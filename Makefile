@@ -2,7 +2,7 @@
 # Cada "objetivo" (proto, test, up...) es un atajo: "make up" ejecuta los
 # comandos de debajo. Las líneas de comando deben empezar con un tabulador.
 # .PHONY indica que son nombres de tareas, no ficheros que generar.
-.PHONY: help proto test test-integration up up-apps down logs alerts
+.PHONY: help proto test test-java test-integration up up-apps down logs alerts
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-18s %s\n", $$1, $$2}'
@@ -13,6 +13,9 @@ proto: ## Valida los .proto y regenera el código en gen/
 test: ## Tests unitarios de todos los servicios Go (con detector de carreras)
 	cd services/flight-ingestor && go vet ./... && go test -race ./...
 	cd services/price-consumer && go vet ./... && go test -race ./...
+
+test-java: ## Tests del auth-gateway: unitarios + integración con Testcontainers (requiere Docker)
+	cd services/auth-gateway && ./mvnw -B verify
 
 # Para el price-consumer se leen usuario y contraseña de infrastructure/.env.
 test-integration: ## Tests contra Kafka y PostgreSQL de docker compose (requiere "make up")

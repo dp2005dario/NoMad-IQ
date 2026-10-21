@@ -10,6 +10,8 @@
   },
   // Los tests unitarios se ejecutan con el detector de carreras.
   "go.testFlags": ["-race", "-count=1"],
+  // Java: cuando cambias el pom.xml, VS Code recarga las librerías él solo.
+  "java.configuration.updateBuildConfiguration": "automatic",
   // El código generado no se edita: lo marcamos como solo lectura.
   "files.readonlyInclude": {
     "gen/**": true

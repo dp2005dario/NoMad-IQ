@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  pom.xml = la "receta" del proyecto Java para Maven (la herramienta que compila).
+  Dice qué librerías necesitamos, con qué versión de Java se compila y cómo se
+  ejecutan los tests. Es el equivalente al go.mod de los servicios en Go.
+
+  Para compilar y probar no hace falta instalar Maven: usa el "wrapper"
+  incluido en esta carpeta:   ./mvnw verify   (en Windows: mvnw.cmd verify)
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!--
+    "Heredamos" de Spring Boot: nos da versiones probadas entre sí de cientos
+    de librerías. Así no elegimos a mano la versión de cada una (y evitamos
+    combinaciones incompatibles).
+  -->
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>4.1.1</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>com.nomadiq</groupId>
+  <artifactId>auth-gateway</artifactId>
+  <version>0.1.0</version>
+  <name>auth-gateway</name>
+  <description>Pasarela de identidad de NomadIQ: registro, login, JWT (ES256) con JWKS, refresh tokens y revocación</description>
+
+  <properties>
+    <!-- Java 21 es la versión LTS (soporte largo) que usamos en todo el servicio. -->
+    <java.version>21</java.version>
+    <!-- BouncyCastle: implementación de Argon2, el algoritmo con el que guardamos las contraseñas. -->
+    <bouncycastle.version>1.86</bouncycastle.version>
+  </properties>
+
+  <dependencies>
+    <!-- Servidor web (Tomcat) y controladores REST. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webmvc</artifactId>
+    </dependency>
+    <!-- Spring Security: filtros que deciden quién puede entrar a cada ruta. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+    <!-- Validación de JWT entrantes y firma de los que emitimos (incluye Nimbus JOSE). -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+    </dependency>
+    <!-- Validación declarativa de las peticiones (@NotBlank, @Email, @Size...). -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <!-- Acceso a PostgreSQL con SQL explícito (JdbcClient) y pool de conexiones Hikari. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>runtime</scope>
+    </dependency>
+    <!-- Flyway: aplica las migraciones SQL (src/main/resources/db/migration) al arrancar. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-flyway</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-database-postgresql</artifactId>
+    </dependency>
+    <!-- Redis: lista negra de tokens revocados y contadores del rate limiting. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-redis</artifactId>
+    </dependency>
+    <!-- Actuator: endpoints de salud (/livez, /readyz) para Docker y Kubernetes. -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk18on</artifactId>
+      <version>${bouncycastle.version}</version>
+    </dependency>
+
+    <!-- ===== Solo para tests (no van dentro de la aplicación final) ===== -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Testcontainers: arranca PostgreSQL y Redis reales en Docker durante los tests de integración. -->
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <!-- Nombre fijo del .jar final: el Dockerfile lo busca con este nombre. -->
+    <finalName>auth-gateway</finalName>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <!-- Todos los avisos del compilador activados y tratados como errores:
+                 un aviso hoy suele ser un fallo mañana. -->
+            <arg>-Xlint:all,-processing,-serial</arg>
+            <arg>-Werror</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <!--
+        Dos tipos de tests, como en los servicios Go:
+          - *Test.java -> unitarios (surefire). Rápidos, sin Docker: ./mvnw test
+          - *IT.java   -> integración (failsafe). PostgreSQL y Redis reales en
+                          Docker: ./mvnw verify
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

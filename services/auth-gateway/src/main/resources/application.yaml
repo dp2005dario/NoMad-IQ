@@ -1,0 +1,115 @@
+# Configuración del auth-gateway.
+#
+# Este fichero NO contiene secretos: solo traduce variables de entorno a la
+# configuración de Spring. La sintaxis ${VARIABLE:valor} significa "usa la
+# variable de entorno VARIABLE y, si no existe, este valor por defecto".
+# ${VARIABLE} sin ":" significa obligatoria: si falta, el servicio no arranca.
+#
+# La lista completa de variables está en services/auth-gateway/README.md.
+
+spring:
+  application:
+    name: auth-gateway
+  threads:
+    virtual:
+      # Hilos virtuales de Java 21: cada petición usa un hilo ligerísimo.
+      # Miles de peticiones esperando a Redis/PostgreSQL no agotan el servidor
+      # (la misma idea que las goroutines de Go).
+      enabled: true
+  data:
+    redis:
+      # No usamos "repositorios" de Spring Data sobre Redis, solo comandos directos.
+      repositories:
+        enabled: false
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
+      # Si la consulta a Redis tarda más de esto, se corta: mejor un error
+      # rápido que dejar a la app móvil esperando.
+      timeout: 500ms
+      connect-timeout: 2s
+      ssl:
+        enabled: ${REDIS_TLS:true}
+  flyway:
+    # Cada microservicio tiene su propio esquema (ver infrastructure/postgres/init).
+    schemas: identity
+    default-schema: identity
+    locations: classpath:db/migration
+
+server:
+  port: ${HTTP_PORT:8083}
+  # Si las cabeceras X-Forwarded-For se deben creer o no. Solo "native" si
+  # delante hay un proxy de confianza: si no, un atacante podría inventarse
+  # su IP y saltarse el rate limiting.
+  forward-headers-strategy: ${FORWARD_HEADERS_STRATEGY:none}
+  # Al apagar, termina las peticiones en curso antes de cerrar.
+  shutdown: graceful
+  # No revelar versiones ni trazas internas en las páginas de error.
+  error:
+    include-stacktrace: never
+    include-message: never
+
+management:
+  # Salud en un puerto aparte, sin TLS, que solo se expone dentro del clúster:
+  # Docker/Kubernetes pueden preguntar "¿estás vivo?" sin certificado de cliente.
+  server:
+    port: ${MANAGEMENT_PORT:8084}
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+      group:
+        # /livez: "el proceso está vivo" (si falla, Docker/Kubernetes lo reinicia).
+        liveness:
+          additional-path: "management:/livez"
+        # /readyz: "puedo atender peticiones". Solo si PostgreSQL y Redis
+        # responden; si no, el balanceador deja de mandarle tráfico.
+        readiness:
+          include: readinessState,db,redis
+          additional-path: "management:/readyz"
+
+logging:
+  structured:
+    format:
+      # Logs en JSON (formato ECS): fáciles de buscar en herramientas como Loki o Elastic.
+      console: ${LOG_FORMAT:ecs}
+  level:
+    root: ${LOG_LEVEL:info}
+
+nomadiq:
+  http:
+    tls-cert-file: ${TLS_CERT_FILE:}
+    tls-key-file: ${TLS_KEY_FILE:}
+    tls-client-ca-file: ${TLS_CLIENT_CA_FILE:}
+    insecure-dev: ${HTTP_INSECURE_DEV:false}
+  database:
+    host: ${PGHOST:}
+    port: ${PGPORT:5432}
+    user: ${PGUSER:}
+    password: ${PGPASSWORD:}
+    name: ${PGDATABASE:}
+    ssl-mode: ${PGSSLMODE:verify-full}
+    ssl-root-cert: ${PGSSLROOTCERT:}
+    max-pool-size: ${PG_MAX_CONNS:10}
+    insecure-dev: ${DB_INSECURE_DEV:false}
+  redis:
+    tls: ${REDIS_TLS:true}
+    insecure-dev: ${REDIS_INSECURE_DEV:false}
+  jwt:
+    issuer: ${JWT_ISSUER:https://auth.nomadiq.app}
+    audience: ${JWT_AUDIENCE:nomadiq-api}
+    access-token-ttl: ${ACCESS_TOKEN_TTL:15m}
+    refresh-token-ttl: ${REFRESH_TOKEN_TTL:30d}
+    active-key-file: ${JWT_ACTIVE_KEY_FILE:}
+    verify-only-key-files: ${JWT_VERIFY_ONLY_KEY_FILES:}
+    dev-ephemeral-key: ${JWT_DEV_EPHEMERAL_KEY:false}
+  rate-limits:
+    login-per-ip: ${RATE_LIMIT_LOGIN_IP:20/1m}
+    register-per-ip: ${RATE_LIMIT_REGISTER_IP:5/10m}
+    refresh-per-ip: ${RATE_LIMIT_REFRESH_IP:60/1m}
+    login-failures-per-account: ${RATE_LIMIT_LOGIN_FAILURES:5/15m}
