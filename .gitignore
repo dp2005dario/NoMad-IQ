@@ -426,3 +426,6 @@ FodyWeavers.xsd
 
 # Official VS Code C# Dev Kit Extension exclusion
 #*.lscache
+
+# Java / Maven: carpeta de compilación del auth-gateway (se regenera con ./mvnw)
+target/

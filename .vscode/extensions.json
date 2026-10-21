@@ -3,6 +3,8 @@
   // (aparece un aviso abajo a la derecha: pulsa "Instalar todas").
   "recommendations": [
     "golang.go",                          // Go: autocompletado, errores al escribir, tests y depurador
+    "vscjava.vscode-java-pack",           // Java: compilar, autocompletar, tests JUnit y depurador (auth-gateway)
+    "vmware.vscode-boot-dev-pack",        // Spring Boot: autocompletado de application.yaml y panel de la app
     "ms-azuretools.vscode-docker",        // Docker: ver contenedores, logs y docker-compose
     "bufbuild.vscode-buf",                // Protobuf: resaltado y validación de los .proto con buf
     "redhat.vscode-yaml",                 // YAML: valida docker-compose.yml y la CI de GitHub

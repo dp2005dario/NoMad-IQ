@@ -204,6 +204,45 @@ services:
       postgres:
         condition: service_healthy
 
+  # Pasarela de identidad (Java Spring Boot): registro, login y JWT (ES256).
+  # Valida tokens sin consultar bases de datos (solo la lista negra en Redis).
+  auth-gateway:
+    <<: *hardening
+    profiles: ["apps"]
+    build:
+      context: ..
+      dockerfile: services/auth-gateway/Dockerfile
+    read_only: true
+    # Java necesita escribir ficheros temporales: /tmp en memoria, no en disco.
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:?Define POSTGRES_USER en .env}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
+      PGDATABASE: ${POSTGRES_DB:?Define POSTGRES_DB en .env}
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Define REDIS_PASSWORD en .env}
+      # Solo en local: en producción todo va con TLS/mTLS (ver services/auth-gateway/README.md)
+      # y la clave de firma se monta desde un fichero (JWT_ACTIVE_KEY_FILE).
+      PGSSLMODE: disable
+      DB_INSECURE_DEV: "true"
+      REDIS_TLS: "false"
+      REDIS_INSECURE_DEV: "true"
+      HTTP_INSECURE_DEV: "true"
+      JWT_DEV_EPHEMERAL_KEY: "true"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "127.0.0.1:8083:8083"     # API: /v1/auth/*, /v1/me, /.well-known/jwks.json
+      - "127.0.0.1:8084:8084"     # /livez y /readyz
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 networks:
   backend:
     name: nomadiq-backend
