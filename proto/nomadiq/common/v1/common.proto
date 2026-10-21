@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package nomadiq.common.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Money representa un importe monetario sin coma flotante.
+// Se guarda en la unidad mínima de la divisa (céntimos para EUR) para que
+// 0.1 + 0.2 nunca dé 0.30000000000000004 en un precio.
+message Money {
+  // Código ISO 4217 en mayúsculas, por ejemplo "EUR" o "USD".
+  string currency_code = 1;
+  // Importe en unidades mínimas. 12999 con EUR significa 129,99 €.
+  int64 amount_minor = 2;
+}
+
+// Date es una fecha de calendario sin hora ni zona horaria (fecha de vuelo).
+message Date {
+  int32 year = 1;
+  int32 month = 2;
+  int32 day = 3;
+}
+
+// EventMetadata viaja dentro de cada evento de Kafka. Permite deduplicar,
+// trazar una petición entre microservicios y saber qué servicio lo emitió.
+message EventMetadata {
+  // Identificador único del evento (UUID). Los consumidores lo usan para
+  // ignorar duplicados (entrega "at-least-once" de Kafka).
+  string event_id = 1;
+  // Momento en que ocurrió el hecho de negocio, no cuando se procesó.
+  google.protobuf.Timestamp occurred_at = 2;
+  // Servicio que produjo el evento, por ejemplo "flight-ingestor".
+  string producer = 3;
+  // Identificador para seguir una misma operación a través de varios servicios.
+  string correlation_id = 4;
+}

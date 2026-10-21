@@ -1,0 +1,76 @@
+package config
+
+import (
+	"strings"
+	"testing"
+	"time"
+)
+
+func env(m map[string]string) LookupFunc {
+	return func(k string) (string, bool) {
+		v, ok := m[k]
+		return v, ok
+	}
+}
+
+func TestLoadDefaults(t *testing.T) {
+	cfg, err := Load(env(map[string]string{
+		"KAFKA_BROKERS":     "kafka-1:9092, kafka-2:9092",
+		"GRPC_INSECURE_DEV": "true",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.KafkaBrokers) != 2 || cfg.KafkaBrokers[1] != "kafka-2:9092" {
+		t.Errorf("KafkaBrokers = %v", cfg.KafkaBrokers)
+	}
+	if cfg.PollInterval != 5*time.Minute || cfg.Concurrency != 32 || cfg.TopicPriceObserved != "flights.price-observed.v1" {
+		t.Errorf("valores por defecto inesperados: %+v", cfg)
+	}
+}
+
+func TestLoadReportsAllErrorsAtOnce(t *testing.T) {
+	_, err := Load(env(map[string]string{
+		"POLL_INTERVAL":      "rápido",
+		"INGEST_CONCURRENCY": "0",
+		"LOG_LEVEL":          "verbose",
+	}))
+	if err == nil {
+		t.Fatal("se esperaba error")
+	}
+	for _, want := range []string{"KAFKA_BROKERS", "POLL_INTERVAL", "INGEST_CONCURRENCY", "LOG_LEVEL", "gRPC sin TLS"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("el error no menciona %s:\n%v", want, err)
+		}
+	}
+}
+
+func TestLoadTLSRules(t *testing.T) {
+	base := map[string]string{"KAFKA_BROKERS": "k:9092"}
+	tests := []struct {
+		name    string
+		extra   map[string]string
+		wantErr bool
+	}{
+		{name: "sin TLS ni modo dev", extra: nil, wantErr: true},
+		{name: "modo dev", extra: map[string]string{"GRPC_INSECURE_DEV": "true"}},
+		{name: "TLS incompleto", extra: map[string]string{"GRPC_TLS_CERT_FILE": "c.pem"}, wantErr: true},
+		{name: "TLS completo", extra: map[string]string{"GRPC_TLS_CERT_FILE": "c", "GRPC_TLS_KEY_FILE": "k", "GRPC_TLS_CLIENT_CA_FILE": "ca"}},
+		{name: "TLS y modo dev a la vez", extra: map[string]string{"GRPC_TLS_CERT_FILE": "c", "GRPC_TLS_KEY_FILE": "k", "GRPC_TLS_CLIENT_CA_FILE": "ca", "GRPC_INSECURE_DEV": "true"}, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := map[string]string{}
+			for k, v := range base {
+				m[k] = v
+			}
+			for k, v := range tt.extra {
+				m[k] = v
+			}
+			_, err := Load(env(m))
+			if tt.wantErr != (err != nil) {
+				t.Fatalf("error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

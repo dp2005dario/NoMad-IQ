@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package nomadiq.flights.v1;
+
+import "nomadiq/common/v1/common.proto";
+import "nomadiq/flights/v1/flights.proto";
+
+// RouteWatchService es la API interna (gRPC sobre mTLS) del flight-ingestor.
+// La llama el auth-gateway cuando un usuario quiere vigilar un vuelo.
+// No se expone a Internet: solo servicios con certificado válido pueden usarla.
+service RouteWatchService {
+  // Empieza a vigilar una ruta. Es idempotente: la misma ruta, fechas y
+  // cabina devuelven el mismo watch_id en lugar de duplicar trabajo.
+  rpc WatchRoute(WatchRouteRequest) returns (WatchRouteResponse);
+  // Deja de vigilar una ruta.
+  rpc UnwatchRoute(UnwatchRouteRequest) returns (UnwatchRouteResponse);
+  // Lista las rutas vigiladas actualmente.
+  rpc ListRouteWatches(ListRouteWatchesRequest) returns (ListRouteWatchesResponse);
+}
+
+message WatchRouteRequest {
+  Route route = 1;
+  nomadiq.common.v1.Date departure_date = 2;
+  nomadiq.common.v1.Date return_date = 3;
+  CabinClass cabin = 4;
+}
+
+message WatchRouteResponse {
+  RouteWatch watch = 1;
+  // true si el seguimiento ya existía antes de esta llamada.
+  bool already_existed = 2;
+}
+
+message UnwatchRouteRequest {
+  string watch_id = 1;
+}
+
+message UnwatchRouteResponse {}
+
+message ListRouteWatchesRequest {}
+
+message ListRouteWatchesResponse {
+  repeated RouteWatch watches = 1;
+}

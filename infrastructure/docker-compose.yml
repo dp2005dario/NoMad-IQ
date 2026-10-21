@@ -1,0 +1,181 @@
+# Entorno de desarrollo local de NomadIQ.
+#
+#   cp .env.example .env      # y rellena los secretos
+#   docker compose up -d      # solo infraestructura
+#   docker compose --profile apps up -d --build   # + microservicios
+#
+# Reglas que sigue este fichero:
+#   - Ningún secreto escrito aquí: todo sale de .env y la sintaxis ${VAR:?}
+#     hace que compose falle si falta alguno, en vez de usar un valor por defecto.
+#   - Los puertos solo se publican en 127.0.0.1: nada queda abierto a tu red local.
+#   - Cada servicio tiene healthcheck, y quien depende de él espera a que esté sano.
+#   - Versiones de imagen fijadas: el mismo fichero da el mismo entorno siempre.
+
+name: nomadiq
+
+x-hardening: &hardening
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  networks:
+    - backend
+
+services:
+  # ---------------------------------------------------------------------------
+  # Apache Kafka en modo KRaft: sin ZooKeeper, un solo proceso hace de broker
+  # (guarda mensajes) y de controller (gestiona los metadatos del clúster).
+  # ---------------------------------------------------------------------------
+  kafka:
+    <<: *hardening
+    image: apache/kafka:3.9.1
+    hostname: kafka
+    environment:
+      CLUSTER_ID: ${KAFKA_CLUSTER_ID:?Define KAFKA_CLUSTER_ID en .env}
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      # INTERNAL: tráfico entre contenedores. EXTERNAL: tu máquina (localhost:29092).
+      KAFKA_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093,EXTERNAL://:29092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      # Con un único broker, los factores de replicación internos deben ser 1.
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      # Los topics se crean explícitamente (kafka-init), nunca por accidente
+      # al publicar en un nombre mal escrito.
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    ports:
+      - "127.0.0.1:29092:29092"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # Contenedor de un solo uso: crea los topics y termina.
+  kafka-init:
+    image: apache/kafka:3.9.1
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - backend
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP: kafka:9092
+    volumes:
+      - ./kafka/create-topics.sh:/create-topics.sh:ro
+    entrypoint: ["/bin/bash", "/create-topics.sh"]
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL 17 con la extensión PostGIS (datos relacionales + geoespaciales).
+  # ---------------------------------------------------------------------------
+  postgres:
+    <<: *hardening
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Define POSTGRES_USER en .env}
+      POSTGRES_DB: ${POSTGRES_DB:?Define POSTGRES_DB en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
+      # scram-sha-256: el algoritmo moderno de contraseñas (no md5).
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=scram-sha-256
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # ---------------------------------------------------------------------------
+  # Redis: caché en memoria. En local un nodo; en producción, Redis Cluster.
+  # ---------------------------------------------------------------------------
+  redis:
+    <<: *hardening
+    image: redis:7.4-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Define REDIS_PASSWORD en .env}
+      # redis-cli lee la contraseña de aquí, así no aparece en la lista de procesos.
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?Define REDIS_PASSWORD en .env}
+    command: ["sh", "-c", "exec redis-server --requirepass \"$$REDIS_PASSWORD\" --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ---------------------------------------------------------------------------
+  # Qdrant: base de datos vectorial para la memoria semántica de los agentes IA.
+  # ---------------------------------------------------------------------------
+  qdrant:
+    <<: *hardening
+    image: qdrant/qdrant:v1.13.6
+    environment:
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:?Define QDRANT_API_KEY en .env}
+      QDRANT__TELEMETRY_DISABLED: "true"
+    ports:
+      - "127.0.0.1:6333:6333"   # API REST
+      - "127.0.0.1:6334:6334"   # API gRPC
+    volumes:
+      - qdrant-data:/qdrant/storage
+    healthcheck:
+      # La imagen no trae curl: abrimos el socket con bash y pedimos /readyz.
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/6333 && printf \"GET /readyz HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3 && grep -q \"200 OK\" <&3'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # Microservicios (perfil "apps": no arrancan con un "up" a secas).
+  # ---------------------------------------------------------------------------
+  flight-ingestor:
+    <<: *hardening
+    profiles: ["apps"]
+    build:
+      context: ..
+      dockerfile: services/flight-ingestor/Dockerfile
+    read_only: true
+    cap_drop:
+      - ALL
+    environment:
+      KAFKA_BROKERS: kafka:9092
+      # Solo en local: en producción el gRPC exige certificados (mTLS).
+      GRPC_INSECURE_DEV: "true"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      POLL_INTERVAL: ${POLL_INTERVAL:-1m}
+      # Rutas de ejemplo para ver eventos sin llamar al gRPC (opcional).
+      SEED_WATCHES: ${SEED_WATCHES:-}
+    ports:
+      - "127.0.0.1:50051:50051"   # gRPC RouteWatchService
+      - "127.0.0.1:8081:8081"     # /healthz y /readyz
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+
+networks:
+  backend:
+    name: nomadiq-backend
+
+volumes:
+  kafka-data:
+  postgres-data:
+  redis-data:
+  qdrant-data:

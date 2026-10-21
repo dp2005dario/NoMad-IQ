@@ -1,0 +1,16 @@
+# Generación de código a partir de los contratos .proto.
+# "managed mode" fija el paquete Go sin ensuciar los .proto con detalles de un
+# lenguaje concreto: así Rust, Java y Python pueden generar desde los mismos ficheros.
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/dp2005dario/NoMad-IQ/gen/go
+plugins:
+  - local: protoc-gen-go
+    out: ../gen/go
+    opt: paths=source_relative
+  - local: protoc-gen-go-grpc
+    out: ../gen/go
+    opt: paths=source_relative

@@ -1,0 +1,113 @@
+# Integración continua: se ejecuta en cada push y Pull Request.
+# Si algo falla aquí, el cambio no debería fusionarse.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read # mínimo privilegio también para la CI
+
+jobs:
+  proto:
+    name: Contratos proto
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+      - name: Instalar buf y plugins
+        run: |
+          go install github.com/bufbuild/buf/cmd/buf@v1.47.2
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.5
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
+      - name: Lint
+        working-directory: proto
+        run: buf lint
+      - name: Cambios incompatibles frente a main
+        if: github.event_name == 'pull_request'
+        working-directory: proto
+        # Si main aún no tiene proto/ (primer PR), no hay nada con qué comparar.
+        run: |
+          if git cat-file -e origin/${{ github.base_ref }}:proto/buf.yaml 2>/dev/null; then
+            buf breaking --against "../.git#branch=origin/${{ github.base_ref }},subdir=proto"
+          else
+            echo "main todavía no tiene contratos: se omite la comprobación"
+          fi
+      - name: El código generado está al día
+        working-directory: proto
+        run: |
+          buf generate
+          git diff --exit-code -- ../gen || (echo "Ejecuta 'make proto' y sube gen/" && exit 1)
+
+  flight-ingestor:
+    name: flight-ingestor (Go)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/flight-ingestor
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: services/flight-ingestor/go.sum
+      - name: Formato
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - name: go vet
+        run: go vet ./... && go vet -tags integration ./...
+      - name: Tests unitarios (con detector de carreras)
+        run: go test -race -count=1 ./...
+
+  integration:
+    name: Integración (docker compose + Kafka real)
+    runs-on: ubuntu-latest
+    needs: [flight-ingestor]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: services/flight-ingestor/go.sum
+      - name: Generar secretos efímeros para la CI
+        working-directory: infrastructure
+        run: |
+          {
+            echo "POSTGRES_USER=nomadiq"
+            echo "POSTGRES_DB=nomadiq"
+            echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)"
+            echo "REDIS_PASSWORD=$(openssl rand -hex 24)"
+            echo "QDRANT_API_KEY=$(openssl rand -hex 24)"
+            echo "KAFKA_CLUSTER_ID=$(docker run --rm apache/kafka:3.9.1 /opt/kafka/bin/kafka-storage.sh random-uuid)"
+          } > .env
+      - name: Levantar infraestructura
+        working-directory: infrastructure
+        run: |
+          docker compose up -d --wait kafka postgres redis qdrant
+          docker compose up --exit-code-from kafka-init kafka-init
+      - name: Tests de integración contra Kafka
+        working-directory: services/flight-ingestor
+        env:
+          KAFKA_BROKERS: localhost:29092
+        run: go test -tags integration -count=1 ./internal/publisher/
+      - name: Construir y arrancar flight-ingestor
+        working-directory: infrastructure
+        env:
+          SEED_WATCHES: MAD-NRT:2026-12-01:ECONOMY
+          POLL_INTERVAL: 10s
+        run: |
+          docker compose --profile apps up -d --build --wait flight-ingestor
+          curl -fsS http://127.0.0.1:8081/readyz
+      - name: Logs si algo falla
+        if: failure()
+        working-directory: infrastructure
+        run: docker compose --profile apps logs --tail=100
+      - name: Apagar
+        if: always()
+        working-directory: infrastructure
+        run: docker compose --profile apps down -v
