@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package nomadiq.flights.v1;
+
+import "nomadiq/common/v1/common.proto";
+
+// CabinClass es la clase de cabina. El valor 0 siempre es "no especificado"
+// para que un campo olvidado no se interprete como una clase real.
+enum CabinClass {
+  CABIN_CLASS_UNSPECIFIED = 0;
+  CABIN_CLASS_ECONOMY = 1;
+  CABIN_CLASS_PREMIUM_ECONOMY = 2;
+  CABIN_CLASS_BUSINESS = 3;
+  CABIN_CLASS_FIRST = 4;
+}
+
+// Route es un trayecto entre dos aeropuertos identificados por código IATA.
+message Route {
+  // Código IATA de 3 letras del origen, por ejemplo "MAD".
+  string origin_iata = 1;
+  // Código IATA de 3 letras del destino, por ejemplo "NRT".
+  string destination_iata = 2;
+}
+
+// RouteWatch es una ruta concreta que el sistema vigila de forma periódica.
+message RouteWatch {
+  // Identificador estable del seguimiento (lo genera el servidor).
+  string watch_id = 1;
+  Route route = 2;
+  nomadiq.common.v1.Date departure_date = 3;
+  // Vacío si es solo ida.
+  nomadiq.common.v1.Date return_date = 4;
+  CabinClass cabin = 5;
+}

@@ -40,3 +40,18 @@ Para garantizar una escalabilidad masiva sin degradación del rendimiento, el si
 ## 💰 Modelo de Negocio y Monetización Pasiva
 * **Afiliación por Conversión (CPS):** Integración mediante *Deep Linking* con plataformas globales de hoteles (Booking), vuelos (Travelpayouts), eSIMs, seguros de viaje, transporte y atracciones.
 * **Google Play Billing:** Gestión automatizada de suscripciones recurrentes (**NomadIQ Pro**) y micropagos, con ingresos limpios transferidos directamente a cuentas bancarias (como BBVA) por umbrales mínimos.
+
+---
+
+## 🗂️ Estructura del Repositorio
+
+```
+proto/                    Contratos gRPC y eventos Kafka (Protocol Buffers, fuente única de verdad)
+gen/go/                   Código Go generado desde proto/ (no editar a mano)
+infrastructure/           docker-compose local: Kafka (KRaft), PostgreSQL+PostGIS, Redis, Qdrant
+services/flight-ingestor/ Microservicio Go: vigila rutas y publica precios en Kafka
+docs/                     Documentación, incluida la guía de aprendizaje
+.github/workflows/        Integración continua
+```
+
+**Primeros pasos:** `cp infrastructure/.env.example infrastructure/.env`, rellena los secretos y ejecuta `make up`. Lee [`docs/guia-aprendizaje.md`](docs/guia-aprendizaje.md) para entender cada pieza.

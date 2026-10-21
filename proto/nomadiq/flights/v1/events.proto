@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package nomadiq.flights.v1;
+
+import "google/protobuf/timestamp.proto";
+import "nomadiq/common/v1/common.proto";
+import "nomadiq/flights/v1/flights.proto";
+
+// Eventos de dominio de vuelos que viajan por Kafka.
+// Regla de evolución: solo se AÑADEN campos con números nuevos; nunca se
+// reutiliza ni se cambia el tipo de un número existente. "buf breaking" lo vigila.
+
+// FlightPriceObserved se publica en el topic "flights.price-observed.v1"
+// cada vez que el flight-ingestor obtiene un precio de un proveedor.
+// Clave del mensaje Kafka: "ORIGEN-DESTINO:AAAA-MM-DD:CABINA", para que todas
+// las observaciones de una misma ruta y fecha vayan a la misma partición
+// y se procesen en orden.
+message FlightPriceObserved {
+  nomadiq.common.v1.EventMetadata metadata = 1;
+  // Seguimiento que originó la consulta.
+  string watch_id = 2;
+  Route route = 3;
+  nomadiq.common.v1.Date departure_date = 4;
+  nomadiq.common.v1.Date return_date = 5;
+  CabinClass cabin = 6;
+  // Precio total por pasajero adulto.
+  nomadiq.common.v1.Money price = 7;
+  // Proveedor del precio, por ejemplo "travelpayouts".
+  string provider = 8;
+  // Aerolínea operadora (código IATA de 2 caracteres), si el proveedor lo da.
+  string carrier_iata = 9;
+  // Momento en que el proveedor devolvió el precio.
+  google.protobuf.Timestamp observed_at = 10;
+  // Enlace de reserva con el identificador de afiliado (monetización CPS).
+  string booking_deep_link = 11;
+}
+
+// FareAlertType clasifica por qué se dispara una alerta.
+enum FareAlertType {
+  FARE_ALERT_TYPE_UNSPECIFIED = 0;
+  // Bajada relevante frente al precio de referencia.
+  FARE_ALERT_TYPE_PRICE_DROP = 1;
+  // Precio anómalamente bajo: posible tarifa error de la aerolínea.
+  FARE_ALERT_TYPE_ERROR_FARE = 2;
+  // El precio ha llegado al objetivo que fijó el usuario.
+  FARE_ALERT_TYPE_TARGET_REACHED = 3;
+}
+
+// FareAlertTriggered se publica en "flights.fare-alerts.v1" cuando el
+// detector ("sniper") encuentra una oportunidad para un usuario.
+// Clave del mensaje Kafka: user_id (orden garantizado por usuario).
+message FareAlertTriggered {
+  nomadiq.common.v1.EventMetadata metadata = 1;
+  string alert_id = 2;
+  string user_id = 3;
+  FareAlertType alert_type = 4;
+  string watch_id = 5;
+  Route route = 6;
+  nomadiq.common.v1.Date departure_date = 7;
+  CabinClass cabin = 8;
+  // Precio de referencia contra el que se compara (media reciente u objetivo).
+  nomadiq.common.v1.Money reference_price = 9;
+  nomadiq.common.v1.Money current_price = 10;
+  // Bajada en puntos básicos: 2500 = 25,00 %. Entero para evitar flotantes.
+  int32 drop_basis_points = 11;
+  string booking_deep_link = 12;
+}

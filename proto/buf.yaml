@@ -1,0 +1,11 @@
+# Configuración del módulo Buf: valida estilo (lint) y detecta cambios que
+# romperían a los consumidores existentes (breaking) en cada Pull Request.
+version: v2
+modules:
+  - path: .
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE
