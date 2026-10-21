@@ -359,6 +359,6 @@ make test-integration
 
 1. Persistir la watchlist en PostgreSQL (esquema `flights`) con migraciones.
 2. Proveedor real (Travelpayouts) con límite de peticiones y reintentos con espera exponencial.
-3. Servicio detector *sniper* que consume `price-observed` y emite `fare-alerts`.
+3. ~~Servicio detector *sniper* que consume `price-observed` y emite `fare-alerts`.~~ Hecho: ver [`guia-price-consumer.md`](guia-price-consumer.md).
 4. Generar la CA interna y los certificados mTLS para todos los servicios.
 5. Métricas con Prometheus/OpenTelemetry y trazas distribuidas.

@@ -15,6 +15,9 @@ TOPICS=(
   "flights.price-observed.v1|12|604800000|delete"
   # Alertas a usuarios: poco volumen, se guardan 30 días para auditoría.
   "flights.fare-alerts.v1|6|2592000000|delete"
+  # Mensajes de precio imposibles de procesar (DLQ): se guardan 14 días para
+  # investigarlos y, una vez corregido el fallo, volver a inyectarlos.
+  "flights.price-observed-dlq.v1|3|1209600000|delete"
 )
 
 # Recorre la lista y separa cada entrada por el carácter | en cuatro variables.

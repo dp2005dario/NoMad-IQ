@@ -50,8 +50,9 @@ proto/                    Contratos gRPC y eventos Kafka (Protocol Buffers, fuen
 gen/go/                   Código Go generado desde proto/ (no editar a mano)
 infrastructure/           docker-compose local: Kafka (KRaft), PostgreSQL+PostGIS, Redis, Qdrant
 services/flight-ingestor/ Microservicio Go: vigila rutas y publica precios en Kafka
+services/price-consumer/  Microservicio Go: guarda el historial de precios, detecta chollos y publica alertas
 docs/                     Documentación, incluida la guía de aprendizaje
 .github/workflows/        Integración continua
 ```
 
-**Primeros pasos:** `cp infrastructure/.env.example infrastructure/.env`, rellena los secretos y ejecuta `make up`. ¿Empiezas de cero? Lee primero [`docs/guia-principiantes.md`](docs/guia-principiantes.md) (incluye cómo usar el proyecto en VS Code) y después [`docs/guia-aprendizaje.md`](docs/guia-aprendizaje.md) para el detalle técnico.
+**Primeros pasos:** `cp infrastructure/.env.example infrastructure/.env`, rellena los secretos y ejecuta `make up`. ¿Empiezas de cero? Lee primero [`docs/guia-principiantes.md`](docs/guia-principiantes.md) (incluye cómo usar el proyecto en VS Code), después [`docs/guia-aprendizaje.md`](docs/guia-aprendizaje.md) para el detalle técnico y [`docs/guia-price-consumer.md`](docs/guia-price-consumer.md) para el detector de chollos.
