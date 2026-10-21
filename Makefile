@@ -1,4 +1,7 @@
 # Atajos para el día a día. Ejecuta "make help" para ver la lista.
+# Cada "objetivo" (proto, test, up...) es un atajo: "make up" ejecuta los
+# comandos de debajo. Las líneas de comando deben empezar con un tabulador.
+# .PHONY indica que son nombres de tareas, no ficheros que generar.
 .PHONY: help proto test test-integration up up-apps down logs alerts
 
 help: ## Muestra esta ayuda

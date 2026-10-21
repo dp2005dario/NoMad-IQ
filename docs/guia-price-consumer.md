@@ -1,7 +1,9 @@
 # Guía del price-consumer: el detector de chollos, explicado desde cero
 
 Esta guía está escrita para alguien que **no sabe nada** de programación de
-sistemas. Si algo no se entiende, la culpa es de la guía, no tuya. Ve por
+sistemas. Si es tu primera vez con el proyecto, lee antes
+[`guia-principiantes.md`](guia-principiantes.md) (qué es cada carpeta y cómo
+instalarlo todo); esta guía se centra en el detector de chollos. Si algo no se entiende, la culpa es de la guía, no tuya. Ve por
 orden: cada sección se apoya en la anterior.
 
 ---
@@ -183,7 +185,8 @@ Todos los umbrales se cambian con variables de entorno, sin tocar código
 | `infrastructure/.env.example` | Ejemplo de `SEED_SUBSCRIPTIONS`. |
 | `.github/workflows/ci.yml` | Nuevo job `price-consumer` (formato, vet, tests con detector de carreras). En el job de integración: arranca ingestor + consumer, comprueba que los precios llegan a PostgreSQL y ejecuta los tests de integración. |
 | `Makefile` | `make test` y `make test-integration` incluyen el nuevo servicio; `make alerts` muestra las últimas alertas. |
-| `.vscode/extensions.json` | Extensiones recomendadas para VS Code (ver sección 6). |
+| `.vscode/extensions.json` | Añade a las recomendadas las extensiones de PostgreSQL y Markdown (ver sección 6). |
+| `go.work` | Añade `services/price-consumer` al espacio de trabajo de Go (y `go.work.sum`, sus huellas). |
 
 ---
 
@@ -239,11 +242,12 @@ función `Test…` verás **run test | debug test**. Pulsa *run test*.
 
 ### Consejos
 
-- Usa la carpeta raíz como espacio de trabajo. La extensión de Go entiende
-  que hay varios módulos (`gen/go`, `services/flight-ingestor`,
-  `services/price-consumer`); si se queja, ejecuta en la raíz
-  `go work init ./gen/go ./services/flight-ingestor ./services/price-consumer`
-  (el fichero `go.work` es solo para tu máquina; no lo subas).
+- Usa la carpeta raíz como espacio de trabajo. El fichero `go.work` de la
+  raíz le dice a la extensión de Go que hay varios módulos (`gen/go`,
+  `services/flight-ingestor`, `services/price-consumer`); este PR añade el
+  price-consumer a esa lista. Si creas otro servicio en Go, añádelo también.
+- `.vscode/settings.json` ya formatea Go al guardar y activa la etiqueta
+  `integration` para que el editor entienda también esos tests.
 - Nunca subas tu `infrastructure/.env`: ya está en `.gitignore`.
 
 ---

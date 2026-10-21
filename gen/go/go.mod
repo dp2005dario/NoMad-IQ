@@ -1,3 +1,5 @@
+// Módulo con el código Go generado desde proto/ (make proto). No editar a mano:
+// cualquier cambio se hace en los .proto y se regenera.
 module github.com/dp2005dario/NoMad-IQ/gen/go
 
 go 1.24

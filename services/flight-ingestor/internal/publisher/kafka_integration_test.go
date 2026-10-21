@@ -18,6 +18,8 @@ import (
 	"github.com/dp2005dario/NoMad-IQ/services/flight-ingestor/internal/events"
 )
 
+// Publica un mensaje con una clave única y lo busca leyendo el topic desde el
+// principio. Demuestra que el productor escribe de verdad en Kafka.
 func TestKafkaPublishAndConsume(t *testing.T) {
 	brokers := strings.Split(os.Getenv("KAFKA_BROKERS"), ",")
 	if brokers[0] == "" {
@@ -65,6 +67,8 @@ func TestKafkaPublishAndConsume(t *testing.T) {
 	}
 }
 
+// Como la autocreación de topics está desactivada, publicar en un topic que no
+// existe debe dar error en vez de crearlo en silencio.
 func TestPublishToMissingTopicFails(t *testing.T) {
 	brokers := strings.Split(os.Getenv("KAFKA_BROKERS"), ",")
 	if brokers[0] == "" {

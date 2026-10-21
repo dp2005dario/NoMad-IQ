@@ -55,4 +55,4 @@ docs/                     Documentación, incluida la guía de aprendizaje
 .github/workflows/        Integración continua
 ```
 
-**Primeros pasos:** `cp infrastructure/.env.example infrastructure/.env`, rellena los secretos y ejecuta `make up`. Lee [`docs/guia-aprendizaje.md`](docs/guia-aprendizaje.md) para entender cada pieza y [`docs/guia-price-consumer.md`](docs/guia-price-consumer.md) para el detector de chollos (empieza desde cero, sin conocimientos previos, e incluye cómo trabajar desde VS Code).
+**Primeros pasos:** `cp infrastructure/.env.example infrastructure/.env`, rellena los secretos y ejecuta `make up`. ¿Empiezas de cero? Lee primero [`docs/guia-principiantes.md`](docs/guia-principiantes.md) (incluye cómo usar el proyecto en VS Code), después [`docs/guia-aprendizaje.md`](docs/guia-aprendizaje.md) para el detalle técnico y [`docs/guia-price-consumer.md`](docs/guia-price-consumer.md) para el detector de chollos.

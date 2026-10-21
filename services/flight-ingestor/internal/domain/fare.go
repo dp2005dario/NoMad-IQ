@@ -19,10 +19,13 @@ type ValidationError struct {
 	Reason string
 }
 
+// Error hace que ValidationError cumpla la interfaz error de Go: cualquier tipo
+// con un método Error() string puede usarse como error.
 func (e *ValidationError) Error() string {
 	return fmt.Sprintf("campo %q inválido: %s", e.Field, e.Reason)
 }
 
+// invalid es un atajo para crear un ValidationError con un mensaje formateado.
 func invalid(field, format string, args ...any) error {
 	return &ValidationError{Field: field, Reason: fmt.Sprintf(format, args...)}
 }
@@ -50,9 +53,11 @@ func ParseAirport(field, raw string) (Airport, error) {
 	return Airport(code), nil
 }
 
-// CabinClass es la clase de cabina. El valor cero es deliberadamente inválido.
+// CabinClass es la clase de cabina. El valor cero es deliberadamente inválido:
+// en Go, una variable sin asignar vale 0, así que un olvido se detecta.
 type CabinClass int
 
+// iota numera las constantes automáticamente: 0, 1, 2, 3, 4.
 const (
 	CabinUnspecified CabinClass = iota
 	CabinEconomy
@@ -61,6 +66,7 @@ const (
 	CabinFirst
 )
 
+// cabinNames asocia cada clase con su nombre en texto (el mismo que en el .proto).
 var cabinNames = map[CabinClass]string{
 	CabinEconomy:        "ECONOMY",
 	CabinPremiumEconomy: "PREMIUM_ECONOMY",
@@ -99,6 +105,8 @@ type Date struct {
 	Day   int
 }
 
+// dateLayout indica a Go el formato de fecha. Go usa una fecha de referencia
+// fija (2 de enero de 2006) en vez de códigos como AAAA-MM-DD.
 const dateLayout = "2006-01-02"
 
 // NewDate construye y valida una fecha; rechaza fechas imposibles (30 de febrero).

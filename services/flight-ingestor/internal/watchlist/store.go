@@ -26,10 +26,10 @@ var (
 
 // Store es el registro en memoria de seguimientos.
 type Store struct {
-	mu      sync.RWMutex
-	max     int
-	byID    map[string]domain.Watch
-	idByKey map[string]string
+	mu      sync.RWMutex            // protege los dos mapas del acceso simultáneo
+	max     int                     // número máximo de seguimientos
+	byID    map[string]domain.Watch // ID → seguimiento
+	idByKey map[string]string       // clave natural (MAD-NRT:...) → ID, para la idempotencia
 }
 
 // New crea un Store que admite como mucho max seguimientos.
@@ -48,6 +48,8 @@ func (s *Store) Add(spec domain.WatchSpec) (watch domain.Watch, existed bool, er
 	}
 	key := spec.Key()
 
+	// Lock: acceso exclusivo mientras modificamos. defer Unlock lo libera al
+	// salir de la función, pase lo que pase (incluso si hay un return antes).
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -79,6 +81,7 @@ func (s *Store) Remove(id string) error {
 
 // List devuelve una copia ordenada por clave, para resultados deterministas.
 func (s *Store) List() []domain.Watch {
+	// RLock: varios lectores pueden leer a la vez; solo se bloquea si alguien escribe.
 	s.mu.RLock()
 	out := make([]domain.Watch, 0, len(s.byID))
 	for _, w := range s.byID {

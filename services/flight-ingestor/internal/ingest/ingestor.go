@@ -39,6 +39,7 @@ type Config struct {
 	Concurrency int
 }
 
+// validate comprueba que ningún valor sea cero o negativo.
 func (c Config) validate() error {
 	var errs []error
 	if c.Interval <= 0 {
@@ -116,6 +117,8 @@ func (in *Ingestor) Run(ctx context.Context) error {
 	}
 }
 
+// levelFor elige el nivel del log del ciclo: ERROR si no se pudo publicar o se
+// descartaron datos, WARN si solo fallaron proveedores, INFO si todo fue bien.
 func levelFor(s CycleStats) slog.Level {
 	if s.PublishErrors > 0 || s.EncodeErrors > 0 {
 		return slog.LevelError
@@ -132,6 +135,9 @@ func (in *Ingestor) RunCycle(ctx context.Context) CycleStats {
 	start := time.Now()
 	watches := in.watches.List()
 
+	// Contadores atómicos: muchas goroutines los incrementan a la vez y
+	// atomic garantiza que ninguna suma se pierda. WaitGroup sirve para
+	// esperar a que terminen todas las goroutines lanzadas.
 	var (
 		providerErrs, encodeErrs, publishErrs atomic.Int64
 		quotes, published                     atomic.Int64
@@ -142,15 +148,18 @@ func (in *Ingestor) RunCycle(ctx context.Context) CycleStats {
 
 loop:
 	for _, w := range watches {
+		// Esperamos a que haya hueco en el semáforo, salvo que nos pidan
+		// apagar: entonces dejamos de lanzar trabajo nuevo ("break loop").
 		select {
 		case <-ctx.Done():
 			break loop
 		case sem <- struct{}{}:
 		}
 		wg.Add(1)
+		// "go" lanza la función en una goroutine nueva y el bucle sigue sin esperar.
 		go func(w domain.Watch) {
-			defer wg.Done()
-			defer func() { <-sem }()
+			defer wg.Done()          // al terminar: "una goroutine menos"
+			defer func() { <-sem }() // y libera su hueco del semáforo
 			r := in.processWatch(ctx, w)
 			quotes.Add(int64(r.quotes))
 			published.Add(int64(r.published))
@@ -159,7 +168,7 @@ loop:
 			publishErrs.Add(int64(r.publishErrs))
 		}(w)
 	}
-	wg.Wait()
+	wg.Wait() // bloquea hasta que todas las goroutines del ciclo han terminado
 
 	stats := CycleStats{
 		Watches:        len(watches),
@@ -174,10 +183,14 @@ loop:
 	return stats
 }
 
+// watchResult son los contadores de una sola ruta dentro de un ciclo.
 type watchResult struct {
 	quotes, published, providerErrs, encodeErrs, publishErrs int
 }
 
+// processWatch hace todo el trabajo de una ruta: consultar el proveedor,
+// convertir cada precio en mensaje y publicarlos juntos en Kafka.
+// Se ejecuta dentro de su propia goroutine.
 func (in *Ingestor) processWatch(ctx context.Context, w domain.Watch) (res watchResult) {
 	log := in.log.With(slog.String("watch_id", w.ID), slog.String("route_key", w.Spec.Key()))
 
@@ -189,6 +202,8 @@ func (in *Ingestor) processWatch(ctx context.Context, w domain.Watch) (res watch
 		}
 	}()
 
+	// Contexto con fecha de caducidad: si el proveedor no contesta a tiempo,
+	// Quote recibe la cancelación y devuelve un error.
 	qctx, cancel := context.WithTimeout(ctx, in.cfg.QueryTimeout)
 	quotes, err := in.provider.Quote(qctx, w.Spec)
 	cancel()
@@ -203,6 +218,8 @@ func (in *Ingestor) processWatch(ctx context.Context, w domain.Watch) (res watch
 	}
 	res.quotes = len(quotes)
 
+	// Todos los precios de esta consulta comparten correlation_id, para poder
+	// relacionarlos después en los logs y en los consumidores.
 	correlationID := in.encoder.NewID()
 	msgs := make([]events.Message, 0, len(quotes))
 	for _, q := range quotes {

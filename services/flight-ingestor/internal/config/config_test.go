@@ -1,3 +1,6 @@
+// Tests de la configuración. Cada test simula un conjunto de variables de
+// entorno distinto y comprueba que Load acepta lo correcto y rechaza lo inseguro.
+
 package config
 
 import (
@@ -6,6 +9,8 @@ import (
 	"time"
 )
 
+// env convierte un mapa en una LookupFunc: así el test decide qué variables
+// "existen" sin modificar las variables de entorno reales del ordenador.
 func env(m map[string]string) LookupFunc {
 	return func(k string) (string, bool) {
 		v, ok := m[k]
@@ -13,6 +18,8 @@ func env(m map[string]string) LookupFunc {
 	}
 }
 
+// Con solo lo obligatorio, el resto debe tomar valores por defecto sensatos.
+// También comprueba que los espacios alrededor de las comas se ignoran.
 func TestLoadDefaults(t *testing.T) {
 	cfg, err := Load(env(map[string]string{
 		"KAFKA_BROKERS":     "kafka-1:9092, kafka-2:9092",
@@ -29,6 +36,8 @@ func TestLoadDefaults(t *testing.T) {
 	}
 }
 
+// Si hay varios errores, deben aparecer todos en el mismo mensaje: así quien
+// despliega los arregla de una vez y no uno por arranque.
 func TestLoadReportsAllErrorsAtOnce(t *testing.T) {
 	_, err := Load(env(map[string]string{
 		"POLL_INTERVAL":      "rápido",
@@ -45,6 +54,9 @@ func TestLoadReportsAllErrorsAtOnce(t *testing.T) {
 	}
 }
 
+// Reglas de seguridad de gRPC: o certificados completos, o modo desarrollo
+// explícito. Cualquier otra combinación debe impedir el arranque.
+// Es un "test de tabla": cada fila es un caso con su resultado esperado.
 func TestLoadTLSRules(t *testing.T) {
 	base := map[string]string{"KAFKA_BROKERS": "k:9092"}
 	tests := []struct {
