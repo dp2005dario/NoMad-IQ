@@ -1,0 +1,8 @@
+// Espacio de trabajo Go del monorepo. Permite abrir la carpeta raíz en
+// VS Code (u otro editor) y que entienda a la vez todos los módulos Go.
+go 1.24
+
+use (
+	./gen/go
+	./services/flight-ingestor
+)

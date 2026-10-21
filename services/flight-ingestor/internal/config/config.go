@@ -47,11 +47,14 @@ func (c Config) GRPCTLSEnabled() bool { return c.GRPCCertFile != "" }
 // LookupFunc tiene la firma de os.LookupEnv; inyectarla facilita los tests.
 type LookupFunc func(key string) (string, bool)
 
+// reader acumula los errores mientras lee variables, para devolverlos todos
+// juntos al final en vez de parar en el primero.
 type reader struct {
 	lookup LookupFunc
 	errs   []error
 }
 
+// str devuelve la variable sin espacios, o def si no existe o está vacía.
 func (r *reader) str(key, def string) string {
 	if v, ok := r.lookup(key); ok && strings.TrimSpace(v) != "" {
 		return strings.TrimSpace(v)
@@ -59,6 +62,7 @@ func (r *reader) str(key, def string) string {
 	return def
 }
 
+// required apunta un error si la variable no existe o está vacía.
 func (r *reader) required(key string) string {
 	v := r.str(key, "")
 	if v == "" {
@@ -67,6 +71,7 @@ func (r *reader) required(key string) string {
 	return v
 }
 
+// list lee una lista separada por comas ("a, b,c") ignorando huecos vacíos.
 func (r *reader) list(key string) []string {
 	raw := r.str(key, "")
 	if raw == "" {
@@ -81,6 +86,7 @@ func (r *reader) list(key string) []string {
 	return out
 }
 
+// duration lee una duración ("30s", "5m") y comprueba que esté entre min y max.
 func (r *reader) duration(key string, def, min, max time.Duration) time.Duration {
 	raw := r.str(key, "")
 	if raw == "" {
@@ -97,6 +103,7 @@ func (r *reader) duration(key string, def, min, max time.Duration) time.Duration
 	return d
 }
 
+// integer lee un número entero y comprueba que esté entre min y max.
 func (r *reader) integer(key string, def, min, max int) int {
 	raw := r.str(key, "")
 	if raw == "" {
@@ -113,6 +120,7 @@ func (r *reader) integer(key string, def, min, max int) int {
 	return n
 }
 
+// float lee un número decimal y comprueba que esté entre min y max.
 func (r *reader) float(key string, def, min, max float64) float64 {
 	raw := r.str(key, "")
 	if raw == "" {
@@ -126,6 +134,7 @@ func (r *reader) float(key string, def, min, max float64) float64 {
 	return f
 }
 
+// boolean lee true/false (también acepta 1/0, t/f).
 func (r *reader) boolean(key string, def bool) bool {
 	raw := r.str(key, "")
 	if raw == "" {

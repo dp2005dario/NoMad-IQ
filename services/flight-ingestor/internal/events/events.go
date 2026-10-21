@@ -96,6 +96,7 @@ func (e *Encoder) EncodePriceObserved(obs domain.PriceObservation, correlationID
 		ObservedAt:      timestamppb.New(obs.Quote.ObservedAt),
 		BookingDeepLink: obs.Quote.DeepLink,
 	}
+	// Marshal convierte el mensaje en bytes protobuf (el formato binario compacto).
 	value, err := proto.Marshal(evt)
 	if err != nil {
 		return Message{}, fmt.Errorf("serializar FlightPriceObserved: %w", err)

@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # Crea los topics de Kafka de forma idempotente (se puede ejecutar varias veces).
 # Lo lanza el contenedor "kafka-init" cuando el broker está sano.
+# -e: parar si un comando falla; -u: error si se usa una variable sin definir;
+# -o pipefail: un fallo en medio de una tubería (a | b) también cuenta.
 set -euo pipefail
 
+# Dirección del broker; si no se define KAFKA_BOOTSTRAP se usa kafka:9092.
 BOOTSTRAP="${KAFKA_BOOTSTRAP:-kafka:9092}"
 KAFKA_BIN=/opt/kafka/bin
 
@@ -14,6 +17,8 @@ TOPICS=(
   "flights.fare-alerts.v1|6|2592000000|delete"
 )
 
+# Recorre la lista y separa cada entrada por el carácter | en cuatro variables.
+# replication-factor=1 porque en local solo hay un broker (en producción, 3).
 for entry in "${TOPICS[@]}"; do
   IFS='|' read -r name partitions retention cleanup <<<"${entry}"
   echo "Asegurando topic ${name} (${partitions} particiones)"
@@ -27,4 +32,5 @@ for entry in "${TOPICS[@]}"; do
     --config "min.insync.replicas=1"
 done
 
+# Muestra los topics existentes para comprobarlo en los logs.
 "${KAFKA_BIN}/kafka-topics.sh" --bootstrap-server "${BOOTSTRAP}" --list

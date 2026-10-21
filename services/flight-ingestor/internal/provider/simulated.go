@@ -56,6 +56,8 @@ func (s *Simulated) Quote(ctx context.Context, spec domain.WatchSpec) ([]domain.
 		}
 	}
 
+	// Un hash convierte la clave de la ruta en un número siempre igual para la
+	// misma ruta: así cada ruta tiene "su" precio base estable.
 	h := fnv.New64a()
 	_, _ = h.Write([]byte(spec.Key()))      // Write de un hash nunca falla.
 	base := int64(4_000 + h.Sum64()%90_000) // entre 40 € y 940 €

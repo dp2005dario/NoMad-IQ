@@ -1,3 +1,5 @@
+// Tests del proveedor simulado.
+
 package provider
 
 import (
@@ -9,6 +11,7 @@ import (
 	"github.com/dp2005dario/NoMad-IQ/services/flight-ingestor/internal/domain"
 )
 
+// El precio inventado debe pasar las mismas validaciones que uno real.
 func TestSimulatedQuoteIsValid(t *testing.T) {
 	spec, err := domain.ParseWatchKey("MAD-NRT:2026-12-01:ECONOMY")
 	if err != nil {
@@ -27,6 +30,8 @@ func TestSimulatedQuoteIsValid(t *testing.T) {
 	}
 }
 
+// Con 1 s de latencia simulada y un contexto que expira a los 10 ms, Quote debe
+// rendirse enseguida con DeadlineExceeded en lugar de esperar el segundo entero.
 func TestSimulatedRespectsCancellation(t *testing.T) {
 	spec, _ := domain.ParseWatchKey("MAD-NRT:2026-12-01:ECONOMY")
 	p := NewSimulated(1, time.Second, 0)
@@ -43,6 +48,8 @@ func TestSimulatedRespectsCancellation(t *testing.T) {
 	}
 }
 
+// Con ErrorFareRate=1 siempre sale "tarifa error": debe costar menos de la
+// mitad que el precio normal de la misma ruta (misma semilla = mismo azar).
 func TestSimulatedErrorFare(t *testing.T) {
 	spec, _ := domain.ParseWatchKey("MAD-NRT:2026-12-01:ECONOMY")
 	normal, _ := NewSimulated(7, 0, 0).Quote(context.Background(), spec)

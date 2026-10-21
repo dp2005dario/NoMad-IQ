@@ -1,0 +1,10 @@
+{
+  // VS Code ofrece instalar estas extensiones al abrir el proyecto.
+  "recommendations": [
+    "golang.go",
+    "bufbuild.vscode-buf",
+    "ms-azuretools.vscode-docker",
+    "redhat.vscode-yaml",
+    "github.vscode-github-actions"
+  ]
+}

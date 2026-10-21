@@ -3,6 +3,8 @@
 Esta guía explica **qué se ha construido, por qué y cómo encaja todo**, pensada
 para aprender, no solo para usar. Léela en orden: cada parte se apoya en la anterior.
 
+> ¿No sabes qué es Kafka, Docker o gRPC? Empieza por [`guia-principiantes.md`](guia-principiantes.md).
+
 ---
 
 ## 0. La idea en un minuto

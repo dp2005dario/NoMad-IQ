@@ -11,10 +11,14 @@ permissions:
   contents: read # mínimo privilegio también para la CI
 
 jobs:
+  # Cada "job" corre en una máquina virtual limpia de GitHub (ubuntu-latest).
+  # Los tres jobs de abajo se ejecutan en paralelo salvo que uno dependa de otro (needs).
   proto:
     name: Contratos proto
     runs-on: ubuntu-latest
     steps:
+      # Descarga el código. fetch-depth: 0 trae todo el historial, necesario
+      # para comparar los contratos con main.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -67,7 +71,7 @@ jobs:
   integration:
     name: Integración (docker compose + Kafka real)
     runs-on: ubuntu-latest
-    needs: [flight-ingestor]
+    needs: [flight-ingestor] # solo arranca si los tests unitarios han pasado
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
