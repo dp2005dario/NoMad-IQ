@@ -64,16 +64,37 @@ jobs:
       - name: Tests unitarios (con detector de carreras)
         run: go test -race -count=1 ./...
 
-  integration:
-    name: Integración (docker compose + Kafka real)
+  price-consumer:
+    name: price-consumer (Go)
     runs-on: ubuntu-latest
-    needs: [flight-ingestor]
+    defaults:
+      run:
+        working-directory: services/price-consumer
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
-          cache-dependency-path: services/flight-ingestor/go.sum
+          cache-dependency-path: services/price-consumer/go.sum
+      - name: Formato
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - name: go vet
+        run: go vet ./... && go vet -tags integration ./...
+      - name: Tests unitarios (con detector de carreras)
+        run: go test -race -count=1 ./...
+
+  integration:
+    name: Integración (docker compose + Kafka real)
+    runs-on: ubuntu-latest
+    needs: [flight-ingestor, price-consumer]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: |
+            services/flight-ingestor/go.sum
+            services/price-consumer/go.sum
       - name: Generar secretos efímeros para la CI
         working-directory: infrastructure
         run: |
@@ -95,14 +116,35 @@ jobs:
         env:
           KAFKA_BROKERS: localhost:29092
         run: go test -tags integration -count=1 ./internal/publisher/
-      - name: Construir y arrancar flight-ingestor
+      - name: Construir y arrancar flight-ingestor y price-consumer
         working-directory: infrastructure
         env:
           SEED_WATCHES: MAD-NRT:2026-12-01:ECONOMY
+          SEED_SUBSCRIPTIONS: ci-user|MAD-NRT:2026-12-01:ECONOMY
           POLL_INTERVAL: 10s
         run: |
-          docker compose --profile apps up -d --build --wait flight-ingestor
+          docker compose --profile apps up -d --build --wait flight-ingestor price-consumer
           curl -fsS http://127.0.0.1:8081/readyz
+          curl -fsS http://127.0.0.1:8082/readyz
+      - name: El bucle está cerrado (los precios del ingestor llegan a PostgreSQL)
+        working-directory: infrastructure
+        run: |
+          for i in $(seq 1 30); do
+            # Va antes de los tests de integración: así solo cuenta precios del ingestor.
+            n=$(docker compose exec -T postgres sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT count(*) FROM flights.price_observations"')
+            echo "observaciones guardadas: $n"
+            [ "$n" -ge 2 ] && exit 0
+            sleep 3
+          done
+          exit 1
+      - name: Tests de integración del price-consumer (PostgreSQL + Kafka reales)
+        working-directory: services/price-consumer
+        env:
+          KAFKA_BROKERS: localhost:29092
+        run: |
+          set -a; . ../../infrastructure/.env; set +a
+          export PGHOST=localhost PGUSER="$POSTGRES_USER" PGPASSWORD="$POSTGRES_PASSWORD" PGDATABASE="$POSTGRES_DB"
+          go test -race -tags integration -count=1 ./internal/store/ ./internal/kafka/
       - name: Logs si algo falla
         if: failure()
         working-directory: infrastructure

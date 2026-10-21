@@ -163,12 +163,46 @@ services:
       POLL_INTERVAL: ${POLL_INTERVAL:-1m}
       # Rutas de ejemplo para ver eventos sin llamar al gRPC (opcional).
       SEED_WATCHES: ${SEED_WATCHES:-}
+      # Probabilidad de simular una tarifa error (0.01 = 1 %). Súbela para ver alertas antes.
+      SIMULATED_ERROR_FARE_RATE: ${SIMULATED_ERROR_FARE_RATE:-0.01}
     ports:
       - "127.0.0.1:50051:50051"   # gRPC RouteWatchService
       - "127.0.0.1:8081:8081"     # /healthz y /readyz
     depends_on:
       kafka-init:
         condition: service_completed_successfully
+
+  # Lee los precios de Kafka, guarda el historial en PostgreSQL, detecta
+  # chollos y publica alertas en flights.fare-alerts.v1.
+  price-consumer:
+    <<: *hardening
+    profiles: ["apps"]
+    build:
+      context: ..
+      dockerfile: services/price-consumer/Dockerfile
+    read_only: true
+    cap_drop:
+      - ALL
+    environment:
+      KAFKA_BROKERS: kafka:9092
+      # Mismas variables que usa psql. La contraseña sale de .env, nunca de aquí.
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:?Define POSTGRES_USER en .env}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
+      PGDATABASE: ${POSTGRES_DB:?Define POSTGRES_DB en .env}
+      # Solo en local: en producción PostgreSQL exige TLS (PGSSLMODE=verify-full).
+      PGSSLMODE: disable
+      DB_INSECURE_DEV: "true"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # Suscripciones de ejemplo para ver alertas sin app móvil (opcional).
+      SEED_SUBSCRIPTIONS: ${SEED_SUBSCRIPTIONS:-}
+    ports:
+      - "127.0.0.1:8082:8082"     # /healthz y /readyz
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
 
 networks:
   backend:
