@@ -1,3 +1,6 @@
+// Tests de las reglas de negocio. No necesitan red, base de datos ni Kafka:
+// por eso son instantáneos y se pueden ejecutar miles de veces.
+
 package domain
 
 import (
@@ -5,6 +8,8 @@ import (
 	"time"
 )
 
+// mustDate es un ayudante: convierte un texto en Date o para el test si falla.
+// t.Helper() hace que, si falla, el error señale la línea del test que lo llamó.
 func mustDate(t *testing.T, raw string) Date {
 	t.Helper()
 	d, err := ParseDate("date", raw)
@@ -14,6 +19,8 @@ func mustDate(t *testing.T, raw string) Date {
 	return d
 }
 
+// Códigos IATA: se aceptan en minúsculas o con espacios (se normalizan) y se
+// rechazan longitudes incorrectas o caracteres que no sean letras.
 func TestParseAirport(t *testing.T) {
 	tests := []struct {
 		in      string
@@ -41,6 +48,7 @@ func TestParseAirport(t *testing.T) {
 	}
 }
 
+// El 30 de febrero no existe; el 29 de febrero de un año bisiesto sí.
 func TestNewDateRejectsImpossibleDates(t *testing.T) {
 	if _, err := NewDate("d", 2026, time.February, 30); !IsValidation(err) {
 		t.Fatalf("30 de febrero debería ser inválido, error = %v", err)
@@ -50,6 +58,8 @@ func TestNewDateRejectsImpossibleDates(t *testing.T) {
 	}
 }
 
+// Partimos de un seguimiento válido y en cada caso lo "estropeamos" de una
+// forma distinta (mutate) para comprobar que la validación lo detecta.
 func TestWatchSpecValidate(t *testing.T) {
 	dep := mustDate(t, "2026-12-01")
 	before := mustDate(t, "2026-11-20")
@@ -81,6 +91,8 @@ func TestWatchSpecValidate(t *testing.T) {
 	}
 }
 
+// "Ida y vuelta": convertir texto → WatchSpec → texto debe dar el mismo texto.
+// Si no, la clave de Kafka podría cambiar y romper el orden de los mensajes.
 func TestWatchKeyRoundTrip(t *testing.T) {
 	for _, key := range []string{
 		"MAD-NRT:2026-12-01:ECONOMY",
@@ -96,6 +108,7 @@ func TestWatchKeyRoundTrip(t *testing.T) {
 	}
 }
 
+// Claves mal formadas: sin destino, mes 13, cabina inventada, origen = destino.
 func TestParseWatchKeyErrors(t *testing.T) {
 	for _, key := range []string{"", "MAD:2026-12-01:ECONOMY", "MAD-NRT:2026-13-01:ECONOMY", "MAD-NRT:2026-12-01:SOFA", "MAD-MAD:2026-12-01:ECONOMY"} {
 		if _, err := ParseWatchKey(key); !IsValidation(err) {
@@ -104,6 +117,8 @@ func TestParseWatchKeyErrors(t *testing.T) {
 	}
 }
 
+// Una observación de precio solo se publica si es válida: precio positivo y
+// divisa ISO en mayúsculas.
 func TestPriceObservationValidate(t *testing.T) {
 	spec, err := ParseWatchKey("MAD-NRT:2026-12-01:ECONOMY")
 	if err != nil {

@@ -14,6 +14,8 @@ import (
 	"github.com/dp2005dario/NoMad-IQ/services/flight-ingestor/internal/domain"
 )
 
+// cabinToProto es la tabla de equivalencias entre la cabina de dominio y el
+// enum generado desde el .proto. Se usa en los dos sentidos.
 var cabinToProto = map[domain.CabinClass]flightsv1.CabinClass{
 	domain.CabinEconomy:        flightsv1.CabinClass_CABIN_CLASS_ECONOMY,
 	domain.CabinPremiumEconomy: flightsv1.CabinClass_CABIN_CLASS_PREMIUM_ECONOMY,

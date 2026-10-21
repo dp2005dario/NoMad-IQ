@@ -1,3 +1,6 @@
+// Test de seguridad mTLS. Crea en memoria una autoridad certificadora (CA)
+// falsa, emite certificados con ella y comprueba quién puede conectarse.
+
 package grpcserver
 
 import (
@@ -29,12 +32,16 @@ import (
 // Este test demuestra el zero trust: con mTLS, un cliente sin certificado de
 // nuestra CA no puede ni siquiera hacer una llamada.
 
+// pki (infraestructura de clave pública) agrupa el certificado y la clave
+// privada de una CA de pruebas, capaz de "firmar carnés" para servicios.
 type pki struct {
 	caCert *x509.Certificate
 	caKey  *ecdsa.PrivateKey
 	caPEM  []byte
 }
 
+// newPKI crea una CA nueva con una clave ECDSA P-256 (criptografía de curva
+// elíptica: claves pequeñas y muy seguras). Solo vale una hora.
 func newPKI(t *testing.T) *pki {
 	t.Helper()
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -58,6 +65,8 @@ func newPKI(t *testing.T) *pki {
 	return &pki{caCert: cert, caKey: key, caPEM: pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der})}
 }
 
+// issue emite un certificado firmado por la CA. usage indica si es para un
+// servidor (ServerAuth) o para un cliente (ClientAuth).
 func (p *pki) issue(t *testing.T, cn string, usage x509.ExtKeyUsage) (certPEM, keyPEM []byte) {
 	t.Helper()
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -86,6 +95,8 @@ func (p *pki) issue(t *testing.T, cn string, usage x509.ExtKeyUsage) (certPEM, k
 		pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: keyDER})
 }
 
+// writeFile guarda datos en un fichero temporal con permisos 0600 (solo el
+// dueño puede leerlo), como se haría con una clave privada real.
 func writeFile(t *testing.T, dir, name string, data []byte) string {
 	t.Helper()
 	path := filepath.Join(dir, name)

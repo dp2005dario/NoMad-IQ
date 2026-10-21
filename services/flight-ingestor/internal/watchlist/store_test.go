@@ -1,3 +1,5 @@
+// Tests del registro de seguimientos.
+
 package watchlist
 
 import (
@@ -9,6 +11,7 @@ import (
 	"github.com/dp2005dario/NoMad-IQ/services/flight-ingestor/internal/domain"
 )
 
+// spec es un ayudante que crea un WatchSpec desde su clave de texto.
 func spec(t *testing.T, key string) domain.WatchSpec {
 	t.Helper()
 	s, err := domain.ParseWatchKey(key)
@@ -18,6 +21,7 @@ func spec(t *testing.T, key string) domain.WatchSpec {
 	return s
 }
 
+// Añadir dos veces la misma ruta devuelve el mismo ID y no duplica.
 func TestAddIsIdempotent(t *testing.T) {
 	store, err := New(10)
 	if err != nil {
@@ -39,6 +43,7 @@ func TestAddIsIdempotent(t *testing.T) {
 	}
 }
 
+// Un seguimiento vacío se rechaza con un error de validación.
 func TestAddRejectsInvalidSpec(t *testing.T) {
 	store, _ := New(10)
 	if _, _, err := store.Add(domain.WatchSpec{}); !domain.IsValidation(err) {
@@ -46,6 +51,7 @@ func TestAddRejectsInvalidSpec(t *testing.T) {
 	}
 }
 
+// Con capacidad 1, el segundo seguimiento distinto debe rechazarse.
 func TestCapacity(t *testing.T) {
 	store, _ := New(1)
 	if _, _, err := store.Add(spec(t, "MAD-NRT:2026-12-01:ECONOMY")); err != nil {
@@ -56,6 +62,8 @@ func TestCapacity(t *testing.T) {
 	}
 }
 
+// Borrar funciona una vez; la segunda da ErrNotFound; y después la ruta se
+// puede volver a añadir (con un ID nuevo).
 func TestRemove(t *testing.T) {
 	store, _ := New(10)
 	w, _, _ := store.Add(spec(t, "MAD-NRT:2026-12-01:ECONOMY"))
@@ -72,6 +80,9 @@ func TestRemove(t *testing.T) {
 	}
 }
 
+// 50 goroutines añadiendo y 50 leyendo a la vez. Ejecutado con -race, el
+// detector de carreras de Go fallaría si el mutex no protegiera bien el mapa.
+// Las 50 altas usan solo 28 fechas distintas, así que deben quedar 28 rutas.
 func TestConcurrentAccess(t *testing.T) {
 	store, _ := New(1000)
 	var wg sync.WaitGroup

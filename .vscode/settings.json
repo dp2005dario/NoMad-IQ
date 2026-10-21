@@ -1,0 +1,17 @@
+{
+  // Ajustes compartidos del proyecto para VS Code.
+  // Formatea Go al guardar (igual que exige la CI con gofmt).
+  "[go]": {
+    "editor.formatOnSave": true
+  },
+  // Que el editor también entienda los tests de integración (etiqueta "integration").
+  "gopls": {
+    "buildFlags": ["-tags=integration"]
+  },
+  // Los tests unitarios se ejecutan con el detector de carreras.
+  "go.testFlags": ["-race", "-count=1"],
+  // El código generado no se edita: lo marcamos como solo lectura.
+  "files.readonlyInclude": {
+    "gen/**": true
+  }
+}

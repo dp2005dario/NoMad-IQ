@@ -36,8 +36,11 @@ import (
 	"github.com/dp2005dario/NoMad-IQ/services/flight-ingestor/internal/watchlist"
 )
 
+// serviceName aparece en cada log y en la cabecera ce_source de los eventos.
 const serviceName = "flight-ingestor"
 
+// main es lo primero que se ejecuta. Solo decide el modo (healthcheck o servicio)
+// y traduce un error de run() en código de salida 1, que Docker interpreta como fallo.
 func main() {
 	healthcheck := flag.Bool("healthcheck", false, "consulta /healthz del propio servicio y sale con 0 si está sano (para el HEALTHCHECK del contenedor)")
 	flag.Parse()
@@ -51,6 +54,7 @@ func main() {
 	}
 }
 
+// run arranca el servicio completo y no vuelve hasta que se apaga.
 func run() error {
 	cfg, err := config.Load(os.LookupEnv)
 	if err != nil {
@@ -60,6 +64,8 @@ func run() error {
 		With(slog.String("service", serviceName))
 	slog.SetDefault(log)
 
+	// ctx se cancela solo cuando llega Ctrl+C (SIGINT) o la orden de parada de
+	// Docker/Kubernetes (SIGTERM). Todas las piezas escuchan este ctx para apagarse.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -91,6 +97,8 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	// defer: esto se ejecuta al salir de run(), es decir, al final del apagado,
+	// para enviar a Kafka los mensajes que aún estuvieran en cola.
 	defer func() {
 		closeCtx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
 		defer cancel()
@@ -139,6 +147,8 @@ func run() error {
 		WriteTimeout:      5 * time.Second,
 	}
 
+	// errgroup lanza varias goroutines y, si una devuelve error, cancela gctx
+	// para que las demás también se detengan. g.Wait() espera a todas.
 	g, gctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
 		log.Info("gRPC escuchando", slog.String("addr", cfg.GRPCAddr), slog.Bool("mtls", grpcTLS != nil))
@@ -212,6 +222,8 @@ func healthHandler(pub *publisher.Kafka, ing *ingest.Ingestor) http.Handler {
 	return mux
 }
 
+// clientTLS crea la configuración TLS para conectarse a Kafka confiando solo
+// en la CA indicada y exigiendo TLS 1.3.
 func clientTLS(caFile string) (*tls.Config, error) {
 	caPEM, err := os.ReadFile(caFile)
 	if err != nil {
@@ -224,6 +236,8 @@ func clientTLS(caFile string) (*tls.Config, error) {
 	return &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS13}, nil
 }
 
+// runHealthcheck pide /healthz al propio proceso. Devuelve 0 (sano) o 1 (enfermo),
+// que es el código de salida que espera el HEALTHCHECK de Docker.
 func runHealthcheck() int {
 	addr := os.Getenv("HTTP_ADDR")
 	if addr == "" {

@@ -54,4 +54,4 @@ docs/                     Documentación, incluida la guía de aprendizaje
 .github/workflows/        Integración continua
 ```
 
-**Primeros pasos:** `cp infrastructure/.env.example infrastructure/.env`, rellena los secretos y ejecuta `make up`. Lee [`docs/guia-aprendizaje.md`](docs/guia-aprendizaje.md) para entender cada pieza.
+**Primeros pasos:** `cp infrastructure/.env.example infrastructure/.env`, rellena los secretos y ejecuta `make up`. ¿Empiezas de cero? Lee primero [`docs/guia-principiantes.md`](docs/guia-principiantes.md) (incluye cómo usar el proyecto en VS Code) y después [`docs/guia-aprendizaje.md`](docs/guia-aprendizaje.md) para el detalle técnico.

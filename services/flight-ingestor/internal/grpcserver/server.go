@@ -85,6 +85,7 @@ func (s *Service) ListRouteWatches(context.Context, *flightsv1.ListRouteWatchesR
 // desconocidos se devuelven como Internal sin detalles, para no filtrar
 // información interna al cliente.
 func toStatus(err error) error {
+	// errors.Is / errors.As miran también dentro de errores envueltos con %w.
 	switch {
 	case domain.IsValidation(err):
 		return status.Error(codes.InvalidArgument, err.Error())
@@ -148,6 +149,8 @@ func NewServer(svc *Service, tlsCfg *tls.Config, log *slog.Logger) (*grpc.Server
 	return srv, hs
 }
 
+// logInterceptor envuelve cada llamada: mide cuánto tarda y deja una línea de
+// log con el método y el código de respuesta. Es como un middleware web.
 func logInterceptor(log *slog.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		start := time.Now()
@@ -163,6 +166,8 @@ func logInterceptor(log *slog.Logger) grpc.UnaryServerInterceptor {
 	}
 }
 
+// recoverInterceptor captura cualquier pánico dentro de una llamada para que un
+// error inesperado no tumbe el servidor entero; el cliente recibe Internal.
 func recoverInterceptor(log *slog.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		defer func() {

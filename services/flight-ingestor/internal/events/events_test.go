@@ -1,3 +1,5 @@
+// Tests de la codificación de eventos para Kafka.
+
 package events
 
 import (
@@ -11,6 +13,10 @@ import (
 	"github.com/dp2005dario/NoMad-IQ/services/flight-ingestor/internal/domain"
 )
 
+// Codifica una observación y vuelve a decodificarla como lo haría un
+// consumidor (por ejemplo, el futuro servicio sniper en otro lenguaje).
+// Si los datos no salen iguales que entraron, el contrato está roto.
+// NewID se sustituye por uno fijo para que el resultado sea predecible.
 func TestEncodePriceObservedRoundTrip(t *testing.T) {
 	spec, err := domain.ParseWatchKey("MAD-NRT:2026-12-01:2026-12-15:ECONOMY")
 	if err != nil {
@@ -65,6 +71,7 @@ func TestEncodePriceObservedRoundTrip(t *testing.T) {
 	}
 }
 
+// Una observación vacía nunca debe llegar a Kafka.
 func TestEncodeRejectsInvalidObservation(t *testing.T) {
 	enc := NewEncoder(TopicPriceObserved, "flight-ingestor")
 	if _, err := enc.EncodePriceObserved(domain.PriceObservation{}, ""); !domain.IsValidation(err) {

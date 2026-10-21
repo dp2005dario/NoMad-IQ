@@ -1,3 +1,6 @@
+// Tests del ingestor. Sustituyen al proveedor y a Kafka por "dobles" que
+// podemos controlar: hacer que tarden, que fallen o que devuelvan basura.
+
 package ingest
 
 import (
@@ -17,10 +20,14 @@ import (
 
 // --- Dobles de prueba: sustituyen a proveedor y Kafka sin red ---
 
+// staticWatches es una lista fija de seguimientos que hace de watchlist.
 type staticWatches []domain.Watch
 
 func (s staticWatches) List() []domain.Watch { return s }
 
+// fakeProvider simula un proveedor de precios. Además cuenta cuántas consultas
+// hay en curso a la vez (inFlight) y el máximo alcanzado (maxInFlight), para
+// verificar que el límite de concurrencia se cumple.
 type fakeProvider struct {
 	delay    time.Duration
 	failFor  map[string]error
@@ -31,6 +38,9 @@ type fakeProvider struct {
 
 func (p *fakeProvider) Name() string { return "fake" }
 
+// Quote registra la consulta en curso, espera delay (respetando la cancelación),
+// y devuelve un error o un precio según cómo se haya configurado el doble.
+// El bucle con CompareAndSwap actualiza el máximo de forma segura entre goroutines.
 func (p *fakeProvider) Quote(ctx context.Context, spec domain.WatchSpec) ([]domain.Quote, error) {
 	n := p.inFlight.Add(1)
 	defer p.inFlight.Add(-1)
@@ -57,6 +67,8 @@ func (p *fakeProvider) Quote(ctx context.Context, spec domain.WatchSpec) ([]doma
 	return []domain.Quote{{Price: domain.Money{Currency: "EUR", AmountMinor: amount}, ObservedAt: time.Now()}}, nil
 }
 
+// fakePublisher guarda en memoria los mensajes "publicados" o devuelve err
+// para simular que Kafka está caído.
 type fakePublisher struct {
 	mu   sync.Mutex
 	msgs []events.Message
@@ -73,6 +85,8 @@ func (p *fakePublisher) Publish(_ context.Context, msgs ...events.Message) error
 	return nil
 }
 
+// makeWatches crea n seguimientos distintos (cambia la fecha y, a partir del
+// 28, la cabina) para no repetir claves.
 func makeWatches(t *testing.T, n int) staticWatches {
 	t.Helper()
 	out := make(staticWatches, 0, n)
@@ -89,6 +103,8 @@ func makeWatches(t *testing.T, n int) staticWatches {
 	return out
 }
 
+// newIngestor construye un Ingestor de pruebas con logs descartados (io.Discard)
+// para que la salida de los tests quede limpia.
 func newIngestor(t *testing.T, cfg Config, w WatchLister, p *fakeProvider, pub Publisher) *Ingestor {
 	t.Helper()
 	in, err := New(cfg, w, p, events.NewEncoder(events.TopicPriceObserved, "test"), pub, slog.New(slog.NewTextHandler(io.Discard, nil)))
@@ -98,10 +114,12 @@ func newIngestor(t *testing.T, cfg Config, w WatchLister, p *fakeProvider, pub P
 	return in
 }
 
+// defaultCfg: intervalo largo (no se usa en RunCycle), 1 s de timeout y 4 a la vez.
 var defaultCfg = Config{Interval: time.Hour, QueryTimeout: time.Second, Concurrency: 4}
 
 // --- Tests ---
 
+// Caso feliz: 20 rutas → 20 mensajes publicados y servicio sano.
 func TestRunCyclePublishesEveryWatch(t *testing.T) {
 	pub := &fakePublisher{}
 	in := newIngestor(t, defaultCfg, makeWatches(t, 20), &fakeProvider{}, pub)
@@ -115,6 +133,8 @@ func TestRunCyclePublishesEveryWatch(t *testing.T) {
 	}
 }
 
+// Con límite 3 y consultas lentas, nunca debe haber más de 3 a la vez, pero sí
+// más de 1 (si no, no estaríamos paralelizando).
 func TestConcurrencyLimitIsRespected(t *testing.T) {
 	p := &fakeProvider{delay: 20 * time.Millisecond}
 	cfg := defaultCfg
@@ -130,6 +150,7 @@ func TestConcurrencyLimitIsRespected(t *testing.T) {
 	}
 }
 
+// Si falla una ruta, las otras cuatro se publican igualmente.
 func TestProviderFailureDoesNotStopOthers(t *testing.T) {
 	watches := makeWatches(t, 5)
 	p := &fakeProvider{failFor: map[string]error{watches[2].Spec.Key(): errors.New("API caída")}}
@@ -145,6 +166,7 @@ func TestProviderFailureDoesNotStopOthers(t *testing.T) {
 	}
 }
 
+// Un proveedor que tarda 1 s con timeout de 10 ms debe cortarse enseguida.
 func TestQueryTimeout(t *testing.T) {
 	cfg := defaultCfg
 	cfg.QueryTimeout = 10 * time.Millisecond
@@ -160,6 +182,7 @@ func TestQueryTimeout(t *testing.T) {
 	}
 }
 
+// Precios negativos del proveedor se descartan: no se publica basura.
 func TestInvalidQuotesAreDropped(t *testing.T) {
 	pub := &fakePublisher{}
 	in := newIngestor(t, defaultCfg, makeWatches(t, 3), &fakeProvider{badPrice: true}, pub)
@@ -170,6 +193,7 @@ func TestInvalidQuotesAreDropped(t *testing.T) {
 	}
 }
 
+// Si Kafka no acepta los mensajes, /readyz debe pasar a "no listo".
 func TestPublishFailureMarksUnhealthy(t *testing.T) {
 	in := newIngestor(t, defaultCfg, makeWatches(t, 3), &fakeProvider{}, &fakePublisher{err: errors.New("broker caído")})
 
@@ -179,6 +203,8 @@ func TestPublishFailureMarksUnhealthy(t *testing.T) {
 	}
 }
 
+// Run repite ciclos hasta que se cancela el contexto (lo que pasa al recibir
+// SIGTERM); entonces debe terminar rápido y sin error.
 func TestRunStopsOnCancel(t *testing.T) {
 	cfg := defaultCfg
 	cfg.Interval = 5 * time.Millisecond
@@ -206,6 +232,7 @@ func TestRunStopsOnCancel(t *testing.T) {
 	}
 }
 
+// Una configuración vacía (intervalo 0, concurrencia 0...) se rechaza al crear.
 func TestNewValidatesConfig(t *testing.T) {
 	_, err := New(Config{}, staticWatches{}, &fakeProvider{}, events.NewEncoder("t", "p"), &fakePublisher{}, slog.Default())
 	if err == nil {

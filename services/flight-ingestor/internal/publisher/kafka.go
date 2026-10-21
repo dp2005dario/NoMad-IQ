@@ -67,6 +67,8 @@ func (k *Kafka) Publish(ctx context.Context, msgs ...events.Message) error {
 	if len(msgs) == 0 {
 		return nil
 	}
+	// Traducimos nuestros Message (independientes de Kafka) a kgo.Record, el
+	// tipo que entiende la librería franz-go.
 	records := make([]*kgo.Record, len(msgs))
 	for i, m := range msgs {
 		headers := make([]kgo.RecordHeader, len(m.Headers))

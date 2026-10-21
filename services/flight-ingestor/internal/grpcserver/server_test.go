@@ -1,3 +1,6 @@
+// Tests de la API gRPC: se hacen llamadas reales a través de un cliente gRPC,
+// igual que haría el auth-gateway, y se comprueban respuestas y códigos de error.
+
 package grpcserver
 
 import (
@@ -42,6 +45,8 @@ func newClient(t *testing.T, maxWatches int) flightsv1.RouteWatchServiceClient {
 	return flightsv1.NewRouteWatchServiceClient(conn)
 }
 
+// validRequest devuelve una petición correcta. "mad" va en minúsculas a
+// propósito para comprobar que el servidor lo normaliza a "MAD".
 func validRequest() *flightsv1.WatchRouteRequest {
 	return &flightsv1.WatchRouteRequest{
 		Route:         &flightsv1.Route{OriginIata: "mad", DestinationIata: "NRT"},
@@ -50,6 +55,7 @@ func validRequest() *flightsv1.WatchRouteRequest {
 	}
 }
 
+// Pedir dos veces la misma ruta no debe crear dos seguimientos.
 func TestWatchRouteIdempotent(t *testing.T) {
 	client := newClient(t, 10)
 	ctx := context.Background()
@@ -75,6 +81,8 @@ func TestWatchRouteIdempotent(t *testing.T) {
 	}
 }
 
+// Cada tipo de error debe traducirse a su código gRPC estándar, para que el
+// cliente sepa si la culpa es suya (InvalidArgument) o un límite (ResourceExhausted).
 func TestWatchRouteErrorCodes(t *testing.T) {
 	client := newClient(t, 1)
 	ctx := context.Background()
@@ -101,6 +109,8 @@ func TestWatchRouteErrorCodes(t *testing.T) {
 	}
 }
 
+// Borrar un seguimiento: funciona la primera vez, da NotFound la segunda y
+// exige un watch_id.
 func TestUnwatchRoute(t *testing.T) {
 	client := newClient(t, 10)
 	ctx := context.Background()
