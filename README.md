@@ -52,8 +52,9 @@ infrastructure/           docker-compose local: Kafka (KRaft), PostgreSQL+PostGI
 services/flight-ingestor/ Microservicio Go: vigila rutas y publica precios en Kafka
 services/price-consumer/  Microservicio Go: guarda el historial de precios, detecta chollos y publica alertas
 services/auth-gateway/    Microservicio Java Spring Boot: registro, login, JWT ES256 + JWKS, refresh tokens y revocación
+services/ai-orchestrator/ Microservicio Python FastAPI + Ollama: convierte alertas en recomendaciones fundamentadas con IA local
 docs/                     Documentación, incluida la guía de aprendizaje
 .github/workflows/        Integración continua
 ```
 
-**Primeros pasos:** `cp infrastructure/.env.example infrastructure/.env`, rellena los secretos y ejecuta `make up`. ¿Empiezas de cero? Lee primero [`docs/guia-principiantes.md`](docs/guia-principiantes.md) (incluye cómo usar el proyecto en VS Code), después [`docs/guia-aprendizaje.md`](docs/guia-aprendizaje.md) para el detalle técnico, [`docs/guia-price-consumer.md`](docs/guia-price-consumer.md) para el detector de chollos y [`docs/guia-auth-gateway.md`](docs/guia-auth-gateway.md) para la pasarela de identidad.
+**Primeros pasos:** `cp infrastructure/.env.example infrastructure/.env`, rellena los secretos y ejecuta `make up`. ¿Empiezas de cero? Lee primero [`docs/guia-principiantes.md`](docs/guia-principiantes.md) (incluye cómo usar el proyecto en VS Code), después [`docs/guia-aprendizaje.md`](docs/guia-aprendizaje.md) para el detalle técnico, [`docs/guia-price-consumer.md`](docs/guia-price-consumer.md) para el detector de chollos, [`docs/guia-auth-gateway.md`](docs/guia-auth-gateway.md) para la pasarela de identidad y [`docs/guia-ai-orchestrator.md`](docs/guia-ai-orchestrator.md) para el cerebro de IA.

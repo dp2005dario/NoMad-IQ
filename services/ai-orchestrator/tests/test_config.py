@@ -1,0 +1,93 @@
+"""Tests de la configuración: lo inseguro no arranca salvo que se pida."""
+
+from __future__ import annotations
+
+from typing import Any
+
+import pytest
+from pydantic import ValidationError
+
+from ai_orchestrator.config import Settings
+
+BASE: dict[str, Any] = {
+    "kafka_brokers": "localhost:29092, otro:9092",
+    "pghost": "localhost",
+    "pguser": "nomadiq",
+    "pgpassword": "secreto",
+    "pgdatabase": "nomadiq",
+}
+DEV: dict[str, Any] = {
+    **BASE,
+    "http_insecure_dev": True,
+    "pgsslmode": "disable",
+    "db_insecure_dev": True,
+    "ollama_insecure_dev": True,
+}
+
+
+@pytest.fixture(autouse=True)
+def clean_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Si tu terminal tiene variables como QDRANT_API_KEY (por ejemplo, tras
+    # cargar el .env), no deben colarse en estos tests.
+    for name in Settings.model_fields:
+        monkeypatch.delenv(name.upper(), raising=False)
+
+
+def settings(**kw: Any) -> Settings:
+    # _env_file=None: el test no lee ningún .env de tu ordenador.
+    return Settings(_env_file=None, **kw)
+
+
+def test_local_dev_config_is_accepted() -> None:
+    s = settings(**DEV)
+    assert s.kafka_broker_list == ["localhost:29092", "otro:9092"]
+    assert s.llm_temperature <= 0.2  # temperatura baja por defecto
+    # La contraseña no aparece si alguien imprime la configuración.
+    assert "secreto" not in repr(s)
+
+
+def test_secure_defaults_require_mtls_and_verified_db() -> None:
+    with pytest.raises(ValidationError) as err:
+        settings(**BASE)
+    text = str(err.value)
+    assert "mTLS" in text
+    assert "PGSSLMODE=verify-full" not in text  # el modo por defecto ya es el seguro
+    assert "OLLAMA_URL usa http" in text
+
+
+def test_db_without_verification_needs_explicit_flag() -> None:
+    with pytest.raises(ValidationError, match="PGSSLMODE=require"):
+        settings(**{**DEV, "pgsslmode": "require", "db_insecure_dev": False})
+
+
+def test_contradictory_flags_are_rejected() -> None:
+    with pytest.raises(ValidationError, match="contradice"):
+        settings(**{**DEV, "pgsslmode": "verify-full"})
+
+
+def test_partial_tls_files_are_rejected(tmp_path: Any) -> None:
+    with pytest.raises(ValidationError, match="van juntas"):
+        settings(**{**DEV, "http_insecure_dev": False, "tls_cert_file": tmp_path / "a.pem"})
+
+
+def test_qdrant_requires_api_key_and_https() -> None:
+    with pytest.raises(ValidationError) as err:
+        settings(**{**DEV, "qdrant_url": "http://qdrant:6333"})
+    assert "QDRANT_API_KEY" in str(err.value)
+    assert "QDRANT_INSECURE_DEV" in str(err.value)
+
+
+def test_values_are_bounded() -> None:
+    with pytest.raises(ValidationError):
+        settings(**{**DEV, "llm_max_attempts": 50})
+    with pytest.raises(ValidationError):
+        settings(**{**DEV, "llm_temperature": 1.5})
+
+
+def test_reads_from_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    for key, value in DEV.items():
+        monkeypatch.setenv(key.upper(), str(value).lower() if isinstance(value, bool) else str(value))
+    monkeypatch.setenv("OLLAMA_MODEL", "qwen2.5:7b")
+    s = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert s.ollama_model == "qwen2.5:7b"
+    assert s.pgpassword.get_secret_value() == "secreto"

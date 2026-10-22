@@ -1,0 +1,104 @@
+# ai-orchestrator (Python FastAPI + Ollama)
+
+Cerebro de IA de NomadIQ. Lee las alertas de chollos que publica el
+`price-consumer` en Kafka y las convierte en una **recomendación corta y
+fundamentada** ("Compra ya: 520,00 EUR, el mínimo del último mes") usando un
+modelo de lenguaje **local** (Ollama). El modelo nunca inventa precios ni fechas.
+
+> ¿Empiezas desde cero? Lee primero [`docs/guia-ai-orchestrator.md`](../../docs/guia-ai-orchestrator.md).
+
+```
+Kafka flights.fare-alerts.v1 ──► consumer ──► recommender ──┬─► PostgreSQL: historial de precios real (RAG)
+            │ (protobuf)          │               │         ├─► Qdrant: notas de viaje (RAG, opcional)
+            ▼                     │               │         └─► Ollama /api/chat (JSON con esquema, temperatura baja)
+ flights.fare-alerts-dlq.v1       │               ▼
+   (mensajes ilegibles)           │      validación Pydantic + "huecos" {precio_actual} ─► reintento acotado
+                                  │               │ si falla o no hay LLM: reglas deterministas
+                                  ▼               ▼
+                         ai.fare_recommendations (PostgreSQL) ◄── GET /v1/recommendations (mTLS + X-User-ID)
+```
+
+## Endpoints
+
+| Método y ruta | Acceso | Qué hace |
+|---|---|---|
+| `GET /v1/recommendations?limit=20` | `X-User-ID` + rol `USER` | Últimas recomendaciones del usuario (1–50). |
+| `GET /v1/recommendations/{alert_id}` | `X-User-ID` + rol `USER` | Una recomendación; 404 si no existe **o no es tuya**. |
+| `GET :8086/healthz`, `GET :8086/readyz` | red interna | Salud (readyz: PostgreSQL + consumidor Kafka; Ollama no cuenta porque hay plan B). |
+
+La identidad llega en `X-User-ID` / `X-User-Roles`, ya verificada por el
+`auth-gateway` (forward auth del proxy de borde). El puerto 8085 exige **mTLS
+con TLS 1.3**, así que solo el proxy puede enviarlas. Errores en RFC 9457
+(`application/problem+json`). Ningún endpoint espera al LLM.
+
+## Mitigación de los riesgos de un sistema con LLM
+
+| Riesgo | Cómo se resuelve | Dónde |
+|---|---|---|
+| 1. Bloqueo del event loop | Todo es `async` (httpx, asyncpg, aiokafka). La inferencia ocurre en el consumidor de Kafka, en segundo plano; la API solo lee PostgreSQL. Semáforo de concurrencia hacia Ollama y tiempo máximo por llamada. | `llm/client.py`, `consumer.py` |
+| 2. JSON roto o con "charla" | Esquema JSON de Pydantic enviado a Ollama (`format`), temperatura 0.1, validación estricta (`extra="forbid"`), reintentos con el error explicado, **máximo 3**. | `llm/structured.py` |
+| 3. Alucinaciones | RAG sobre datos reales (historial en PostgreSQL, notas en Qdrant). El modelo **no puede escribir cifras**: usa huecos `{precio_actual}` que rellenamos nosotros; cualquier dígito o hueco desconocido = respuesta rechazada. Plan B por reglas. | `grounding.py`, `recommender.py`, `retrieval.py` |
+| 4. Saturación del contexto | Estimación de tokens, presupuesto por llamada, recorte de notas, historial de chat con los mensajes recientes + resumen acotado de lo antiguo. | `context.py` |
+| 5. Bucles en la negociación | Esqueleto con máximo de rondas (techo absoluto 10), tiempo por ronda, contexto de una sola postura por agente y árbitro determinista (Borda + desempates fijos). | `negotiation.py` |
+
+## Estructura
+
+| Módulo | Responsabilidad |
+|---|---|
+| `config.py` | Variables de entorno tipadas y validadas (no arranca si algo es inseguro) |
+| `domain.py` | Tipos de dominio con Pydantic: `FareAlert`, `Money`, `Recommendation`... |
+| `events.py` | Protobuf de Kafka → `FareAlert` (y cabeceras de DLQ) |
+| `llm/client.py` | Cliente asíncrono de Ollama (`/api/chat`, `/api/embed`) |
+| `llm/structured.py` | Salidas estructuradas con validación y reintentos acotados |
+| `grounding.py` | Hechos verificados, control de huecos y rellenado |
+| `retrieval.py` | Fuentes de contexto: historial de precios y Qdrant |
+| `recommender.py` | Prompt, llamada al LLM y plan B por reglas |
+| `context.py` | Presupuesto de tokens, recorte y resumen |
+| `negotiation.py` | Motor de negociación multi-agente acotado (esqueleto) |
+| `store.py` | PostgreSQL: migraciones, historial y recomendaciones |
+| `consumer.py` | Bucle de Kafka: commits manuales, DLQ y reintentos |
+| `api.py` | FastAPI: identidad, RBAC y errores RFC 9457 |
+| `__main__.py` | Arranque, mTLS y apagado ordenado |
+| `src/nomadiq/` | Código **generado** desde `proto/` (no editar: `make proto-python`) |
+
+## Configuración
+
+| Variable | Por defecto | Descripción |
+|---|---|---|
+| `HTTP_PORT` / `MANAGEMENT_PORT` | `8085` / `8086` | API / salud |
+| `TLS_CERT_FILE`, `TLS_KEY_FILE`, `TLS_CLIENT_CA_FILE` | — | mTLS de la API (las tres juntas, PEM) |
+| `HTTP_INSECURE_DEV` | `false` | Solo local: API sin TLS |
+| `EXPOSE_API_DOCS` | `false` | Publica `/docs` y `/openapi.json` |
+| `KAFKA_BROKERS` | **obligatoria** | Separados por comas |
+| `KAFKA_GROUP_ID` / `KAFKA_CLIENT_ID` | `ai-orchestrator` | |
+| `KAFKA_TOPIC_FARE_ALERTS` / `KAFKA_TOPIC_DLQ` | `flights.fare-alerts.v1` / `flights.fare-alerts-dlq.v1` | |
+| `KAFKA_TLS_CA_FILE` | — | Activa TLS hacia Kafka |
+| `KAFKA_MAX_POLL_RECORDS` | `20` | Mensajes por lote |
+| `PGHOST`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` | **obligatorias** | PostgreSQL (esquema `ai`) |
+| `PGPORT` / `PG_MAX_CONNS` | `5432` / `10` | |
+| `PGSSLMODE` / `PGSSLROOTCERT` | `verify-full` / — | TLS 1.3 verificando el servidor |
+| `DB_INSECURE_DEV` | `false` | Solo local: permite otros `PGSSLMODE` |
+| `LLM_ENABLED` | `true` | `false` = todo por reglas |
+| `OLLAMA_URL` / `OLLAMA_MODEL` / `OLLAMA_EMBED_MODEL` | `http://localhost:11434` / `llama3.1:8b` / `nomic-embed-text` | |
+| `OLLAMA_TIMEOUT_SECONDS` / `OLLAMA_MAX_CONCURRENCY` / `OLLAMA_NUM_CTX` | `60` / `2` / `4096` | |
+| `OLLAMA_TLS_CA_FILE`, `OLLAMA_TLS_CERT_FILE`, `OLLAMA_TLS_KEY_FILE` | — | mTLS hacia el proxy que protege Ollama |
+| `OLLAMA_INSECURE_DEV` | `false` | Solo local: Ollama por http |
+| `LLM_TEMPERATURE` / `LLM_MAX_ATTEMPTS` / `LLM_MAX_OUTPUT_TOKENS` | `0.1` / `3` / `400` | |
+| `PRICE_HISTORY_WINDOW_DAYS` | `30` | Ventana del historial que se le da al modelo |
+| `QDRANT_URL`, `QDRANT_API_KEY`, `QDRANT_COLLECTION` | — / — / `travel_knowledge` | Notas de viaje (opcional) |
+| `QDRANT_TLS_CA_FILE` / `QDRANT_INSECURE_DEV` | — / `false` | |
+| `KNOWLEDGE_MAX_SNIPPETS` | `3` | Notas por recomendación (0 = ninguna) |
+| `LOG_LEVEL` | `info` | Logs JSON |
+
+## Desarrollo
+
+```bash
+cd services/ai-orchestrator
+uv sync                          # crea .venv con Python 3.13 y las librerías de uv.lock
+uv run pytest                    # tests unitarios (LLM falso, sin Ollama)
+uv run ruff format . && uv run ruff check . && uv run mypy
+uv run pytest -m integration     # con "make up" y las variables PG* (ver Makefile)
+```
+
+Desde la raíz: `make test-python`, `make test-integration`, `make up-apps`,
+`make ollama` (descarga el modelo) y `make recommendations`.

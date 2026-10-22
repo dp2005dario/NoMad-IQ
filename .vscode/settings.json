@@ -12,8 +12,20 @@
   "go.testFlags": ["-race", "-count=1"],
   // Java: cuando cambias el pom.xml, VS Code recarga las librerías él solo.
   "java.configuration.updateBuildConfiguration": "automatic",
+  // Python (ai-orchestrator): usa el entorno que crea "uv sync" y formatea con ruff al guardar.
+  // En Windows, si no lo detecta: Ctrl+Shift+P > "Python: Select Interpreter" > services/ai-orchestrator/.venv/Scripts/python.exe
+  "python.defaultInterpreterPath": "${workspaceFolder}/services/ai-orchestrator/.venv/bin/python",
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+  // Tests de Python desde el panel de pruebas (el icono del matraz).
+  "python.testing.pytestEnabled": true,
+  "python.testing.cwd": "${workspaceFolder}/services/ai-orchestrator",
+  "python.testing.pytestArgs": ["tests"],
   // El código generado no se edita: lo marcamos como solo lectura.
   "files.readonlyInclude": {
-    "gen/**": true
+    "gen/**": true,
+    "services/ai-orchestrator/src/nomadiq/**": true
   }
 }

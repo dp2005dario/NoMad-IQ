@@ -18,6 +18,8 @@ TOPICS=(
   # Mensajes de precio imposibles de procesar (DLQ): se guardan 14 días para
   # investigarlos y, una vez corregido el fallo, volver a inyectarlos.
   "flights.price-observed-dlq.v1|3|1209600000|delete"
+  # Alertas que el ai-orchestrator no pudo leer (DLQ): mismos 14 días.
+  "flights.fare-alerts-dlq.v1|3|1209600000|delete"
 )
 
 # Recorre la lista y separa cada entrada por el carácter | en cuatro variables.

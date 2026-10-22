@@ -6,6 +6,9 @@
     "vscjava.vscode-java-pack",           // Java: compilar, autocompletar, tests JUnit y depurador (auth-gateway)
     "vmware.vscode-boot-dev-pack",        // Spring Boot: autocompletado de application.yaml y panel de la app
     "ms-azuretools.vscode-docker",        // Docker: ver contenedores, logs y docker-compose
+    "ms-python.python",                   // Python: autocompletado, depurador y tests con pytest (ai-orchestrator)
+    "charliermarsh.ruff",                 // Ruff: formatea y revisa el Python al guardar (igual que la CI)
+    "ms-python.mypy-type-checker",        // mypy: marca en rojo los errores de tipos mientras escribes
     "bufbuild.vscode-buf",                // Protobuf: resaltado y validación de los .proto con buf
     "redhat.vscode-yaml",                 // YAML: valida docker-compose.yml y la CI de GitHub
     "github.vscode-github-actions",       // GitHub Actions: ver la CI sin salir del editor

@@ -31,9 +31,9 @@ programa (lo llamamos **microservicio**) y cada uno hace una sola cosa muy bien:
 | Empleado (microservicio) | Qué hace en la "empresa" | Lenguaje |
 |---|---|---|
 | **flight-ingestor** | El vigilante de precios: llama a las aerolíneas sin parar y apunta precios | Go |
-| auth-gateway *(futuro)* | El recepcionista: comprueba quién eres antes de dejarte pasar | Java |
+| **auth-gateway** | El recepcionista: comprueba quién eres antes de dejarte pasar | Java |
 | geo-engine *(futuro)* | El experto en mapas: calcula distancias y rutas | Rust |
-| ai-orchestrator *(futuro)* | El asistente inteligente: habla contigo y toma decisiones | Python |
+| **ai-orchestrator** | El asistente inteligente: convierte alertas en consejos con IA local (ver [`guia-ai-orchestrator.md`](guia-ai-orchestrator.md)) | Python |
 
 **¿Por qué no un solo programa gigante?** Por la misma razón que una empresa no
 tiene un único empleado que lo hace todo: si se pone enfermo, se para todo. Con
