@@ -112,6 +112,14 @@ class Settings(BaseSettings):
     audio_job_lease_seconds: int = Field(default=900, ge=60, le=6 * 3600)
     audio_poll_seconds: float = Field(default=30.0, ge=1.0, le=3600.0)
     audio_max_attempts: int = Field(default=5, ge=1, le=20)
+    # Recolector de basura del audio (audioguides/audio_gc.py): cada cuánto
+    # pasa, cuántas grabaciones recientes nunca se tocan (N y N-1), cuántos
+    # días de cuarentena tiene una grabación sustituida antes de borrarse y
+    # cuántas horas debe tener un archivo huérfano para borrarlo.
+    audio_gc_interval_seconds: float = Field(default=6 * 3600.0, ge=60.0, le=7 * 24 * 3600.0)
+    audio_gc_keep: int = Field(default=2, ge=1, le=20)
+    audio_gc_grace_days: float = Field(default=30.0, ge=0.0, le=365.0)
+    audio_gc_orphan_hours: float = Field(default=24.0, ge=1.0, le=24 * 30.0)
 
     # --- Redis (caché de audioguías) -----------------------------------------------
     redis_host: str | None = None

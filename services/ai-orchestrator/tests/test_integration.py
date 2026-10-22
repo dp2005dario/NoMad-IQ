@@ -44,6 +44,7 @@ from ai_orchestrator.audioguides.audio_jobs import (
     PostgresAudioJobs,
     PostgresAudioManifests,
 )
+from ai_orchestrator.audioguides.audio_store import audio_key
 from ai_orchestrator.audioguides.cache import RedisScriptCache, lock_key
 from ai_orchestrator.audioguides.facts import PostgresZoneFacts
 from ai_orchestrator.audioguides.service import AudioguideService, Outcome, ServiceSettings
@@ -414,3 +415,66 @@ async def test_audio_manifests_roundtrip(pool: asyncpg.Pool[asyncpg.Record]) -> 
         assert await manifests.latest(str(uuid.uuid4()), "it", 0) is None
     finally:
         await pool.execute("DELETE FROM ai.zone_audio WHERE script_digest = $1", digest)
+
+
+async def test_audio_gc_keeps_two_recordings_and_a_grace_window(pool: asyncpg.Pool[asyncpg.Record]) -> None:
+    # Cuatro grabaciones de una zona de prueba, sustituidas hace 60, 40 y 1 días.
+    slug = f"test-{uuid.uuid4().hex[:12]}"
+    manifests = PostgresAudioManifests(pool)
+
+    def recording(version: int) -> AudioManifest:
+        digest = f"{version:016x}"
+        return AudioManifest(
+            zone_slug=slug,
+            language="es",
+            content_language="es",
+            content_version=version,
+            script_digest=digest,
+            source="rules",
+            voice="es-test",
+            parts=(
+                AudioPart(
+                    index=1, key=audio_key(slug, "es", version, digest, 1), duration_seconds=1.0, text="Hola."
+                ),
+            ),
+        )
+
+    try:
+        for version, days_ago in ((1, 100), (2, 60), (3, 40), (4, 1)):
+            await manifests.save(recording(version))
+            await pool.execute(
+                "UPDATE ai.zone_audio SET created_at = now() - make_interval(days => $3) "
+                "WHERE zone_slug = $1 AND content_version = $2",
+                slug,
+                version,
+                days_ago,
+            )
+
+        async def expired(grace_days: float) -> list[int]:
+            found = await manifests.expired(keep=2, grace_days=grace_days, limit=1000)
+            return [m.content_version for m in found if m.zone_slug == slug]
+
+        # v4 (actual) y v3 (reserva) nunca. v2 lleva 40 días sustituida y v1, 60.
+        assert await expired(30) == [1, 2]
+        assert await expired(50) == [1]
+        assert await expired(90) == []
+
+        await manifests.mark_purged(recording(1))
+        stone = await manifests.tombstone(slug, "es", 1, f"{1:016x}")
+        assert stone is not None and stone.zone_id is None  # la zona de prueba no está en geo.zones
+        assert await manifests.tombstone(slug, "es", 2, f"{2:016x}") is None  # v2 sigue viva
+        keys = await manifests.referenced_keys()
+        assert recording(1).parts[0].key not in keys and recording(2).parts[0].key in keys
+        # Con v1 ya borrada, la cuenta sigue igual: v2 es la siguiente candidata.
+        assert await expired(30) == [2]
+
+        # Una lápida que vuelve a grabarse revive.
+        await manifests.save(recording(1))
+        assert await manifests.exists(slug, "es", 1, f"{1:016x}")
+
+        async with manifests.exclusive() as first:
+            async with manifests.exclusive() as second:
+                # El cerrojo es por conexión: la segunda no lo consigue.
+                assert first and not second
+    finally:
+        await pool.execute("DELETE FROM ai.zone_audio WHERE zone_slug = $1", slug)

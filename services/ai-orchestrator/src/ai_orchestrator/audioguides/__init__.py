@@ -48,4 +48,5 @@ Ficheros:
     audio_jobs.py    cola de trabajos (outbox) y manifiestos en PostgreSQL
     audio_worker.py  el worker que graba: cola → guion → voz → archivos
     audio_catalog.py lo que lee la API: manifiesto actual o el de la versión anterior
+    audio_gc.py      recolector del audio viejo: N y N-1 + 30 días de gracia, lápidas
 """

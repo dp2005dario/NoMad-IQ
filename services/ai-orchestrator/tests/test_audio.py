@@ -20,7 +20,7 @@ from test_audioguides import ZONE_ID, build_service, draft_json, make_zone
 
 from ai_orchestrator.api import create_api
 from ai_orchestrator.audioguides.audio_catalog import AudioCatalog
-from ai_orchestrator.audioguides.audio_jobs import AudioJob, AudioManifest, AudioPart
+from ai_orchestrator.audioguides.audio_jobs import AudioJob, AudioManifest, AudioPart, Tombstone
 from ai_orchestrator.audioguides.audio_store import (
     FilesystemAudioStore,
     audio_key,
@@ -251,6 +251,7 @@ class FakeJobs:
 class FakeManifests:
     def __init__(self) -> None:
         self.saved: list[AudioManifest] = []
+        self.purged: set[tuple[str, str, int, str]] = set()
 
     async def exists(self, slug: str, language: str, version: int, digest: str) -> bool:
         return any(
@@ -264,6 +265,11 @@ class FakeManifests:
     async def latest(self, zone_id: str, language: str, max_version: int) -> AudioManifest | None:
         found = [m for m in self.saved if m.language == language and m.content_version <= max_version]
         return max(found, key=lambda m: m.content_version, default=None)
+
+    async def tombstone(self, slug: str, language: str, version: int, digest: str) -> Tombstone | None:
+        if (slug, language, version, digest) in self.purged:
+            return Tombstone(zone_id=ZONE_ID, language=language)
+        return None
 
 
 class MemoryAudioStore:
@@ -489,5 +495,7 @@ async def test_audio_files_are_public_immutable_and_safe(tmp_path: Path) -> None
         assert ok.status_code == 200 and ok.content == b"OggS-datos"
         assert ok.headers["content-type"].startswith("audio/ogg")
         assert ok.headers["cache-control"] == "public, max-age=31536000, immutable"
-        assert (await c.get(f"/v1/audio/{SLUG}/es/v1/{DIGEST}/parte-2.opus")).status_code == 404
+        missing = await c.get(f"/v1/audio/{SLUG}/es/v1/{DIGEST}/parte-2.opus")
+        # Nunca existió: 404, y sin cachear (si mañana existe, que nadie guarde el error).
+        assert missing.status_code == 404 and missing.headers["cache-control"] == "no-store"
         assert (await c.get("/v1/audio/..%2F..%2Fetc%2Fpasswd")).status_code == 404

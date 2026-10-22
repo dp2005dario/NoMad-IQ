@@ -30,6 +30,7 @@ import json
 import os
 import re
 import secrets
+import time
 from pathlib import Path
 from typing import Protocol
 
@@ -79,6 +80,14 @@ def is_valid_key(key: str) -> bool:
     return _KEY.fullmatch(key) is not None
 
 
+def parse_key(key: str) -> tuple[str, str, int, str] | None:
+    """(zona, idioma, versión, huella) de una clave válida, o None."""
+    if not is_valid_key(key):
+        return None
+    slug, language, version, digest, _ = key.split("/")
+    return slug, language, int(version[1:]), digest
+
+
 class AudioStore(Protocol):
     async def exists(self, key: str) -> bool: ...
 
@@ -122,6 +131,58 @@ class FilesystemAudioStore:
             return None
         path = self._path(key)
         return path if path.is_file() else None
+
+    # --- Para el recolector de basura (audio_gc.py) -------------------------------
+
+    async def delete(self, key: str) -> None:
+        """Borra un archivo (si ya no estaba, no pasa nada: borrar dos veces es seguro)."""
+        path = self._path(key)
+        try:
+            await asyncio.to_thread(path.unlink, missing_ok=True)
+        except OSError as exc:
+            raise AudioStoreError(f"borrar {key}: {exc}") from exc
+
+    async def old_files(self, *, older_than_seconds: float) -> list[str]:
+        """Rutas (relativas) de TODOS los archivos más viejos que eso, válidos o no.
+
+        "O no": también salen los temporales que dejó una escritura cortada de
+        golpe (un apagón a mitad de grabar), para que el recolector los limpie.
+        """
+        return await asyncio.to_thread(self._old_files, time.time() - older_than_seconds)
+
+    def _old_files(self, cutoff: float) -> list[str]:
+        found: list[str] = []
+        for path in self._root.rglob("*"):
+            # is_symlink: nunca seguimos enlaces (podrían apuntar fuera del almacén).
+            if path.is_symlink() or not path.is_file():
+                continue
+            if path.stat().st_mtime < cutoff:
+                found.append(path.relative_to(self._root).as_posix())
+        return found
+
+    async def delete_any(self, relative: str) -> None:
+        """Borra un archivo cualquiera DEL ALMACÉN (huérfanos y temporales)."""
+        path = (self._root / relative).resolve()
+        if not path.is_relative_to(self._root) or path == self._root:
+            raise ValueError(f"ruta fuera del almacén: {relative!r}")
+        try:
+            await asyncio.to_thread(path.unlink, missing_ok=True)
+        except OSError as exc:
+            raise AudioStoreError(f"borrar {relative}: {exc}") from exc
+
+    async def prune_empty_dirs(self) -> int:
+        """Quita las carpetas que se han quedado vacías (de abajo arriba)."""
+        return await asyncio.to_thread(self._prune_empty_dirs)
+
+    def _prune_empty_dirs(self) -> int:
+        removed = 0
+        # Ordenadas de la más profunda a la menos: así una carpeta que solo
+        # contenía carpetas vacías también se queda vacía y se borra.
+        for path in sorted(self._root.rglob("*"), key=lambda p: len(p.parts), reverse=True):
+            if path.is_dir() and not path.is_symlink() and not any(path.iterdir()):
+                path.rmdir()
+                removed += 1
+        return removed
 
 
 def _write_atomically(path: Path, data: bytes) -> None:

@@ -177,6 +177,33 @@ class AudioguideAudioView(BaseModel):
         )
 
 
+async def _missing_audio(audio: AudioCatalog, key: str) -> JSONResponse:
+    """Un archivo de audio que no está: 410 si lo borró el recolector, 404 si nunca existió.
+
+    Con 410 Gone ("existió y ya no volverá") la app sabe que no debe
+    reintentar, sino pedir el manifiesto actual, que va en el cuerpo y en la
+    cabecera Link. Ninguna de las dos respuestas se guarda en la CDN
+    (no-store): si mañana existiera, no queremos un error cacheado un año.
+    """
+    gone = await audio.gone(key)
+    if gone is None:
+        response = _problem(404, "No encontrado", "archivo de audio no encontrado")
+    else:
+        body: dict[str, Any] = {
+            "type": "about:blank",
+            "title": "Ya no existe",
+            "status": 410,
+            "detail": "esta versión del audio se retiró: pide el manifiesto actual",
+        }
+        if gone.current_manifest:
+            body["current_manifest"] = gone.current_manifest
+        response = JSONResponse(body, status_code=410, media_type="application/problem+json")
+        if gone.current_manifest:
+            response.headers["Link"] = f'<{gone.current_manifest}>; rel="latest-version"'
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 # Un archivo de audio nunca cambia (su ruta lleva versión y huella): se puede
 # guardar un año entero en la CDN y en el móvil sin volver a preguntar.
 IMMUTABLE_CACHE = "public, max-age=31536000, immutable"
@@ -276,12 +303,12 @@ def create_api(
                 raise HTTPException(status_code=404, detail="el audio de esta zona aún no está grabado")
             return AudioguideAudioView.of(str(zone_id), found, audio)
 
-        @app.get("/v1/audio/{key:path}", include_in_schema=False)
-        async def get_audio_file(key: str) -> FileResponse:
+        @app.get("/v1/audio/{key:path}", include_in_schema=False, response_model=None)
+        async def get_audio_file(key: str) -> FileResponse | JSONResponse:
             # local_path valida la clave con un patrón estricto: nada de "../".
             path = audio.file(key)
             if path is None:
-                raise HTTPException(status_code=404, detail="archivo de audio no encontrado")
+                return await _missing_audio(audio, key)
             # FileResponse admite peticiones por rangos (Range): el móvil puede
             # empezar a reproducir sin descargar el archivo entero.
             return FileResponse(

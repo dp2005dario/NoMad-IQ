@@ -22,7 +22,9 @@ todas las zonas narrables en esos idiomas y termina (útil antes de un evento
 o cada noche, para que el primer turista ya lo encuentre hecho).
 Opción --audio-worker: en vez de todo lo anterior, arranca SOLO el worker que
 graba las audioguías con Piper (va en su propio contenedor: la síntesis de voz
-gasta mucha CPU y no debe frenar a la API) y la API de salud.
+gasta mucha CPU y no debe frenar a la API) y la API de salud. El worker
+también pasa cada AUDIO_GC_INTERVAL_SECONDS el recolector del audio viejo.
+Opción --gc-audio: pasa el recolector del audio viejo una vez y termina.
 """
 
 from __future__ import annotations
@@ -49,6 +51,7 @@ from redis.asyncio import Redis
 
 from ai_orchestrator.api import create_api, create_management_api
 from ai_orchestrator.audioguides.audio_catalog import AudioCatalog
+from ai_orchestrator.audioguides.audio_gc import AudioGarbageCollector, GcSettings
 from ai_orchestrator.audioguides.audio_jobs import NOTIFY_CHANNEL, PostgresAudioJobs, PostgresAudioManifests
 from ai_orchestrator.audioguides.audio_store import FilesystemAudioStore
 from ai_orchestrator.audioguides.audio_worker import AudioWorker, WorkerSettings
@@ -389,6 +392,37 @@ async def run(settings: Settings) -> int:
         return exit_code
 
 
+def _audio_gc(
+    settings: Settings, manifests: PostgresAudioManifests, store: FilesystemAudioStore
+) -> AudioGarbageCollector:
+    return AudioGarbageCollector(
+        manifests=manifests,
+        store=store,
+        settings=GcSettings(
+            keep=settings.audio_gc_keep,
+            grace_days=settings.audio_gc_grace_days,
+            orphan_grace_hours=settings.audio_gc_orphan_hours,
+        ),
+    )
+
+
+async def gc_audio(settings: Settings) -> int:
+    """Pasa una vez el recolector del audio viejo y termina."""
+    if settings.audio_dir is None:
+        log.error("el recolector necesita AUDIO_DIR (dónde está el audio)")
+        return 2
+    async with AsyncExitStack() as stack:
+        pool = await create_pool(settings)
+        stack.push_async_callback(pool.close)
+        await migrate(pool)
+        report = await _audio_gc(
+            settings, PostgresAudioManifests(pool), FilesystemAudioStore(settings.audio_dir)
+        ).run_once()
+        if report.skipped:
+            log.info("otro proceso está limpiando ahora mismo: no hago nada")
+        return 0
+
+
 async def run_audio_worker(settings: Settings) -> int:
     """Arranca solo el worker de audio (y la API de salud) hasta recibir la orden de apagado."""
     if settings.audio_dir is None:
@@ -420,10 +454,12 @@ async def run_audio_worker(settings: Settings) -> int:
         llm = _ollama(settings, stack) if settings.llm_enabled else None
         audioguides, script_cache, _ = _audioguides(settings, pool, llm, stack)
         jobs = PostgresAudioJobs(pool)
+        manifests = PostgresAudioManifests(pool)
+        store = FilesystemAudioStore(settings.audio_dir)
         worker = AudioWorker(
             jobs=jobs,
-            manifests=PostgresAudioManifests(pool),
-            store=FilesystemAudioStore(settings.audio_dir),
+            manifests=manifests,
+            store=store,
             synthesizer=synthesizer,
             audioguides=audioguides,
             settings=WorkerSettings(
@@ -433,7 +469,9 @@ async def run_audio_worker(settings: Settings) -> int:
                 max_attempts=settings.audio_max_attempts,
                 upgrade_delay_seconds=float(settings.audioguide_rules_ttl_seconds),
                 llm_enabled=settings.llm_enabled,
+                gc_interval_seconds=settings.audio_gc_interval_seconds,
             ),
+            gc=_audio_gc(settings, manifests, store),
         )
 
         # "Timbre": una conexión que escucha los pg_notify del trigger. Si esa
@@ -512,6 +550,11 @@ def main() -> None:
         action="store_true",
         help="arranca solo el worker que graba las audioguías con Piper",
     )
+    parser.add_argument(
+        "--gc-audio",
+        action="store_true",
+        help="borra una vez el audio viejo (respetando la ventana de gracia) y termina",
+    )
     args = parser.parse_args()
     if args.healthcheck:
         sys.exit(healthcheck())
@@ -530,6 +573,8 @@ def main() -> None:
             sys.exit(2)
         languages = [lang.strip() for lang in args.pregenerate_audioguides.split(",") if lang.strip()]
         sys.exit(asyncio.run(pregenerate(settings, languages)))
+    if args.gc_audio:
+        sys.exit(asyncio.run(gc_audio(settings)))
     if args.audio_worker:
         if not settings.audioguides_enabled:
             print("AUDIOGUIDES_ENABLED=false: el worker de audio no tiene nada que hacer", file=sys.stderr)

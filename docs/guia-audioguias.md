@@ -340,6 +340,81 @@ las versiones viejas se van acumulando: hará falta borrarlas (ver "Qué falta")
 
 ---
 
+## 4 quater. Problema 7: borrar el audio viejo sin romper a nadie
+
+### El riesgo
+
+Cada corrección de hechos deja una grabación entera nueva, y la vieja se queda
+en el disco: a escala, unos 2 GB más cada vez. Sin limpiar, el almacén crece
+para siempre. Pero si borramos demasiado pronto, el móvil que guardó ayer el
+manifiesto (o que lo usa sin conexión en el metro) pedirá archivos que ya no
+existen.
+
+### La política: "ventana de gracia + versión de reserva"
+
+Analogía: una biblioteca que retira las ediciones viejas de un libro. No las
+tira el día que llega la nueva (alguien puede tener una prestada): las saca de
+la estantería, las guarda un mes en el almacén y luego las recicla, dejando
+una **ficha** que dice "esta edición ya no existe, pide la nueva".
+
+1. **Nunca** se borran las 2 grabaciones más recientes de cada zona e idioma:
+   la actual (N) y la anterior (N-1). `AUDIO_GC_KEEP=2`.
+2. Una grabación sustituida entra en **cuarentena**: la API ya no la anuncia
+   (siempre da la más nueva), pero sus archivos siguen ahí durante **30 días**
+   contados desde que la sustituyeron (no desde que se grabó).
+   `AUDIO_GC_GRACE_DAYS=30`.
+3. Pasada la cuarentena, el recolector (`audio_gc.py`, dentro del worker de
+   audio, cada 6 horas) borra sus archivos y deja su fila como **lápida**
+   (columna `purged_at`, migración `0005`). Primero borra los archivos y
+   después pone la lápida: si algo se corta a mitad, la próxima pasada lo
+   termina (borrar dos veces no hace daño).
+4. **Huérfanos**: archivos que no aparecen en ningún manifiesto (una grabación
+   cortada por un apagón, temporales a medio escribir). Se borran cuando tienen
+   más de 24 horas, para no tocar nunca una grabación que se está haciendo.
+5. **Un solo limpiador a la vez**: con varios workers, solo limpia el que
+   consigue el *cerrojo consultivo* de PostgreSQL (`pg_try_advisory_lock`); los
+   demás se saltan esa pasada.
+
+### ¿Y si un móvil muy atrasado pide un archivo borrado?
+
+La API no responde un 404 mudo, sino **410 Gone** ("existió y ya no volverá")
+con el enlace al manifiesto actual, en el cuerpo (`current_manifest`) y en la
+cabecera `Link`. La app sabe así que no debe reintentar, sino pedir el
+manifiesto nuevo y reproducir eso.
+
+¿Por qué no redirigir directamente a la "parte 3" de la versión nueva? Porque
+los párrafos de una versión y otra no coinciden: la parte 3 nueva puede contar
+otra cosa, y el texto que la app enseña ya no casaría con lo que suena. La
+unidad coherente es el **manifiesto entero**, así que la app vuelve a pedirlo.
+
+### ¿Y la CDN?
+
+Si la CDN guardó un archivo que luego borramos, lo seguirá sirviendo mientras
+lo tenga. **No es un problema**: el archivo era válido, nunca cambia, y es
+justo lo que necesita ese móvil atrasado. Por eso no hace falta purgar la CDN
+al borrar (ni pagar por ello). Lo que la CDN **no** debe guardar son los
+errores: las respuestas 404 y 410 del audio van con `Cache-Control: no-store`,
+para que un "no existe" nunca se quede cacheado un año.
+
+### Por qué NO contamos descargas ni dejamos que el móvil "fije" versiones
+
+- Contar descargas obligaría a pasar cada petición de audio por la base de
+  datos: adiós a la gracia de la CDN.
+- Si el móvil decidiera qué se borra, una app desinstalada o abandonada
+  bloquearía la limpieza para siempre. El servidor manda sobre sus datos.
+
+Pruébalo (con el worker de audio en marcha): `make audio-gc` pasa el recolector
+ya. Para verlo borrar sin esperar 30 días, en una terminal de VS Code:
+
+```bash
+cd infrastructure
+docker compose exec -e AUDIO_GC_GRACE_DAYS=0 -e AUDIO_GC_KEEP=1 audio-worker ai-orchestrator --gc-audio
+```
+
+y pide a la API una URL de la versión vieja: responderá 410 con el enlace.
+
+---
+
 ## 5. El recorrido completo
 
 ```text
@@ -436,10 +511,8 @@ Para cambiar la histéresis, en `infrastructure/.env` añade por ejemplo
 
 ## 7. Qué falta (próximos pasos)
 
-- **Borrar versiones viejas del audio** (recolector de basura): cada corrección
-  deja una versión entera en disco. Habría que borrar las que tengan una más
-  nueva ya grabada y lleven días sin usarse, sin romper a un móvil que aún tenga
-  guardado el manifiesto antiguo.
+- **Panel de mantenimiento** del audio: ver espacio usado por zona, lápidas y
+  trabajos abandonados (hoy, `make audio`).
 - **Almacén de objetos + CDN** en producción (una clase más que cumpla
   `AudioStore`, por ejemplo para Cloudflare R2 con su capa gratuita).
 - **Revisar las licencias** de Piper (GPL-3.0) y de las voces inglesa e italiana.
@@ -485,4 +558,10 @@ Para cambiar la histéresis, en `infrastructure/.env` añade por ejemplo
 | **URL inmutable** | Una dirección cuyo contenido nunca cambia; si cambia el contenido, cambia la dirección. |
 | **CDN** | Red de servidores repartidos por el mundo que guardan copias de archivos cerca del usuario. |
 | **Manifiesto** | La lista de archivos que forman algo (aquí, las partes del audio de una zona) y en qué orden van. |
+| **Recolector de basura** (*GC*) | Proceso que borra lo que ya no se usa para que el almacenamiento no crezca sin fin. |
+| **Ventana de gracia / cuarentena** | Tiempo que algo retirado se conserva antes de borrarlo, por si alguien aún lo necesita. |
+| **Lápida** (*tombstone*) | Marca que dice "esto existió y se borró", para responder con sentido a quien lo pida. |
+| **410 Gone** | Respuesta HTTP: "existió, pero se retiró para siempre" (distinto de 404, "no existe"). |
+| **Cerrojo consultivo** | Un "cerrojo" de PostgreSQL que solo respetan los programas que lo piden; sirve para que una tarea la haga uno solo. |
+| **Huérfano** | Archivo que ya no aparece en ningún manifiesto (por ejemplo, de una grabación que se cortó). |
 | **GPL** | Licencia de software libre que obliga a compartir el código de lo que se distribuye junto con él. |

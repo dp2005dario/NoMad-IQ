@@ -330,6 +330,15 @@ jobs:
               second=$(jq -r '.parts[0].url' /tmp/audio.json)
               [ "$second" != "$first" ]
               echo "audio nuevo: $second"
+              # Recolector sin ventana de gracia y conservando solo 1 grabación:
+              # la vieja se borra y su URL responde 410 con el enlace al
+              # manifiesto actual; la nueva sigue sirviéndose.
+              docker compose exec -T -e AUDIO_GC_GRACE_DAYS=0 -e AUDIO_GC_KEEP=1 audio-worker ai-orchestrator --gc-audio
+              code=$(curl -s -D /tmp/gone-headers -o /tmp/gone.json -w '%{http_code}' "http://127.0.0.1:8085${first}")
+              [ "$code" = 410 ]
+              grep -qi '^cache-control: no-store' /tmp/gone-headers
+              jq -e --arg zone "$zone" '.current_manifest | contains($zone)' /tmp/gone.json
+              curl -fsS -o /dev/null "http://127.0.0.1:8085${second}"
               exit 0
             fi
             sleep 3

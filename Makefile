@@ -2,7 +2,7 @@
 # Cada "objetivo" (proto, test, up...) es un atajo: "make up" ejecuta los
 # comandos de debajo. Las líneas de comando deben empezar con un tabulador.
 # .PHONY indica que son nombres de tareas, no ficheros que generar.
-.PHONY: help proto proto-python test test-java test-python test-rust test-rust-integration test-integration up up-apps down logs alerts ollama recommendations audioguides voices audio-worker audio zones
+.PHONY: help proto proto-python test test-java test-python test-rust test-rust-integration test-integration up up-apps down logs alerts ollama recommendations audioguides voices audio-worker audio audio-gc zones
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-18s %s\n", $$1, $$2}'
@@ -78,6 +78,9 @@ audio-worker: voices ## Arranca el worker que graba las audioguías con Piper (n
 
 audio: ## Muestra el audio grabado por zona e idioma (y la cola de trabajos pendientes)
 	cd infrastructure && docker compose exec postgres sh -c 'PGPASSWORD="$$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -c "SELECT zone_slug, language, content_version AS version, source, voice, jsonb_array_length(parts) AS partes, created_at FROM ai.zone_audio ORDER BY created_at DESC LIMIT 20" -c "SELECT zone_slug, content_version AS version, attempts AS intentos, available_at, last_error FROM ai.audio_jobs WHERE done_at IS NULL ORDER BY available_at"'
+
+audio-gc: ## Pasa ya el recolector del audio viejo (respeta la ventana de gracia: N y N-1 + 30 días)
+	cd infrastructure && docker compose exec audio-worker ai-orchestrator --gc-audio
 
 zones: ## Muestra las zonas de geofencing guardadas en PostGIS (geo-engine)
 	cd infrastructure && docker compose exec postgres sh -c 'PGPASSWORD="$$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -c "SELECT slug, kind, active, round(ST_Area(geom::geography)) AS m2, updated_at FROM geo.zones ORDER BY slug"'

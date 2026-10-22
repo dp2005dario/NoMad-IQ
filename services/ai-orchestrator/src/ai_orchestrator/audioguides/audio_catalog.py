@@ -21,9 +21,17 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ai_orchestrator.audioguides.audio_jobs import AudioManifest, AudioManifests
-from ai_orchestrator.audioguides.audio_store import AudioStore
+from ai_orchestrator.audioguides.audio_store import AudioStore, parse_key
 from ai_orchestrator.audioguides.domain import resolve_language
 from ai_orchestrator.audioguides.versions import TtlMemo, ZoneVersionCache
+
+
+@dataclass(frozen=True, slots=True)
+class Gone:
+    """El archivo existió pero el recolector lo borró (ver audio_gc.py)."""
+
+    # Dónde pedir el audio actual de esa zona, o None si la zona ya no existe.
+    current_manifest: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,3 +83,19 @@ class AudioCatalog:
 
     def file(self, key: str) -> Path | None:
         return self._store.local_path(key)
+
+    async def gone(self, key: str) -> Gone | None:
+        """Si un archivo que falta fue borrado por el recolector, adónde mandar al móvil.
+
+        Solo se consulta cuando el archivo NO está (caso raro: un móvil muy
+        atrasado), así que no añade carga en el camino normal.
+        """
+        parts = parse_key(key)
+        if parts is None:
+            return None
+        stone = await self._manifests.tombstone(*parts)
+        if stone is None:
+            return None
+        if stone.zone_id is None:
+            return Gone(current_manifest=None)
+        return Gone(current_manifest=f"/v1/audioguides/{stone.zone_id}/audio?lang={stone.language}")

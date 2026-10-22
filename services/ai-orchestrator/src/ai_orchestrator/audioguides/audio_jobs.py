@@ -7,13 +7,18 @@ Ver la migración 0004 para el porqué de cada tabla. Aquí está el "cómo":
   coge un trabajo distinto gracias a ``FOR UPDATE SKIP LOCKED`` ("si esta fila
   la está mirando otro, sáltatela y dame la siguiente").
 - :class:`PostgresAudioManifests`: guardar y buscar "qué archivos forman el
-  audio de esta zona en este idioma" (el manifiesto).
+  audio de esta zona en este idioma" (el manifiesto), y lo que necesita el
+  recolector de basura (audio_gc.py): qué grabaciones viejas se pueden borrar,
+  marcarlas como borradas (lápidas) y un cerrojo para que solo limpie un worker.
 """
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal, Protocol
@@ -28,6 +33,9 @@ log = logging.getLogger(__name__)
 
 # Canal de pg_notify del trigger (migración 0004).
 NOTIFY_CHANNEL = "ai_audio_jobs"
+# Número del cerrojo "consultivo" de PostgreSQL del recolector (uno cualquiera,
+# pero fijo y distinto del de las migraciones).
+GC_LOCK_ID = 0x4E49_4147  # "NIAG"
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +82,15 @@ class AudioManifest(BaseModel):
     created_at: datetime | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class Tombstone:
+    """Rastro de una grabación ya borrada: sirve para responder 410 con un enlace."""
+
+    # None si la zona tampoco existe ya.
+    zone_id: str | None
+    language: str
+
+
 class AudioJobQueue(Protocol):
     async def claim(self, *, lease_seconds: int) -> AudioJob | None: ...
 
@@ -94,6 +111,22 @@ class AudioManifests(Protocol):
     async def save(self, manifest: AudioManifest) -> None: ...
 
     async def latest(self, zone_id: str, language: str, max_version: int) -> AudioManifest | None: ...
+
+    async def tombstone(self, slug: str, language: str, version: int, digest: str) -> Tombstone | None: ...
+
+
+class AudioGcStore(Protocol):
+    """Lo que necesita el recolector de basura (audio_gc.py)."""
+
+    def exclusive(self) -> contextlib.AbstractAsyncContextManager[bool]:
+        """True si este proceso es el único que limpia ahora mismo."""
+        ...
+
+    async def expired(self, *, keep: int, grace_days: float, limit: int) -> list[AudioManifest]: ...
+
+    async def mark_purged(self, manifest: AudioManifest) -> None: ...
+
+    async def referenced_keys(self) -> set[str]: ...
 
 
 def _store_error(what: str, exc: BaseException) -> StoreError:
@@ -237,7 +270,7 @@ class PostgresAudioManifests:
         try:
             found = await self._pool.fetchval(
                 "SELECT EXISTS (SELECT 1 FROM ai.zone_audio WHERE zone_slug = $1 AND language = $2 "
-                "AND content_version = $3 AND script_digest = $4)",
+                "AND content_version = $3 AND script_digest = $4 AND purged_at IS NULL)",
                 slug,
                 language,
                 version,
@@ -253,7 +286,10 @@ class PostgresAudioManifests:
             await self._pool.execute(
                 "INSERT INTO ai.zone_audio (zone_slug, language, content_language, content_version, "
                 "script_digest, source, voice, parts) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb) "
-                "ON CONFLICT DO NOTHING",
+                # Si existía como lápida (borrada), vuelve a la vida con sus archivos nuevos.
+                "ON CONFLICT (zone_slug, language, content_version, script_digest) DO UPDATE "
+                "SET parts = EXCLUDED.parts, voice = EXCLUDED.voice, purged_at = NULL, created_at = now() "
+                "WHERE ai.zone_audio.purged_at IS NOT NULL",
                 manifest.zone_slug,
                 manifest.language,
                 manifest.content_language,
@@ -278,6 +314,7 @@ class PostgresAudioManifests:
                 "a.source, a.voice, a.parts, a.created_at "
                 "FROM ai.zone_audio a JOIN geo.zones z ON z.slug = a.zone_slug "
                 "WHERE z.zone_id = $1::uuid AND z.active AND a.language = $2 AND a.content_version <= $3 "
+                "AND a.purged_at IS NULL "
                 "ORDER BY a.content_version DESC, a.created_at DESC LIMIT 1",
                 zone_id,
                 language,
@@ -287,16 +324,124 @@ class PostgresAudioManifests:
             return None
         except _DB_ERRORS as exc:
             raise _store_error("leer manifiesto de audio", exc) from exc
+        return None if row is None else _manifest(row)
+
+    async def tombstone(self, slug: str, language: str, version: int, digest: str) -> Tombstone | None:
+        try:
+            row = await self._pool.fetchrow(
+                "SELECT z.zone_id FROM ai.zone_audio a "
+                "LEFT JOIN geo.zones z ON z.slug = a.zone_slug AND z.active "
+                "WHERE a.zone_slug = $1 AND a.language = $2 AND a.content_version = $3 "
+                "AND a.script_digest = $4 AND a.purged_at IS NOT NULL",
+                slug,
+                language,
+                version,
+                digest,
+            )
+        except asyncpg.UndefinedTableError:
+            return None
+        except _DB_ERRORS as exc:
+            raise _store_error("buscar lápida de audio", exc) from exc
         if row is None:
             return None
-        return AudioManifest(
-            zone_slug=row["zone_slug"],
-            language=row["language"],
-            content_language=row["content_language"],
-            content_version=int(row["content_version"]),
-            script_digest=row["script_digest"],
-            source=row["source"],
-            voice=row["voice"],
-            parts=tuple(AudioPart(**p) for p in json.loads(row["parts"])),
-            created_at=row["created_at"],
-        )
+        return Tombstone(zone_id=None if row["zone_id"] is None else str(row["zone_id"]), language=language)
+
+    # --- Recolector de basura -------------------------------------------------------
+
+    @asynccontextmanager
+    async def exclusive(self) -> AsyncIterator[bool]:
+        """Cerrojo consultivo de PostgreSQL: si hay varios workers, limpia solo uno.
+
+        "pg_try_advisory_lock" no espera: si otro ya lo tiene, devuelve false y
+        este worker simplemente se salta la limpieza esta vez.
+        """
+        try:
+            async with self._pool.acquire() as conn:
+                acquired = bool(await conn.fetchval("SELECT pg_try_advisory_lock($1)", GC_LOCK_ID))
+                try:
+                    yield acquired
+                finally:
+                    if acquired:
+                        await conn.execute("SELECT pg_advisory_unlock($1)", GC_LOCK_ID)
+        except _DB_ERRORS as exc:
+            raise _store_error("cerrojo del recolector", exc) from exc
+
+    async def expired(self, *, keep: int, grace_days: float, limit: int) -> list[AudioManifest]:
+        """Grabaciones que ya se pueden borrar.
+
+        Por cada zona e idioma, se numeran de la más nueva (1) a la más vieja.
+        Se pueden borrar las que no están entre las ``keep`` más nuevas Y cuya
+        sustituta (la grabación inmediatamente más nueva) existe desde hace
+        más de ``grace_days`` días: así contamos el tiempo desde que DEJARON de
+        ser la buena, no desde que se grabaron.
+        """
+        try:
+            rows = await self._pool.fetch(
+                """
+                WITH ranked AS (
+                    SELECT *,
+                           row_number() OVER w AS position,
+                           -- La fila anterior en este orden es la grabación más nueva que la sustituyó.
+                           lag(created_at) OVER w AS superseded_at
+                    FROM ai.zone_audio
+                    WHERE purged_at IS NULL
+                    WINDOW w AS (
+                        PARTITION BY zone_slug, language ORDER BY content_version DESC, created_at DESC
+                    )
+                )
+                SELECT zone_slug, language, content_language, content_version, script_digest,
+                       source, voice, parts, created_at
+                FROM ranked
+                WHERE position > $1 AND superseded_at < now() - make_interval(secs => $2)
+                ORDER BY superseded_at
+                LIMIT $3
+                """,
+                keep,
+                grace_days * 86400.0,
+                limit,
+            )
+        except asyncpg.UndefinedTableError:
+            return []
+        except _DB_ERRORS as exc:
+            raise _store_error("buscar audio caducado", exc) from exc
+        return [_manifest(r) for r in rows]
+
+    async def mark_purged(self, manifest: AudioManifest) -> None:
+        try:
+            await self._pool.execute(
+                "UPDATE ai.zone_audio SET purged_at = now() WHERE zone_slug = $1 AND language = $2 "
+                "AND content_version = $3 AND script_digest = $4",
+                manifest.zone_slug,
+                manifest.language,
+                manifest.content_version,
+                manifest.script_digest,
+            )
+        except _DB_ERRORS as exc:
+            raise _store_error("marcar audio como borrado", exc) from exc
+
+    async def referenced_keys(self) -> set[str]:
+        """Todos los archivos que aparecen en algún manifiesto vivo."""
+        try:
+            rows = await self._pool.fetch(
+                "SELECT p->>'key' AS key FROM ai.zone_audio, jsonb_array_elements(parts) AS p "
+                "WHERE purged_at IS NULL"
+            )
+        except asyncpg.UndefinedTableError:
+            return set()
+        except _DB_ERRORS as exc:
+            raise _store_error("listar audio vivo", exc) from exc
+        return {r["key"] for r in rows}
+
+
+def _manifest(row: asyncpg.Record) -> AudioManifest:
+    return AudioManifest(
+        zone_slug=row["zone_slug"],
+        language=row["language"],
+        content_language=row["content_language"],
+        content_version=int(row["content_version"]),
+        script_digest=row["script_digest"],
+        source=row["source"],
+        voice=row["voice"],
+        parts=tuple(AudioPart(**p) for p in json.loads(row["parts"])),
+        created_at=row["created_at"],
+    )

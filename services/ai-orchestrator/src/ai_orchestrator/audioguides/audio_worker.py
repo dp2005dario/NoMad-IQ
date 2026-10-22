@@ -19,6 +19,9 @@ Qué hace con cada trabajo "zona X, versión N":
        (30 s, 1 min, 2 min...). Tras ``max_attempts`` fallos se abandona y
        queda apuntado el error para revisarlo.
 
+Además, cada ``gc_interval_seconds`` pasa el recolector de basura
+(audio_gc.py), que borra las grabaciones viejas con su ventana de gracia.
+
 Si el guion salió del plan B (reglas) porque el LLM no estaba, se graba
 igualmente (mejor eso que nada) y el trabajo se reprograma para más tarde:
 cuando el LLM vuelva, el guion nuevo tendrá otra huella y se grabará en rutas
@@ -35,6 +38,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
 
+from ai_orchestrator.audioguides.audio_gc import AudioGarbageCollector
 from ai_orchestrator.audioguides.audio_jobs import (
     AudioJob,
     AudioJobQueue,
@@ -42,7 +46,7 @@ from ai_orchestrator.audioguides.audio_jobs import (
     AudioManifests,
     AudioPart,
 )
-from ai_orchestrator.audioguides.audio_store import AudioStore, audio_key, script_digest
+from ai_orchestrator.audioguides.audio_store import AudioStore, AudioStoreError, audio_key, script_digest
 from ai_orchestrator.audioguides.domain import NARRATED_KINDS, AudioguideScript
 from ai_orchestrator.audioguides.service import AudioguideService
 from ai_orchestrator.audioguides.speech import Synthesizer
@@ -86,6 +90,8 @@ class WorkerSettings:
     # Si el guion salió del plan B, cuándo volver a intentarlo con el LLM.
     upgrade_delay_seconds: float = 3600.0
     llm_enabled: bool = True
+    # Cada cuánto pasa el recolector de basura (si hay uno).
+    gc_interval_seconds: float = 6 * 3600.0
 
 
 class AudioWorker:
@@ -98,6 +104,7 @@ class AudioWorker:
         synthesizer: Synthesizer,
         audioguides: AudioguideService,
         settings: WorkerSettings,
+        gc: AudioGarbageCollector | None = None,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._jobs = jobs
@@ -106,6 +113,7 @@ class AudioWorker:
         self._synth = synthesizer
         self._audioguides = audioguides
         self._settings = settings
+        self._gc = gc
         self._clock = clock
         self._running = False
 
@@ -117,6 +125,7 @@ class AudioWorker:
         """Bucle principal. ``wake`` se activa con cada aviso de pg_notify."""
         self._running = True
         next_sweep = 0.0
+        next_gc = 0.0
         try:
             while True:
                 # Se borra ANTES de mirar la cola: si llega un aviso mientras
@@ -128,6 +137,9 @@ class AudioWorker:
                         if added:
                             log.info("zonas sin audio apuntadas en la cola", extra={"jobs": added})
                         next_sweep = self._clock() + self._settings.sweep_seconds
+                    if self._gc is not None and self._clock() >= next_gc:
+                        next_gc = self._clock() + self._settings.gc_interval_seconds
+                        await self._collect_garbage()
                     job = await self._jobs.claim(lease_seconds=self._settings.lease_seconds)
                     if job is not None:
                         await self.process(job)
@@ -140,6 +152,15 @@ class AudioWorker:
                     await asyncio.wait_for(wake.wait(), timeout=self._settings.poll_seconds)
         finally:
             self._running = False
+
+    async def _collect_garbage(self) -> None:
+        assert self._gc is not None  # noqa: S101 (lo comprueba quien llama)
+        try:
+            await self._gc.run_once()
+        except AudioStoreError as exc:
+            # Un disco con problemas no debe parar la grabación: se reintentará
+            # en la siguiente pasada.
+            log.warning("el recolector de audio falló", extra={"error": str(exc)})
 
     async def process(self, job: AudioJob) -> JobOutcome:
         if job.zone_id is None or not job.zone_active or job.zone_kind not in NARRATED_KINDS:
