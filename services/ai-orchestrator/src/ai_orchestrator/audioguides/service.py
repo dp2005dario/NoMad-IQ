@@ -113,6 +113,20 @@ class AudioguideService:
             zone_id, resolve_language(language, self._settings.default_language), version
         )
 
+    async def ensure_script(
+        self, zone_id: str, language: str, *, fresh: bool = False
+    ) -> tuple[Outcome, AudioguideScript | None]:
+        """Asegura el guion y lo devuelve (lo usa el worker de audio).
+
+        ``fresh=True`` olvida antes la versión recordada en memoria: el worker
+        acaba de enterarse de que la versión ha cambiado y no puede esperar
+        al minuto que tarda en caducar.
+        """
+        if fresh:
+            self._versions.forget(zone_id)
+        outcome = await self.ensure_zone(zone_id, language)
+        return outcome, await self.get(zone_id, language)
+
     async def pregenerate(self, languages: Sequence[str]) -> Counter[Outcome]:
         """Prepara por adelantado los guiones de todas las zonas narrables.
 

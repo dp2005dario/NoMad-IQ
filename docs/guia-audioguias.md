@@ -9,6 +9,9 @@ autobús entero de turistas y sin que la IA sepa quién es nadie.
 - Código de las audioguías: [`services/ai-orchestrator/src/ai_orchestrator/audioguides/`](../services/ai-orchestrator/src/ai_orchestrator/audioguides/)
 - Contrato del evento: [`proto/nomadiq/geo/v1/events.proto`](../proto/nomadiq/geo/v1/events.proto) (`ZoneEntered`)
 - Hechos verificados: [`services/ai-orchestrator/src/ai_orchestrator/migrations/0002_zone_facts.sql`](../services/ai-orchestrator/src/ai_orchestrator/migrations/0002_zone_facts.sql)
+- La voz (Piper): [`audio_worker.py`](../services/ai-orchestrator/src/ai_orchestrator/audioguides/audio_worker.py),
+  [`speech.py`](../services/ai-orchestrator/src/ai_orchestrator/audioguides/speech.py) y la cola
+  [`0004_audio_outbox.sql`](../services/ai-orchestrator/src/ai_orchestrator/migrations/0004_audio_outbox.sql)
 
 ---
 
@@ -244,6 +247,174 @@ y `test_editing_facts_bumps_the_zone_content_version` comprueban justo esto.
 
 ---
 
+## 4 ter. Problema 6: ponerle voz (texto → audio con Piper)
+
+### El riesgo
+
+Convertir texto en voz (**TTS**, *text to speech*) gasta mucha CPU: unos 20
+segundos de cálculo por cada 25 segundos de audio, en un solo núcleo. Si lo
+hiciéramos **al vuelo** (cuando entra el primer turista), esa persona esperaría
+o vería "aún no está lista". Y si lo hiciera la API, todas las demás peticiones
+irían más lentas mientras tanto.
+
+### La solución, pieza a pieza
+
+Analogía: un restaurante. El **comedor** (la API) solo sirve platos ya
+preparados. La **cocina** (el worker de audio) cocina aparte, a su ritmo. Y el
+**ticket de cocina** sale de la misma impresora que el pedido, así que es
+imposible cobrar un plato sin que cocina se entere.
+
+1. **El ticket: la cola *outbox*** (`ai.audio_jobs`, migración `0004`). Cuando
+   sube la versión de una zona (apartado 4 bis), un trigger apunta "hay que
+   grabar la zona X, versión N" **en la misma transacción** que la corrección.
+   O se guardan las dos cosas, o ninguna. Si en vez de eso el código guardara
+   el hecho y *luego* publicara un mensaje en Kafka, un corte justo en medio
+   dejaría el hecho corregido y el audio viejo para siempre: el problema de la
+   **doble escritura**.
+2. **El timbre: `pg_notify`.** El trigger además "toca el timbre" y el worker
+   se despierta al instante. Si el timbre falla (se cae la conexión), no se
+   pierde nada: el worker revisa la cola cada 30 s de todos modos.
+3. **La cocina: el worker** (`--audio-worker`, contenedor `audio-worker`, con un
+   techo de 1 CPU para no dejar sin CPU al resto). Coge un trabajo con
+   `FOR UPDATE SKIP LOCKED` ("si este ya lo tiene otro, dame el siguiente"):
+   puedes arrancar varios workers y nunca se pisan. El trabajo se "presta" 15
+   minutos: si el worker se cae a mitad, el préstamo caduca y otro lo retoma.
+4. **La voz: Piper + Opus.** Para cada idioma con voz instalada, el worker pide
+   el guion de texto de esa versión (con todas las protecciones de antes) y
+   graba **cada párrafo** por separado:
+   `texto → piper → sonido en crudo → opusenc (24 kbps) → .opus`.
+   Por párrafos, para que el móvil empiece a reproducir el primero mientras
+   descarga los siguientes.
+5. **URLs que nunca cambian (inmutables).** Cada archivo se guarda en
+   `madrid-centro/es/v4/ca5ca3d02260fa2b/parte-1.opus`: zona, idioma,
+   **versión** y **huella del texto**. Si se corrige un hecho → otra versión →
+   otra ruta. Si el texto cambia sin tocar los hechos (el plan B por reglas se
+   sustituye por el del LLM) → otra huella → otra ruta. Por eso el archivo se
+   sirve con `Cache-Control: immutable` (un año): ni la CDN ni el móvil tienen
+   que preguntar nunca "¿ha cambiado?", y nunca hay que purgar nada.
+6. **El manifiesto** (`ai.zone_audio`): la lista de archivos de cada zona e
+   idioma. Se guarda **el último**, cuando ya existen todos sus archivos: la
+   API nunca anuncia un archivo que todavía no está.
+7. **Plan B mientras se graba.** `GET /v1/audioguides/<zona>/audio?lang=es`
+   devuelve el manifiesto de la versión actual o, si aún se está grabando, el
+   de la **anterior** con `"stale": true`. Cada parte trae su texto exacto, para
+   que la app muestre lo que de verdad suena. Si no hay audio de ninguna
+   versión (o no hay voz para ese idioma), responde 404 y la app puede leer el
+   guion con la voz del propio teléfono: gratis para nosotros.
+8. **Si algo falla** (Piper se cuelga, disco lleno...), el trabajo vuelve a la
+   cola con espera creciente: 30 s, 1 min, 2 min... Tras 5 fallos seguidos se
+   abandona y queda apuntado el error (`make audio` lo enseña).
+
+### Cuánto cuesta (medido, no estimado)
+
+En la prueba local, la audioguía de `madrid-centro` en español son 6 párrafos,
+**26 segundos de audio, 81 KB** (unos **180 KB por minuto** a 24 kbps), y se
+grabó en unos 20 segundos de CPU. Para 1.000 zonas × 6 idiomas × 2 minutos:
+unos **2,2 GB por cada versión completa**. Cabe en un disco o en la capa
+gratuita de un almacén de objetos (por ejemplo, Cloudflare R2 da 10 GB), pero
+las versiones viejas se van acumulando: hará falta borrarlas (ver "Qué falta").
+
+### Seguridad y licencias
+
+- Piper y opusenc se ejecutan como **programas aparte**, sin shell (nada de
+  inyección de comandos), con tiempo máximo y **sin heredar las contraseñas**
+  del worker (se les pasa un entorno mínimo).
+- Las voces se descargan con `make voices` y se comprueban con su **SHA-256**;
+  Piper se instala con `--require-hashes`. Así nadie puede colarnos un archivo
+  manipulado (seguridad de la cadena de suministro).
+- **Piper es GPL-3.0.** Por eso se instala en un entorno aparte (`/opt/piper`)
+  y nuestro código no lo importa: le pasa texto y recibe sonido, como harías
+  con cualquier programa. Antes de distribuir la app conviene que lo revise
+  alguien que sepa de licencias.
+- **Cada voz tiene su licencia**, la de los datos con los que se entrenó (está en
+  su `MODEL_CARD`). Las elegidas:
+
+  | Idioma | Voz | Licencia de los datos |
+  |---|---|---|
+  | es | es-carlfm-x-low | Dominio público |
+  | de | de-thorsten-low | CC0 |
+  | fr | fr-gilles-low | CC0 |
+  | pt | pt-br-edresson-low (portugués de Brasil) | CC BY 4.0 (hay que citar al autor) |
+  | en | en-gb-alan-low | "ver URL": **revisar antes de un uso comercial** |
+  | it | it-riccardo_fasol-x-low | M-AILABS: **revisar antes de un uso comercial** |
+
+---
+
+## 4 quater. Problema 7: borrar el audio viejo sin romper a nadie
+
+### El riesgo
+
+Cada corrección de hechos deja una grabación entera nueva, y la vieja se queda
+en el disco: a escala, unos 2 GB más cada vez. Sin limpiar, el almacén crece
+para siempre. Pero si borramos demasiado pronto, el móvil que guardó ayer el
+manifiesto (o que lo usa sin conexión en el metro) pedirá archivos que ya no
+existen.
+
+### La política: "ventana de gracia + versión de reserva"
+
+Analogía: una biblioteca que retira las ediciones viejas de un libro. No las
+tira el día que llega la nueva (alguien puede tener una prestada): las saca de
+la estantería, las guarda un mes en el almacén y luego las recicla, dejando
+una **ficha** que dice "esta edición ya no existe, pide la nueva".
+
+1. **Nunca** se borran las 2 grabaciones más recientes de cada zona e idioma:
+   la actual (N) y la anterior (N-1). `AUDIO_GC_KEEP=2`.
+2. Una grabación sustituida entra en **cuarentena**: la API ya no la anuncia
+   (siempre da la más nueva), pero sus archivos siguen ahí durante **30 días**
+   contados desde que la sustituyeron (no desde que se grabó).
+   `AUDIO_GC_GRACE_DAYS=30`.
+3. Pasada la cuarentena, el recolector (`audio_gc.py`, dentro del worker de
+   audio, cada 6 horas) borra sus archivos y deja su fila como **lápida**
+   (columna `purged_at`, migración `0005`). Primero borra los archivos y
+   después pone la lápida: si algo se corta a mitad, la próxima pasada lo
+   termina (borrar dos veces no hace daño).
+4. **Huérfanos**: archivos que no aparecen en ningún manifiesto (una grabación
+   cortada por un apagón, temporales a medio escribir). Se borran cuando tienen
+   más de 24 horas, para no tocar nunca una grabación que se está haciendo.
+5. **Un solo limpiador a la vez**: con varios workers, solo limpia el que
+   consigue el *cerrojo consultivo* de PostgreSQL (`pg_try_advisory_lock`); los
+   demás se saltan esa pasada.
+
+### ¿Y si un móvil muy atrasado pide un archivo borrado?
+
+La API no responde un 404 mudo, sino **410 Gone** ("existió y ya no volverá")
+con el enlace al manifiesto actual, en el cuerpo (`current_manifest`) y en la
+cabecera `Link`. La app sabe así que no debe reintentar, sino pedir el
+manifiesto nuevo y reproducir eso.
+
+¿Por qué no redirigir directamente a la "parte 3" de la versión nueva? Porque
+los párrafos de una versión y otra no coinciden: la parte 3 nueva puede contar
+otra cosa, y el texto que la app enseña ya no casaría con lo que suena. La
+unidad coherente es el **manifiesto entero**, así que la app vuelve a pedirlo.
+
+### ¿Y la CDN?
+
+Si la CDN guardó un archivo que luego borramos, lo seguirá sirviendo mientras
+lo tenga. **No es un problema**: el archivo era válido, nunca cambia, y es
+justo lo que necesita ese móvil atrasado. Por eso no hace falta purgar la CDN
+al borrar (ni pagar por ello). Lo que la CDN **no** debe guardar son los
+errores: las respuestas 404 y 410 del audio van con `Cache-Control: no-store`,
+para que un "no existe" nunca se quede cacheado un año.
+
+### Por qué NO contamos descargas ni dejamos que el móvil "fije" versiones
+
+- Contar descargas obligaría a pasar cada petición de audio por la base de
+  datos: adiós a la gracia de la CDN.
+- Si el móvil decidiera qué se borra, una app desinstalada o abandonada
+  bloquearía la limpieza para siempre. El servidor manda sobre sus datos.
+
+Pruébalo (con el worker de audio en marcha): `make audio-gc` pasa el recolector
+ya. Para verlo borrar sin esperar 30 días, en una terminal de VS Code:
+
+```bash
+cd infrastructure
+docker compose exec -e AUDIO_GC_GRACE_DAYS=0 -e AUDIO_GC_KEEP=1 audio-worker ai-orchestrator --gc-audio
+```
+
+y pide a la API una URL de la versión vieja: responderá 410 con el enlace.
+
+---
+
 ## 5. El recorrido completo
 
 ```text
@@ -310,6 +481,29 @@ audioguía de `madrid-centro` a la API (sin Ollama: sale por reglas).
    GB) y vuelve a pedirla cuando caduque la versión de reglas (1 hora), o borra
    la clave de Redis para forzarlo.
 
+9. **Ponle voz.** Descarga las voces (la primera vez; todas son unos 230 MB, o
+   solo la española con `LANGS=es`) y arranca el worker de audio:
+
+   ```bash
+   make voices LANGS=es
+   make audio-worker
+   make audio            # qué se ha grabado y qué queda en la cola
+   ```
+
+10. Pide el manifiesto y descarga la primera parte:
+
+    ```bash
+    curl -s "http://127.0.0.1:8085/v1/audioguides/<zone_id>/audio?lang=es" \
+      -H 'X-User-ID: yo' -H 'X-User-Roles: USER' | jq .
+    curl -s -o parte-1.opus "http://127.0.0.1:8085$(curl -s "http://127.0.0.1:8085/v1/audioguides/<zone_id>/audio?lang=es" -H 'X-User-ID: yo' -H 'X-User-Roles: USER' | jq -r '.parts[0].url')"
+    ```
+
+    Haz doble clic en `parte-1.opus` en el explorador de VS Code (o ábrelo con
+    VLC o con el navegador) para escucharla.
+
+11. Corrige un hecho (apartado 4 bis) y, en unos segundos, `make audio` mostrará
+    la versión nueva grabada; al minuto, el manifiesto apuntará a las rutas nuevas.
+
 Para cambiar la histéresis, en `infrastructure/.env` añade por ejemplo
 `GEOFENCE_ENTER_DWELL=30s` o `GEOFENCE_EXIT_MARGIN_M=50` y vuelve a `make up-apps`.
 
@@ -317,11 +511,11 @@ Para cambiar la histéresis, en `infrastructure/.env` añade por ejemplo
 
 ## 7. Qué falta (próximos pasos)
 
-- **Síntesis de voz** (texto → audio): un motor TTS local y gratuito (por ejemplo
-  Piper) que convierta el guion en un MP3/Opus por zona e idioma, guardado en un
-  almacén de objetos y servido por CDN. El guion ya está partido en párrafos de
-  20-30 segundos, que es justo lo que se necesita para empezar a reproducir el
-  primero mientras se descargan los siguientes (*streaming*).
+- **Panel de mantenimiento** del audio: ver espacio usado por zona, lápidas y
+  trabajos abandonados (hoy, `make audio`).
+- **Almacén de objetos + CDN** en producción (una clase más que cumpla
+  `AudioStore`, por ejemplo para Cloudflare R2 con su capa gratuita).
+- **Revisar las licencias** de Piper (GPL-3.0) y de las voces inglesa e italiana.
 - **Capa de notificaciones**: leer `geo.geofence-transitions.v1` (que sí trae el
   usuario), comprobar que la audioguía está lista y mandar el push al móvil.
 - **Panel de hechos**: una API de administración para dar de alta y revisar
@@ -352,3 +546,22 @@ Para cambiar la histéresis, en `infrastructure/.env` añade por ejemplo
 | **Clave de partición (Kafka)** | El valor que decide a qué partición va un mensaje; misma clave = misma partición = mismo consumidor. |
 | **DLQ** | *Dead letter queue*: buzón donde van los mensajes que no se pueden procesar, para revisarlos sin bloquear al resto. |
 | **TTS** | *Text to speech*: convertir texto en voz. |
+| **Piper** | Motor de voz gratuito que funciona en la CPU de tu ordenador; cada voz es un archivo `.onnx`. |
+| **ONNX** | Formato estándar para guardar un modelo de red neuronal y ejecutarlo en cualquier sitio. |
+| **Opus** | Formato de audio muy eficiente para voz (el de las videollamadas). |
+| **kbps** | Kilobits por segundo: cuántos datos ocupa cada segundo de audio (24 kbps ≈ 180 KB por minuto). |
+| **PCM** | Sonido "en crudo", sin comprimir: una lista de números, uno por muestra. |
+| **Outbox** | Patrón: apuntar el "mensaje para otros" en una tabla, en la misma transacción que el cambio, para que nunca se pierda. |
+| **Doble escritura** | Guardar en dos sitios por separado (base de datos y Kafka): si algo se cae en medio, quedan desincronizados. |
+| **SKIP LOCKED** | En PostgreSQL, "sáltate las filas que ya tiene bloqueadas otro": permite varios workers sobre la misma cola. |
+| **Préstamo** (*lease*) | Reservar un trabajo solo durante un tiempo: si quien lo tenía se cae, vuelve solo a la cola. |
+| **URL inmutable** | Una dirección cuyo contenido nunca cambia; si cambia el contenido, cambia la dirección. |
+| **CDN** | Red de servidores repartidos por el mundo que guardan copias de archivos cerca del usuario. |
+| **Manifiesto** | La lista de archivos que forman algo (aquí, las partes del audio de una zona) y en qué orden van. |
+| **Recolector de basura** (*GC*) | Proceso que borra lo que ya no se usa para que el almacenamiento no crezca sin fin. |
+| **Ventana de gracia / cuarentena** | Tiempo que algo retirado se conserva antes de borrarlo, por si alguien aún lo necesita. |
+| **Lápida** (*tombstone*) | Marca que dice "esto existió y se borró", para responder con sentido a quien lo pida. |
+| **410 Gone** | Respuesta HTTP: "existió, pero se retiró para siempre" (distinto de 404, "no existe"). |
+| **Cerrojo consultivo** | Un "cerrojo" de PostgreSQL que solo respetan los programas que lo piden; sirve para que una tarea la haga uno solo. |
+| **Huérfano** | Archivo que ya no aparece en ningún manifiesto (por ejemplo, de una grabación que se cortó). |
+| **GPL** | Licencia de software libre que obliga a compartir el código de lo que se distribuye junto con él. |

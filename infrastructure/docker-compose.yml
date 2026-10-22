@@ -278,14 +278,70 @@ services:
       REDIS_TLS: "false"
       REDIS_INSECURE_DEV: "true"
       AUDIOGUIDE_DEFAULT_LANGUAGE: ${AUDIOGUIDE_DEFAULT_LANGUAGE:-en}
+      # Audio de las audioguías: lo graba el audio-worker; la API solo lo lee.
+      AUDIO_DIR: /var/lib/nomadiq/audio
       EXPOSE_API_DOCS: "true"
       LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - audio-data:/var/lib/nomadiq/audio:ro
     ports:
       - "127.0.0.1:8085:8085"     # API: /v1/recommendations (en local sin mTLS)
       - "127.0.0.1:8086:8086"     # /healthz y /readyz
     depends_on:
       kafka-init:
         condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Worker de audio: graba las audioguías con Piper (voz local y gratuita) en
+  # archivos Opus. Va aparte de la API porque la síntesis de voz gasta mucha
+  # CPU: con "cpus" le ponemos un techo para que nunca deje sin CPU al resto.
+  # Perfil "audio" (además de "apps"): necesita las voces, que se descargan
+  # con "make voices". Se arranca con "make audio-worker".
+  audio-worker:
+    <<: *hardening
+    profiles: ["audio"]
+    build:
+      context: ..
+      dockerfile: services/ai-orchestrator/Dockerfile
+      target: audio-worker
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    cpus: ${AUDIO_WORKER_CPUS:-1.0}
+    mem_limit: 1g
+    environment:
+      # Kafka no lo usa, pero la configuración común lo pide.
+      KAFKA_BROKERS: kafka:9092
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:?Define POSTGRES_USER en .env}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
+      PGDATABASE: ${POSTGRES_DB:?Define POSTGRES_DB en .env}
+      PGSSLMODE: disable
+      DB_INSECURE_DEV: "true"
+      HTTP_INSECURE_DEV: "true"
+      OLLAMA_URL: http://ollama:11434
+      OLLAMA_INSECURE_DEV: "true"
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+      LLM_ENABLED: ${LLM_ENABLED:-true}
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Define REDIS_PASSWORD en .env}
+      REDIS_TLS: "false"
+      REDIS_INSECURE_DEV: "true"
+      AUDIOGUIDE_DEFAULT_LANGUAGE: ${AUDIOGUIDE_DEFAULT_LANGUAGE:-en}
+      AUDIO_POLL_SECONDS: ${AUDIO_POLL_SECONDS:-30}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - audio-data:/var/lib/nomadiq/audio
+      # Las voces, en solo lectura (las descarga tts/download-voices.sh).
+      - ./tts/voices:/voices:ro
+    ports:
+      - "127.0.0.1:8088:8086"     # /healthz y /readyz del worker
+    depends_on:
       postgres:
         condition: service_healthy
       redis:
@@ -368,3 +424,5 @@ volumes:
   redis-data:
   qdrant-data:
   ollama-models:
+  # Los .opus de las audioguías (en producción: almacén de objetos + CDN).
+  audio-data:

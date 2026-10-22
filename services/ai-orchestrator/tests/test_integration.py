@@ -38,6 +38,13 @@ from conftest import (
 )
 from redis.asyncio import Redis
 
+from ai_orchestrator.audioguides.audio_jobs import (
+    AudioManifest,
+    AudioPart,
+    PostgresAudioJobs,
+    PostgresAudioManifests,
+)
+from ai_orchestrator.audioguides.audio_store import audio_key
 from ai_orchestrator.audioguides.cache import RedisScriptCache, lock_key
 from ai_orchestrator.audioguides.facts import PostgresZoneFacts
 from ai_orchestrator.audioguides.service import AudioguideService, Outcome, ServiceSettings
@@ -325,3 +332,149 @@ async def test_editing_facts_bumps_the_zone_content_version(pool: asyncpg.Pool[a
     finally:
         await pool.execute("DELETE FROM ai.zone_facts WHERE zone_slug = $1", slug)
         await pool.execute("DELETE FROM ai.zone_content WHERE zone_slug = $1", slug)
+        # Cada versión dejó apuntado su trabajo de audio (migración 0004).
+        await pool.execute("DELETE FROM ai.audio_jobs WHERE zone_slug = $1", slug)
+
+
+async def test_fixing_a_fact_leaves_an_audio_job_in_the_outbox(pool: asyncpg.Pool[asyncpg.Record]) -> None:
+    slug = f"test-{uuid.uuid4().hex[:12]}"
+    jobs = PostgresAudioJobs(pool)
+    try:
+        await pool.execute(
+            "INSERT INTO ai.zone_facts (zone_slug, language, position, fact) "
+            "VALUES ($1, 'es', 1, 'Un hecho.')",
+            slug,
+        )
+        await pool.execute("UPDATE ai.zone_facts SET fact = 'Un hecho corregido.' WHERE zone_slug = $1", slug)
+        rows = await pool.fetch(
+            "SELECT content_version FROM ai.audio_jobs WHERE zone_slug = $1 ORDER BY content_version", slug
+        )
+        # La MISMA transacción que cambió el hecho apuntó el trabajo (outbox).
+        assert [r["content_version"] for r in rows] == [1, 2]
+
+        # Que nuestros trabajos sean los primeros de la cola (la base de datos es compartida).
+        await pool.execute(
+            "UPDATE ai.audio_jobs SET available_at = now() - interval '10 years' WHERE zone_slug = $1", slug
+        )
+        first = await jobs.claim(lease_seconds=60)
+        assert first is not None and first.zone_slug == slug and first.attempt == 1
+        # La zona no existe en geo.zones (es de prueba) y su versión actual es la 2.
+        assert first.zone_id is None and first.current_version == 2
+        second = await jobs.claim(lease_seconds=60)
+        assert second is not None and second.zone_slug == slug
+        # Prestado: nadie más lo coge mientras dure el préstamo.
+        assert (first.content_version, second.content_version) in {(1, 2), (2, 1)}
+
+        await jobs.retry(first, delay_seconds=3600, error="piper caído")
+        await jobs.complete(second)
+        state = {
+            r["content_version"]: r
+            for r in await pool.fetch(
+                "SELECT content_version, done_at, last_error, available_at > now() AS later "
+                "FROM ai.audio_jobs WHERE zone_slug = $1",
+                slug,
+            )
+        }
+        assert state[first.content_version]["last_error"] == "piper caído"
+        assert state[first.content_version]["later"] and state[first.content_version]["done_at"] is None
+        assert state[second.content_version]["done_at"] is not None
+    finally:
+        await pool.execute("DELETE FROM ai.audio_jobs WHERE zone_slug = $1", slug)
+        await pool.execute("DELETE FROM ai.zone_facts WHERE zone_slug = $1", slug)
+        await pool.execute("DELETE FROM ai.zone_content WHERE zone_slug = $1", slug)
+
+
+async def test_audio_manifests_roundtrip(pool: asyncpg.Pool[asyncpg.Record]) -> None:
+    try:
+        zone = await pool.fetchrow("SELECT zone_id, slug FROM geo.zones WHERE slug = 'madrid-centro'")
+    except asyncpg.UndefinedTableError:
+        pytest.skip("geo.zones no existe: arranca antes el geo-engine")
+    if zone is None:
+        pytest.skip("falta la zona madrid-centro (la crea el geo-engine)")
+    manifests = PostgresAudioManifests(pool)
+    digest = uuid.uuid4().hex[:16]
+    key = f"madrid-centro/it/v0/{digest}/parte-1.opus"
+    manifest = AudioManifest(
+        zone_slug="madrid-centro",
+        language="it",
+        content_language="es",
+        content_version=0,
+        script_digest=digest,
+        source="rules",
+        voice="es-carlfm-x-low",
+        parts=(AudioPart(index=1, key=key, duration_seconds=3.3, text="Bienvenido."),),
+    )
+    try:
+        assert not await manifests.exists("madrid-centro", "it", 0, digest)
+        await manifests.save(manifest)
+        await manifests.save(manifest)  # repetir no duplica
+        assert await manifests.exists("madrid-centro", "it", 0, digest)
+        found = await manifests.latest(str(zone["zone_id"]), "it", 0)
+        assert found is not None and found.script_digest == digest
+        assert found.parts[0].key == key and found.parts[0].text == "Bienvenido."
+        assert await manifests.latest(str(uuid.uuid4()), "it", 0) is None
+    finally:
+        await pool.execute("DELETE FROM ai.zone_audio WHERE script_digest = $1", digest)
+
+
+async def test_audio_gc_keeps_two_recordings_and_a_grace_window(pool: asyncpg.Pool[asyncpg.Record]) -> None:
+    # Cuatro grabaciones de una zona de prueba, sustituidas hace 60, 40 y 1 días.
+    slug = f"test-{uuid.uuid4().hex[:12]}"
+    manifests = PostgresAudioManifests(pool)
+
+    def recording(version: int) -> AudioManifest:
+        digest = f"{version:016x}"
+        return AudioManifest(
+            zone_slug=slug,
+            language="es",
+            content_language="es",
+            content_version=version,
+            script_digest=digest,
+            source="rules",
+            voice="es-test",
+            parts=(
+                AudioPart(
+                    index=1, key=audio_key(slug, "es", version, digest, 1), duration_seconds=1.0, text="Hola."
+                ),
+            ),
+        )
+
+    try:
+        for version, days_ago in ((1, 100), (2, 60), (3, 40), (4, 1)):
+            await manifests.save(recording(version))
+            await pool.execute(
+                "UPDATE ai.zone_audio SET created_at = now() - make_interval(days => $3) "
+                "WHERE zone_slug = $1 AND content_version = $2",
+                slug,
+                version,
+                days_ago,
+            )
+
+        async def expired(grace_days: float) -> list[int]:
+            found = await manifests.expired(keep=2, grace_days=grace_days, limit=1000)
+            return [m.content_version for m in found if m.zone_slug == slug]
+
+        # v4 (actual) y v3 (reserva) nunca. v2 lleva 40 días sustituida y v1, 60.
+        assert await expired(30) == [1, 2]
+        assert await expired(50) == [1]
+        assert await expired(90) == []
+
+        await manifests.mark_purged(recording(1))
+        stone = await manifests.tombstone(slug, "es", 1, f"{1:016x}")
+        assert stone is not None and stone.zone_id is None  # la zona de prueba no está en geo.zones
+        assert await manifests.tombstone(slug, "es", 2, f"{2:016x}") is None  # v2 sigue viva
+        keys = await manifests.referenced_keys()
+        assert recording(1).parts[0].key not in keys and recording(2).parts[0].key in keys
+        # Con v1 ya borrada, la cuenta sigue igual: v2 es la siguiente candidata.
+        assert await expired(30) == [2]
+
+        # Una lápida que vuelve a grabarse revive.
+        await manifests.save(recording(1))
+        assert await manifests.exists(slug, "es", 1, f"{1:016x}")
+
+        async with manifests.exclusive() as first:
+            async with manifests.exclusive() as second:
+                # El cerrojo es por conexión: la segunda no lo consigue.
+                assert first and not second
+    finally:
+        await pool.execute("DELETE FROM ai.zone_audio WHERE zone_slug = $1", slug)

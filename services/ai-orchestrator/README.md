@@ -25,6 +25,8 @@ Kafka flights.fare-alerts.v1 ──► consumer ──► recommender ──┬�
 | `GET /v1/recommendations?limit=20` | `X-User-ID` + rol `USER` | Últimas recomendaciones del usuario (1–50). |
 | `GET /v1/recommendations/{alert_id}` | `X-User-ID` + rol `USER` | Una recomendación; 404 si no existe **o no es tuya**. |
 | `GET /v1/audioguides/{zone_id}?lang=es` | `X-User-ID` + rol `USER` | Guion de la audioguía de una zona (genérico, desde la caché de Redis); 404 si aún no está listo. |
+| `GET /v1/audioguides/{zone_id}/audio?lang=es` | `X-User-ID` + rol `USER` | Manifiesto del audio: URLs de cada párrafo, duración y texto. Si la versión actual aún se graba, devuelve la anterior con `stale: true`; 404 si no hay ninguna (la app puede usar la voz del teléfono). |
+| `GET /v1/audio/<zona>/<idioma>/v<N>/<huella>/parte-<n>.opus` | ninguna (contenido público) | Archivo Ogg Opus **inmutable** (`Cache-Control: immutable`, 1 año). En producción lo sirve la CDN. Si el recolector ya lo borró: **410 Gone** con `current_manifest` y cabecera `Link`; si nunca existió, 404 (ninguno de los dos se cachea). |
 | `GET :8086/healthz`, `GET :8086/readyz` | red interna | Salud (readyz: PostgreSQL + consumidores Kafka + Redis; Ollama no cuenta porque hay plan B). |
 
 La identidad llega en `X-User-ID` / `X-User-Roles`, ya verificada por el
@@ -41,6 +43,8 @@ con TLS 1.3**, así que solo el proxy puede enviarlas. Errores en RFC 9457
 | 3. Alucinaciones | RAG sobre datos reales (historial en PostgreSQL, notas en Qdrant). El modelo **no puede escribir cifras**: usa huecos `{precio_actual}` que rellenamos nosotros; cualquier dígito o hueco desconocido = respuesta rechazada. Plan B por reglas. | `grounding.py`, `recommender.py`, `retrieval.py` |
 | 4. Saturación del contexto | Estimación de tokens, presupuesto por llamada, recorte de notas, historial de chat con los mensajes recientes + resumen acotado de lo antiguo. | `context.py` |
 | 6. Audioguías: latencia, estampidas y privacidad | Consumidor propio de `geo.zone-entries.v1` (entradas **anónimas**: solo `zone_id` + idioma). Guion **genérico por zona+idioma** en Redis; un lote agrupa las entradas repetidas, *single flight* en el proceso y cerrojo `SET NX` entre réplicas: un autobús = una generación. Hechos verificados en `ai.zone_facts`; cada párrafo cita sus hechos y se rechaza cualquier cifra que no esté en ellos. Plan B por reglas con caducidad corta. La clave lleva la **versión del contenido** de la zona (`ai:audioguide:v2:<zona>:<idioma>:<versión>`), que un trigger sube al tocar `ai.zone_facts`; la versión se recuerda 60 s en memoria, así que corregir un hecho se nota en ≤ 60 s sin consultar PostgreSQL en cada entrada. | `audioguides/`, `migrations/0003_zone_content_version.sql` |
+| 7. Voz (TTS): CPU, audio viejo y doble escritura | **Pregeneración en segundo plano**, nunca al vuelo: al subir la versión, un trigger apunta el trabajo en `ai.audio_jobs` en la **misma transacción** (outbox, sin doble escritura) y avisa con `pg_notify`; un worker aparte (`--audio-worker`, con techo de CPU) lo coge con `FOR UPDATE SKIP LOCKED` y préstamo con caducidad. Piper (local, gratis) + Opus a 24 kbps, como programas externos con tiempo máximo y sin heredar secretos. **URLs inmutables** con versión y huella del guion: ni CDN ni móvil sirven audio viejo y nunca hay que purgar. Mientras se graba la versión nueva, suena la anterior (`stale`). | `audioguides/audio_*.py`, `speech.py`, `migrations/0004_audio_outbox.sql` |
+| 8. Audio viejo: almacenamiento infinito vs. móviles atrasados | Recolector con **ventana de gracia**: nunca se borran las 2 grabaciones más recientes (N y N-1); una sustituida pasa 30 días en cuarentena (la API ya no la anuncia, pero sus archivos siguen) y luego se borra dejando una **lápida** (`purged_at`), con la que la API responde **410 Gone** + enlace al manifiesto actual en vez de un 404 mudo. Huérfanos (grabaciones cortadas) a las 24 h. Un solo worker limpia a la vez (cerrojo consultivo de PostgreSQL). Los errores de audio van con `no-store` para que la CDN no los guarde. | `audioguides/audio_gc.py`, `migrations/0005_audio_gc.sql` |
 | 5. Bucles en la negociación | Esqueleto con máximo de rondas (techo absoluto 10), tiempo por ronda, contexto de una sola postura por agente y árbitro determinista (Borda + desempates fijos). | `negotiation.py` |
 
 ## Estructura
@@ -58,7 +62,8 @@ con TLS 1.3**, así que solo el proxy puede enviarlas. Errores en RFC 9457
 | `context.py` | Presupuesto de tokens, recorte y resumen |
 | `negotiation.py` | Motor de negociación multi-agente acotado (esqueleto) |
 | `store.py` | PostgreSQL: migraciones, historial y recomendaciones |
-| `audioguides/` | Audioguías por zona: eventos, hechos, redactor anclado, caché Redis + *single flight*, servicio y consumidor |
+| `audioguides/` | Audioguías por zona: eventos, hechos, redactor anclado, caché Redis + *single flight*, servicio y consumidor; y la voz: cola outbox, worker de audio, Piper + Opus, almacén y catálogo |
+| `tts/` | Piper fijado con huellas SHA-256 (se instala aparte, en la imagen del worker) |
 | `consumer.py` | Bucle de Kafka: commits manuales, DLQ y reintentos |
 | `api.py` | FastAPI: identidad, RBAC y errores RFC 9457 |
 | `__main__.py` | Arranque, mTLS y apagado ordenado |
@@ -100,6 +105,16 @@ con TLS 1.3**, así que solo el proxy puede enviarlas. Errores en RFC 9457
 | `AUDIOGUIDE_DEFAULT_LANGUAGE` | `en` | Si la app no indica idioma (admitidos: es, en, fr, de, it, pt) |
 | `AUDIOGUIDE_LLM_TTL_SECONDS` / `AUDIOGUIDE_RULES_TTL_SECONDS` | `86400` / `3600` | Vida en caché del guion del LLM (24 h) / del plan B |
 | `AUDIOGUIDE_VERSION_CACHE_SECONDS` | `60` | Cuánto recuerda cada réplica la versión del contenido de una zona: lo máximo que tarda en notarse un hecho corregido |
+| `AUDIO_DIR` | — | Carpeta del audio grabado. Sin ella, la API no ofrece audio (solo texto) |
+| `AUDIO_PUBLIC_BASE_URL` | `/v1/audio` | Prefijo de las URLs de audio (en producción, la CDN) |
+| `AUDIO_MANIFEST_CACHE_SECONDS` | `60` | Cuánto recuerda la API el manifiesto de audio de una zona |
+| `TTS_VOICES_DIR` | `/voices` | Solo el worker: `<dir>/<idioma>/<voz>.onnx` (una voz por idioma; `make voices`) |
+| `TTS_PIPER_BIN` / `TTS_OPUSENC_BIN` | `piper` / `opusenc` | Programas de voz y de compresión |
+| `TTS_BITRATE_KBPS` / `TTS_TIMEOUT_SECONDS` | `24` / `120` | Calidad Opus (≈180 KB/min) y tiempo máximo por párrafo |
+| `AUDIO_JOB_LEASE_SECONDS` / `AUDIO_POLL_SECONDS` / `AUDIO_MAX_ATTEMPTS` | `900` / `30` / `5` | Préstamo de un trabajo, revisión de la cola sin aviso y fallos antes de abandonar |
+| `AUDIO_GC_INTERVAL_SECONDS` | `21600` | Cada cuánto pasa el recolector del audio viejo (6 h) |
+| `AUDIO_GC_KEEP` / `AUDIO_GC_GRACE_DAYS` | `2` / `30` | Grabaciones recientes que nunca se borran (N y N-1) y días de cuarentena de una sustituida |
+| `AUDIO_GC_ORPHAN_HOURS` | `24` | Edad mínima de un archivo sin manifiesto (grabación cortada) para borrarlo |
 | `AUDIOGUIDE_MAX_WORDS` / `AUDIOGUIDE_MAX_OUTPUT_TOKENS` | `260` / `900` | ≈ menos de dos minutos de audio |
 | `LOG_LEVEL` | `info` | Logs JSON |
 
@@ -116,3 +131,8 @@ uv run python -m ai_orchestrator --pregenerate-audioguides es,en   # rellena la 
 
 Desde la raíz: `make test-python`, `make test-integration`, `make up-apps`,
 `make ollama` (descarga el modelo) y `make recommendations`.
+
+Audio: `make voices` (descarga las voces, comprobando su SHA-256),
+`make audio-worker` (arranca el worker de audio en Docker), `make audio`
+(qué hay grabado y qué queda en la cola) y `make audio-gc` (pasa ya el
+recolector del audio viejo).

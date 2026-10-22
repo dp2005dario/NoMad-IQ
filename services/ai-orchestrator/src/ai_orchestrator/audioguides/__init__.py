@@ -10,9 +10,19 @@ El recorrido completo, de principio a fin:
                                    │ 2. si no: UNA sola generación por zona+idioma
                                    │    (hechos verificados + LLM, o reglas)
                                    ▼
-                     Redis: ai:audioguide:v1:<zone_id>:<idioma>
+                     Redis: ai:audioguide:v2:<zone_id>:<idioma>:<versión>
                                    ▲
               capa de notificaciones (futura) ──► GET /v1/audioguides/<zone_id>?lang=es
+
+Y la voz, en un worker aparte (``--audio-worker``):
+
+    corregir un hecho ──trigger──► ai.zone_content (versión + 1)
+                       ──trigger──► ai.audio_jobs (outbox) + pg_notify
+                                         │
+                     audio_worker: guion de texto → Piper → Opus (24 kbps)
+                                         │
+              archivos inmutables  <zona>/<idioma>/v<versión>/<huella>/parte-N.opus
+              + manifiesto en ai.zone_audio ──► GET /v1/audioguides/<zone_id>/audio
 
 Las tres ideas clave (los tres riesgos del análisis de diseño):
 
@@ -32,4 +42,11 @@ Ficheros:
     cache.py     caché en Redis + cerrojo distribuido + single flight local
     service.py   junta todo: "asegúrate de que existe el guion de esta zona"
     consumer.py  el bucle de Kafka (lotes, DLQ, reintentos)
+    versions.py  versión del contenido de cada zona, recordada en memoria
+    speech.py    texto → voz: Piper + opusenc, como programas aparte
+    audio_store.py   rutas inmutables y almacén de archivos (volumen)
+    audio_jobs.py    cola de trabajos (outbox) y manifiestos en PostgreSQL
+    audio_worker.py  el worker que graba: cola → guion → voz → archivos
+    audio_catalog.py lo que lee la API: manifiesto actual o el de la versión anterior
+    audio_gc.py      recolector del audio viejo: N y N-1 + 30 días de gracia, lápidas
 """

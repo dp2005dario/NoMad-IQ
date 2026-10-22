@@ -20,6 +20,11 @@ Opción --healthcheck: comprueba /healthz y sale con 0 o 1 (lo usa Docker).
 Opción --pregenerate-audioguides es,en: prepara por adelantado los guiones de
 todas las zonas narrables en esos idiomas y termina (útil antes de un evento
 o cada noche, para que el primer turista ya lo encuentre hecho).
+Opción --audio-worker: en vez de todo lo anterior, arranca SOLO el worker que
+graba las audioguías con Piper (va en su propio contenedor: la síntesis de voz
+gasta mucha CPU y no debe frenar a la API) y la API de salud. El worker
+también pasa cada AUDIO_GC_INTERVAL_SECONDS el recolector del audio viejo.
+Opción --gc-audio: pasa el recolector del audio viejo una vez y termina.
 """
 
 from __future__ import annotations
@@ -45,10 +50,16 @@ from pydantic import ValidationError
 from redis.asyncio import Redis
 
 from ai_orchestrator.api import create_api, create_management_api
+from ai_orchestrator.audioguides.audio_catalog import AudioCatalog
+from ai_orchestrator.audioguides.audio_gc import AudioGarbageCollector, GcSettings
+from ai_orchestrator.audioguides.audio_jobs import NOTIFY_CHANNEL, PostgresAudioJobs, PostgresAudioManifests
+from ai_orchestrator.audioguides.audio_store import FilesystemAudioStore
+from ai_orchestrator.audioguides.audio_worker import AudioWorker, WorkerSettings
 from ai_orchestrator.audioguides.cache import CacheError, RedisScriptCache
 from ai_orchestrator.audioguides.consumer import ZoneEntryConsumer
 from ai_orchestrator.audioguides.facts import PostgresZoneFacts
 from ai_orchestrator.audioguides.service import AudioguideService, ServiceSettings
+from ai_orchestrator.audioguides.speech import PiperOpusSynthesizer, SpeechError, discover_voices
 from ai_orchestrator.audioguides.versions import ZoneVersionCache
 from ai_orchestrator.audioguides.writer import AudioguideWriter, WriterSettings
 from ai_orchestrator.config import Settings
@@ -148,7 +159,7 @@ def _ollama(settings: Settings, stack: AsyncExitStack) -> OllamaClient:
 
 def _audioguides(
     settings: Settings, pool: Pool, llm: LLMClient | None, stack: AsyncExitStack
-) -> tuple[AudioguideService, RedisScriptCache]:
+) -> tuple[AudioguideService, RedisScriptCache, ZoneVersionCache]:
     """Monta la caché de Redis y el servicio de audioguías."""
     assert settings.redis_host and settings.redis_password  # noqa: S101 (config.py lo garantiza)
     tls: dict[str, object] = {}
@@ -170,9 +181,10 @@ def _audioguides(
     stack.push_async_callback(redis.aclose)
     cache = RedisScriptCache(redis)
     facts = PostgresZoneFacts(pool)
+    versions = ZoneVersionCache(facts, ttl_seconds=settings.audioguide_version_cache_seconds)
     service = AudioguideService(
         facts=facts,
-        versions=ZoneVersionCache(facts, ttl_seconds=settings.audioguide_version_cache_seconds),
+        versions=versions,
         writer=AudioguideWriter(
             llm=llm,
             settings=WriterSettings(
@@ -190,7 +202,7 @@ def _audioguides(
             lock_ttl_seconds=settings.audioguide_lock_ttl_seconds,
         ),
     )
-    return service, cache
+    return service, cache, versions
 
 
 async def pregenerate(settings: Settings, languages: list[str]) -> int:
@@ -200,7 +212,7 @@ async def pregenerate(settings: Settings, languages: list[str]) -> int:
         stack.push_async_callback(pool.close)
         await migrate(pool)
         llm = _ollama(settings, stack) if settings.llm_enabled else None
-        service, _ = _audioguides(settings, pool, llm, stack)
+        service, _, _ = _audioguides(settings, pool, llm, stack)
         results = await service.pregenerate(languages)
         log.info("audioguías pregeneradas", extra={"outcomes": {k.value: v for k, v in results.items()}})
         return 0
@@ -285,10 +297,21 @@ async def run(settings: Settings) -> int:
 
         # --- Audioguías por zona (segundo consumidor, su propio grupo) -------------------
         audioguides: AudioguideService | None = None
+        audio: AudioCatalog | None = None
         zone_consumer: ZoneEntryConsumer | None = None
         script_cache: RedisScriptCache | None = None
         if settings.audioguides_enabled:
-            audioguides, script_cache = _audioguides(settings, pool, llm, stack)
+            audioguides, script_cache, versions = _audioguides(settings, pool, llm, stack)
+            if settings.audio_dir is not None:
+                # Solo LEE el audio que graba el worker (en Docker, volumen de solo lectura).
+                audio = AudioCatalog(
+                    versions=versions,
+                    manifests=PostgresAudioManifests(pool),
+                    store=FilesystemAudioStore(settings.audio_dir),
+                    default_language=settings.audioguide_default_language,
+                    public_base_url=settings.audio_public_base_url,
+                    cache_seconds=settings.audio_manifest_cache_seconds,
+                )
             entries = AIOKafkaConsumer(
                 settings.kafka_topic_zone_entries,
                 **kafka_common,
@@ -322,7 +345,9 @@ async def run(settings: Settings) -> int:
             return checks
 
         api = _server(
-            create_api(recommendations, audioguides=audioguides, expose_docs=settings.expose_api_docs),
+            create_api(
+                recommendations, audioguides=audioguides, audio=audio, expose_docs=settings.expose_api_docs
+            ),
             settings.http_port,
             tls=None if settings.http_insecure_dev else settings,
         )
@@ -367,6 +392,140 @@ async def run(settings: Settings) -> int:
         return exit_code
 
 
+def _audio_gc(
+    settings: Settings, manifests: PostgresAudioManifests, store: FilesystemAudioStore
+) -> AudioGarbageCollector:
+    return AudioGarbageCollector(
+        manifests=manifests,
+        store=store,
+        settings=GcSettings(
+            keep=settings.audio_gc_keep,
+            grace_days=settings.audio_gc_grace_days,
+            orphan_grace_hours=settings.audio_gc_orphan_hours,
+        ),
+    )
+
+
+async def gc_audio(settings: Settings) -> int:
+    """Pasa una vez el recolector del audio viejo y termina."""
+    if settings.audio_dir is None:
+        log.error("el recolector necesita AUDIO_DIR (dónde está el audio)")
+        return 2
+    async with AsyncExitStack() as stack:
+        pool = await create_pool(settings)
+        stack.push_async_callback(pool.close)
+        await migrate(pool)
+        report = await _audio_gc(
+            settings, PostgresAudioManifests(pool), FilesystemAudioStore(settings.audio_dir)
+        ).run_once()
+        if report.skipped:
+            log.info("otro proceso está limpiando ahora mismo: no hago nada")
+        return 0
+
+
+async def run_audio_worker(settings: Settings) -> int:
+    """Arranca solo el worker de audio (y la API de salud) hasta recibir la orden de apagado."""
+    if settings.audio_dir is None:
+        log.error("el worker de audio necesita AUDIO_DIR (dónde guardar los .opus)")
+        return 2
+    try:
+        voices = discover_voices(settings.tts_voices_dir)
+        synthesizer = PiperOpusSynthesizer(
+            voices,
+            piper_bin=settings.tts_piper_bin,
+            opusenc_bin=settings.tts_opusenc_bin,
+            bitrate_kbps=settings.tts_bitrate_kbps,
+            timeout_seconds=settings.tts_timeout_seconds,
+        )
+    except SpeechError as exc:
+        log.error("el worker de audio no puede arrancar", extra={"error": str(exc)})
+        return 2
+    if not voices:
+        log.error(
+            "no hay ninguna voz instalada: ejecuta 'make voices'",
+            extra={"voices_dir": str(settings.tts_voices_dir)},
+        )
+        return 2
+
+    async with AsyncExitStack() as stack:
+        pool = await create_pool(settings)
+        stack.push_async_callback(pool.close)
+        await migrate(pool)
+        llm = _ollama(settings, stack) if settings.llm_enabled else None
+        audioguides, script_cache, _ = _audioguides(settings, pool, llm, stack)
+        jobs = PostgresAudioJobs(pool)
+        manifests = PostgresAudioManifests(pool)
+        store = FilesystemAudioStore(settings.audio_dir)
+        worker = AudioWorker(
+            jobs=jobs,
+            manifests=manifests,
+            store=store,
+            synthesizer=synthesizer,
+            audioguides=audioguides,
+            settings=WorkerSettings(
+                languages=tuple(voices),
+                lease_seconds=settings.audio_job_lease_seconds,
+                poll_seconds=settings.audio_poll_seconds,
+                max_attempts=settings.audio_max_attempts,
+                upgrade_delay_seconds=float(settings.audioguide_rules_ttl_seconds),
+                llm_enabled=settings.llm_enabled,
+                gc_interval_seconds=settings.audio_gc_interval_seconds,
+            ),
+            gc=_audio_gc(settings, manifests, store),
+        )
+
+        # "Timbre": una conexión que escucha los pg_notify del trigger. Si esa
+        # conexión se cae, no se pierde nada: el worker revisa la cola cada
+        # AUDIO_POLL_SECONDS de todos modos.
+        wake = asyncio.Event()
+        listener = await pool.acquire()
+        stack.push_async_callback(pool.release, listener)
+        await listener.add_listener(NOTIFY_CHANNEL, lambda *_: wake.set())
+        stack.push_async_callback(listener.remove_listener, NOTIFY_CHANNEL, lambda *_: None)
+
+        async def readiness() -> dict[str, bool]:
+            return {
+                "database": await PostgresRecommendations(pool).ping(),
+                "redis": await script_cache.ping(),
+                "audio_worker": worker.running,
+            }
+
+        management = _server(create_management_api(readiness), settings.management_port, tls=None)
+        stop = asyncio.Event()
+        loop = asyncio.get_running_loop()
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            loop.add_signal_handler(sig, stop.set)
+        tasks = {
+            asyncio.create_task(worker.run(wake), name="audio-worker"),
+            asyncio.create_task(management.serve(), name="management"),
+        }
+        stopper = asyncio.create_task(stop.wait(), name="stop")
+        log.info(
+            "worker de audio en marcha",
+            extra={"voices": {lang: v.name for lang, v in voices.items()}, "llm": bool(llm)},
+        )
+        done, _ = await asyncio.wait({*tasks, stopper}, return_when=asyncio.FIRST_COMPLETED)
+        exit_code = 0
+        for task in done:
+            if task is not stopper:
+                failure = task.exception() if not task.cancelled() else None
+                log.error(
+                    "una tarea terminó inesperadamente",
+                    extra={"task": task.get_name(), "error": repr(failure)},
+                )
+                exit_code = 1
+        log.info("apagando el worker de audio")
+        management.should_exit = True
+        for task in tasks:
+            if task.get_name() == "audio-worker":
+                # Si estaba grabando, se corta; el trabajo vuelve a la cola
+                # cuando caduque su préstamo y otro worker lo terminará.
+                task.cancel()
+        stopper.cancel()
+        await asyncio.gather(*tasks, stopper, return_exceptions=True)
+        return exit_code
+
+
 def healthcheck() -> int:
     port = os.environ.get("MANAGEMENT_PORT", "8086")
     try:
@@ -386,6 +545,16 @@ def main() -> None:
         metavar="IDIOMAS",
         help="prepara las audioguías de todas las zonas en esos idiomas (ej.: es,en) y termina",
     )
+    parser.add_argument(
+        "--audio-worker",
+        action="store_true",
+        help="arranca solo el worker que graba las audioguías con Piper",
+    )
+    parser.add_argument(
+        "--gc-audio",
+        action="store_true",
+        help="borra una vez el audio viejo (respetando la ventana de gracia) y termina",
+    )
     args = parser.parse_args()
     if args.healthcheck:
         sys.exit(healthcheck())
@@ -404,6 +573,13 @@ def main() -> None:
             sys.exit(2)
         languages = [lang.strip() for lang in args.pregenerate_audioguides.split(",") if lang.strip()]
         sys.exit(asyncio.run(pregenerate(settings, languages)))
+    if args.gc_audio:
+        sys.exit(asyncio.run(gc_audio(settings)))
+    if args.audio_worker:
+        if not settings.audioguides_enabled:
+            print("AUDIOGUIDES_ENABLED=false: el worker de audio no tiene nada que hacer", file=sys.stderr)
+            sys.exit(2)
+        sys.exit(asyncio.run(run_audio_worker(settings)))
     sys.exit(asyncio.run(run(settings)))
 
 

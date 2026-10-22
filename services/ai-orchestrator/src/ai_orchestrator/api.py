@@ -21,6 +21,11 @@ Además:
     - Las audioguías (/v1/audioguides) son GENÉRICAS por zona e idioma: no
       dependen de quién pregunta. Aun así exigen identidad (solo usuarios de
       NomadIQ), y quien las pide nunca deja rastro de su ubicación aquí.
+    - Los archivos de audio (/v1/audio/...) son contenido público e
+      inmutable, como las imágenes de una web: no llevan datos de nadie, así
+      que se sirven sin identidad para que una CDN pueda guardarlos y
+      repartirlos. Lo que exige identidad es el manifiesto que dice qué
+      archivos tocan en cada zona.
 """
 
 from __future__ import annotations
@@ -35,10 +40,11 @@ from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Path, Query, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ConfigDict
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel, ConfigDict, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from ai_orchestrator.audioguides.audio_catalog import AudioCatalog, AudioLookup
 from ai_orchestrator.audioguides.cache import CacheError
 from ai_orchestrator.audioguides.domain import AudioguideScript
 from ai_orchestrator.audioguides.service import AudioguideService
@@ -121,10 +127,93 @@ class RecommendationList(BaseModel):
     items: list[RecommendationView]
 
 
+class AudioPartView(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    index: int
+    url: str
+    duration_seconds: float
+    text: str
+
+
+class AudioguideAudioView(BaseModel):
+    """El manifiesto de audio: qué archivos reproducir, en orden."""
+
+    model_config = ConfigDict(frozen=True)
+
+    zone_id: str
+    language: str
+    content_language: str
+    # Versión actual del contenido de la zona...
+    content_version: int
+    # ...y la versión de la que es este audio. Si es menor, "stale" = true: la
+    # versión nueva aún se está grabando y, mientras, suena la anterior.
+    audio_content_version: int
+    stale: bool
+    source: str
+    voice: str
+    total_seconds: float
+    parts: list[AudioPartView] = Field(min_length=1)
+
+    @classmethod
+    def of(cls, zone_id: str, found: AudioLookup, catalog: AudioCatalog) -> AudioguideAudioView:
+        m = found.manifest
+        return cls(
+            zone_id=zone_id,
+            language=m.language,
+            content_language=m.content_language,
+            content_version=found.current_version,
+            audio_content_version=m.content_version,
+            stale=found.stale,
+            source=m.source,
+            voice=m.voice,
+            total_seconds=round(sum(p.duration_seconds for p in m.parts), 1),
+            parts=[
+                AudioPartView(
+                    index=p.index, url=catalog.url(p.key), duration_seconds=p.duration_seconds, text=p.text
+                )
+                for p in m.parts
+            ],
+        )
+
+
+async def _missing_audio(audio: AudioCatalog, key: str) -> JSONResponse:
+    """Un archivo de audio que no está: 410 si lo borró el recolector, 404 si nunca existió.
+
+    Con 410 Gone ("existió y ya no volverá") la app sabe que no debe
+    reintentar, sino pedir el manifiesto actual, que va en el cuerpo y en la
+    cabecera Link. Ninguna de las dos respuestas se guarda en la CDN
+    (no-store): si mañana existiera, no queremos un error cacheado un año.
+    """
+    gone = await audio.gone(key)
+    if gone is None:
+        response = _problem(404, "No encontrado", "archivo de audio no encontrado")
+    else:
+        body: dict[str, Any] = {
+            "type": "about:blank",
+            "title": "Ya no existe",
+            "status": 410,
+            "detail": "esta versión del audio se retiró: pide el manifiesto actual",
+        }
+        if gone.current_manifest:
+            body["current_manifest"] = gone.current_manifest
+        response = JSONResponse(body, status_code=410, media_type="application/problem+json")
+        if gone.current_manifest:
+            response.headers["Link"] = f'<{gone.current_manifest}>; rel="latest-version"'
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+# Un archivo de audio nunca cambia (su ruta lleva versión y huella): se puede
+# guardar un año entero en la CDN y en el móvil sin volver a preguntar.
+IMMUTABLE_CACHE = "public, max-age=31536000, immutable"
+
+
 def create_api(
     store: RecommendationStore,
     *,
     audioguides: AudioguideService | None = None,
+    audio: AudioCatalog | None = None,
     expose_docs: bool = False,
 ) -> FastAPI:
     """Crea la API pública (puerto con mTLS)."""
@@ -199,6 +288,34 @@ def create_api(
             if script is None:
                 raise HTTPException(status_code=404, detail="la audioguía de esta zona aún no está lista")
             return script
+
+    if audio is not None:
+
+        @app.get("/v1/audioguides/{zone_id}/audio", response_model=AudioguideAudioView)
+        async def get_audioguide_audio(
+            _: Annotated[Principal, Depends(current_principal)],
+            zone_id: Annotated[uuid.UUID, Path()],
+            lang: Annotated[str, Query(pattern=r"^([A-Za-z]{2,3})?$")] = "",
+        ) -> AudioguideAudioView:
+            found = await audio.lookup(str(zone_id), lang)
+            if found is None:
+                # La app puede leer el guion de texto con la voz del teléfono.
+                raise HTTPException(status_code=404, detail="el audio de esta zona aún no está grabado")
+            return AudioguideAudioView.of(str(zone_id), found, audio)
+
+        @app.get("/v1/audio/{key:path}", include_in_schema=False, response_model=None)
+        async def get_audio_file(key: str) -> FileResponse | JSONResponse:
+            # local_path valida la clave con un patrón estricto: nada de "../".
+            path = audio.file(key)
+            if path is None:
+                return await _missing_audio(audio, key)
+            # FileResponse admite peticiones por rangos (Range): el móvil puede
+            # empezar a reproducir sin descargar el archivo entero.
+            return FileResponse(
+                path,
+                media_type="audio/ogg",
+                headers={"Cache-Control": IMMUTABLE_CACHE, "X-Content-Type-Options": "nosniff"},
+            )
 
     return app
 
