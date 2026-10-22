@@ -142,7 +142,10 @@ async def test_end_to_end_from_kafka_to_postgres(pool: asyncpg.Pool[asyncpg.Reco
     alert = make_alert(alert_id=str(uuid.uuid4()), user_id=f"e2e-{uuid.uuid4()}")
     garbage_key = f"basura-{uuid.uuid4()}".encode()
 
-    producer = AIOKafkaProducer(bootstrap_servers=BROKERS, acks="all", enable_idempotence=True)
+    # zstd, igual que comprimen sus mensajes los servicios Go (franz-go).
+    producer = AIOKafkaProducer(
+        bootstrap_servers=BROKERS, acks="all", enable_idempotence=True, compression_type="zstd"
+    )
     await producer.start()
     try:
         await producer.send_and_wait(

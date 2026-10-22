@@ -17,7 +17,9 @@ dependencies = [
     # Cliente HTTP asíncrono: habla con Ollama y Qdrant SIN bloquear.
     "httpx>=0.27",
     # Cliente de Kafka asíncrono.
-    "aiokafka>=0.12",
+    # Extra "zstd": el price-consumer (Go) comprime los mensajes con zstd;
+    # sin esta librería no podríamos descomprimirlos.
+    "aiokafka[zstd]>=0.12",
     # Driver asíncrono de PostgreSQL.
     "asyncpg>=0.30",
     # Lee los mensajes protobuf que viajan por Kafka.
