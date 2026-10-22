@@ -49,6 +49,7 @@ from ai_orchestrator.audioguides.cache import CacheError, RedisScriptCache
 from ai_orchestrator.audioguides.consumer import ZoneEntryConsumer
 from ai_orchestrator.audioguides.facts import PostgresZoneFacts
 from ai_orchestrator.audioguides.service import AudioguideService, ServiceSettings
+from ai_orchestrator.audioguides.versions import ZoneVersionCache
 from ai_orchestrator.audioguides.writer import AudioguideWriter, WriterSettings
 from ai_orchestrator.config import Settings
 from ai_orchestrator.consumer import AlertProcessor, FareAlertConsumer
@@ -168,8 +169,10 @@ def _audioguides(
     )
     stack.push_async_callback(redis.aclose)
     cache = RedisScriptCache(redis)
+    facts = PostgresZoneFacts(pool)
     service = AudioguideService(
-        facts=PostgresZoneFacts(pool),
+        facts=facts,
+        versions=ZoneVersionCache(facts, ttl_seconds=settings.audioguide_version_cache_seconds),
         writer=AudioguideWriter(
             llm=llm,
             settings=WriterSettings(

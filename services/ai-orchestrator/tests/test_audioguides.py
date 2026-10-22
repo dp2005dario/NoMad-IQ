@@ -30,6 +30,7 @@ from ai_orchestrator.audioguides.domain import (
 )
 from ai_orchestrator.audioguides.events import decode_zone_entry
 from ai_orchestrator.audioguides.service import AudioguideService, Outcome, ServiceSettings
+from ai_orchestrator.audioguides.versions import ZoneVersionCache
 from ai_orchestrator.audioguides.writer import AudioguideWriter, GuideDraft, WriterSettings, guide_problems
 from ai_orchestrator.consumer import RetryPolicy
 from ai_orchestrator.events import InvalidEventError
@@ -53,6 +54,7 @@ def make_zone(facts: tuple[ZoneFact, ...] = FACTS, language: str = "es", **kw: A
         "kind": ZoneKind.TOURIST_AREA,
         "facts_language": language,
         "facts": facts,
+        "content_version": 1,
     }
     data.update(kw)
     return ZoneFacts(**data)
@@ -92,9 +94,9 @@ class MemoryCache:
     """ScriptCache en memoria; apunta TTLs y puede fallar a propósito."""
 
     def __init__(self) -> None:
-        self.items: dict[tuple[str, str], AudioguideScript] = {}
-        self.ttls: dict[tuple[str, str], int] = {}
-        self.locks: dict[tuple[str, str], str] = {}
+        self.items: dict[tuple[str, str, int], AudioguideScript] = {}
+        self.ttls: dict[tuple[str, str, int], int] = {}
+        self.locks: dict[tuple[str, str, int], str] = {}
         self.failures = 0
 
     def _maybe_fail(self) -> None:
@@ -102,23 +104,24 @@ class MemoryCache:
             self.failures -= 1
             raise CacheError("redis caído")
 
-    async def get(self, zone_id: str, language: str) -> AudioguideScript | None:
+    async def get(self, zone_id: str, language: str, version: int) -> AudioguideScript | None:
         self._maybe_fail()
-        return self.items.get((zone_id, language))
+        return self.items.get((zone_id, language, version))
 
     async def put(self, script: AudioguideScript, *, ttl_seconds: int) -> None:
-        self.items[(script.zone_id, script.language)] = script
-        self.ttls[(script.zone_id, script.language)] = ttl_seconds
+        key = (script.zone_id, script.language, script.content_version)
+        self.items[key] = script
+        self.ttls[key] = ttl_seconds
 
-    async def try_lock(self, zone_id: str, language: str, *, ttl_seconds: int) -> str | None:
-        if (zone_id, language) in self.locks:
+    async def try_lock(self, zone_id: str, language: str, version: int, *, ttl_seconds: int) -> str | None:
+        if (zone_id, language, version) in self.locks:
             return None
-        self.locks[(zone_id, language)] = "token"
+        self.locks[(zone_id, language, version)] = "token"
         return "token"
 
-    async def unlock(self, zone_id: str, language: str, token: str) -> None:
-        if self.locks.get((zone_id, language)) == token:
-            del self.locks[(zone_id, language)]
+    async def unlock(self, zone_id: str, language: str, version: int, token: str) -> None:
+        if self.locks.get((zone_id, language, version)) == token:
+            del self.locks[(zone_id, language, version)]
 
     async def ping(self) -> bool:
         return True
@@ -128,6 +131,12 @@ class FakeFacts:
     def __init__(self, zone: ZoneFacts | None) -> None:
         self.zone = zone
         self.calls = 0
+        self.version_calls = 0
+
+    async def content_version(self, zone_id: str) -> int | None:
+        self.version_calls += 1
+        await asyncio.sleep(0)  # como una consulta real: cede el turno
+        return self.zone.content_version if self.zone and self.zone.zone_id == zone_id else None
 
     async def load(self, zone_id: str, *, language: str, fallback_language: str) -> ZoneFacts | None:
         self.calls += 1
@@ -157,7 +166,9 @@ def build_service(
     cache = cache or MemoryCache()
     facts = FakeFacts(zone if zone is not None else make_zone())
     writer = AudioguideWriter(llm=llm, settings=WRITER, clock=lambda: FIXED_NOW)
-    return AudioguideService(facts=facts, writer=writer, cache=cache, settings=SERVICE), cache, facts
+    versions = ZoneVersionCache(facts, ttl_seconds=60)
+    service = AudioguideService(facts=facts, writer=writer, cache=cache, versions=versions, settings=SERVICE)
+    return service, cache, facts
 
 
 # --- Eventos e idiomas -------------------------------------------------------------
@@ -333,19 +344,19 @@ async def test_a_bus_full_of_tourists_triggers_one_generation() -> None:
     assert outcomes[Outcome.SHARED] == 49
     # Los que lleguen después, directos de la caché.
     assert await service.ensure(entry) is Outcome.CACHED
-    assert cache.ttls[(ZONE_ID, "es")] == SERVICE.llm_ttl_seconds
+    assert cache.ttls[(ZONE_ID, "es", 1)] == SERVICE.llm_ttl_seconds
 
 
 async def test_rules_scripts_expire_sooner() -> None:
     service, cache, _ = build_service(FakeLLM([LLMUnavailableError("caído")]))
     assert await service.ensure_zone(ZONE_ID, "es") is Outcome.GENERATED
-    assert cache.ttls[(ZONE_ID, "es")] == SERVICE.rules_ttl_seconds
+    assert cache.ttls[(ZONE_ID, "es", 1)] == SERVICE.rules_ttl_seconds
 
 
 async def test_another_replica_holding_the_lock_is_not_duplicated() -> None:
     llm = FakeLLM([draft_json()])
     service, cache, _ = build_service(llm)
-    cache.locks[(ZONE_ID, "es")] = "otra-copia"
+    cache.locks[(ZONE_ID, "es", 1)] = "otra-copia"
     assert await service.ensure_zone(ZONE_ID, "es") is Outcome.BUSY_ELSEWHERE
     assert llm.calls == []
 
@@ -364,7 +375,7 @@ async def test_pregenerate_fills_every_language_once() -> None:
     service, cache, _ = build_service(FakeLLM([draft_json()] * 5))
     results = await service.pregenerate(["es", "en", "ES", "xx"])  # xx -> en (por defecto)
     assert results == Counter({Outcome.GENERATED: 2})
-    assert set(cache.items) == {(ZONE_ID, "es"), (ZONE_ID, "en")}
+    assert set(cache.items) == {(ZONE_ID, "es", 1), (ZONE_ID, "en", 1)}
 
 
 # --- Consumidor de Kafka ------------------------------------------------------------------
@@ -438,7 +449,7 @@ async def test_batch_groups_the_crowd_and_dead_letters_garbage() -> None:
     topic, value, headers = producer.sent[0]
     assert (topic, value) == ("geo.zone-entries-dlq.v1", b"basura")
     assert ("dlq_source_offset", b"32") in headers
-    assert (ZONE_ID, "es") in cache.items
+    assert (ZONE_ID, "es", 1) in cache.items
 
 
 async def test_redis_hiccup_is_retried_before_committing() -> None:
@@ -453,7 +464,7 @@ async def test_redis_hiccup_is_retried_before_committing() -> None:
     with pytest.raises(asyncio.CancelledError):
         await task
     assert fake.commits == 1
-    assert (ZONE_ID, "es") in cache.items
+    assert (ZONE_ID, "es", 1) in cache.items
 
 
 # --- API --------------------------------------------------------------------------------------
@@ -477,3 +488,53 @@ async def test_api_serves_cached_scripts_only() -> None:
         assert len(body["segments"]) == 3
         # Idioma con forma inválida: 400, nunca llega a la caché.
         assert (await c.get(f"/v1/audioguides/{ZONE_ID}?lang=es;drop", headers=user)).status_code == 400
+
+
+# --- Versión del contenido (correcciones de hechos sin esperar al TTL) -------------------
+
+
+async def test_version_cache_hits_the_database_once_per_zone_and_ttl() -> None:
+    facts = FakeFacts(make_zone())
+    now = [0.0]
+    versions = ZoneVersionCache(facts, ttl_seconds=60, clock=lambda: now[0])
+    # Mil turistas a la vez: UNA consulta.
+    assert set(await asyncio.gather(*(versions.get(ZONE_ID) for _ in range(1000)))) == {1}
+    assert facts.version_calls == 1
+    now[0] = 59.0
+    await versions.get(ZONE_ID)
+    assert facts.version_calls == 1, "aún dentro del TTL: de memoria"
+    now[0] = 61.0
+    await versions.get(ZONE_ID)
+    assert facts.version_calls == 2
+    # Una zona inexistente también se recuerda: no se puede martillear PostgreSQL.
+    bogus = str(uuid.uuid4())
+    for _ in range(5):
+        assert await versions.get(bogus) is None
+    assert facts.version_calls == 3
+
+
+async def test_fixing_a_fact_produces_a_new_script_without_waiting_for_the_ttl() -> None:
+    llm = FakeLLM([draft_json()] * 5)
+    service, cache, facts = build_service(llm)
+    assert await service.ensure_zone(ZONE_ID, "es") is Outcome.GENERATED
+    # Un editor corrige un hecho: el trigger sube la versión a 2.
+    facts.zone = make_zone(content_version=2)
+    # Mientras la versión vieja siga en memoria, se sirve la vieja (máx. 60 s)...
+    assert await service.ensure_zone(ZONE_ID, "es") is Outcome.CACHED
+    # ...y en cuanto caduca, la clave nueva está vacía y se regenera.
+    service._versions.forget(ZONE_ID)
+    assert await service.ensure_zone(ZONE_ID, "es") is Outcome.GENERATED
+    assert {k[2] for k in cache.items} == {1, 2}
+    got = await service.get(ZONE_ID, "es")
+    assert got is not None and got.content_version == 2
+    assert len(llm.calls) == 2
+
+
+async def test_script_is_stored_with_the_version_it_was_written_from() -> None:
+    llm = FakeLLM([draft_json()] * 5)
+    service, cache, facts = build_service(llm)
+    await service._versions.get(ZONE_ID)  # en memoria: versión 1
+    facts.zone = make_zone(content_version=3)  # cambia justo antes de generar
+    assert await service.ensure_zone(ZONE_ID, "es") is Outcome.GENERATED
+    assert set(cache.items) == {(ZONE_ID, "es", 3)}, "se guarda con la versión REAL de los hechos"
+    assert cache.locks == {}

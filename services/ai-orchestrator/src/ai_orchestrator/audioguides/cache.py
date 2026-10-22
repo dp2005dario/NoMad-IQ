@@ -8,7 +8,7 @@ El problema (riesgo nº 2 del análisis: "thundering herd", la estampida):
 La solución, en tres capas (de la más barata a la más cara):
     1. **Caché en Redis.** El guion de una zona es el mismo para todos los que
        hablan ese idioma: se genera una vez y se guarda con la clave
-       ``ai:audioguide:v1:<zone_id>:<idioma>``. Los siguientes 49 lo encuentran
+       ``ai:audioguide:v2:<zone_id>:<idioma>:<versión>``. Los siguientes 49 lo encuentran
        hecho (lectura de ~1 ms).
     2. **Single flight local** (:class:`SingleFlight`). Si dentro de ESTE proceso
        dos tareas piden la misma clave a la vez, la segunda no lanza otra
@@ -38,10 +38,16 @@ from redis.exceptions import RedisError
 
 from ai_orchestrator.audioguides.domain import AudioguideScript
 
-# El "v1" de la clave permite cambiar el formato del guion en el futuro sin
-# leer por error guiones antiguos: basta con pasar a "v2".
-KEY_PREFIX = "ai:audioguide:v1"
-LOCK_PREFIX = "ai:audioguide-lock:v1"
+# La "v2" de la clave es la versión del FORMATO (la v1 no llevaba la versión
+# del contenido; sus claves caducan solas). El último trozo de la clave es la
+# versión del CONTENIDO de la zona (ai.zone_content): cuando alguien corrige
+# un hecho sube ese número, la clave nueva está vacía y se genera un guion
+# nuevo. El guion viejo nadie lo vuelve a pedir y caduca solo con su TTL.
+#
+# Ese "v2" permite cambiar el formato del guion en el futuro sin leer por
+# error guiones antiguos: basta con pasar a "v3".
+KEY_PREFIX = "ai:audioguide:v2"
+LOCK_PREFIX = "ai:audioguide-lock:v2"
 
 # Borra el cerrojo SOLO si sigue siendo nuestro (mismo token). Sin esta
 # comprobación, si nuestro cerrojo caducó y otro lo cogió, lo borraríamos sin
@@ -59,26 +65,26 @@ class CacheError(Exception):
     """Redis no disponible (temporal: el mensaje se reintentará)."""
 
 
-def content_key(zone_id: str, language: str) -> str:
-    return f"{KEY_PREFIX}:{zone_id}:{language}"
+def content_key(zone_id: str, language: str, version: int) -> str:
+    return f"{KEY_PREFIX}:{zone_id}:{language}:{version}"
 
 
-def lock_key(zone_id: str, language: str) -> str:
-    return f"{LOCK_PREFIX}:{zone_id}:{language}"
+def lock_key(zone_id: str, language: str, version: int) -> str:
+    return f"{LOCK_PREFIX}:{zone_id}:{language}:{version}"
 
 
 class ScriptCache(Protocol):
     """Lo que el servicio necesita de la caché (en los tests hay una en memoria)."""
 
-    async def get(self, zone_id: str, language: str) -> AudioguideScript | None: ...
+    async def get(self, zone_id: str, language: str, version: int) -> AudioguideScript | None: ...
 
     async def put(self, script: AudioguideScript, *, ttl_seconds: int) -> None: ...
 
-    async def try_lock(self, zone_id: str, language: str, *, ttl_seconds: int) -> str | None:
+    async def try_lock(self, zone_id: str, language: str, version: int, *, ttl_seconds: int) -> str | None:
         """Intenta coger el cerrojo. Devuelve el token si lo consigue, None si ya es de otro."""
         ...
 
-    async def unlock(self, zone_id: str, language: str, token: str) -> None: ...
+    async def unlock(self, zone_id: str, language: str, version: int, token: str) -> None: ...
 
     async def ping(self) -> bool: ...
 
@@ -87,9 +93,9 @@ class RedisScriptCache:
     def __init__(self, redis: Redis) -> None:
         self._redis = redis
 
-    async def get(self, zone_id: str, language: str) -> AudioguideScript | None:
+    async def get(self, zone_id: str, language: str, version: int) -> AudioguideScript | None:
         try:
-            raw = await self._redis.get(content_key(zone_id, language))
+            raw = await self._redis.get(content_key(zone_id, language, version))
         except (RedisError, OSError) as exc:
             raise CacheError(f"leer guion de Redis: {exc}") from exc
         if raw is None:
@@ -104,24 +110,28 @@ class RedisScriptCache:
     async def put(self, script: AudioguideScript, *, ttl_seconds: int) -> None:
         try:
             await self._redis.set(
-                content_key(script.zone_id, script.language), script.model_dump_json(), ex=ttl_seconds
+                content_key(script.zone_id, script.language, script.content_version),
+                script.model_dump_json(),
+                ex=ttl_seconds,
             )
         except (RedisError, OSError) as exc:
             raise CacheError(f"guardar guion en Redis: {exc}") from exc
 
-    async def try_lock(self, zone_id: str, language: str, *, ttl_seconds: int) -> str | None:
+    async def try_lock(self, zone_id: str, language: str, version: int, *, ttl_seconds: int) -> str | None:
         # Token aleatorio: identifica a ESTE dueño del cerrojo.
         token = secrets.token_hex(16)
         try:
             # NX = solo si no existe; EX = caduca solo pasados ttl_seconds.
-            acquired = await self._redis.set(lock_key(zone_id, language), token, nx=True, ex=ttl_seconds)
+            acquired = await self._redis.set(
+                lock_key(zone_id, language, version), token, nx=True, ex=ttl_seconds
+            )
         except (RedisError, OSError) as exc:
             raise CacheError(f"cerrojo en Redis: {exc}") from exc
         return token if acquired else None
 
-    async def unlock(self, zone_id: str, language: str, token: str) -> None:
+    async def unlock(self, zone_id: str, language: str, version: int, token: str) -> None:
         try:
-            await self._redis.eval(_UNLOCK_SCRIPT, 1, lock_key(zone_id, language), token)
+            await self._redis.eval(_UNLOCK_SCRIPT, 1, lock_key(zone_id, language, version), token)
         except (RedisError, OSError):
             # No es grave: el cerrojo caducará solo.
             return
