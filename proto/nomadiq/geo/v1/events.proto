@@ -20,6 +20,12 @@ message UserPositionReported {
   // Precisión horizontal del GPS en metros (radio de incertidumbre).
   // Las posiciones demasiado imprecisas se ignoran para no generar avisos falsos.
   double horizontal_accuracy_meters = 4;
+  // Idioma preferido del usuario en formato BCP 47 ("es", "en-GB"...). Lo
+  // envía la app para que el contenido contextual (audioguías) llegue en su
+  // idioma. Opcional: si viene vacío o mal formado se usa el idioma por defecto.
+  // El geo-engine solo conserva la parte principal ("en-GB" -> "en"): basta
+  // para elegir el idioma y revela menos sobre la persona.
+  string preferred_language = 5;
 }
 
 // GeofenceTransitionType indica si el usuario entró o salió de una zona.
@@ -48,4 +54,30 @@ message GeofenceTransitioned {
   LatLng position = 8;
   // event_id del UserPositionReported que lo provocó (trazabilidad).
   string position_event_id = 9;
+}
+
+// ZoneEntered se publica en "geo.zone-entries.v1" cuando un usuario entra
+// (con la entrada ya CONFIRMADA por la histéresis) en una zona. Es la versión
+// "anónima" de GeofenceTransitioned, pensada para servicios que solo
+// necesitan saber QUÉ zona y en QUÉ idioma, nunca QUIÉN ni DÓNDE exactamente
+// (por ejemplo, el ai-orchestrator, que prepara la audioguía de la zona).
+//
+// Minimización de datos (RGPD, Zero Trust): a propósito NO lleva user_id, ni
+// coordenadas, ni precisión del GPS, ni el id de la posición original.
+// - metadata.event_id es un UUID aleatorio (no derivado de la posición), para
+//   que no se pueda enlazar con los eventos que sí identifican al usuario.
+// - metadata.occurred_at se redondea hacia abajo al minuto.
+// - metadata.correlation_id va vacío por el mismo motivo.
+// El vínculo con la persona real lo hace solo la capa de notificaciones,
+// leyendo GeofenceTransitioned (que sí lleva user_id).
+//
+// Clave del mensaje Kafka: zone_id. Todas las entradas a una misma zona van a
+// la misma partición, así que las procesa un único consumidor: si entra un
+// autobús entero a la vez, ese consumidor genera el contenido una sola vez.
+message ZoneEntered {
+  nomadiq.common.v1.EventMetadata metadata = 1;
+  string zone_id = 2;
+  ZoneKind zone_kind = 3;
+  // Idioma principal ISO 639 en minúsculas ("es", "en"), o vacío si la app no lo indicó.
+  string language = 4;
 }

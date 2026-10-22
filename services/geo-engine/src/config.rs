@@ -118,12 +118,18 @@ pub struct StreamConfig {
     pub topic_positions: String,
     /// Topic de salida (entradas/salidas de zonas).
     pub topic_transitions: String,
+    /// Topic de entradas anónimas a zonas (solo zone_id + idioma).
+    pub topic_zone_entries: String,
     /// Topic de mensajes imposibles de procesar.
     pub topic_positions_dlq: String,
     /// CA para TLS hacia Kafka (opcional; activa TLS si se indica).
     pub tls_ca_file: Option<PathBuf>,
     /// Posiciones con peor precisión que esto se ignoran (evita avisos falsos).
     pub max_accuracy_m: f64,
+    /// Histéresis de salida: hay que alejarse más que esto del borde para salir.
+    pub exit_margin_m: f64,
+    /// Histéresis de entrada: tiempo mínimo dentro antes de anunciar la entrada.
+    pub enter_dwell: Duration,
     /// Cuánto se recuerda en Redis en qué zonas estaba cada usuario.
     pub presence_ttl: Duration,
 }
@@ -386,9 +392,15 @@ impl Config {
                 group_id: r.string("KAFKA_GROUP_ID", "geo-engine"),
                 topic_positions: r.string("KAFKA_TOPIC_POSITIONS", "geo.user-positions.v1"),
                 topic_transitions: r.string("KAFKA_TOPIC_TRANSITIONS", "geo.geofence-transitions.v1"),
+                topic_zone_entries: r.string("KAFKA_TOPIC_ZONE_ENTRIES", "geo.zone-entries.v1"),
                 topic_positions_dlq: r.string("KAFKA_TOPIC_POSITIONS_DLQ", "geo.user-positions-dlq.v1"),
                 tls_ca_file: r.path("KAFKA_TLS_CA_FILE"),
                 max_accuracy_m: r.float("GEOFENCE_MAX_ACCURACY_M", 100.0, 1.0, 10_000.0),
+                // 30 m: algo más que el "baile" típico del GPS de un móvil en ciudad.
+                exit_margin_m: r.float("GEOFENCE_EXIT_MARGIN_M", 30.0, 0.0, 1_000.0),
+                // 15 s: suficiente para descartar el borde, poco para que el
+                // usuario note retraso. 0s desactiva la histéresis de entrada.
+                enter_dwell: r.duration("GEOFENCE_ENTER_DWELL", Duration::from_secs(15), Duration::ZERO, Duration::from_secs(600)),
                 presence_ttl: r.duration(
                     "PRESENCE_TTL",
                     Duration::from_secs(24 * 3600),
@@ -484,6 +496,8 @@ mod tests {
         assert_eq!(cfg.postgres.tls, PgTls::Disable);
         assert_eq!(cfg.stream.as_ref().map(|s| s.topic_positions.as_str()), Some("geo.user-positions.v1"));
         assert_eq!(cfg.route_exact_max_stops, 12);
+        let stream = cfg.stream.as_ref().map(|s| (s.exit_margin_m, s.enter_dwell, s.topic_zone_entries.as_str()));
+        assert_eq!(stream, Some((30.0, Duration::from_secs(15), "geo.zone-entries.v1")));
         Ok(())
     }
 

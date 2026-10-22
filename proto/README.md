@@ -12,7 +12,7 @@ fuente de verdad: Go, Rust, Java y Python generan su código desde estos fichero
 | `nomadiq/flights/v1/route_watch_service.proto` | API gRPC `RouteWatchService` |
 | `nomadiq/geo/v1/geo.proto` | Tipos geoespaciales: `LatLng`, `Geometry` (WKB), `Airport`, `Zone`, `ZoneKind` |
 | `nomadiq/geo/v1/geo_service.proto` | API gRPC `GeoService` del geo-engine (Rust) |
-| `nomadiq/geo/v1/events.proto` | Eventos de Kafka: `UserPositionReported`, `GeofenceTransitioned` |
+| `nomadiq/geo/v1/events.proto` | Eventos de Kafka: `UserPositionReported`, `GeofenceTransitioned`, `ZoneEntered` (anónimo) |
 
 ## Catálogo de topics de Kafka
 
@@ -21,7 +21,9 @@ fuente de verdad: Go, Rust, Java y Python generan su código desde estos fichero
 | `flights.price-observed.v1` | `FlightPriceObserved` | `ORIGEN-DESTINO:FECHA[:VUELTA]:CABINA` | 12 | 7 días | flight-ingestor → detector sniper, analítica |
 | `flights.fare-alerts.v1` | `FareAlertTriggered` | `user_id` | 6 | 30 días | detector sniper → notificaciones, ai-orchestrator |
 | `geo.user-positions.v1` | `UserPositionReported` | `user_id` | 12 | 24 horas (dato personal) | app móvil (futuro) → geo-engine |
-| `geo.geofence-transitions.v1` | `GeofenceTransitioned` | `user_id` | 6 | 7 días | geo-engine → notificaciones, ai-orchestrator |
+| `geo.geofence-transitions.v1` | `GeofenceTransitioned` | `user_id` | 6 | 7 días | geo-engine → notificaciones |
+| `geo.zone-entries.v1` | `ZoneEntered` (sin user_id ni coordenadas) | `zone_id` | 6 | 24 horas | geo-engine → ai-orchestrator (audioguías) |
+| `geo.zone-entries-dlq.v1` | `ZoneEntered` (original) | `zone_id` | 3 | 3 días | ai-orchestrator (mensajes inválidos) |
 | `geo.user-positions-dlq.v1` | `UserPositionReported` (original) | `user_id` | 3 | 3 días | geo-engine (mensajes inválidos) |
 
 ### Geometrías: WKB
