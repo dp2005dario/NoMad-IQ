@@ -14,6 +14,7 @@ fuente de verdad: Go, Rust, Java y Python generan su código desde estos fichero
 | `nomadiq/geo/v1/geo_service.proto` | API gRPC `GeoService` del geo-engine (Rust) |
 | `nomadiq/geo/v1/events.proto` | Eventos de Kafka: `UserPositionReported`, `GeofenceTransitioned`, `ZoneEntered` (anónimo) |
 | `nomadiq/notify/v1/events.proto` | Evento de Kafka: `ZoneNotificationRequested` (orden de aviso push con seudónimo, sin coordenadas) |
+| `nomadiq/ai/v1/negotiation.proto` | Eventos de Kafka de la negociación de grupo: `GroupNegotiationRequested` (orden de trabajo) y `GroupNegotiationConcluded` (resultado con seudónimos) |
 
 ## Catálogo de topics de Kafka
 
@@ -28,6 +29,9 @@ fuente de verdad: Go, Rust, Java y Python generan su código desde estos fichero
 | `geo.user-positions-dlq.v1` | `UserPositionReported` (original) | `user_id` | 3 | 3 días | geo-engine (mensajes inválidos) |
 | `notify.zone-requests.v1` | `ZoneNotificationRequested` (seudónimo, sin user_id ni coordenadas) | seudónimo | 6 | 1 hora | geo-engine → notifier (avisos push) |
 | `notify.zone-requests-dlq.v1` | `ZoneNotificationRequested` (original) | seudónimo | 3 | 3 días | notifier (mensajes inválidos) |
+| `ai.group-negotiation-requests.v1` | `GroupNegotiationRequested` (solo el id, sin preferencias) | `negotiation_id` | 6 | 7 días | ai-orchestrator (outbox) → ai-orchestrator (agentes) |
+| `ai.group-negotiation-requests-dlq.v1` | `GroupNegotiationRequested` (original) | `negotiation_id` | 3 | 3 días | ai-orchestrator (mensajes inválidos) |
+| `ai.group-negotiations.v1` | `GroupNegotiationConcluded` (seudónimos, sin user_id) | `negotiation_id` | 6 | 7 días | ai-orchestrator (outbox) → (futuro) notifier |
 
 ### Geometrías: WKB
 

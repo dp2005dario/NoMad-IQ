@@ -2,7 +2,7 @@
 # Cada "objetivo" (proto, test, up...) es un atajo: "make up" ejecuta los
 # comandos de debajo. Las líneas de comando deben empezar con un tabulador.
 # .PHONY indica que son nombres de tareas, no ficheros que generar.
-.PHONY: help proto proto-python test test-java test-python test-rust test-rust-integration test-integration up up-apps down logs alerts ollama recommendations audioguides voices audio-worker audio audio-gc zones keys notifier-devices push-messages
+.PHONY: help proto proto-python test test-java test-python test-rust test-rust-integration test-integration up up-apps down logs alerts ollama recommendations audioguides negotiations voices audio-worker audio audio-gc zones keys notifier-devices push-messages
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-18s %s\n", $$1, $$2}'
@@ -73,6 +73,9 @@ recommendations: ## Muestra las últimas recomendaciones generadas por el ai-orc
 
 audioguides: ## Muestra las audioguías por zona guardadas en Redis (ai-orchestrator)
 	cd infrastructure && docker compose exec redis sh -c 'redis-cli --scan --pattern "ai:audioguide:v2:*" | while read k; do echo "$$k  (caduca en $$(redis-cli ttl $$k) s)"; done'
+
+negotiations: ## Muestra las últimas negociaciones de grupo (ai-orchestrator)
+	cd infrastructure && docker compose exec postgres sh -c 'PGPASSWORD="$$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -c "SELECT created_at, negotiation_id, title, status, result->>'"'"'outcome'"'"' AS resultado, result->>'"'"'chosen_option_id'"'"' AS elegida FROM ai.group_negotiations ORDER BY created_at DESC LIMIT 20"'
 
 voices: ## Descarga las voces de Piper (una por idioma, ~230 MB; o solo algunas: make voices LANGS="es en")
 	./infrastructure/tts/download-voices.sh $(LANGS)

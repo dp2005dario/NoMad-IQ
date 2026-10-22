@@ -20,10 +20,11 @@ import re
 from pathlib import Path
 from typing import Literal, Self
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from ai_orchestrator.audioguides.domain import SUPPORTED_LANGUAGES
+from ai_orchestrator.pseudonym import Pseudonymizer
 
 # El único modo de TLS de PostgreSQL que comprueba el certificado Y el nombre
 # del servidor. Los demás ("require", "prefer"...) cifran, pero no impiden
@@ -121,6 +122,35 @@ class Settings(BaseSettings):
     audio_gc_grace_days: float = Field(default=30.0, ge=0.0, le=365.0)
     audio_gc_orphan_hours: float = Field(default=24.0, ge=1.0, le=24 * 30.0)
 
+    # --- Negociación de grupo (ver el paquete negotiation/) ---------------------------
+    negotiations_enabled: bool = True
+    # Órdenes de trabajo (las publica nuestro propio outbox) y su DLQ.
+    kafka_topic_negotiation_requests: str = "ai.group-negotiation-requests.v1"
+    kafka_topic_negotiation_requests_dlq: str = "ai.group-negotiation-requests-dlq.v1"
+    # Resultados, para quien quiera enterarse (el notifier, en el futuro).
+    kafka_topic_negotiation_results: str = "ai.group-negotiations.v1"
+    # Grupo de consumidores PROPIO: una negociación larga no frena las alertas.
+    kafka_negotiations_group_id: str = "ai-orchestrator-negotiations"
+    # Rondas si el organizador no dice otra cosa (el techo absoluto es 10).
+    negotiation_default_max_rounds: int = Field(default=3, ge=1, le=10)
+    # Cuánto se espera a que todos envíen sus preferencias (72 h = 3 días).
+    negotiation_collect_hours: float = Field(default=72.0, ge=0.01, le=30 * 24.0)
+    # Tiempo máximo de UNA ronda y de TODA la negociación. Una ronda puede
+    # necesitar varios reintentos del LLM por agente (OLLAMA_TIMEOUT_SECONDS x
+    # LLM_MAX_ATTEMPTS); quien no conteste a tiempo usa su plan B por reglas.
+    negotiation_round_timeout_seconds: float = Field(default=180.0, gt=0, le=1800)
+    negotiation_total_timeout_seconds: float = Field(default=480.0, gt=0, le=3600)
+    # La respuesta de un agente es corta: ranking, aceptables y una frase.
+    negotiation_max_output_tokens: int = Field(default=300, ge=64, le=2048)
+    # Las negociaciones terminadas se borran pasado este tiempo.
+    negotiation_retention_days: int = Field(default=90, ge=1, le=3650)
+    # Cada cuánto revisa el relé el outbox si nadie toca el timbre.
+    outbox_poll_seconds: float = Field(default=2.0, ge=0.1, le=60.0)
+    # Clave de los seudónimos de las notificaciones (la MISMA que el notifier
+    # y el geo-engine, en hexadecimal). Opcional: sin ella, el resultado se
+    # anuncia sin destinatarios. En producción, desde un gestor de secretos.
+    notify_pseudonym_key: SecretStr | None = None
+
     # --- Redis (caché de audioguías) -----------------------------------------------
     redis_host: str | None = None
     redis_port: int = Field(default=6379, ge=1, le=65535)
@@ -182,6 +212,13 @@ class Settings(BaseSettings):
     # --- Registros (logs) ---------------------------------------------------------
     log_level: Literal["debug", "info", "warning", "error"] = "info"
 
+    @field_validator("notify_pseudonym_key", mode="before")
+    @classmethod
+    def _empty_is_none(cls, value: object) -> object:
+        # docker compose pasa "NOTIFY_PSEUDONYM_KEY=" (vacía) si no está en el
+        # .env: para nosotros eso es "no configurada", no una clave inválida.
+        return None if value == "" else value
+
     # ------------------------------------------------------------------------------
     # Validaciones que relacionan varios campos (no se pueden expresar en uno solo).
     # ------------------------------------------------------------------------------
@@ -237,6 +274,17 @@ class Settings(BaseSettings):
         ):
             problems.append("AUDIO_PUBLIC_BASE_URL debe ser https://... o una ruta que empiece por /")
 
+        if self.negotiation_round_timeout_seconds > self.negotiation_total_timeout_seconds:
+            problems.append(
+                "NEGOTIATION_ROUND_TIMEOUT_SECONDS no puede ser mayor que NEGOTIATION_TOTAL_TIMEOUT_SECONDS"
+            )
+        if self.notify_pseudonym_key is not None:
+            try:
+                Pseudonymizer.from_hex(self.notify_pseudonym_key.get_secret_value())
+            except ValueError as exc:
+                # El mensaje nunca incluye la clave, solo qué le pasa.
+                problems.append(f"NOTIFY_PSEUDONYM_KEY: {exc}")
+
         if self.http_port == self.management_port:
             problems.append("HTTP_PORT y MANAGEMENT_PORT deben ser distintos")
         if not re.fullmatch(r"[A-Za-z0-9._-]{1,255}", self.qdrant_collection):
@@ -251,6 +299,12 @@ class Settings(BaseSettings):
     def audioguide_lock_ttl_seconds(self) -> int:
         """Lo máximo que puede tardar una generación (todos los intentos) + margen."""
         return int(self.ollama_timeout_seconds * self.llm_max_attempts) + 30
+
+    @property
+    def negotiation_lease_seconds(self) -> int:
+        """Cuánto "reserva" una copia del servicio una negociación en marcha:
+        lo máximo que puede durar + margen. Si muere, otra la retoma después."""
+        return int(self.negotiation_total_timeout_seconds) + 120
 
     @property
     def kafka_broker_list(self) -> list[str]:

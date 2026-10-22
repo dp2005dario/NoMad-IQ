@@ -31,6 +31,8 @@ MIGRATION_LOCK_ID = 0x61692D6F7263  # "ai-orc" en hexadecimal
 
 # "type" crea un alias que solo se evalúa al comprobar tipos (asyncpg no admite [] en tiempo de ejecución).
 type Pool = asyncpg.Pool[asyncpg.Record]
+# Una conexión: suelta, o prestada por el pool (las dos se usan igual).
+type Conn = asyncpg.Connection[asyncpg.Record] | asyncpg.pool.PoolConnectionProxy[asyncpg.Record]
 
 
 class StoreError(Exception):

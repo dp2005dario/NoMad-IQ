@@ -9,6 +9,8 @@ Qué hace, en orden:
     4. Arranca a la vez, en el mismo proceso y sin bloquearse entre sí:
          - el consumidor de Kafka (genera recomendaciones en segundo plano),
          - el consumidor de entradas a zonas (prepara audioguías en Redis),
+         - el consumidor de órdenes de negociación de grupo (agentes de IA),
+         - el relé del outbox (manda a Kafka lo pendiente y revisa plazos),
          - la API con mTLS (puerto 8085),
          - la API de salud (puerto 8086).
     5. Al recibir la orden de apagado (Ctrl+C o SIGTERM de Docker) cierra todo
@@ -41,11 +43,13 @@ import urllib.request
 from collections.abc import Callable, Generator
 from contextlib import AsyncExitStack
 from pathlib import Path
+from typing import Any
 
 import httpx
 import uvicorn
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 from aiokafka.errors import KafkaError
+from fastapi import APIRouter
 from pydantic import ValidationError
 from redis.asyncio import Redis
 
@@ -66,6 +70,13 @@ from ai_orchestrator.config import Settings
 from ai_orchestrator.consumer import AlertProcessor, FareAlertConsumer
 from ai_orchestrator.llm.client import LLMClient, OllamaClient
 from ai_orchestrator.logs import setup_logging
+from ai_orchestrator.negotiation.agents import AgentSettings
+from ai_orchestrator.negotiation.api import ApiSettings, negotiation_router
+from ai_orchestrator.negotiation.consumer import NegotiationRequestConsumer
+from ai_orchestrator.negotiation.service import NegotiationService, NegotiationSettings
+from ai_orchestrator.negotiation.store import PostgresNegotiations, SweepReport
+from ai_orchestrator.outbox import OutboxRelay
+from ai_orchestrator.pseudonym import Pseudonymizer
 from ai_orchestrator.recommender import FareRecommender, RecommenderSettings
 from ai_orchestrator.retrieval import KnowledgeBase, NoKnowledge, QdrantKnowledge
 from ai_orchestrator.store import (
@@ -267,7 +278,7 @@ async def run(settings: Settings) -> int:
             "security_protocol": "SSL" if kafka_tls else "PLAINTEXT",
             "ssl_context": kafka_tls,
         }
-        # Productor solo para la DLQ. acks="all" + idempotencia: no se pierde ni se duplica.
+        # Productor para las DLQ y el outbox. acks="all" + idempotencia: no se pierde ni se duplica.
         producer = AIOKafkaProducer(**kafka_common, acks="all", enable_idempotence=True)
         await producer.start()
         stack.push_async_callback(producer.stop)
@@ -335,6 +346,15 @@ async def run(settings: Settings) -> int:
                 transient_errors=(StoreError, CacheError, KafkaError),
             )
 
+        # --- Negociación de grupo (tercer consumidor + relé del outbox) -----------------
+        negotiations: APIRouter | None = None
+        negotiation_consumer: NegotiationRequestConsumer | None = None
+        relay: OutboxRelay | None = None
+        if settings.negotiations_enabled:
+            negotiations, negotiation_consumer, relay = await _negotiations(
+                settings, pool, llm, producer, kafka_common, stack
+            )
+
         # --- Servidores HTTP --------------------------------------------------------------
         async def readiness() -> dict[str, bool]:
             # Ollama NO cuenta: sin él seguimos funcionando con reglas.
@@ -342,11 +362,18 @@ async def run(settings: Settings) -> int:
             if zone_consumer is not None and script_cache is not None:
                 checks["redis"] = await script_cache.ping()
                 checks["zone_entries_consumer"] = zone_consumer.running
+            if negotiation_consumer is not None and relay is not None:
+                checks["negotiation_consumer"] = negotiation_consumer.running
+                checks["outbox_relay"] = relay.running
             return checks
 
         api = _server(
             create_api(
-                recommendations, audioguides=audioguides, audio=audio, expose_docs=settings.expose_api_docs
+                recommendations,
+                audioguides=audioguides,
+                audio=audio,
+                negotiations=negotiations,
+                expose_docs=settings.expose_api_docs,
             ),
             settings.http_port,
             tls=None if settings.http_insecure_dev else settings,
@@ -366,6 +393,9 @@ async def run(settings: Settings) -> int:
         }
         if zone_consumer is not None:
             tasks.add(asyncio.create_task(zone_consumer.run(), name="zone-entries"))
+        if negotiation_consumer is not None and relay is not None:
+            tasks.add(asyncio.create_task(negotiation_consumer.run(), name="negotiations"))
+            tasks.add(asyncio.create_task(relay.run(), name="outbox"))
         stopper = asyncio.create_task(stop.wait(), name="stop")
         log.info("ai-orchestrator en marcha", extra={"http_port": settings.http_port, "llm": bool(llm)})
         done, _ = await asyncio.wait({*tasks, stopper}, return_when=asyncio.FIRST_COMPLETED)
@@ -385,11 +415,98 @@ async def run(settings: Settings) -> int:
         api.should_exit = True
         management.should_exit = True
         for task in tasks:
-            if task.get_name() in {"consumer", "zone-entries"}:
+            if task.get_name() in {"consumer", "zone-entries", "negotiations", "outbox"}:
                 task.cancel()
         stopper.cancel()
         await asyncio.gather(*tasks, stopper, return_exceptions=True)
         return exit_code
+
+
+async def _negotiations(
+    settings: Settings,
+    pool: Pool,
+    llm: LLMClient | None,
+    producer: AIOKafkaProducer,
+    kafka_common: dict[str, Any],
+    stack: AsyncExitStack,
+) -> tuple[APIRouter, NegotiationRequestConsumer, OutboxRelay]:
+    """Monta la negociación de grupo: almacén, relé del outbox, servicio, consumidor y rutas."""
+    store = PostgresNegotiations(
+        pool,
+        requests_topic=settings.kafka_topic_negotiation_requests,
+        retention_days=settings.negotiation_retention_days,
+    )
+    loop = asyncio.get_running_loop()
+    next_sweep = 0.0
+
+    async def housekeeping() -> None:
+        # El barrido de plazos no necesita ir cada 2 s: como mucho cada 30 s.
+        nonlocal next_sweep
+        if loop.time() < next_sweep:
+            return
+        next_sweep = loop.time() + 30.0
+        report = await store.sweep()
+        if report != SweepReport():
+            log.info("barrido de negociaciones", extra={"report": report})
+
+    relay = OutboxRelay(
+        pool,
+        producer,
+        poll_seconds=settings.outbox_poll_seconds,
+        housekeeping=housekeeping,
+        transient_errors=(KafkaError,),
+    )
+    pseudonymizer = None
+    if settings.notify_pseudonym_key is not None:
+        pseudonymizer = Pseudonymizer.from_hex(settings.notify_pseudonym_key.get_secret_value())
+    else:
+        log.warning("sin NOTIFY_PSEUDONYM_KEY: los resultados de negociación se anuncian sin destinatarios")
+    service = NegotiationService(
+        store=store,
+        llm=llm,
+        settings=NegotiationSettings(
+            results_topic=settings.kafka_topic_negotiation_results,
+            lease_seconds=settings.negotiation_lease_seconds,
+            round_timeout_seconds=settings.negotiation_round_timeout_seconds,
+            total_timeout_seconds=settings.negotiation_total_timeout_seconds,
+            agent=AgentSettings(
+                temperature=settings.llm_temperature,
+                max_output_tokens=settings.negotiation_max_output_tokens,
+                max_attempts=settings.llm_max_attempts,
+            ),
+        ),
+        pseudonymizer=pseudonymizer,
+        on_outbox=relay.kick.set,
+    )
+    requests = AIOKafkaConsumer(
+        settings.kafka_topic_negotiation_requests,
+        **kafka_common,
+        group_id=settings.kafka_negotiations_group_id,
+        enable_auto_commit=False,
+        auto_offset_reset="earliest",
+        # Una negociación puede durar minutos: de una en una, y con margen de
+        # sobra antes de que Kafka crea que este consumidor ha muerto.
+        max_poll_interval_ms=settings.negotiation_lease_seconds * 1000,
+    )
+    await requests.start()
+    stack.push_async_callback(requests.stop)
+    consumer = NegotiationRequestConsumer(
+        requests,
+        producer,
+        service,
+        dlq_topic=settings.kafka_topic_negotiation_requests_dlq,
+        max_records=1,
+        transient_errors=(StoreError, KafkaError),
+    )
+    router = negotiation_router(
+        store,
+        ApiSettings(
+            default_max_rounds=settings.negotiation_default_max_rounds,
+            collect_hours=settings.negotiation_collect_hours,
+        ),
+        on_outbox=relay.kick.set,
+    )
+    return router, consumer, relay
 
 
 def _audio_gc(

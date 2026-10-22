@@ -41,6 +41,14 @@ TOPICS=(
   "notify.zone-requests.v1|6|3600000|delete"
   # Órdenes que el notifier no pudo leer (DLQ): 3 días.
   "notify.zone-requests-dlq.v1|3|259200000|delete"
+  # Negociación de grupo (ai-orchestrator). Órdenes de trabajo: solo llevan
+  # el id de la negociación (las preferencias privadas viven en PostgreSQL).
+  # Clave = negotiation_id. 7 días: de sobra para reintentar tras una caída.
+  "ai.group-negotiation-requests.v1|6|604800000|delete"
+  # Órdenes que el ai-orchestrator no pudo leer (DLQ): 3 días.
+  "ai.group-negotiation-requests-dlq.v1|3|259200000|delete"
+  # Resultados de las negociaciones (con seudónimos, sin user_id): 7 días.
+  "ai.group-negotiations.v1|6|604800000|delete"
 )
 
 # Recorre la lista y separa cada entrada por el carácter | en cuatro variables.

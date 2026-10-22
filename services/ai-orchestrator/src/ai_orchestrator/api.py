@@ -31,14 +31,12 @@ Además:
 from __future__ import annotations
 
 import logging
-import re
 import uuid
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Annotated, Any
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Path, Query, Request
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
@@ -49,25 +47,10 @@ from ai_orchestrator.audioguides.cache import CacheError
 from ai_orchestrator.audioguides.domain import AudioguideScript
 from ai_orchestrator.audioguides.service import AudioguideService
 from ai_orchestrator.domain import Recommendation, Verdict
+from ai_orchestrator.identity import Principal, current_principal
 from ai_orchestrator.store import RecommendationStore, StoreError
 
 log = logging.getLogger(__name__)
-
-HEADER_USER_ID = "X-User-ID"
-HEADER_USER_ROLES = "X-User-Roles"
-# Rol mínimo para usar la API (el auth-gateway emite USER y ADMIN).
-REQUIRED_ROLE = "USER"
-
-_USER_ID = re.compile(r"^[A-Za-z0-9._:@-]{1,128}$")
-_ROLE = re.compile(r"^[A-Z_]{1,32}$")
-
-
-@dataclass(frozen=True, slots=True)
-class Principal:
-    """Quién hace la petición (ya autenticado por el auth-gateway)."""
-
-    user_id: str
-    roles: frozenset[str]
 
 
 def _problem(status: int, title: str, detail: str | None = None) -> JSONResponse:
@@ -75,22 +58,6 @@ def _problem(status: int, title: str, detail: str | None = None) -> JSONResponse
     if detail:
         body["detail"] = detail
     return JSONResponse(body, status_code=status, media_type="application/problem+json")
-
-
-async def current_principal(
-    user_id: Annotated[str | None, Header(alias=HEADER_USER_ID)] = None,
-    roles: Annotated[str | None, Header(alias=HEADER_USER_ROLES)] = None,
-) -> Principal:
-    """Lee la identidad de las cabeceras y la valida con reglas estrictas."""
-    if user_id is None or not _USER_ID.fullmatch(user_id):
-        raise HTTPException(status_code=401, detail="identidad ausente o inválida")
-    parsed = frozenset(r.strip() for r in (roles or "").split(",") if r.strip())
-    if any(not _ROLE.fullmatch(r) for r in parsed):
-        raise HTTPException(status_code=401, detail="roles inválidos")
-    # Control de acceso por roles (RBAC): sin el rol USER, no hay acceso.
-    if REQUIRED_ROLE not in parsed:
-        raise HTTPException(status_code=403, detail="se necesita el rol USER")
-    return Principal(user_id=user_id, roles=parsed)
 
 
 class RecommendationView(BaseModel):
@@ -214,6 +181,7 @@ def create_api(
     *,
     audioguides: AudioguideService | None = None,
     audio: AudioCatalog | None = None,
+    negotiations: APIRouter | None = None,
     expose_docs: bool = False,
 ) -> FastAPI:
     """Crea la API pública (puerto con mTLS)."""
@@ -231,7 +199,13 @@ def create_api(
     # cubrimos los 404/405 de rutas inexistentes con el mismo formato.
     @app.exception_handler(StarletteHTTPException)
     async def _http_error(_: Request, exc: StarletteHTTPException) -> JSONResponse:
-        titles = {401: "No autenticado", 403: "Prohibido", 404: "No encontrado", 405: "Método no permitido"}
+        titles = {
+            401: "No autenticado",
+            403: "Prohibido",
+            404: "No encontrado",
+            405: "Método no permitido",
+            409: "Conflicto",
+        }
         return _problem(exc.status_code, titles.get(exc.status_code, "Error"), str(exc.detail))
 
     @app.exception_handler(RequestValidationError)
@@ -316,6 +290,10 @@ def create_api(
                 media_type="audio/ogg",
                 headers={"Cache-Control": IMMUTABLE_CACHE, "X-Content-Type-Options": "nosniff"},
             )
+
+    if negotiations is not None:
+        # Las rutas /v1/group-negotiations viven en negotiation/api.py.
+        app.include_router(negotiations)
 
     return app
 
