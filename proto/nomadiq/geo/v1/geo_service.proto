@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package nomadiq.geo.v1;
+
+import "nomadiq/geo/v1/geo.proto";
+
+// GeoService es la API interna (gRPC sobre mTLS) del geo-engine (Rust).
+// La llaman otros microservicios, nunca la app directamente.
+//
+// Reparto de responsabilidades con PostGIS:
+//   - PostGIS es la fuente de verdad: guarda aeropuertos y zonas y resuelve
+//     consultas grandes o analíticas.
+//   - El geo-engine responde las preguntas de alta frecuencia desde una copia
+//     en memoria (índices R-tree), sin tocar la base de datos en cada petición.
+//
+// Todas las operaciones son de solo lectura y deterministas: repetir la misma
+// petición devuelve el mismo resultado (se pueden reintentar sin miedo).
+service GeoService {
+  // Aeropuertos más cercanos a un punto, ordenados por distancia.
+  rpc FindNearestAirports(FindNearestAirportsRequest) returns (FindNearestAirportsResponse);
+  // Distancia geodésica (sobre el elipsoide WGS84) entre dos puntos.
+  rpc ComputeDistance(ComputeDistanceRequest) returns (ComputeDistanceResponse);
+  // Ordena paradas para recorrerlas con la menor distancia total.
+  // Es la operación cara: su resultado se guarda en una caché de Redis.
+  rpc OptimizeRoute(OptimizeRouteRequest) returns (OptimizeRouteResponse);
+  // Zonas (geofences) que contienen un punto.
+  rpc LocateZones(LocateZonesRequest) returns (LocateZonesResponse);
+  // Una zona concreta con su geometría.
+  rpc GetZone(GetZoneRequest) returns (GetZoneResponse);
+}
+
+message FindNearestAirportsRequest {
+  LatLng point = 1;
+  // Cuántos aeropuertos devolver (1..50). 0 significa el valor por defecto (5).
+  uint32 limit = 2;
+  // Radio máximo de búsqueda en metros. 0 significa sin límite.
+  double max_distance_meters = 3;
+}
+
+message FindNearestAirportsResponse {
+  repeated AirportDistance airports = 1;
+}
+
+message AirportDistance {
+  Airport airport = 1;
+  double distance_meters = 2;
+}
+
+message ComputeDistanceRequest {
+  LatLng from = 1;
+  LatLng to = 2;
+}
+
+message ComputeDistanceResponse {
+  double distance_meters = 1;
+  // Rumbo inicial en grados [0, 360): 0 = norte, 90 = este.
+  double initial_bearing_degrees = 2;
+}
+
+// RouteShape indica qué tipo de recorrido se quiere.
+enum RouteShape {
+  ROUTE_SHAPE_UNSPECIFIED = 0;
+  // Empieza en la primera parada y termina en cualquiera (un día de turismo
+  // que acaba donde acabe).
+  ROUTE_SHAPE_OPEN = 1;
+  // Empieza y termina en la primera parada (salir del hotel y volver).
+  ROUTE_SHAPE_ROUND_TRIP = 2;
+}
+
+message RouteStop {
+  // Identificador elegido por quien llama (único dentro de la petición).
+  string stop_id = 1;
+  LatLng location = 2;
+}
+
+message OptimizeRouteRequest {
+  // La primera parada es siempre el punto de salida.
+  repeated RouteStop stops = 1;
+  RouteShape shape = 2;
+}
+
+message OptimizeRouteResponse {
+  // Los stop_id en el orden en que conviene visitarlos.
+  repeated string ordered_stop_ids = 1;
+  double total_distance_meters = 2;
+  // Distancia de cada tramo, en el mismo orden (n-1 tramos, o n si es circular).
+  repeated double leg_distances_meters = 3;
+  // El recorrido como LineString en WKB, listo para pintarlo en un mapa.
+  Geometry path = 4;
+  // true si el orden es el mejor posible (búsqueda exacta, pocas paradas);
+  // false si es una aproximación muy buena (heurística, muchas paradas).
+  bool optimal = 5;
+  // true si la respuesta salió de la caché de Redis sin recalcular.
+  bool from_cache = 6;
+}
+
+message LocateZonesRequest {
+  LatLng point = 1;
+  // Si es true, cada zona incluye su polígono en WKB.
+  bool include_geometry = 2;
+}
+
+message LocateZonesResponse {
+  repeated Zone zones = 1;
+}
+
+message GetZoneRequest {
+  string zone_id = 1;
+}
+
+message GetZoneResponse {
+  Zone zone = 1;
+}

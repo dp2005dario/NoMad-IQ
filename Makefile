@@ -2,7 +2,7 @@
 # Cada "objetivo" (proto, test, up...) es un atajo: "make up" ejecuta los
 # comandos de debajo. Las líneas de comando deben empezar con un tabulador.
 # .PHONY indica que son nombres de tareas, no ficheros que generar.
-.PHONY: help proto proto-python test test-java test-python test-integration up up-apps down logs alerts ollama recommendations
+.PHONY: help proto proto-python test test-java test-python test-rust test-rust-integration test-integration up up-apps down logs alerts ollama recommendations zones
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-18s %s\n", $$1, $$2}'
@@ -22,6 +22,16 @@ test-python: ## ai-orchestrator: estilo (ruff), tipos (mypy) y tests unitarios (
 
 test-java: ## Tests del auth-gateway: unitarios + integración con Testcontainers (requiere Docker)
 	cd services/auth-gateway && ./mvnw -B verify
+
+test-rust: ## geo-engine: formato, clippy (avisos = errores) y tests unitarios + mTLS
+	cd services/geo-engine && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo test
+
+# Los e2e necesitan además el geo-engine en marcha ("make up-apps").
+test-rust-integration: ## geo-engine: tests contra PostGIS, Redis y Kafka reales (requiere "make up")
+	cd services/geo-engine && set -a && . ../../infrastructure/.env && set +a && \
+		KAFKA_BROKERS=localhost:29092 GEO_ENGINE_GRPC=http://127.0.0.1:50052 REDIS_HOST=localhost \
+		PGHOST=localhost PGUSER="$$POSTGRES_USER" PGPASSWORD="$$POSTGRES_PASSWORD" PGDATABASE="$$POSTGRES_DB" \
+		cargo test --test integration -- --ignored
 
 # Para el price-consumer se leen usuario y contraseña de infrastructure/.env.
 test-integration: ## Tests contra Kafka y PostgreSQL de docker compose (requiere "make up")
@@ -56,3 +66,6 @@ ollama: ## Arranca Ollama (LLM local) y descarga el modelo (OLLAMA_MODEL, por de
 
 recommendations: ## Muestra las últimas recomendaciones generadas por el ai-orchestrator
 	cd infrastructure && docker compose exec postgres sh -c 'PGPASSWORD="$$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -c "SELECT created_at, user_id, verdict, source, headline FROM ai.fare_recommendations ORDER BY created_at DESC LIMIT 20"'
+
+zones: ## Muestra las zonas de geofencing guardadas en PostGIS (geo-engine)
+	cd infrastructure && docker compose exec postgres sh -c 'PGPASSWORD="$$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -c "SELECT slug, kind, active, round(ST_Area(geom::geography)) AS m2, updated_at FROM geo.zones ORDER BY slug"'

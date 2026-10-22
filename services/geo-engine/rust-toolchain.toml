@@ -1,0 +1,6 @@
+# Fija la versión de Rust del proyecto. rustup la descarga sola la primera vez
+# que ejecutas "cargo" en esta carpeta: tú, la CI y Docker compiláis con la misma.
+[toolchain]
+channel = "1.97.0"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

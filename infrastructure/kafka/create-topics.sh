@@ -20,6 +20,13 @@ TOPICS=(
   "flights.price-observed-dlq.v1|3|1209600000|delete"
   # Alertas que el ai-orchestrator no pudo leer (DLQ): mismos 14 días.
   "flights.fare-alerts-dlq.v1|3|1209600000|delete"
+  # Posiciones GPS de usuarios (geo-engine). Son DATOS PERSONALES: se guardan
+  # solo 24 horas (minimización de datos, RGPD). Clave = user_id.
+  "geo.user-positions.v1|12|86400000|delete"
+  # Entradas y salidas de zonas detectadas por el geo-engine: 7 días.
+  "geo.geofence-transitions.v1|6|604800000|delete"
+  # Posiciones imposibles de procesar (DLQ): 3 días, también por privacidad.
+  "geo.user-positions-dlq.v1|3|259200000|delete"
 )
 
 # Recorre la lista y separa cada entrada por el carácter | en cuatro variables.

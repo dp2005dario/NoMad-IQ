@@ -283,6 +283,46 @@ services:
       postgres:
         condition: service_healthy
 
+  # Motor geoespacial (Rust): aeropuertos cercanos, distancias, orden óptimo de
+  # paradas y geofencing en streaming (posiciones de Kafka → entradas/salidas
+  # de zonas). Carga sus datos de PostGIS y responde desde la memoria.
+  geo-engine:
+    <<: *hardening
+    profiles: ["apps"]
+    build:
+      context: ..
+      dockerfile: services/geo-engine/Dockerfile
+    read_only: true
+    cap_drop:
+      - ALL
+    environment:
+      KAFKA_BROKERS: kafka:9092
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:?Define POSTGRES_USER en .env}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
+      PGDATABASE: ${POSTGRES_DB:?Define POSTGRES_DB en .env}
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Define REDIS_PASSWORD en .env}
+      # Solo en local: en producción todo va con TLS/mTLS (ver services/geo-engine/README.md).
+      PGSSLMODE: disable
+      DB_INSECURE_DEV: "true"
+      REDIS_TLS: "false"
+      REDIS_INSECURE_DEV: "true"
+      GRPC_INSECURE_DEV: "true"
+      # Zonas de ejemplo (Madrid, Barcelona, París, Tokio) para ver el geofencing.
+      SEED_DEMO_ZONES: ${SEED_DEMO_ZONES:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "127.0.0.1:50052:50052"   # gRPC GeoService
+      - "127.0.0.1:8087:8087"     # /healthz y /readyz
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   # Ollama: ejecuta el modelo de lenguaje en tu máquina (gratis, sin enviar
   # datos fuera). Perfil propio porque los modelos ocupan varios GB:
   #   docker compose --profile ai up -d ollama

@@ -138,10 +138,36 @@ jobs:
       - name: Tests unitarios
         run: uv run pytest -q
 
+  geo-engine:
+    name: geo-engine (Rust)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/geo-engine
+    steps:
+      - uses: actions/checkout@v4
+      # rustup ya viene instalado en la máquina de GitHub: lee
+      # rust-toolchain.toml e instala Rust 1.97.0 con clippy y rustfmt.
+      - name: Instalar Rust (versión de rust-toolchain.toml)
+        run: rustup toolchain install && rustc --version
+      # Guarda las librerías compiladas entre ejecuciones (de ~3 min a segundos).
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: services/geo-engine
+      - name: Formato (cargo fmt)
+        run: cargo fmt --check
+      # --locked: falla si Cargo.lock no está al día. -D warnings: cualquier
+      # aviso de clippy (el "revisor automático" de Rust) cuenta como error.
+      - name: Clippy (avisos como errores)
+        run: cargo clippy --locked --all-targets -- -D warnings
+      # Unitarios + mTLS. Los de integración (#[ignore]) van en el job de abajo.
+      - name: Tests
+        run: cargo test --locked
+
   integration:
     name: Integración (docker compose + Kafka real)
     runs-on: ubuntu-latest
-    needs: [flight-ingestor, price-consumer, auth-gateway, ai-orchestrator]
+    needs: [flight-ingestor, price-consumer, auth-gateway, ai-orchestrator, geo-engine]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -156,6 +182,12 @@ jobs:
           python-version: "3.13"
           enable-cache: true
           cache-dependency-glob: services/ai-orchestrator/uv.lock
+      - name: Instalar Rust (versión de rust-toolchain.toml)
+        working-directory: services/geo-engine
+        run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: services/geo-engine
       - name: Generar secretos efímeros para la CI
         working-directory: infrastructure
         run: |
@@ -177,19 +209,21 @@ jobs:
         env:
           KAFKA_BROKERS: localhost:29092
         run: go test -tags integration -count=1 ./internal/publisher/
-      - name: Construir y arrancar flight-ingestor, price-consumer, auth-gateway y ai-orchestrator
+      - name: Construir y arrancar flight-ingestor, price-consumer, auth-gateway, ai-orchestrator y geo-engine
         working-directory: infrastructure
         env:
           SEED_WATCHES: MAD-NRT:2026-12-01:ECONOMY
           SEED_SUBSCRIPTIONS: ci-user|MAD-NRT:2026-12-01:ECONOMY
           POLL_INTERVAL: 10s
         run: |
-          docker compose --profile apps up -d --build --wait flight-ingestor price-consumer auth-gateway ai-orchestrator
+          docker compose --profile apps up -d --build --wait flight-ingestor price-consumer auth-gateway ai-orchestrator geo-engine
           curl -fsS http://127.0.0.1:8081/readyz
           curl -fsS http://127.0.0.1:8082/readyz
           curl -fsS http://127.0.0.1:8084/readyz
           # Sin Ollama en la CI: el ai-orchestrator debe estar listo igualmente (plan B por reglas).
           curl -fsS http://127.0.0.1:8086/readyz
+          # El geo-engine está listo cuando ha cargado aeropuertos y zonas de PostGIS.
+          curl -fsS http://127.0.0.1:8087/readyz | jq -e '.ready and .snapshot.airports > 1000 and .geofence_stream == "running"'
       - name: auth-gateway en su contenedor (registro, login y token)
         run: |
           set -euo pipefail
@@ -228,6 +262,17 @@ jobs:
           export PGHOST=localhost PGUSER="$POSTGRES_USER" PGPASSWORD="$POSTGRES_PASSWORD" PGDATABASE="$POSTGRES_DB"
           uv sync --locked
           uv run pytest -m integration -q
+      # PostGIS y Redis reales, más e2e contra el contenedor: gRPC (con la
+      # caché de rutas en Redis) y geofencing (posición en Kafka → evento de entrada).
+      - name: Tests de integración del geo-engine (PostGIS, Redis, Kafka y e2e)
+        working-directory: services/geo-engine
+        env:
+          KAFKA_BROKERS: localhost:29092
+          GEO_ENGINE_GRPC: http://127.0.0.1:50052
+        run: |
+          set -a; . ../../infrastructure/.env; set +a
+          export PGHOST=localhost PGUSER="$POSTGRES_USER" PGPASSWORD="$POSTGRES_PASSWORD" PGDATABASE="$POSTGRES_DB" REDIS_HOST=localhost
+          cargo test --locked --test integration -- --ignored
       - name: La API del ai-orchestrator exige identidad
         run: |
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8085/v1/recommendations)" = 401

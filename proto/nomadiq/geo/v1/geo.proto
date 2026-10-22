@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package nomadiq.geo.v1;
+
+// Tipos geoespaciales compartidos por la API gRPC del geo-engine y por sus
+// eventos de Kafka.
+//
+// Convención de coordenadas para TODO NomadIQ: WGS84 (EPSG:4326), el mismo
+// sistema que usa el GPS del móvil. Latitud en [-90, 90] y longitud en
+// [-180, 180], en grados decimales.
+
+// LatLng es un punto suelto (la posición de un usuario, un aeropuerto...).
+// Para un único punto, dos double son tan compactos como WKB (16 bytes frente
+// a 21) y mucho más fáciles de usar desde la app móvil, así que no usamos WKB.
+message LatLng {
+  double latitude = 1;
+  double longitude = 2;
+}
+
+// Geometry transporta formas complejas (polígonos de zonas, rutas con muchos
+// puntos) como WKB ("Well-Known Binary", estándar ISO/OGC).
+//
+// ¿Por qué bytes y no mensajes protobuf campo a campo? Un polígono detallado
+// puede tener miles de vértices: como "repeated LatLng" cada vértice es un
+// submensaje con su cabecera y el parseo cuesta CPU en ambos lados. WKB es un
+// bloque contiguo de números que PostGIS genera con ST_AsBinary y que Rust lee
+// casi sin trabajo. Además, el mismo formato viaja de PostGIS a la app sin
+// conversiones intermedias.
+//
+// Reglas: WKB ISO 2D, sin SRID embebido (siempre EPSG:4326), X = longitud,
+// Y = latitud (¡ojo, al revés que LatLng!).
+message Geometry {
+  bytes wkb = 1;
+}
+
+// ZoneKind clasifica una zona de geofencing. El 0 siempre es "no
+// especificado" para que un valor olvidado no se confunda con uno real.
+enum ZoneKind {
+  ZONE_KIND_UNSPECIFIED = 0;
+  // Centro histórico o comercial de una ciudad.
+  ZONE_KIND_CITY_CENTER = 1;
+  // Zona turística concreta (un monumento y sus alrededores, un barrio).
+  ZONE_KIND_TOURIST_AREA = 2;
+  // Recinto de un aeropuerto (útil para "ya has llegado, aquí tienes tu eSIM").
+  ZONE_KIND_AIRPORT = 3;
+  // Zona que conviene evitar o con restricciones (avisos de seguridad).
+  ZONE_KIND_RESTRICTED = 4;
+}
+
+// Airport es un aeropuerto con vuelos comerciales.
+message Airport {
+  // Código IATA de 3 letras, por ejemplo "MAD".
+  string iata_code = 1;
+  // Código OACI/ICAO de 4 letras, por ejemplo "LEMD" (puede venir vacío).
+  string icao_code = 2;
+  string name = 3;
+  string city = 4;
+  // Código de país ISO 3166-1 alfa-2, por ejemplo "ES".
+  string country_code = 5;
+  LatLng location = 6;
+}
+
+// Zone es un área geográfica (geofence) que dispara avisos al entrar o salir.
+message Zone {
+  // Identificador estable (UUID).
+  string zone_id = 1;
+  // Nombre corto legible y único, por ejemplo "madrid-centro".
+  string slug = 2;
+  string name = 3;
+  ZoneKind kind = 4;
+  // Polígono o multipolígono en WKB. Solo se rellena si se pide (es lo más
+  // pesado del mensaje).
+  Geometry geometry = 5;
+}
