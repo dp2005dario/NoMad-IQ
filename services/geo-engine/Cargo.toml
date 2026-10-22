@@ -1,0 +1,100 @@
+# Manifiesto del geo-engine: nombre, versión y librerías (en Rust, "crates").
+# Cargo.lock (junto a este fichero) fija la versión EXACTA de cada librería,
+# así todos compilamos lo mismo. Se sube a git porque esto es un programa.
+[package]
+name = "geo-engine"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+license = "MIT"
+publish = false
+
+[dependencies]
+# --- Asincronía: Tokio ejecuta miles de tareas concurrentes con pocos hilos.
+tokio = { version = "1.54", features = ["rt-multi-thread", "macros", "net", "time", "sync", "signal", "io-util"] }
+tokio-stream = { version = "0.1", features = ["net"] }
+futures = "0.3"
+# CancellationToken: avisa a todas las tareas de que toca apagarse.
+tokio-util = "0.7"
+
+# --- gRPC (tonic) y Protocol Buffers (prost). Sin la TLS de tonic: montamos
+# la nuestra con rustls para exigir TLS 1.3 y mTLS (ver src/tls.rs).
+tonic = { version = "0.14", default-features = false, features = ["transport", "codegen", "router", "server"] }
+tonic-prost = "0.14"
+prost = "0.14"
+prost-types = "0.14"
+# Bytes: buffers que se comparten sin copiarlos (el WKB de las zonas).
+bytes = "1"
+
+# --- Geometría 100 % Rust (sin GEOS/GDAL/PROJ en C ni bloques unsafe nuestros).
+geo = "0.33"
+geo-types = "0.7"
+rstar = "0.12"
+wkb = "0.9"
+# Interfaz común entre wkb y geo-types (convierte lo leído en tipos de geo).
+geo-traits = "0.3"
+# Puntero atómico intercambiable: lecturas sin bloqueos del índice en memoria.
+arc-swap = "1.9"
+
+# --- TLS en Rust puro (rustls) con el proveedor criptográfico "ring".
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"] }
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12", "logging"] }
+rustls-pki-types = { version = "1", features = ["std"] }
+x509-parser = "0.18"
+
+# --- PostgreSQL (driver en Rust puro) con TLS.
+tokio-postgres = { version = "0.7", features = ["with-uuid-1"] }
+tokio-postgres-rustls = "0.14"
+
+# --- Redis (driver en Rust puro), con reconexión automática y TLS.
+redis = { version = "1.0", default-features = false, features = ["tokio-comp", "connection-manager", "tokio-rustls-comp", "script"] }
+
+# --- Kafka. ÚNICA dependencia en C (librdkafka), aislada en src/stream/kafka.rs.
+# Se compila desde el código fuente en una versión fijada (no depende de la del sistema).
+rdkafka = { version = "0.39", default-features = false, features = ["tokio", "zstd", "libz-static", "ssl"] }
+
+# --- HTTP para /healthz y /readyz.
+axum = { version = "0.8", default-features = false, features = ["http1", "tokio", "json"] }
+
+# --- Utilidades.
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "fmt"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+hex = "0.4"
+uuid = { version = "1", features = ["v4", "v5", "serde"] }
+humantime = "2"
+
+[build-dependencies]
+# Generan el código Rust de los .proto. protox es un compilador de protobuf
+# escrito en Rust: no hace falta instalar "protoc".
+tonic-prost-build = "0.14"
+protox = "0.10"
+
+[dev-dependencies]
+# Genera certificados de prueba (una CA de mentira) para los tests de mTLS.
+rcgen = "0.14"
+tempfile = "3"
+# Para que el cliente gRPC de los tests use nuestra propia TLS (rustls).
+tower = { version = "0.5", features = ["util"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+
+# Perfil de producción: binario optimizado y más pequeño.
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+panic = "abort"
+
+# Reglas de calidad que comprueba "cargo clippy" (la CI falla si no se cumplen).
+[lints.rust]
+# Prohíbe "unsafe" en NUESTRO código: el compilador garantiza la seguridad de memoria.
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "warn"
+panic = "warn"

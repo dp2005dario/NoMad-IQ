@@ -23,6 +23,15 @@
   "python.testing.pytestEnabled": true,
   "python.testing.cwd": "${workspaceFolder}/services/ai-orchestrator",
   "python.testing.pytestArgs": ["tests"],
+  // Rust (geo-engine): rust-analyzer busca un Cargo.toml en la raíz de la carpeta
+  // abierta; el nuestro está en services/geo-engine, así que se lo indicamos.
+  "rust-analyzer.linkedProjects": ["services/geo-engine/Cargo.toml"],
+  // Al guardar, revisa con clippy (igual que la CI) y formatea con rustfmt.
+  "rust-analyzer.check.command": "clippy",
+  "[rust]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+  },
   // El código generado no se edita: lo marcamos como solo lectura.
   "files.readonlyInclude": {
     "gen/**": true,

@@ -1,0 +1,7 @@
+# Qué NO se envía a Docker al construir el geo-engine (contexto = raíz del repo).
+# Lo más importante: target/ (lo compilado en tu PC, varios GB).
+**/target
+**/.venv
+**/node_modules
+.git
+**/*.env

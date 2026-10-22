@@ -1,0 +1,4 @@
+# Formato del código: "cargo fmt" lo aplica y la CI comprueba que esté aplicado.
+# Líneas de hasta 140 caracteres: caben bien en un monitor y evitan cortes raros.
+max_width = 140
+use_small_heuristics = "Max"
