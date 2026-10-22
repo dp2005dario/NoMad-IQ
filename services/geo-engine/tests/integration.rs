@@ -149,7 +149,12 @@ async fn e2e_grpc_contra_el_contenedor() -> TestResult {
     let run = Uuid::new_v4().simple().to_string();
     let stop = |name: &str, lat, lon| pb::RouteStop { stop_id: format!("{name}-{run}"), location: point(lat, lon) };
     let request = pb::OptimizeRouteRequest {
-        stops: vec![stop("hotel", 40.4168, -3.7038), stop("prado", 40.4138, -3.6921), stop("palacio", 40.4180, -3.7144), stop("retiro", 40.4153, -3.6845)],
+        stops: vec![
+            stop("hotel", 40.4168, -3.7038),
+            stop("prado", 40.4138, -3.6921),
+            stop("palacio", 40.4180, -3.7144),
+            stop("retiro", 40.4153, -3.6845),
+        ],
         shape: pb::RouteShape::RoundTrip.into(),
     };
     let first = client.optimize_route(request.clone()).await?.into_inner();

@@ -113,7 +113,11 @@ async fn call(addr: SocketAddr, tls_config: rustls::ClientConfig) -> Result<pb::
             }
         }))
         .await?;
-    let request = pb::FindNearestAirportsRequest { point: Some(pb::LatLng { latitude: 40.4168, longitude: -3.7038 }), limit: 1, max_distance_meters: 0.0 };
+    let request = pb::FindNearestAirportsRequest {
+        point: Some(pb::LatLng { latitude: 40.4168, longitude: -3.7038 }),
+        limit: 1,
+        max_distance_meters: 0.0,
+    };
     let response = tokio::time::timeout(Duration::from_secs(5), GeoServiceClient::new(channel).find_nearest_airports(request)).await??;
     Ok(response.into_inner())
 }
