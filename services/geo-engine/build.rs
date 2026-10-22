@@ -16,7 +16,7 @@ use std::error::Error;
 const PROTO_ROOT: &str = "../../proto";
 
 /// Contratos que necesita este servicio (sus dependencias se incluyen solas).
-const PROTO_FILES: &[&str] = &["nomadiq/geo/v1/geo_service.proto", "nomadiq/geo/v1/events.proto"];
+const PROTO_FILES: &[&str] = &["nomadiq/geo/v1/geo_service.proto", "nomadiq/geo/v1/events.proto", "nomadiq/notify/v1/events.proto"];
 
 fn main() -> Result<(), Box<dyn Error>> {
     // Recompilar si cambia cualquier contrato.

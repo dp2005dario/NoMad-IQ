@@ -9,12 +9,15 @@ Levanta en tu máquina todo lo que necesitan los microservicios.
 | Redis | `redis:7.4-alpine` | 6379 | Caché |
 | Qdrant | `qdrant/qdrant:v1.13.6` | 6333 (REST), 6334 (gRPC) | Vectores para la IA |
 | flight-ingestor | build local | 50051 (gRPC), 8081 (salud) | Perfil `apps` |
+| notifier | build local | 8089 (API de teléfonos), 8090 (salud) | Perfil `apps`. Necesita las claves de `make keys` |
+| fcm-fake | build local (misma imagen) | 8099 | Perfil `apps`. Firebase falso: `GET /messages` muestra lo que "vería Google" |
 
 ## Arranque
 
 ```bash
 cd infrastructure
 cp .env.example .env          # rellena cada valor (ver comentarios dentro)
+make -C .. keys               # crea las claves de las notificaciones push si faltan
 docker compose up -d --wait   # infraestructura
 docker compose ps             # todo debe salir "healthy"; kafka-init "exited (0)"
 

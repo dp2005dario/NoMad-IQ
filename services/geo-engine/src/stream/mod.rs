@@ -25,6 +25,7 @@
 
 pub mod geofence;
 pub mod kafka;
+pub mod notify;
 pub mod processor;
 
 pub use processor::{EventSink, InboundRecord, OutboundRecord, Processor};

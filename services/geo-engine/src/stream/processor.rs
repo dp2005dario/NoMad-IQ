@@ -12,6 +12,7 @@ use prost::Message;
 use thiserror::Error;
 
 use super::geofence::{self, GeofenceRules, Outcome, Presence, TransitionKind, presence_key};
+use super::notify::{self, Pseudonymizer, TYPE_ZONE_NOTIFICATION_REQUESTED};
 use crate::cache::{CacheError, KeyValueStore};
 use crate::snapshot::SnapshotHandle;
 
@@ -103,10 +104,21 @@ pub struct ProcessorSettings {
     pub topic_zone_entries: String,
     /// Topic DLQ.
     pub topic_dlq: String,
+    /// Órdenes de notificación push (None = desactivadas).
+    pub notify: Option<NotifyTarget>,
     /// Precisión máxima e histéresis.
     pub rules: GeofenceRules,
     /// Caducidad del estado de presencia.
     pub presence_ttl: Duration,
+}
+
+/// Adónde y cómo se piden las notificaciones push (ver notify.rs).
+#[derive(Debug, Clone)]
+pub struct NotifyTarget {
+    /// Topic de las órdenes (`notify.zone-requests.v1`).
+    pub topic: String,
+    /// Calcula el seudónimo del destinatario.
+    pub pseudonymizer: Arc<Pseudonymizer>,
 }
 
 /// Procesador de posiciones.
@@ -176,6 +188,25 @@ impl<S: KeyValueStore, K: EventSink> Processor<S, K> {
                     .await?;
             }
         }
+        // Como mucho UNA orden de notificación por posición, la de la zona
+        // más relevante (ver notify.rs). Si se reprocesa el mensaje tras un
+        // fallo, la orden se repite, pero el notifier descarta la repetida
+        // (recuerda qué zona ya anunció a cada persona).
+        if let Some(target) = &self.settings.notify {
+            let best = transitions.iter().filter(|t| t.kind == TransitionKind::Enter).max_by_key(|t| notify::notify_priority(&t.zone.kind));
+            if let Some(transition) = best {
+                let recipient = target.pseudonymizer.recipient(&position.user_id);
+                let (request_id, request) = notify::request_event(&position, &transition.zone, recipient.clone(), PRODUCER);
+                self.sink
+                    .send(OutboundRecord {
+                        topic: target.topic.clone(),
+                        key: recipient.into_bytes(),
+                        payload: request.encode_to_vec(),
+                        headers: cloud_event_headers(&request_id.to_string(), TYPE_ZONE_NOTIFICATION_REQUESTED),
+                    })
+                    .await?;
+            }
+        }
         // 2) Guardar el estado nuevo (solo después de publicar: ver stream/mod.rs).
         let bytes = serde_json::to_vec(&presence).map_err(|e| TransientError::Encode(e.to_string()))?;
         self.presence.set_ex(&key, bytes, self.settings.presence_ttl).await?;
@@ -233,6 +264,7 @@ mod tests {
     use super::*;
     use crate::cache::MemoryStore;
     use crate::proto::geo as pb;
+    use crate::proto::notify as pb_notify;
     use crate::spatial::index::tests::sample_snapshot;
     use crate::stream::geofence::tests::position_msg;
     use std::sync::Mutex;
@@ -271,10 +303,57 @@ mod tests {
             topic_transitions: "geo.geofence-transitions.v1".into(),
             topic_zone_entries: "geo.zone-entries.v1".into(),
             topic_dlq: "geo.user-positions-dlq.v1".into(),
+            notify: None,
             rules: GeofenceRules::without_hysteresis(100.0),
             presence_ttl: Duration::from_secs(3600),
         };
         (Processor::new(handle, Arc::new(store.clone()), sink.clone(), settings), store, sink)
+    }
+
+    fn processor_with_notify() -> Result<(Processor<MemoryStore, VecSink>, Arc<VecSink>), String> {
+        let handle = SnapshotHandle::new();
+        handle.publish(sample_snapshot());
+        let sink = Arc::new(VecSink::default());
+        let settings = ProcessorSettings {
+            topic_transitions: "geo.geofence-transitions.v1".into(),
+            topic_zone_entries: "geo.zone-entries.v1".into(),
+            topic_dlq: "geo.user-positions-dlq.v1".into(),
+            notify: Some(NotifyTarget {
+                topic: "notify.zone-requests.v1".into(),
+                pseudonymizer: Arc::new(Pseudonymizer::from_hex(&"0f".repeat(32))?),
+            }),
+            rules: GeofenceRules::without_hysteresis(100.0),
+            presence_ttl: Duration::from_secs(3600),
+        };
+        Ok((Processor::new(handle, Arc::new(MemoryStore::default()), sink.clone(), settings), sink))
+    }
+
+    #[tokio::test]
+    async fn una_sola_orden_seudonima_por_posicion() -> Result<(), Box<dyn std::error::Error>> {
+        let (p, sink) = processor_with_notify()?;
+        // La Puerta del Sol está DENTRO del centro de Madrid: dos entradas a la vez.
+        assert_eq!(p.handle(&record(40.4168, -3.7038, now(), 1)).await?, Handled::Published(2));
+        let sent = sink.take();
+        let requests: Vec<_> = sent.iter().filter(|r| r.topic == "notify.zone-requests.v1").collect();
+        assert_eq!(requests.len(), 1, "un solo aviso aunque se entre en dos zonas");
+        let request = pb_notify::ZoneNotificationRequested::decode(requests[0].payload.as_slice())?;
+        // Gana la zona más concreta (el monumento), no el centro entero.
+        assert_eq!(request.zone_kind, i32::from(pb::ZoneKind::TouristArea));
+        assert_eq!(request.language, "es");
+        assert_eq!(request.recipient.len(), 43);
+        assert_eq!(requests[0].key, request.recipient.as_bytes(), "clave = seudónimo");
+        // Ni el user_id ni las coordenadas viajan en la orden.
+        let raw = String::from_utf8_lossy(&requests[0].payload);
+        assert!(!raw.contains("ana"));
+        assert!(!requests[0].payload.windows(8).any(|w| w == 40.4168_f64.to_le_bytes()));
+        let seconds = request.metadata.and_then(|m| m.occurred_at).map(|t| t.seconds).unwrap_or(1);
+        assert_eq!(seconds % 60, 0, "hora redondeada al minuto");
+
+        // Seguir dentro no pide más avisos; salir (lejos de toda zona) tampoco.
+        assert_eq!(p.handle(&record(40.4168, -3.7038, now() + 1000, 2)).await?, Handled::Published(0));
+        assert_eq!(p.handle(&record(0.0, 0.0, now() + 2000, 3)).await?, Handled::Published(2));
+        assert!(sink.take().iter().all(|r| r.topic != "notify.zone-requests.v1"));
+        Ok(())
     }
 
     fn record(lat: f64, lon: f64, ms: i64, event: u128) -> InboundRecord {

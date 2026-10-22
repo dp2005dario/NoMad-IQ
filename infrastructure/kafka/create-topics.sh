@@ -34,6 +34,13 @@ TOPICS=(
   "geo.zone-entries.v1|6|86400000|delete"
   # Entradas a zonas que el ai-orchestrator no pudo leer (DLQ): 3 días.
   "geo.zone-entries-dlq.v1|3|259200000|delete"
+  # Órdenes de notificación push (geo-engine → notifier). Llevan un
+  # SEUDÓNIMO, no el user_id, y nada de coordenadas. Clave = seudónimo: los
+  # avisos de una persona se procesan en orden (anti-spam sin carreras).
+  # Solo 1 hora: un "acabas de llegar" con retraso ya no sirve.
+  "notify.zone-requests.v1|6|3600000|delete"
+  # Órdenes que el notifier no pudo leer (DLQ): 3 días.
+  "notify.zone-requests-dlq.v1|3|259200000|delete"
 )
 
 # Recorre la lista y separa cada entrada por el carácter | en cuatro variables.

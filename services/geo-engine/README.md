@@ -90,6 +90,8 @@ Todas las operaciones son deterministas: reintentar es seguro.
 | `KAFKA_GROUP_ID` / `KAFKA_CLIENT_ID` | `geo-engine` | |
 | `KAFKA_TOPIC_POSITIONS` / `KAFKA_TOPIC_TRANSITIONS` / `KAFKA_TOPIC_POSITIONS_DLQ` | `geo.user-positions.v1` / `geo.geofence-transitions.v1` / `geo.user-positions-dlq.v1` | |
 | `KAFKA_TOPIC_ZONE_ENTRIES` | `geo.zone-entries.v1` | Entradas **anónimas** (solo `zone_id` + idioma, clave `zone_id`) para el ai-orchestrator |
+| `KAFKA_TOPIC_NOTIFY_REQUESTS` | `notify.zone-requests.v1` | Órdenes de aviso push **seudónimas** para el notifier (una por posición como mucho) |
+| `NOTIFY_PSEUDONYM_KEY` / `NOTIFY_PSEUDONYM_KEY_FILE` | — | Clave HMAC (hex, ≥ 32 bytes) del seudónimo del destinatario; la misma que el notifier. Sin ella no se piden avisos push |
 | `KAFKA_TLS_CA_FILE` | — | Activa TLS hacia Kafka |
 | `GEOFENCE_MAX_ACCURACY_M` / `PRESENCE_TTL` | `100` / `24h` | Precisión GPS mínima / memoria de presencia |
 | `GEOFENCE_EXIT_MARGIN_M` | `30` | Histéresis de salida: hay que alejarse más que esto del borde (o que la precisión del GPS, si es peor) |

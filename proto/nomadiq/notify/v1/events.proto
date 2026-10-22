@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package nomadiq.notify.v1;
+
+import "nomadiq/common/v1/common.proto";
+import "nomadiq/geo/v1/geo.proto";
+
+// Eventos de la capa de notificaciones push.
+// Regla de evolución: solo se AÑADEN campos con números nuevos.
+
+// ZoneNotificationRequested se publica en "notify.zone-requests.v1" cuando un
+// usuario entra en una zona (entrada ya CONFIRMADA por la histéresis) y quizá
+// convenga avisarle en el móvil ("Estás en el centro de Madrid: ¿escuchas la
+// audioguía?"). Lo publica el geo-engine y lo consume el notifier.
+//
+// Es una "orden de negocio", no un dato de ubicación: el notifier decide si
+// avisa (anti-spam) y a qué teléfonos, pero NUNCA ve coordenadas, precisión
+// del GPS, nombres de zona ni el user_id real.
+//
+// Seudonimización (RGPD art. 4.5): en lugar del user_id viaja `recipient`,
+// un HMAC-SHA256 del user_id con una clave secreta que solo tienen el
+// geo-engine y el notifier. Sin la clave no se puede volver atrás ni
+// comprobar "¿es este el seudónimo de Ana?". El notifier guarda los
+// teléfonos con ese mismo seudónimo, así que nunca necesita saber quién es
+// la persona.
+//
+// Minimización igual que en ZoneEntered:
+// - metadata.event_id es un UUID aleatorio (no derivado de la posición).
+// - metadata.occurred_at se redondea hacia abajo al minuto.
+// - metadata.correlation_id va vacío.
+//
+// Clave del mensaje Kafka: recipient. Todos los avisos de una persona caen en
+// la misma partición y se procesan en orden, uno detrás de otro: así dos
+// entradas casi simultáneas (dos zonas contiguas) no se "cuelan" a la vez por
+// el control anti-spam.
+//
+// Retención corta (1 hora): un aviso de "acabas de llegar" que llega tarde ya
+// no sirve, y el notifier descarta los que tienen más de unos minutos.
+message ZoneNotificationRequested {
+  nomadiq.common.v1.EventMetadata metadata = 1;
+  // HMAC-SHA256(clave, user_id) en base64url sin relleno: 43 caracteres.
+  string recipient = 2;
+  string zone_id = 3;
+  nomadiq.geo.v1.ZoneKind zone_kind = 4;
+  // Idioma principal ISO 639 en minúsculas ("es", "en"), o vacío.
+  string language = 5;
+}

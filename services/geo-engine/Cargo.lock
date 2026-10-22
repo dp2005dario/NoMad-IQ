@@ -715,6 +715,7 @@ version = "0.1.0"
 dependencies = [
  "arc-swap",
  "axum",
+ "base64 0.22.1",
  "bytes",
  "futures",
  "geo",
@@ -729,6 +730,7 @@ dependencies = [
  "rcgen",
  "rdkafka",
  "redis",
+ "ring",
  "rstar",
  "rustls",
  "rustls-pki-types",

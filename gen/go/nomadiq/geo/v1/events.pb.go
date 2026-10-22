@@ -290,8 +290,8 @@ func (x *GeofenceTransitioned) GetPositionEventId() string {
 //   - metadata.occurred_at se redondea hacia abajo al minuto.
 //   - metadata.correlation_id va vacío por el mismo motivo.
 //
-// El vínculo con la persona real lo hace solo la capa de notificaciones,
-// leyendo GeofenceTransitioned (que sí lleva user_id).
+// Los avisos push a la persona van por otro camino, también sin user_id ni
+// coordenadas: ZoneNotificationRequested (nomadiq/notify/v1), con un seudónimo.
 //
 // Clave del mensaje Kafka: zone_id. Todas las entradas a una misma zona van a
 // la misma partición, así que las procesa un único consumidor: si entra un
