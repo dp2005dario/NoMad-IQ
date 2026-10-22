@@ -2,7 +2,7 @@
 # Cada "objetivo" (proto, test, up...) es un atajo: "make up" ejecuta los
 # comandos de debajo. Las líneas de comando deben empezar con un tabulador.
 # .PHONY indica que son nombres de tareas, no ficheros que generar.
-.PHONY: help proto proto-python test test-java test-python test-rust test-rust-integration test-integration up up-apps down logs alerts ollama recommendations zones
+.PHONY: help proto proto-python test test-java test-python test-rust test-rust-integration test-integration up up-apps down logs alerts ollama recommendations audioguides zones
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-18s %s\n", $$1, $$2}'
@@ -66,6 +66,9 @@ ollama: ## Arranca Ollama (LLM local) y descarga el modelo (OLLAMA_MODEL, por de
 
 recommendations: ## Muestra las últimas recomendaciones generadas por el ai-orchestrator
 	cd infrastructure && docker compose exec postgres sh -c 'PGPASSWORD="$$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -c "SELECT created_at, user_id, verdict, source, headline FROM ai.fare_recommendations ORDER BY created_at DESC LIMIT 20"'
+
+audioguides: ## Muestra las audioguías por zona guardadas en Redis (ai-orchestrator)
+	cd infrastructure && docker compose exec redis sh -c 'redis-cli --scan --pattern "ai:audioguide:v1:*" | while read k; do echo "$$k  (caduca en $$(redis-cli ttl $$k) s)"; done'
 
 zones: ## Muestra las zonas de geofencing guardadas en PostGIS (geo-engine)
 	cd infrastructure && docker compose exec postgres sh -c 'PGPASSWORD="$$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -c "SELECT slug, kind, active, round(ST_Area(geom::geography)) AS m2, updated_at FROM geo.zones ORDER BY slug"'

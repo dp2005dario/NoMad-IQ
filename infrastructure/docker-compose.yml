@@ -272,6 +272,12 @@ services:
       OLLAMA_INSECURE_DEV: "true"
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
       LLM_ENABLED: ${LLM_ENABLED:-true}
+      # Audioguías por zona: la caché de guiones vive en Redis.
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Define REDIS_PASSWORD en .env}
+      REDIS_TLS: "false"
+      REDIS_INSECURE_DEV: "true"
+      AUDIOGUIDE_DEFAULT_LANGUAGE: ${AUDIOGUIDE_DEFAULT_LANGUAGE:-en}
       EXPOSE_API_DOCS: "true"
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
@@ -281,6 +287,8 @@ services:
       kafka-init:
         condition: service_completed_successfully
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   # Motor geoespacial (Rust): aeropuertos cercanos, distancias, orden óptimo de
@@ -311,6 +319,11 @@ services:
       GRPC_INSECURE_DEV: "true"
       # Zonas de ejemplo (Madrid, Barcelona, París, Tokio) para ver el geofencing.
       SEED_DEMO_ZONES: ${SEED_DEMO_ZONES:-true}
+      # Histéresis del geofencing: para SALIR hay que alejarse más de 30 m del
+      # borde, y para ENTRAR hay que seguir dentro 15 s. Evita la "tormenta" de
+      # avisos cuando el GPS baila justo en el borde de una zona.
+      GEOFENCE_EXIT_MARGIN_M: ${GEOFENCE_EXIT_MARGIN_M:-30}
+      GEOFENCE_ENTER_DWELL: ${GEOFENCE_ENTER_DWELL:-15s}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "127.0.0.1:50052:50052"   # gRPC GeoService

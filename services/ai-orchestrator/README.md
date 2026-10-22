@@ -24,7 +24,8 @@ Kafka flights.fare-alerts.v1 ──► consumer ──► recommender ──┬�
 |---|---|---|
 | `GET /v1/recommendations?limit=20` | `X-User-ID` + rol `USER` | Últimas recomendaciones del usuario (1–50). |
 | `GET /v1/recommendations/{alert_id}` | `X-User-ID` + rol `USER` | Una recomendación; 404 si no existe **o no es tuya**. |
-| `GET :8086/healthz`, `GET :8086/readyz` | red interna | Salud (readyz: PostgreSQL + consumidor Kafka; Ollama no cuenta porque hay plan B). |
+| `GET /v1/audioguides/{zone_id}?lang=es` | `X-User-ID` + rol `USER` | Guion de la audioguía de una zona (genérico, desde la caché de Redis); 404 si aún no está listo. |
+| `GET :8086/healthz`, `GET :8086/readyz` | red interna | Salud (readyz: PostgreSQL + consumidores Kafka + Redis; Ollama no cuenta porque hay plan B). |
 
 La identidad llega en `X-User-ID` / `X-User-Roles`, ya verificada por el
 `auth-gateway` (forward auth del proxy de borde). El puerto 8085 exige **mTLS
@@ -39,6 +40,7 @@ con TLS 1.3**, así que solo el proxy puede enviarlas. Errores en RFC 9457
 | 2. JSON roto o con "charla" | Esquema JSON de Pydantic enviado a Ollama (`format`), temperatura 0.1, validación estricta (`extra="forbid"`), reintentos con el error explicado, **máximo 3**. | `llm/structured.py` |
 | 3. Alucinaciones | RAG sobre datos reales (historial en PostgreSQL, notas en Qdrant). El modelo **no puede escribir cifras**: usa huecos `{precio_actual}` que rellenamos nosotros; cualquier dígito o hueco desconocido = respuesta rechazada. Plan B por reglas. | `grounding.py`, `recommender.py`, `retrieval.py` |
 | 4. Saturación del contexto | Estimación de tokens, presupuesto por llamada, recorte de notas, historial de chat con los mensajes recientes + resumen acotado de lo antiguo. | `context.py` |
+| 6. Audioguías: latencia, estampidas y privacidad | Consumidor propio de `geo.zone-entries.v1` (entradas **anónimas**: solo `zone_id` + idioma). Guion **genérico por zona+idioma** en Redis; un lote agrupa las entradas repetidas, *single flight* en el proceso y cerrojo `SET NX` entre réplicas: un autobús = una generación. Hechos verificados en `ai.zone_facts`; cada párrafo cita sus hechos y se rechaza cualquier cifra que no esté en ellos. Plan B por reglas con caducidad corta. | `audioguides/` |
 | 5. Bucles en la negociación | Esqueleto con máximo de rondas (techo absoluto 10), tiempo por ronda, contexto de una sola postura por agente y árbitro determinista (Borda + desempates fijos). | `negotiation.py` |
 
 ## Estructura
@@ -56,6 +58,7 @@ con TLS 1.3**, así que solo el proxy puede enviarlas. Errores en RFC 9457
 | `context.py` | Presupuesto de tokens, recorte y resumen |
 | `negotiation.py` | Motor de negociación multi-agente acotado (esqueleto) |
 | `store.py` | PostgreSQL: migraciones, historial y recomendaciones |
+| `audioguides/` | Audioguías por zona: eventos, hechos, redactor anclado, caché Redis + *single flight*, servicio y consumidor |
 | `consumer.py` | Bucle de Kafka: commits manuales, DLQ y reintentos |
 | `api.py` | FastAPI: identidad, RBAC y errores RFC 9457 |
 | `__main__.py` | Arranque, mTLS y apagado ordenado |
@@ -88,6 +91,15 @@ con TLS 1.3**, así que solo el proxy puede enviarlas. Errores en RFC 9457
 | `QDRANT_URL`, `QDRANT_API_KEY`, `QDRANT_COLLECTION` | — / — / `travel_knowledge` | Notas de viaje (opcional) |
 | `QDRANT_TLS_CA_FILE` / `QDRANT_INSECURE_DEV` | — / `false` | |
 | `KNOWLEDGE_MAX_SNIPPETS` | `3` | Notas por recomendación (0 = ninguna) |
+| `AUDIOGUIDES_ENABLED` | `true` | Consumidor de entradas a zonas + API de audioguías (necesita Redis) |
+| `KAFKA_TOPIC_ZONE_ENTRIES` / `KAFKA_TOPIC_ZONE_ENTRIES_DLQ` | `geo.zone-entries.v1` / `geo.zone-entries-dlq.v1` | |
+| `KAFKA_AUDIOGUIDES_GROUP_ID` | `ai-orchestrator-audioguides` | Grupo propio (no frena a las alertas) |
+| `REDIS_HOST`, `REDIS_PASSWORD` | **obligatorias** con audioguías | Caché de guiones |
+| `REDIS_PORT` / `REDIS_TLS` / `REDIS_TLS_CA_FILE` | `6379` / `true` / — | TLS 1.3 |
+| `REDIS_INSECURE_DEV` | `false` | Solo local: permite `REDIS_TLS=false` |
+| `AUDIOGUIDE_DEFAULT_LANGUAGE` | `en` | Si la app no indica idioma (admitidos: es, en, fr, de, it, pt) |
+| `AUDIOGUIDE_LLM_TTL_SECONDS` / `AUDIOGUIDE_RULES_TTL_SECONDS` | `604800` / `3600` | Vida en caché del guion del LLM / del plan B |
+| `AUDIOGUIDE_MAX_WORDS` / `AUDIOGUIDE_MAX_OUTPUT_TOKENS` | `260` / `900` | ≈ menos de dos minutos de audio |
 | `LOG_LEVEL` | `info` | Logs JSON |
 
 ## Desarrollo
@@ -97,7 +109,8 @@ cd services/ai-orchestrator
 uv sync                          # crea .venv con Python 3.13 y las librerías de uv.lock
 uv run pytest                    # tests unitarios (LLM falso, sin Ollama)
 uv run ruff format . && uv run ruff check . && uv run mypy
-uv run pytest -m integration     # con "make up" y las variables PG* (ver Makefile)
+uv run pytest -m integration     # con "make up" y las variables PG* y REDIS_* (ver Makefile)
+uv run python -m ai_orchestrator --pregenerate-audioguides es,en   # rellena la caché de todas las zonas
 ```
 
 Desde la raíz: `make test-python`, `make test-integration`, `make up-apps`,
