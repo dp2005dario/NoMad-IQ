@@ -11,7 +11,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use prost::Message;
 use thiserror::Error;
 
-use super::geofence::{self, Outcome, Presence, presence_key};
+use super::geofence::{self, GeofenceRules, Outcome, Presence, TransitionKind, presence_key};
 use crate::cache::{CacheError, KeyValueStore};
 use crate::snapshot::SnapshotHandle;
 
@@ -21,6 +21,8 @@ pub const PRODUCER: &str = "geo-engine";
 pub const CONTENT_TYPE_PROTOBUF: &str = "application/x-protobuf";
 /// Nombre completo del mensaje publicado (cabecera `ce_type`).
 pub const TYPE_GEOFENCE_TRANSITIONED: &str = "nomadiq.geo.v1.GeofenceTransitioned";
+/// Nombre completo del evento anónimo de entrada a zona (cabecera `ce_type`).
+pub const TYPE_ZONE_ENTERED: &str = "nomadiq.geo.v1.ZoneEntered";
 
 /// Mensaje recibido (copia de los datos que necesitamos del mensaje de Kafka).
 #[derive(Debug, Clone, Default)]
@@ -97,10 +99,12 @@ pub enum Handled {
 pub struct ProcessorSettings {
     /// Topic de salida.
     pub topic_transitions: String,
+    /// Topic de entradas anónimas a zonas (para el ai-orchestrator).
+    pub topic_zone_entries: String,
     /// Topic DLQ.
     pub topic_dlq: String,
-    /// Precisión máxima aceptada.
-    pub max_accuracy_m: f64,
+    /// Precisión máxima e histéresis.
+    pub rules: GeofenceRules,
     /// Caducidad del estado de presencia.
     pub presence_ttl: Duration,
 }
@@ -138,7 +142,7 @@ impl<S: KeyValueStore, K: EventSink> Processor<S, K> {
             serde_json::from_slice(&bytes).inspect_err(|e| tracing::warn!(error = %e, "estado de presencia ilegible: se reinicia")).ok()
         });
 
-        let (transitions, presence) = match geofence::evaluate(&position, previous.as_ref(), &snapshot, self.settings.max_accuracy_m) {
+        let (transitions, presence) = match geofence::evaluate(&position, previous.as_ref(), &snapshot, &self.settings.rules) {
             Outcome::Ignored(reason) => {
                 tracing::debug!(?reason, "posición ignorada");
                 return Ok(Handled::Ignored);
@@ -153,16 +157,24 @@ impl<S: KeyValueStore, K: EventSink> Processor<S, K> {
                 topic: self.settings.topic_transitions.clone(),
                 key: position.user_id.as_bytes().to_vec(),
                 payload: event.encode_to_vec(),
-                headers: vec![
-                    ("content-type".into(), CONTENT_TYPE_PROTOBUF.into()),
-                    ("ce_specversion".into(), b"1.0".to_vec()),
-                    ("ce_id".into(), event_id.to_string().into_bytes()),
-                    ("ce_type".into(), TYPE_GEOFENCE_TRANSITIONED.into()),
-                    ("ce_source".into(), PRODUCER.into()),
-                    ("ce_time".into(), rfc3339_now().into_bytes()),
-                ],
+                headers: cloud_event_headers(&event_id.to_string(), TYPE_GEOFENCE_TRANSITIONED),
             };
             self.sink.send(record).await?;
+
+            // Cada ENTRADA (ya confirmada por la histéresis) se publica además
+            // en versión anónima, con clave = zone_id. Las salidas no: a la IA
+            // de audioguías solo le interesa "alguien acaba de llegar aquí".
+            if transition.kind == TransitionKind::Enter {
+                let (entry_id, entry) = geofence::zone_entry_event(&position, &transition.zone, PRODUCER);
+                self.sink
+                    .send(OutboundRecord {
+                        topic: self.settings.topic_zone_entries.clone(),
+                        key: transition.zone.id.to_string().into_bytes(),
+                        payload: entry.encode_to_vec(),
+                        headers: cloud_event_headers(&entry_id.to_string(), TYPE_ZONE_ENTERED),
+                    })
+                    .await?;
+            }
         }
         // 2) Guardar el estado nuevo (solo después de publicar: ver stream/mod.rs).
         let bytes = serde_json::to_vec(&presence).map_err(|e| TransientError::Encode(e.to_string()))?;
@@ -194,6 +206,18 @@ impl<S: KeyValueStore, K: EventSink> Processor<S, K> {
             .await?;
         Ok(Handled::DeadLettered)
     }
+}
+
+/// Cabeceras estilo CloudEvents (las mismas que ponen los servicios Go).
+fn cloud_event_headers(event_id: &str, event_type: &str) -> Vec<(String, Vec<u8>)> {
+    vec![
+        ("content-type".into(), CONTENT_TYPE_PROTOBUF.into()),
+        ("ce_specversion".into(), b"1.0".to_vec()),
+        ("ce_id".into(), event_id.as_bytes().to_vec()),
+        ("ce_type".into(), event_type.into()),
+        ("ce_source".into(), PRODUCER.into()),
+        ("ce_time".into(), rfc3339_now().into_bytes()),
+    ]
 }
 
 fn now_ms() -> i64 {
@@ -245,8 +269,9 @@ mod tests {
         let sink = Arc::new(VecSink::default());
         let settings = ProcessorSettings {
             topic_transitions: "geo.geofence-transitions.v1".into(),
+            topic_zone_entries: "geo.zone-entries.v1".into(),
             topic_dlq: "geo.user-positions-dlq.v1".into(),
-            max_accuracy_m: 100.0,
+            rules: GeofenceRules::without_hysteresis(100.0),
             presence_ttl: Duration::from_secs(3600),
         };
         (Processor::new(handle, Arc::new(store.clone()), sink.clone(), settings), store, sink)
@@ -272,13 +297,22 @@ mod tests {
         let (p, store, sink) = processor();
         assert_eq!(p.handle(&record(40.4168, -3.7038, now(), 1)).await?, Handled::Published(2));
         let sent = sink.take();
-        assert_eq!(sent.len(), 2);
-        assert!(sent.iter().all(|r| r.topic == "geo.geofence-transitions.v1" && r.key == b"ana"));
-        let event = pb::GeofenceTransitioned::decode(sent[0].payload.as_slice()).map_err(|e| SinkError(e.to_string()))?;
+        // Por cada entrada: el evento con usuario + su gemelo anónimo.
+        let (named, anonymous): (Vec<_>, Vec<_>) = sent.iter().partition(|r| r.topic == "geo.geofence-transitions.v1");
+        assert_eq!(named.len(), 2);
+        assert!(named.iter().all(|r| r.key == b"ana"));
+        let event = pb::GeofenceTransitioned::decode(named[0].payload.as_slice()).map_err(|e| SinkError(e.to_string()))?;
         assert_eq!(event.zone_slug, "madrid-centro");
         assert_eq!(event.transition, i32::from(pb::GeofenceTransitionType::Enter));
-        let ce_type = sent[0].headers.iter().find(|(k, _)| k == "ce_type").map(|(_, v)| v.as_slice());
+        let ce_type = named[0].headers.iter().find(|(k, _)| k == "ce_type").map(|(_, v)| v.as_slice());
         assert_eq!(ce_type, Some(TYPE_GEOFENCE_TRANSITIONED.as_bytes()));
+
+        assert_eq!(anonymous.len(), 2);
+        let entry = pb::ZoneEntered::decode(anonymous[0].payload.as_slice()).map_err(|e| SinkError(e.to_string()))?;
+        assert_eq!(anonymous[0].topic, "geo.zone-entries.v1");
+        assert_eq!(anonymous[0].key, entry.zone_id.as_bytes(), "clave = zone_id, nunca el usuario");
+        assert_eq!(entry.language, "es");
+        assert!(!String::from_utf8_lossy(&anonymous[0].payload).contains("ana"));
         assert_eq!(store.len(), 1);
         Ok(())
     }
@@ -300,7 +334,8 @@ mod tests {
 
         // Al reintentar todo va bien; un segundo reintento (duplicado) se ignora.
         p.handle(&msg).await?;
-        let first_ids: Vec<_> = sink.take().iter().map(|r| r.headers[2].1.clone()).collect();
+        let first_ids: Vec<_> =
+            sink.take().iter().filter(|r| r.topic == "geo.geofence-transitions.v1").map(|r| r.headers[2].1.clone()).collect();
         assert_eq!(p.handle(&msg).await?, Handled::Ignored, "misma posición = antigua");
         assert_eq!(first_ids.len(), 2);
         Ok(())
@@ -327,6 +362,24 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn con_histeresis_la_entrada_espera_y_el_estado_pendiente_se_guarda() -> Result<(), TransientError> {
+        let (mut p, store, sink) = processor();
+        p.settings.rules = GeofenceRules { max_accuracy_m: 100.0, exit_margin_m: 30.0, enter_dwell_ms: 15_000 };
+        let t0 = now() - 30_000;
+        assert_eq!(p.handle(&record(40.4168, -3.7038, t0, 1)).await?, Handled::Published(0));
+        assert!(sink.take().is_empty(), "primera lectura: solo pendiente");
+        let saved: Presence = store
+            .get(&presence_key("ana"))
+            .await?
+            .and_then(|b| serde_json::from_slice(&b).ok())
+            .ok_or(TransientError::Encode("sin estado".into()))?;
+        assert_eq!(saved.pending.len(), 2);
+        assert_eq!(p.handle(&record(40.4168, -3.7038, t0 + 20_000, 2)).await?, Handled::Published(2));
+        assert_eq!(sink.take().len(), 4);
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn sin_foto_no_se_confirma_nada() {
         let p =
             Processor::new(SnapshotHandle::new(), Arc::new(MemoryStore::default()), Arc::new(VecSink::default()), processor().0.settings);
@@ -338,7 +391,7 @@ mod tests {
         let (p, store, sink) = processor();
         store.set_ex(&presence_key("ana"), b"{no es json".to_vec(), Duration::from_secs(1)).await?;
         assert_eq!(p.handle(&record(40.4168, -3.7038, now(), 1)).await?, Handled::Published(2));
-        assert_eq!(sink.take().len(), 2);
+        assert_eq!(sink.take().len(), 4, "2 entradas + sus 2 gemelas anónimas");
         Ok(())
     }
 }

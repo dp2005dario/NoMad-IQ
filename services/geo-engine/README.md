@@ -89,8 +89,11 @@ Todas las operaciones son deterministas: reintentar es seguro.
 | `KAFKA_BROKERS` | **obligatoria** si el stream está activo | Separados por comas |
 | `KAFKA_GROUP_ID` / `KAFKA_CLIENT_ID` | `geo-engine` | |
 | `KAFKA_TOPIC_POSITIONS` / `KAFKA_TOPIC_TRANSITIONS` / `KAFKA_TOPIC_POSITIONS_DLQ` | `geo.user-positions.v1` / `geo.geofence-transitions.v1` / `geo.user-positions-dlq.v1` | |
+| `KAFKA_TOPIC_ZONE_ENTRIES` | `geo.zone-entries.v1` | Entradas **anónimas** (solo `zone_id` + idioma, clave `zone_id`) para el ai-orchestrator |
 | `KAFKA_TLS_CA_FILE` | — | Activa TLS hacia Kafka |
 | `GEOFENCE_MAX_ACCURACY_M` / `PRESENCE_TTL` | `100` / `24h` | Precisión GPS mínima / memoria de presencia |
+| `GEOFENCE_EXIT_MARGIN_M` | `30` | Histéresis de salida: hay que alejarse más que esto del borde (o que la precisión del GPS, si es peor) |
+| `GEOFENCE_ENTER_DWELL` | `15s` | Histéresis de entrada: tiempo mínimo dentro antes de anunciar la entrada (`0s` = inmediata) |
 | `SHUTDOWN_TIMEOUT` / `LOG_LEVEL` / `LOG_FORMAT` | `20s` / `info` / `json` | |
 
 ## Desarrollo

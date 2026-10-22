@@ -173,24 +173,30 @@ async fn e2e_geofencing_por_kafka() -> TestResult {
     }
     let brokers = env("KAFKA_BROKERS", "localhost:29092");
     let user_id = format!("e2e-{}", Uuid::new_v4());
-    let now = SystemTime::now().duration_since(UNIX_EPOCH)?;
-    let position = pb::UserPositionReported {
-        metadata: Some(common::EventMetadata {
-            event_id: Uuid::new_v4().to_string(),
-            occurred_at: Some(prost_types::Timestamp { seconds: i64::try_from(now.as_secs())?, nanos: 0 }),
-            producer: "e2e-test".into(),
-            correlation_id: String::new(),
-        }),
-        user_id: user_id.clone(),
-        position: point(40.4168, -3.7038), // Puerta del Sol
-        horizontal_accuracy_meters: 8.0,
-    };
+    let now = i64::try_from(SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs())?;
     let producer: FutureProducer = ClientConfig::new().set("bootstrap.servers", &brokers).create()?;
-    let payload = position.encode_to_vec();
-    producer
-        .send(FutureRecord::to("geo.user-positions.v1").key(user_id.as_bytes()).payload(&payload), Duration::from_secs(10))
-        .await
-        .map_err(|(e, _)| e)?;
+    // Histéresis: la entrada solo se confirma si sigue dentro un rato
+    // (GEOFENCE_ENTER_DWELL, 15 s por defecto). Por eso mandamos DOS
+    // posiciones en la Puerta del Sol separadas 20 s (marcas de tiempo del GPS).
+    for seconds in [now - 20, now] {
+        let position = pb::UserPositionReported {
+            metadata: Some(common::EventMetadata {
+                event_id: Uuid::new_v4().to_string(),
+                occurred_at: Some(prost_types::Timestamp { seconds, nanos: 0 }),
+                producer: "e2e-test".into(),
+                correlation_id: String::new(),
+            }),
+            user_id: user_id.clone(),
+            position: point(40.4168, -3.7038), // Puerta del Sol
+            horizontal_accuracy_meters: 8.0,
+            preferred_language: "es-ES".into(),
+        };
+        let payload = position.encode_to_vec();
+        producer
+            .send(FutureRecord::to("geo.user-positions.v1").key(user_id.as_bytes()).payload(&payload), Duration::from_secs(10))
+            .await
+            .map_err(|(e, _)| e)?;
+    }
 
     // Grupo nuevo + "earliest": leemos el topic desde el principio y buscamos
     // los eventos de NUESTRO usuario (el user_id es único en cada ejecución).
@@ -203,15 +209,38 @@ async fn e2e_geofencing_por_kafka() -> TestResult {
     consumer.subscribe(&["geo.geofence-transitions.v1"])?;
     let deadline = Instant::now() + Duration::from_secs(60);
     let mut entered = Vec::new();
-    while Instant::now() < deadline && !entered.contains(&"madrid-centro".to_owned()) {
+    let mut centro_id = String::new();
+    while Instant::now() < deadline && centro_id.is_empty() {
         let Ok(Ok(message)) = tokio::time::timeout(Duration::from_secs(5), consumer.recv()).await else { continue };
         if message.key() != Some(user_id.as_bytes()) {
             continue;
         }
         let event = pb::GeofenceTransitioned::decode(message.payload().unwrap_or_default())?;
         assert_eq!(event.transition, i32::from(pb::GeofenceTransitionType::Enter));
+        if event.zone_slug == "madrid-centro" {
+            centro_id = event.zone_id.clone();
+        }
         entered.push(event.zone_slug);
     }
-    assert!(entered.contains(&"madrid-centro".to_owned()), "no llegó la entrada en madrid-centro: {entered:?}");
+    assert!(!centro_id.is_empty(), "no llegó la entrada en madrid-centro: {entered:?}");
+
+    // Y su gemela ANÓNIMA en geo.zone-entries.v1: clave = zone_id, sin usuario.
+    let anonymous: StreamConsumer = ClientConfig::new()
+        .set("bootstrap.servers", &brokers)
+        .set("group.id", format!("e2e-{}", Uuid::new_v4()))
+        .set("auto.offset.reset", "earliest")
+        .set("enable.auto.commit", "false")
+        .create()?;
+    anonymous.subscribe(&["geo.zone-entries.v1"])?;
+    let deadline = Instant::now() + Duration::from_secs(60);
+    let mut found = false;
+    while Instant::now() < deadline && !found {
+        let Ok(Ok(message)) = tokio::time::timeout(Duration::from_secs(5), anonymous.recv()).await else { continue };
+        let payload = message.payload().unwrap_or_default();
+        assert!(!String::from_utf8_lossy(payload).contains(&user_id), "el evento anónimo no puede llevar el user_id");
+        let entry = pb::ZoneEntered::decode(payload)?;
+        found = message.key() == Some(centro_id.as_bytes()) && entry.zone_id == centro_id && entry.language == "es";
+    }
+    assert!(found, "no llegó la entrada anónima de madrid-centro");
     Ok(())
 }

@@ -259,7 +259,7 @@ jobs:
           KAFKA_BROKERS: localhost:29092
         run: |
           set -a; . ../../infrastructure/.env; set +a
-          export PGHOST=localhost PGUSER="$POSTGRES_USER" PGPASSWORD="$POSTGRES_PASSWORD" PGDATABASE="$POSTGRES_DB"
+          export PGHOST=localhost PGUSER="$POSTGRES_USER" PGPASSWORD="$POSTGRES_PASSWORD" PGDATABASE="$POSTGRES_DB" REDIS_HOST=localhost
           uv sync --locked
           uv run pytest -m integration -q
       # PostGIS y Redis reales, más e2e contra el contenedor: gRPC (con la
@@ -273,6 +273,25 @@ jobs:
           set -a; . ../../infrastructure/.env; set +a
           export PGHOST=localhost PGUSER="$POSTGRES_USER" PGPASSWORD="$POSTGRES_PASSWORD" PGDATABASE="$POSTGRES_DB" REDIS_HOST=localhost
           cargo test --locked --test integration -- --ignored
+      # El recorrido completo de las audioguías, con los contenedores reales:
+      # el e2e del geo-engine metió a un usuario en la Puerta del Sol → entrada
+      # anónima en geo.zone-entries.v1 → el ai-orchestrator la consume y deja el
+      # guion de "madrid-centro" en Redis (sin Ollama en la CI: plan B por reglas).
+      - name: Audioguía de la zona generada de punta a punta (geo-engine → Kafka → ai-orchestrator → Redis)
+        working-directory: infrastructure
+        run: |
+          set -euo pipefail
+          zone=$(docker compose exec -T postgres sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT zone_id FROM geo.zones WHERE slug = '"'"'madrid-centro'"'"'"')
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /tmp/guide.json -w '%{http_code}' "http://127.0.0.1:8085/v1/audioguides/${zone}?lang=es" -H 'X-User-ID: ci-user' -H 'X-User-Roles: USER')
+            if [ "$code" = 200 ]; then
+              jq -e '.language == "es" and (.segments | length) >= 2 and (.source == "rules" or .source == "llm")' /tmp/guide.json
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "la audioguía no apareció (último código: $code)"
+          exit 1
       - name: La API del ai-orchestrator exige identidad
         run: |
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8085/v1/recommendations)" = 401

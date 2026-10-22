@@ -23,6 +23,8 @@ from typing import Literal, Self
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from ai_orchestrator.audioguides.domain import SUPPORTED_LANGUAGES
+
 # El único modo de TLS de PostgreSQL que comprueba el certificado Y el nombre
 # del servidor. Los demás ("require", "prefer"...) cifran, pero no impiden
 # hablar con un impostor.
@@ -64,6 +66,32 @@ class Settings(BaseSettings):
     # Cuántos mensajes se piden a Kafka de golpe. Pocos, porque cada uno puede
     # implicar una llamada al LLM de varios segundos.
     kafka_max_poll_records: int = Field(default=20, ge=1, le=500)
+
+    # --- Audioguías por zona (ver el paquete audioguides/) ------------------------
+    # Interruptor general. Necesita Redis (la caché de guiones).
+    audioguides_enabled: bool = True
+    kafka_topic_zone_entries: str = "geo.zone-entries.v1"
+    kafka_topic_zone_entries_dlq: str = "geo.zone-entries-dlq.v1"
+    # Grupo de consumidores PROPIO: las audioguías avanzan a su ritmo, sin
+    # frenar ni ser frenadas por las alertas de precio.
+    kafka_audioguides_group_id: str = "ai-orchestrator-audioguides"
+    # Idioma si la app no indica uno (o pide uno que no sabemos redactar).
+    audioguide_default_language: str = "en"
+    # Cuánto vive en caché un guion del LLM (7 días) y uno de reglas (1 hora:
+    # es el plan B y conviene reintentar pronto con el LLM).
+    audioguide_llm_ttl_seconds: int = Field(default=7 * 24 * 3600, ge=60, le=90 * 24 * 3600)
+    audioguide_rules_ttl_seconds: int = Field(default=3600, ge=60, le=7 * 24 * 3600)
+    # Unas 260 palabras ≈ menos de dos minutos de audio.
+    audioguide_max_words: int = Field(default=260, ge=50, le=1000)
+    audioguide_max_output_tokens: int = Field(default=900, ge=128, le=4096)
+
+    # --- Redis (caché de audioguías) -----------------------------------------------
+    redis_host: str | None = None
+    redis_port: int = Field(default=6379, ge=1, le=65535)
+    redis_password: SecretStr | None = None
+    redis_tls: bool = True
+    redis_tls_ca_file: Path | None = None
+    redis_insecure_dev: bool = False
 
     # --- PostgreSQL ------------------------------------------------------------
     # Mismos nombres que usa psql, para no inventar otros.
@@ -154,6 +182,19 @@ class Settings(BaseSettings):
             if self.qdrant_api_key is None:
                 problems.append("QDRANT_URL necesita QDRANT_API_KEY (Qdrant nunca va sin autenticación)")
 
+        if self.audioguides_enabled:
+            if not self.redis_host or self.redis_password is None:
+                problems.append(
+                    "las audioguías necesitan Redis: define REDIS_HOST y REDIS_PASSWORD "
+                    "(o AUDIOGUIDES_ENABLED=false)"
+                )
+            if not self.redis_tls and not self.redis_insecure_dev:
+                problems.append("REDIS_TLS=false solo se permite con REDIS_INSECURE_DEV=true (solo en local)")
+            if self.audioguide_default_language not in SUPPORTED_LANGUAGES:
+                problems.append(
+                    f"AUDIOGUIDE_DEFAULT_LANGUAGE debe ser uno de: {', '.join(SUPPORTED_LANGUAGES)}"
+                )
+
         if self.http_port == self.management_port:
             problems.append("HTTP_PORT y MANAGEMENT_PORT deben ser distintos")
         if not re.fullmatch(r"[A-Za-z0-9._-]{1,255}", self.qdrant_collection):
@@ -163,6 +204,11 @@ class Settings(BaseSettings):
             # Todos los problemas a la vez: arreglas el .env de una sola pasada.
             raise ValueError("configuración inválida:\n  - " + "\n  - ".join(problems))
         return self
+
+    @property
+    def audioguide_lock_ttl_seconds(self) -> int:
+        """Lo máximo que puede tardar una generación (todos los intentos) + margen."""
+        return int(self.ollama_timeout_seconds * self.llm_max_attempts) + 30
 
     @property
     def kafka_broker_list(self) -> list[str]:

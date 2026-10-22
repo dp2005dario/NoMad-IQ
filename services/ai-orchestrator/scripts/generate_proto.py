@@ -32,6 +32,9 @@ PROTO_FILES = [
     "nomadiq/common/v1/common.proto",
     "nomadiq/flights/v1/flights.proto",
     "nomadiq/flights/v1/events.proto",
+    # Entradas anónimas a zonas (geo.zone-entries.v1) para las audioguías.
+    "nomadiq/geo/v1/geo.proto",
+    "nomadiq/geo/v1/events.proto",
 ]
 
 

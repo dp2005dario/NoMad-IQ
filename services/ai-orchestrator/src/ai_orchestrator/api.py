@@ -18,6 +18,9 @@ Además:
       así no revelamos qué identificadores existen.
     - Los errores siguen RFC 9457 (application/problem+json), sin trazas internas.
     - Ningún endpoint llama al LLM: responden en milisegundos.
+    - Las audioguías (/v1/audioguides) son GENÉRICAS por zona e idioma: no
+      dependen de quién pregunta. Aun así exigen identidad (solo usuarios de
+      NomadIQ), y quien las pide nunca deja rastro de su ubicación aquí.
 """
 
 from __future__ import annotations
@@ -36,6 +39,9 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from ai_orchestrator.audioguides.cache import CacheError
+from ai_orchestrator.audioguides.domain import AudioguideScript
+from ai_orchestrator.audioguides.service import AudioguideService
 from ai_orchestrator.domain import Recommendation, Verdict
 from ai_orchestrator.store import RecommendationStore, StoreError
 
@@ -115,7 +121,12 @@ class RecommendationList(BaseModel):
     items: list[RecommendationView]
 
 
-def create_api(store: RecommendationStore, *, expose_docs: bool = False) -> FastAPI:
+def create_api(
+    store: RecommendationStore,
+    *,
+    audioguides: AudioguideService | None = None,
+    expose_docs: bool = False,
+) -> FastAPI:
     """Crea la API pública (puerto con mTLS)."""
     app = FastAPI(
         title="NomadIQ ai-orchestrator",
@@ -144,6 +155,11 @@ def create_api(store: RecommendationStore, *, expose_docs: bool = False) -> Fast
         log.error("base de datos no disponible", extra={"error": str(exc)})
         return _problem(503, "Servicio no disponible temporalmente")
 
+    @app.exception_handler(CacheError)
+    async def _cache_error(_: Request, exc: CacheError) -> JSONResponse:
+        log.error("caché de audioguías no disponible", extra={"error": str(exc)})
+        return _problem(503, "Servicio no disponible temporalmente")
+
     @app.exception_handler(Exception)
     async def _unexpected(_: Request, exc: Exception) -> JSONResponse:
         # El detalle va al log, nunca al cliente (podría revelar cosas internas).
@@ -167,6 +183,22 @@ def create_api(store: RecommendationStore, *, expose_docs: bool = False) -> Fast
         if rec is None:
             raise HTTPException(status_code=404, detail="recomendación no encontrada")
         return RecommendationView.of(rec)
+
+    if audioguides is not None:
+
+        @app.get("/v1/audioguides/{zone_id}", response_model=AudioguideScript)
+        async def get_audioguide(
+            _: Annotated[Principal, Depends(current_principal)],
+            zone_id: Annotated[uuid.UUID, Path()],
+            # Idioma ISO 639-1 ("es"). Vacío o desconocido = idioma por defecto.
+            lang: Annotated[str, Query(pattern=r"^([A-Za-z]{2,3})?$")] = "",
+        ) -> AudioguideScript:
+            # Solo lee la caché: si el guion aún no está, 404 y la app
+            # vuelve a preguntar en unos segundos (nunca esperamos al LLM aquí).
+            script = await audioguides.get(str(zone_id), lang)
+            if script is None:
+                raise HTTPException(status_code=404, detail="la audioguía de esta zona aún no está lista")
+            return script
 
     return app
 

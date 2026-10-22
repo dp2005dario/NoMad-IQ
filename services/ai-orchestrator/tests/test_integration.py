@@ -9,7 +9,8 @@ Para lanzarlos:
 
 El LLM sigue siendo falso: queremos probar las tuberías (Kafka -> servicio ->
 PostgreSQL), no la calidad del modelo. La tabla de precios la crea el
-price-consumer: si no existe, esos tests se saltan con un aviso.
+price-consumer y la de zonas (geo.zones) el geo-engine: si no existen, esos
+tests se saltan con un aviso. Las audioguías usan además el Redis real.
 """
 
 from __future__ import annotations
@@ -35,7 +36,12 @@ from conftest import (
     make_alert,
     make_recommendation,
 )
+from redis.asyncio import Redis
 
+from ai_orchestrator.audioguides.cache import RedisScriptCache, lock_key
+from ai_orchestrator.audioguides.facts import PostgresZoneFacts
+from ai_orchestrator.audioguides.service import AudioguideService, Outcome, ServiceSettings
+from ai_orchestrator.audioguides.writer import AudioguideWriter, WriterSettings
 from ai_orchestrator.config import Settings
 from ai_orchestrator.consumer import AlertProcessor, FareAlertConsumer
 from ai_orchestrator.domain import Money
@@ -67,6 +73,10 @@ def _settings() -> Settings:
         db_insecure_dev=True,
         http_insecure_dev=True,
         ollama_insecure_dev=True,
+        redis_host=os.environ.get("REDIS_HOST", "localhost"),
+        redis_password=os.environ["REDIS_PASSWORD"],
+        redis_tls=False,
+        redis_insecure_dev=True,
     )
 
 
@@ -217,3 +227,68 @@ async def test_end_to_end_from_kafka_to_postgres(pool: asyncpg.Pool[asyncpg.Reco
             await dlq.stop()
     finally:
         await producer.stop()
+
+
+async def test_audioguide_with_real_postgres_and_redis(pool: asyncpg.Pool[asyncpg.Record]) -> None:
+    if not await pool.fetchval("SELECT to_regclass('geo.zones') IS NOT NULL"):
+        pytest.skip("geo.zones no existe: arranca antes el geo-engine (make up-apps)")
+    zone_id = await pool.fetchval("SELECT zone_id::text FROM geo.zones WHERE slug = 'madrid-museos'")
+    if zone_id is None:
+        pytest.skip("sin zonas de demostración (SEED_DEMO_ZONES=true en el geo-engine)")
+
+    settings = _settings()
+    assert settings.redis_password is not None
+    redis = Redis(
+        host=settings.redis_host or "localhost",
+        port=settings.redis_port,
+        password=settings.redis_password.get_secret_value(),
+    )
+    cache = RedisScriptCache(redis)
+    try:
+        # Empezamos limpios (por si quedó algo de otra ejecución).
+        await redis.delete(f"ai:audioguide:v1:{zone_id}:es", lock_key(zone_id, "es"))
+
+        # Los hechos de la migración 0002 se leen por slug e idioma.
+        facts = await PostgresZoneFacts(pool).load(zone_id, language="es", fallback_language="en")
+        assert facts is not None and facts.slug == "madrid-museos"
+        assert any("1819" in f.text for f in facts.facts)
+        fr = await PostgresZoneFacts(pool).load(zone_id, language="fr", fallback_language="en")
+        assert fr is not None and fr.facts_language == "en", "sin traducción al francés: se usa el inglés"
+
+        draft = (
+            '{"title": "Paseo del Arte", "segments": ['
+            '{"text": "El Prado abrió al público en 1819, hace ya mucho.", "fact_ids": ["F1"]},'
+            '{"text": "Y dentro te esperan Las Meninas de Velázquez.", "fact_ids": ["F2"]}]}'
+        )
+        llm = FakeLLM([draft] * 5)
+        service = AudioguideService(
+            facts=PostgresZoneFacts(pool),
+            writer=AudioguideWriter(
+                llm=llm, settings=WriterSettings(0.1, 900, 3, 260), clock=lambda: FIXED_NOW
+            ),
+            cache=cache,
+            settings=ServiceSettings(
+                default_language="en", llm_ttl_seconds=600, rules_ttl_seconds=60, lock_ttl_seconds=30
+            ),
+        )
+        # Diez entradas a la vez: una sola generación, el resto comparte.
+        outcomes = await asyncio.gather(*(service.ensure_zone(zone_id, "es") for _ in range(10)))
+        assert outcomes.count(Outcome.GENERATED) == 1
+        assert len(llm.calls) == 1
+        script = await cache.get(zone_id, "es")
+        assert script is not None and script.source == "llm"
+        ttl = await redis.ttl(f"ai:audioguide:v1:{zone_id}:es")
+        assert 0 < ttl <= 600
+        assert await redis.exists(lock_key(zone_id, "es")) == 0, "el cerrojo se soltó"
+
+        # El cerrojo real: el segundo no lo consigue; un token ajeno no lo borra.
+        token = await cache.try_lock(zone_id, "xx", ttl_seconds=30)
+        assert token is not None
+        assert await cache.try_lock(zone_id, "xx", ttl_seconds=30) is None
+        await cache.unlock(zone_id, "xx", "token-ajeno")
+        assert await redis.exists(lock_key(zone_id, "xx")) == 1
+        await cache.unlock(zone_id, "xx", token)
+        assert await redis.exists(lock_key(zone_id, "xx")) == 0
+        assert await cache.ping()
+    finally:
+        await redis.aclose()

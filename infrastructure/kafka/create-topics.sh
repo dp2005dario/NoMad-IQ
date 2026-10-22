@@ -27,6 +27,13 @@ TOPICS=(
   "geo.geofence-transitions.v1|6|604800000|delete"
   # Posiciones imposibles de procesar (DLQ): 3 días, también por privacidad.
   "geo.user-positions-dlq.v1|3|259200000|delete"
+  # Entradas ANÓNIMAS a zonas (solo zone_id + idioma, sin user_id ni
+  # coordenadas) para el ai-orchestrator. Clave = zone_id: una zona = una
+  # partición = un solo consumidor que genera su audioguía. 24 horas: no hace
+  # falta más, la audioguía queda en la caché de Redis.
+  "geo.zone-entries.v1|6|86400000|delete"
+  # Entradas a zonas que el ai-orchestrator no pudo leer (DLQ): 3 días.
+  "geo.zone-entries-dlq.v1|3|259200000|delete"
 )
 
 # Recorre la lista y separa cada entrada por el carácter | en cuatro variables.

@@ -18,7 +18,7 @@ use std::collections::HashMap;
 use std::time::SystemTime;
 
 use bytes::Bytes;
-use geo::{BoundingRect, Intersects};
+use geo::{BoundingRect, Closest, ClosestPoint, Intersects};
 use geo_types::MultiPolygon;
 use rstar::primitives::GeomWithData;
 use rstar::{AABB, RTree, RTreeObject};
@@ -100,6 +100,34 @@ pub struct ZoneRecord {
     /// La misma geometría en WKB, tal y como llegó de PostGIS, para enviarla
     /// por gRPC sin volver a serializarla (`Bytes` se comparte sin copiar).
     pub wkb: Bytes,
+}
+
+impl ZoneRecord {
+    /// Distancia en metros desde `point` hasta la zona (0 si está dentro o en el borde).
+    ///
+    /// La usa la histéresis del geofencing: "¿se ha alejado lo bastante del
+    /// borde como para dar por buena la salida?".
+    ///
+    /// Cómo: `closest_point` busca el punto del contorno más cercano (en el
+    /// plano longitud/latitud) y luego medimos la distancia geodésica real
+    /// hasta él. Para márgenes de decenas o cientos de metros el error de usar
+    /// el plano para ELEGIR el punto es despreciable (centímetros).
+    pub fn distance_m(&self, point: LatLng) -> f64 {
+        let geo_point = point.to_point();
+        if self.geometry.intersects(&geo_point) {
+            return 0.0;
+        }
+        match self.geometry.closest_point(&geo_point) {
+            Closest::Intersection(_) => 0.0,
+            Closest::SinglePoint(nearest) => {
+                // geo usa X = longitud, Y = latitud. Si por algún motivo el
+                // punto no fuese válido, "infinito" = claramente fuera.
+                LatLng::new(nearest.y(), nearest.x()).map_or(f64::INFINITY, |n| point.geodesic_distance_m(n))
+            }
+            // Geometría vacía o degenerada: no hay borde al que acercarse.
+            Closest::Indeterminate => f64::INFINITY,
+        }
+    }
 }
 
 /// Entrada del índice de zonas: la caja que envuelve la zona + su posición
@@ -338,6 +366,18 @@ pub(crate) mod tests {
             let fast: Vec<_> = snap.nearest_airports(p, 3, None).into_iter().map(|(a, d)| (a.iata_code.clone(), d)).collect();
             assert_eq!(fast, brute[..3].to_vec(), "punto {lat},{lon}");
         }
+    }
+
+    #[test]
+    fn distancia_a_una_zona() {
+        let snap = sample_snapshot();
+        let Some(sol) = snap.zone(&Uuid::from_u128(2)) else { unreachable!("la zona 2 existe") };
+        // Dentro (y en el borde) la distancia es 0.
+        assert_eq!(sol.distance_m(ll(40.4165, -3.7035)), 0.0);
+        assert_eq!(sol.distance_m(ll(40.418, -3.703)), 0.0);
+        // 0,0005° de latitud al norte del borde ≈ 55,5 m.
+        let d = sol.distance_m(ll(40.4185, -3.703));
+        assert!((d - 55.5).abs() < 1.0, "{d}");
     }
 
     #[test]

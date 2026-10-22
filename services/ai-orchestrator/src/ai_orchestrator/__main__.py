@@ -8,6 +8,7 @@ Qué hace, en orden:
     3. Prepara el cliente de Ollama (y de Qdrant, si está configurado).
     4. Arranca a la vez, en el mismo proceso y sin bloquearse entre sí:
          - el consumidor de Kafka (genera recomendaciones en segundo plano),
+         - el consumidor de entradas a zonas (prepara audioguías en Redis),
          - la API con mTLS (puerto 8085),
          - la API de salud (puerto 8086).
     5. Al recibir la orden de apagado (Ctrl+C o SIGTERM de Docker) cierra todo
@@ -16,6 +17,9 @@ Qué hace, en orden:
        leer al arrancar de nuevo, así que no se pierde nada.
 
 Opción --healthcheck: comprueba /healthz y sale con 0 o 1 (lo usa Docker).
+Opción --pregenerate-audioguides es,en: prepara por adelantado los guiones de
+todas las zonas narrables en esos idiomas y termina (útil antes de un evento
+o cada noche, para que el primer turista ya lo encuentre hecho).
 """
 
 from __future__ import annotations
@@ -38,8 +42,14 @@ import uvicorn
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 from aiokafka.errors import KafkaError
 from pydantic import ValidationError
+from redis.asyncio import Redis
 
 from ai_orchestrator.api import create_api, create_management_api
+from ai_orchestrator.audioguides.cache import CacheError, RedisScriptCache
+from ai_orchestrator.audioguides.consumer import ZoneEntryConsumer
+from ai_orchestrator.audioguides.facts import PostgresZoneFacts
+from ai_orchestrator.audioguides.service import AudioguideService, ServiceSettings
+from ai_orchestrator.audioguides.writer import AudioguideWriter, WriterSettings
 from ai_orchestrator.config import Settings
 from ai_orchestrator.consumer import AlertProcessor, FareAlertConsumer
 from ai_orchestrator.llm.client import LLMClient, OllamaClient
@@ -47,6 +57,7 @@ from ai_orchestrator.logs import setup_logging
 from ai_orchestrator.recommender import FareRecommender, RecommenderSettings
 from ai_orchestrator.retrieval import KnowledgeBase, NoKnowledge, QdrantKnowledge
 from ai_orchestrator.store import (
+    Pool,
     PostgresPriceHistory,
     PostgresRecommendations,
     StoreError,
@@ -113,6 +124,85 @@ def _server(app: object, port: int, *, tls: Settings | None) -> _Server:
     return _Server(config)
 
 
+def _ollama(settings: Settings, stack: AsyncExitStack) -> OllamaClient:
+    ollama_http = httpx.AsyncClient(
+        base_url=settings.ollama_url,
+        # connect: 5 s para conectar; read: lo que puede tardar el modelo.
+        timeout=httpx.Timeout(settings.ollama_timeout_seconds, connect=5.0),
+        verify=_client_tls(
+            settings.ollama_tls_ca_file, settings.ollama_tls_cert_file, settings.ollama_tls_key_file
+        ),
+    )
+    stack.push_async_callback(ollama_http.aclose)
+    # UN solo cliente (y un solo semáforo) para recomendaciones y audioguías:
+    # entre los dos nunca mandan a Ollama más de OLLAMA_MAX_CONCURRENCY a la vez.
+    return OllamaClient(
+        ollama_http,
+        model=settings.ollama_model,
+        embed_model=settings.ollama_embed_model,
+        num_ctx=settings.ollama_num_ctx,
+        max_concurrency=settings.ollama_max_concurrency,
+    )
+
+
+def _audioguides(
+    settings: Settings, pool: Pool, llm: LLMClient | None, stack: AsyncExitStack
+) -> tuple[AudioguideService, RedisScriptCache]:
+    """Monta la caché de Redis y el servicio de audioguías."""
+    assert settings.redis_host and settings.redis_password  # noqa: S101 (config.py lo garantiza)
+    tls: dict[str, object] = {}
+    if settings.redis_tls:
+        tls = {
+            "ssl": True,
+            "ssl_ca_certs": str(settings.redis_tls_ca_file) if settings.redis_tls_ca_file else None,
+            "ssl_min_version": ssl.TLSVersion.TLSv1_3,
+        }
+    redis = Redis(
+        host=settings.redis_host,
+        port=settings.redis_port,
+        password=settings.redis_password.get_secret_value(),
+        # Si Redis no contesta en 2 s, mejor un error claro (y reintentar) que colgarse.
+        socket_timeout=2.0,
+        socket_connect_timeout=2.0,
+        **tls,  # type: ignore[arg-type]
+    )
+    stack.push_async_callback(redis.aclose)
+    cache = RedisScriptCache(redis)
+    service = AudioguideService(
+        facts=PostgresZoneFacts(pool),
+        writer=AudioguideWriter(
+            llm=llm,
+            settings=WriterSettings(
+                temperature=settings.llm_temperature,
+                max_output_tokens=settings.audioguide_max_output_tokens,
+                max_attempts=settings.llm_max_attempts,
+                max_words=settings.audioguide_max_words,
+            ),
+        ),
+        cache=cache,
+        settings=ServiceSettings(
+            default_language=settings.audioguide_default_language,
+            llm_ttl_seconds=settings.audioguide_llm_ttl_seconds,
+            rules_ttl_seconds=settings.audioguide_rules_ttl_seconds,
+            lock_ttl_seconds=settings.audioguide_lock_ttl_seconds,
+        ),
+    )
+    return service, cache
+
+
+async def pregenerate(settings: Settings, languages: list[str]) -> int:
+    """Rellena la caché de audioguías de todas las zonas narrables y termina."""
+    async with AsyncExitStack() as stack:
+        pool = await create_pool(settings)
+        stack.push_async_callback(pool.close)
+        await migrate(pool)
+        llm = _ollama(settings, stack) if settings.llm_enabled else None
+        service, _ = _audioguides(settings, pool, llm, stack)
+        results = await service.pregenerate(languages)
+        log.info("audioguías pregeneradas", extra={"outcomes": {k.value: v for k, v in results.items()}})
+        return 0
+
+
 async def run(settings: Settings) -> int:
     async with AsyncExitStack() as stack:
         # --- PostgreSQL ---------------------------------------------------------
@@ -126,22 +216,7 @@ async def run(settings: Settings) -> int:
         llm: LLMClient | None = None
         knowledge: KnowledgeBase = NoKnowledge()
         if settings.llm_enabled:
-            ollama_http = httpx.AsyncClient(
-                base_url=settings.ollama_url,
-                # connect: 5 s para conectar; read: lo que puede tardar el modelo.
-                timeout=httpx.Timeout(settings.ollama_timeout_seconds, connect=5.0),
-                verify=_client_tls(
-                    settings.ollama_tls_ca_file, settings.ollama_tls_cert_file, settings.ollama_tls_key_file
-                ),
-            )
-            stack.push_async_callback(ollama_http.aclose)
-            ollama = OllamaClient(
-                ollama_http,
-                model=settings.ollama_model,
-                embed_model=settings.ollama_embed_model,
-                num_ctx=settings.ollama_num_ctx,
-                max_concurrency=settings.ollama_max_concurrency,
-            )
+            ollama = _ollama(settings, stack)
             llm = ollama
             if settings.qdrant_url and settings.qdrant_api_key:
                 qdrant_http = httpx.AsyncClient(
@@ -205,13 +280,46 @@ async def run(settings: Settings) -> int:
             transient_errors=(StoreError, KafkaError),
         )
 
+        # --- Audioguías por zona (segundo consumidor, su propio grupo) -------------------
+        audioguides: AudioguideService | None = None
+        zone_consumer: ZoneEntryConsumer | None = None
+        script_cache: RedisScriptCache | None = None
+        if settings.audioguides_enabled:
+            audioguides, script_cache = _audioguides(settings, pool, llm, stack)
+            entries = AIOKafkaConsumer(
+                settings.kafka_topic_zone_entries,
+                **kafka_common,
+                group_id=settings.kafka_audioguides_group_id,
+                enable_auto_commit=False,
+                # Un grupo nuevo empieza por lo MÁS RECIENTE: una entrada de
+                # hace horas ya no necesita audioguía urgente.
+                auto_offset_reset="latest",
+                max_poll_interval_ms=600_000,
+            )
+            await entries.start()
+            stack.push_async_callback(entries.stop)
+            zone_consumer = ZoneEntryConsumer(
+                entries,
+                producer,
+                audioguides,
+                dlq_topic=settings.kafka_topic_zone_entries_dlq,
+                # Lotes grandes: agrupar entradas a la misma zona es lo que
+                # convierte "un autobús" en "una generación".
+                max_records=200,
+                transient_errors=(StoreError, CacheError, KafkaError),
+            )
+
         # --- Servidores HTTP --------------------------------------------------------------
         async def readiness() -> dict[str, bool]:
             # Ollama NO cuenta: sin él seguimos funcionando con reglas.
-            return {"database": await recommendations.ping(), "kafka_consumer": alert_consumer.running}
+            checks = {"database": await recommendations.ping(), "kafka_consumer": alert_consumer.running}
+            if zone_consumer is not None and script_cache is not None:
+                checks["redis"] = await script_cache.ping()
+                checks["zone_entries_consumer"] = zone_consumer.running
+            return checks
 
         api = _server(
-            create_api(recommendations, expose_docs=settings.expose_api_docs),
+            create_api(recommendations, audioguides=audioguides, expose_docs=settings.expose_api_docs),
             settings.http_port,
             tls=None if settings.http_insecure_dev else settings,
         )
@@ -228,6 +336,8 @@ async def run(settings: Settings) -> int:
             asyncio.create_task(api.serve(), name="api"),
             asyncio.create_task(management.serve(), name="management"),
         }
+        if zone_consumer is not None:
+            tasks.add(asyncio.create_task(zone_consumer.run(), name="zone-entries"))
         stopper = asyncio.create_task(stop.wait(), name="stop")
         log.info("ai-orchestrator en marcha", extra={"http_port": settings.http_port, "llm": bool(llm)})
         done, _ = await asyncio.wait({*tasks, stopper}, return_when=asyncio.FIRST_COMPLETED)
@@ -247,7 +357,7 @@ async def run(settings: Settings) -> int:
         api.should_exit = True
         management.should_exit = True
         for task in tasks:
-            if task.get_name() == "consumer":
+            if task.get_name() in {"consumer", "zone-entries"}:
                 task.cancel()
         stopper.cancel()
         await asyncio.gather(*tasks, stopper, return_exceptions=True)
@@ -268,6 +378,11 @@ def main() -> None:
     parser.add_argument(
         "--healthcheck", action="store_true", help="comprueba /healthz y sale con 0 si está sano"
     )
+    parser.add_argument(
+        "--pregenerate-audioguides",
+        metavar="IDIOMAS",
+        help="prepara las audioguías de todas las zonas en esos idiomas (ej.: es,en) y termina",
+    )
     args = parser.parse_args()
     if args.healthcheck:
         sys.exit(healthcheck())
@@ -280,6 +395,12 @@ def main() -> None:
         print(f"ai-orchestrator no arranca:\n{exc}", file=sys.stderr)
         sys.exit(2)
     setup_logging(settings.log_level)
+    if args.pregenerate_audioguides:
+        if not settings.audioguides_enabled:
+            print("AUDIOGUIDES_ENABLED=false: no hay nada que pregenerar", file=sys.stderr)
+            sys.exit(2)
+        languages = [lang.strip() for lang in args.pregenerate_audioguides.split(",") if lang.strip()]
+        sys.exit(asyncio.run(pregenerate(settings, languages)))
     sys.exit(asyncio.run(run(settings)))
 
 

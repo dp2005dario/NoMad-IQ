@@ -26,6 +26,7 @@ use rdkafka::producer::{FutureProducer, FutureRecord, Producer};
 use rdkafka::util::Timeout;
 use tokio_util::sync::CancellationToken;
 
+use super::geofence::GeofenceRules;
 use super::processor::{EventSink, InboundRecord, OutboundRecord, Processor, ProcessorSettings, SinkError, TransientError};
 use crate::cache::KeyValueStore;
 use crate::config::StreamConfig;
@@ -165,8 +166,14 @@ pub async fn run<S: KeyValueStore>(
         sink.clone(),
         ProcessorSettings {
             topic_transitions: cfg.topic_transitions.clone(),
+            topic_zone_entries: cfg.topic_zone_entries.clone(),
             topic_dlq: cfg.topic_positions_dlq.clone(),
-            max_accuracy_m: cfg.max_accuracy_m,
+            rules: GeofenceRules {
+                max_accuracy_m: cfg.max_accuracy_m,
+                exit_margin_m: cfg.exit_margin_m,
+                // Duration -> milisegundos (cabe de sobra: el máximo es 10 min).
+                enter_dwell_ms: i64::try_from(cfg.enter_dwell.as_millis()).unwrap_or(i64::MAX),
+            },
             presence_ttl: cfg.presence_ttl,
         },
     );
