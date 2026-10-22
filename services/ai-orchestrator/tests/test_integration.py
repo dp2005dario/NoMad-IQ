@@ -41,6 +41,7 @@ from redis.asyncio import Redis
 from ai_orchestrator.audioguides.cache import RedisScriptCache, lock_key
 from ai_orchestrator.audioguides.facts import PostgresZoneFacts
 from ai_orchestrator.audioguides.service import AudioguideService, Outcome, ServiceSettings
+from ai_orchestrator.audioguides.versions import ZoneVersionCache
 from ai_orchestrator.audioguides.writer import AudioguideWriter, WriterSettings
 from ai_orchestrator.config import Settings
 from ai_orchestrator.consumer import AlertProcessor, FareAlertConsumer
@@ -245,12 +246,18 @@ async def test_audioguide_with_real_postgres_and_redis(pool: asyncpg.Pool[asyncp
     )
     cache = RedisScriptCache(redis)
     try:
-        # Empezamos limpios (por si quedó algo de otra ejecución).
-        await redis.delete(f"ai:audioguide:v1:{zone_id}:es", lock_key(zone_id, "es"))
-
-        # Los hechos de la migración 0002 se leen por slug e idioma.
+        # Los hechos de la migración 0002 se leen por slug e idioma, con la
+        # versión de contenido de la zona (migración 0003).
         facts = await PostgresZoneFacts(pool).load(zone_id, language="es", fallback_language="en")
         assert facts is not None and facts.slug == "madrid-museos"
+        version = facts.content_version
+        assert version >= 1
+        assert await PostgresZoneFacts(pool).content_version(zone_id) == version
+        assert await PostgresZoneFacts(pool).content_version(str(uuid.uuid4())) is None
+
+        # Empezamos limpios (por si quedó algo de otra ejecución).
+        key = f"ai:audioguide:v2:{zone_id}:es:{version}"
+        await redis.delete(key, lock_key(zone_id, "es", version))
         assert any("1819" in f.text for f in facts.facts)
         fr = await PostgresZoneFacts(pool).load(zone_id, language="fr", fallback_language="en")
         assert fr is not None and fr.facts_language == "en", "sin traducción al francés: se usa el inglés"
@@ -261,8 +268,10 @@ async def test_audioguide_with_real_postgres_and_redis(pool: asyncpg.Pool[asyncp
             '{"text": "Y dentro te esperan Las Meninas de Velázquez.", "fact_ids": ["F2"]}]}'
         )
         llm = FakeLLM([draft] * 5)
+        source = PostgresZoneFacts(pool)
         service = AudioguideService(
-            facts=PostgresZoneFacts(pool),
+            facts=source,
+            versions=ZoneVersionCache(source, ttl_seconds=60),
             writer=AudioguideWriter(
                 llm=llm, settings=WriterSettings(0.1, 900, 3, 260), clock=lambda: FIXED_NOW
             ),
@@ -275,20 +284,44 @@ async def test_audioguide_with_real_postgres_and_redis(pool: asyncpg.Pool[asyncp
         outcomes = await asyncio.gather(*(service.ensure_zone(zone_id, "es") for _ in range(10)))
         assert outcomes.count(Outcome.GENERATED) == 1
         assert len(llm.calls) == 1
-        script = await cache.get(zone_id, "es")
-        assert script is not None and script.source == "llm"
-        ttl = await redis.ttl(f"ai:audioguide:v1:{zone_id}:es")
+        script = await cache.get(zone_id, "es", version)
+        assert script is not None and script.source == "llm" and script.content_version == version
+        ttl = await redis.ttl(key)
         assert 0 < ttl <= 600
-        assert await redis.exists(lock_key(zone_id, "es")) == 0, "el cerrojo se soltó"
+        assert await redis.exists(lock_key(zone_id, "es", version)) == 0, "el cerrojo se soltó"
 
         # El cerrojo real: el segundo no lo consigue; un token ajeno no lo borra.
-        token = await cache.try_lock(zone_id, "xx", ttl_seconds=30)
+        token = await cache.try_lock(zone_id, "xx", version, ttl_seconds=30)
         assert token is not None
-        assert await cache.try_lock(zone_id, "xx", ttl_seconds=30) is None
-        await cache.unlock(zone_id, "xx", "token-ajeno")
-        assert await redis.exists(lock_key(zone_id, "xx")) == 1
-        await cache.unlock(zone_id, "xx", token)
-        assert await redis.exists(lock_key(zone_id, "xx")) == 0
+        assert await cache.try_lock(zone_id, "xx", version, ttl_seconds=30) is None
+        await cache.unlock(zone_id, "xx", version, "token-ajeno")
+        assert await redis.exists(lock_key(zone_id, "xx", version)) == 1
+        await cache.unlock(zone_id, "xx", version, token)
+        assert await redis.exists(lock_key(zone_id, "xx", version)) == 0
         assert await cache.ping()
     finally:
         await redis.aclose()
+
+
+async def test_editing_facts_bumps_the_zone_content_version(pool: asyncpg.Pool[asyncpg.Record]) -> None:
+    # Una zona de prueba propia: no tocamos los hechos de las zonas de demostración.
+    slug = f"test-{uuid.uuid4().hex[:12]}"
+
+    async def version() -> int | None:
+        value = await pool.fetchval("SELECT content_version FROM ai.zone_content WHERE zone_slug = $1", slug)
+        return None if value is None else int(value)
+
+    try:
+        await pool.execute(
+            "INSERT INTO ai.zone_facts (zone_slug, language, position, fact) "
+            "VALUES ($1, 'es', 1, 'Un hecho.')",
+            slug,
+        )
+        assert await version() == 1, "el primer hecho crea la versión 1"
+        await pool.execute("UPDATE ai.zone_facts SET fact = 'Un hecho corregido.' WHERE zone_slug = $1", slug)
+        assert await version() == 2, "corregir un hecho sube la versión"
+        await pool.execute("DELETE FROM ai.zone_facts WHERE zone_slug = $1", slug)
+        assert await version() == 3, "borrar un hecho también"
+    finally:
+        await pool.execute("DELETE FROM ai.zone_facts WHERE zone_slug = $1", slug)
+        await pool.execute("DELETE FROM ai.zone_content WHERE zone_slug = $1", slug)

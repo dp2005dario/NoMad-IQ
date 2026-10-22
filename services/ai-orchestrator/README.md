@@ -40,7 +40,7 @@ con TLS 1.3**, así que solo el proxy puede enviarlas. Errores en RFC 9457
 | 2. JSON roto o con "charla" | Esquema JSON de Pydantic enviado a Ollama (`format`), temperatura 0.1, validación estricta (`extra="forbid"`), reintentos con el error explicado, **máximo 3**. | `llm/structured.py` |
 | 3. Alucinaciones | RAG sobre datos reales (historial en PostgreSQL, notas en Qdrant). El modelo **no puede escribir cifras**: usa huecos `{precio_actual}` que rellenamos nosotros; cualquier dígito o hueco desconocido = respuesta rechazada. Plan B por reglas. | `grounding.py`, `recommender.py`, `retrieval.py` |
 | 4. Saturación del contexto | Estimación de tokens, presupuesto por llamada, recorte de notas, historial de chat con los mensajes recientes + resumen acotado de lo antiguo. | `context.py` |
-| 6. Audioguías: latencia, estampidas y privacidad | Consumidor propio de `geo.zone-entries.v1` (entradas **anónimas**: solo `zone_id` + idioma). Guion **genérico por zona+idioma** en Redis; un lote agrupa las entradas repetidas, *single flight* en el proceso y cerrojo `SET NX` entre réplicas: un autobús = una generación. Hechos verificados en `ai.zone_facts`; cada párrafo cita sus hechos y se rechaza cualquier cifra que no esté en ellos. Plan B por reglas con caducidad corta. | `audioguides/` |
+| 6. Audioguías: latencia, estampidas y privacidad | Consumidor propio de `geo.zone-entries.v1` (entradas **anónimas**: solo `zone_id` + idioma). Guion **genérico por zona+idioma** en Redis; un lote agrupa las entradas repetidas, *single flight* en el proceso y cerrojo `SET NX` entre réplicas: un autobús = una generación. Hechos verificados en `ai.zone_facts`; cada párrafo cita sus hechos y se rechaza cualquier cifra que no esté en ellos. Plan B por reglas con caducidad corta. La clave lleva la **versión del contenido** de la zona (`ai:audioguide:v2:<zona>:<idioma>:<versión>`), que un trigger sube al tocar `ai.zone_facts`; la versión se recuerda 60 s en memoria, así que corregir un hecho se nota en ≤ 60 s sin consultar PostgreSQL en cada entrada. | `audioguides/`, `migrations/0003_zone_content_version.sql` |
 | 5. Bucles en la negociación | Esqueleto con máximo de rondas (techo absoluto 10), tiempo por ronda, contexto de una sola postura por agente y árbitro determinista (Borda + desempates fijos). | `negotiation.py` |
 
 ## Estructura
@@ -98,7 +98,8 @@ con TLS 1.3**, así que solo el proxy puede enviarlas. Errores en RFC 9457
 | `REDIS_PORT` / `REDIS_TLS` / `REDIS_TLS_CA_FILE` | `6379` / `true` / — | TLS 1.3 |
 | `REDIS_INSECURE_DEV` | `false` | Solo local: permite `REDIS_TLS=false` |
 | `AUDIOGUIDE_DEFAULT_LANGUAGE` | `en` | Si la app no indica idioma (admitidos: es, en, fr, de, it, pt) |
-| `AUDIOGUIDE_LLM_TTL_SECONDS` / `AUDIOGUIDE_RULES_TTL_SECONDS` | `604800` / `3600` | Vida en caché del guion del LLM / del plan B |
+| `AUDIOGUIDE_LLM_TTL_SECONDS` / `AUDIOGUIDE_RULES_TTL_SECONDS` | `86400` / `3600` | Vida en caché del guion del LLM (24 h) / del plan B |
+| `AUDIOGUIDE_VERSION_CACHE_SECONDS` | `60` | Cuánto recuerda cada réplica la versión del contenido de una zona: lo máximo que tarda en notarse un hecho corregido |
 | `AUDIOGUIDE_MAX_WORDS` / `AUDIOGUIDE_MAX_OUTPUT_TOKENS` | `260` / `900` | ≈ menos de dos minutos de audio |
 | `LOG_LEVEL` | `info` | Logs JSON |
 

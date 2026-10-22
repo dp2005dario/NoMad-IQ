@@ -32,6 +32,10 @@ MAX_FACTS = 8
 
 
 class ZoneFactsSource(Protocol):
+    async def content_version(self, zone_id: str) -> int | None:
+        """Versión del contenido de la zona (0 si no tiene hechos), o None si la zona no existe."""
+        ...
+
     async def load(self, zone_id: str, *, language: str, fallback_language: str) -> ZoneFacts | None:
         """La zona y sus hechos, o None si la zona no existe (o está desactivada)."""
         ...
@@ -45,24 +49,50 @@ class PostgresZoneFacts:
     def __init__(self, pool: Pool) -> None:
         self._pool = pool
 
-    async def load(self, zone_id: str, *, language: str, fallback_language: str) -> ZoneFacts | None:
+    async def content_version(self, zone_id: str) -> int | None:
+        # Una sola consulta por clave primaria (zone_id) + otra por clave
+        # primaria (slug). Microsegundos. Y además se guarda en memoria (ver
+        # versions.py): se ejecuta una vez por zona y minuto, no por turista.
         try:
-            zone = await self._pool.fetchrow(
-                "SELECT zone_id, slug, name, kind FROM geo.zones WHERE zone_id = $1::uuid AND active",
+            row = await self._pool.fetchrow(
+                "SELECT COALESCE(c.content_version, 0) AS version "
+                "FROM geo.zones z LEFT JOIN ai.zone_content c ON c.zone_slug = z.slug "
+                "WHERE z.zone_id = $1::uuid AND z.active",
                 zone_id,
             )
-            if zone is None:
-                return None
-            # Pedimos los dos idiomas de una vez y elegimos después: una sola
-            # ida y vuelta a la base de datos.
-            rows = await self._pool.fetch(
-                "SELECT language, fact, source FROM ai.zone_facts "
-                "WHERE zone_slug = $1 AND language = ANY($2::text[]) "
-                "ORDER BY position LIMIT $3",
-                zone["slug"],
-                [language, fallback_language],
-                MAX_FACTS * 2,
-            )
+        except asyncpg.UndefinedTableError:
+            return None
+        except (asyncpg.PostgresError, OSError, TimeoutError) as exc:
+            raise StoreError(f"leer versión de la zona: {exc}") from exc
+        return None if row is None else int(row["version"])
+
+    async def load(self, zone_id: str, *, language: str, fallback_language: str) -> ZoneFacts | None:
+        try:
+            # Una transacción de solo lectura "repeatable read": la versión y
+            # los hechos se leen de la MISMA foto de la base de datos. Si
+            # alguien corrige un hecho justo a la vez, o vemos lo viejo con su
+            # versión vieja, o lo nuevo con la nueva; nunca una mezcla.
+            async with (
+                self._pool.acquire() as conn,
+                conn.transaction(isolation="repeatable_read", readonly=True),
+            ):
+                zone = await conn.fetchrow(
+                    "SELECT z.zone_id, z.slug, z.name, z.kind, COALESCE(c.content_version, 0) AS version "
+                    "FROM geo.zones z LEFT JOIN ai.zone_content c ON c.zone_slug = z.slug "
+                    "WHERE z.zone_id = $1::uuid AND z.active",
+                    zone_id,
+                )
+                if zone is None:
+                    return None
+                # Pedimos los dos idiomas de una vez y elegimos después.
+                rows = await conn.fetch(
+                    "SELECT language, fact, source FROM ai.zone_facts "
+                    "WHERE zone_slug = $1 AND language = ANY($2::text[]) "
+                    "ORDER BY position LIMIT $3",
+                    zone["slug"],
+                    [language, fallback_language],
+                    MAX_FACTS * 2,
+                )
         except asyncpg.UndefinedTableError:
             # El geo-engine aún no ha creado geo.zones: no hay zonas que narrar.
             log.warning("geo.zones no existe todavía: sin audioguías")
@@ -78,6 +108,7 @@ class PostgresZoneFacts:
             name=zone["name"],
             kind=ZoneKind(zone["kind"]),
             facts_language=chosen,
+            content_version=int(zone["version"]),
             facts=tuple(
                 ZoneFact(fact_id=f"F{i}", text=text, source=source)
                 for i, (text, source) in enumerate(texts, start=1)

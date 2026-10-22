@@ -68,7 +68,7 @@ recommendations: ## Muestra las últimas recomendaciones generadas por el ai-orc
 	cd infrastructure && docker compose exec postgres sh -c 'PGPASSWORD="$$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -c "SELECT created_at, user_id, verdict, source, headline FROM ai.fare_recommendations ORDER BY created_at DESC LIMIT 20"'
 
 audioguides: ## Muestra las audioguías por zona guardadas en Redis (ai-orchestrator)
-	cd infrastructure && docker compose exec redis sh -c 'redis-cli --scan --pattern "ai:audioguide:v1:*" | while read k; do echo "$$k  (caduca en $$(redis-cli ttl $$k) s)"; done'
+	cd infrastructure && docker compose exec redis sh -c 'redis-cli --scan --pattern "ai:audioguide:v2:*" | while read k; do echo "$$k  (caduca en $$(redis-cli ttl $$k) s)"; done'
 
 zones: ## Muestra las zonas de geofencing guardadas en PostGIS (geo-engine)
 	cd infrastructure && docker compose exec postgres sh -c 'PGPASSWORD="$$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -c "SELECT slug, kind, active, round(ST_Area(geom::geography)) AS m2, updated_at FROM geo.zones ORDER BY slug"'

@@ -204,6 +204,7 @@ class AudioguideWriter:
                 facts=tuple(f for f in zone.facts if f.fact_id in cited),
                 source="llm",
                 model=self._llm.model,
+                content_version=zone.content_version,
                 generated_at=self._clock(),
             )
         except ValidationError:
@@ -249,5 +250,6 @@ class AudioguideWriter:
             segments=tuple(segments),
             facts=tuple(zone.facts[:5]),
             source="rules",
+            content_version=zone.content_version,
             generated_at=self._clock(),
         )

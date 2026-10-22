@@ -91,6 +91,10 @@ class ZoneFacts(BaseModel):
     # hay traducción: entonces el LLM los traduce, o el plan B los usa tal cual).
     facts_language: LanguageCode
     facts: tuple[ZoneFact, ...] = ()
+    # Versión del contenido de la zona (ai.zone_content), leída en la MISMA
+    # consulta que los hechos: así el guion queda marcado con la versión de
+    # los hechos con los que de verdad se escribió. 0 = zona sin hechos.
+    content_version: int = Field(default=0, ge=0)
 
 
 class GuideSegment(BaseModel):
@@ -123,4 +127,6 @@ class AudioguideScript(BaseModel):
     facts: tuple[ZoneFact, ...] = ()
     source: Literal["llm", "rules"]
     model: str = ""
+    # Versión de los hechos con la que se escribió (forma parte de la clave de caché).
+    content_version: int = Field(ge=0)
     generated_at: datetime

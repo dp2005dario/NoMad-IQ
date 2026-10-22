@@ -125,7 +125,8 @@ esperarían minutos (o se caería por falta de memoria).
 ### La solución, en capas (de la más barata a la más cara)
 
 1. **El guion es genérico**: depende de la zona y del idioma, no de la persona.
-   Se guarda en Redis con la clave `ai:audioguide:v1:<zone_id>:<idioma>`.
+   Se guarda en Redis con la clave `ai:audioguide:v2:<zone_id>:<idioma>:<versión>`
+   (la versión del contenido se explica en el apartado 4 bis).
 2. **Clave de Kafka = `zone_id`**: todas las entradas a una zona van a la misma
    partición y las procesa UN consumidor.
 3. **El lote se agrupa**: si en un lote de Kafka hay 30 entradas a la misma zona
@@ -172,13 +173,74 @@ uv run python -m ai_orchestrator --pregenerate-audioguides es,en
 - Si falla, se le explica el motivo y lo intenta otra vez (máximo 3).
 - **Plan B (reglas)**: si Ollama no está o no acierta, el guion se monta con una
   plantilla de bienvenida + los hechos **tal cual** + despedida. Ese guion dura
-  solo 1 hora en la caché (el del LLM, 7 días) para reintentar pronto con el LLM.
+  solo 1 hora en la caché (el del LLM, 24 horas) para reintentar pronto con el LLM.
 - Si piden un idioma sin hechos traducidos (por ejemplo francés), el LLM traduce
   los hechos del idioma por defecto; el plan B, en cambio, escribe en el idioma
   de los hechos y lo indica en `content_language`.
 - Idiomas admitidos: es, en, fr, de, it, pt. Cualquier otro → `AUDIOGUIDE_DEFAULT_LANGUAGE`
   (así nadie puede llenar Redis inventándose idiomas).
 - Aeropuertos y zonas restringidas no tienen audioguía (`NOT_NARRATED`).
+
+---
+
+## 4 bis. Problema 5: si corriges un hecho, ¿cuándo se entera la audioguía?
+
+### El riesgo
+
+El guion se guardaba 7 días en Redis. Si alguien corregía un horario mal puesto
+en `ai.zone_facts`, los turistas seguían oyendo el dato viejo **hasta una
+semana**. En una audioguía eso es un error visible.
+
+### Las dos ideas que se descartaron (y por qué)
+
+- **Poner la huella (hash) de los hechos en la clave**: para calcularla hay que
+  leer todos los hechos de PostgreSQL en **cada** entrada a la zona. Mil turistas
+  en la Puerta del Sol = mil consultas: una "tormenta de consultas".
+- **Un topic de Kafka para avisar de "borra esta clave"**: funciona, pero añade
+  un productor, un consumidor y una DLQ más para un problema pequeño.
+
+### La solución elegida: un número de versión por zona
+
+Analogía: es como la **edición de un libro**. Si corriges una errata no
+tachas los libros ya impresos: sacas la "2ª edición" y la librería pide esa.
+Los ejemplares viejos se quedan en el almacén hasta que se tiran.
+
+1. **Tabla `ai.zone_content`** (migración `0003`): cada zona tiene un número
+   `content_version`. Un **trigger** de PostgreSQL lo sube solo cada vez que
+   alguien añade, cambia o borra un hecho de esa zona. Da igual quién lo haga
+   (una migración, un `psql` a mano, un futuro panel): las personas se olvidan
+   de "acuérdate de subir la versión"; la base de datos no.
+2. **La versión va en la clave**: `ai:audioguide:v2:<zona>:<idioma>:<versión>`.
+   Al subir la versión, la clave nueva está vacía → se genera un guion nuevo.
+   El viejo no hay que borrarlo: nadie lo vuelve a pedir y caduca solo.
+3. **La versión se recuerda en memoria 60 segundos** (`ZoneVersionCache`, en
+   `versions.py`): cada réplica pregunta a PostgreSQL como mucho **una vez por
+   zona y minuto**, entre o no entre gente. Leer un entero por clave primaria
+   cuesta microsegundos. Si dos tareas preguntan a la vez, solo una consulta
+   (*single flight*), y también se recuerda "esta zona no existe" para que un
+   `zone_id` inventado no pueda martillear la base de datos.
+4. **TTL del guion del LLM: de 7 días a 24 horas**, como red de seguridad.
+5. **Hechos y versión se leen en la misma foto** de la base de datos (una
+   transacción `REPEATABLE READ` de solo lectura) y el guion se guarda con la
+   versión **de la que salió**. Si alguien corrige un hecho justo mientras se
+   escribe el guion, nunca acabará un texto viejo guardado con la versión nueva.
+
+Resultado: tras corregir un hecho, el guion nuevo se usa en **60 segundos como
+mucho** (antes, hasta 7 días). Es *consistencia eventual* con una ventana corta y
+conocida. Se ajusta con `AUDIOGUIDE_VERSION_CACHE_SECONDS`.
+
+Pruébalo: en VS Code abre una terminal (**Terminal → Nueva terminal**) y ejecuta
+
+```bash
+make audioguides   # verás claves que acaban en :1
+cd infrastructure && docker compose exec postgres sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "UPDATE ai.zone_facts SET fact = fact WHERE zone_slug = '"'"'madrid-centro'"'"' AND language = '"'"'es'"'"' AND position = 1"'
+```
+
+y, al minuto, la siguiente entrada a `madrid-centro` deja una clave nueva acabada
+en `:2`. (El trigger suma uno **por cada fila** tocada: si un `UPDATE` cambia
+tres hechos, la versión salta de golpe tres números. No pasa nada: lo único que
+importa es que el número nunca baja ni se repite.) Los tests `test_fixing_a_fact_produces_a_new_script_without_waiting_for_the_ttl`
+y `test_editing_facts_bumps_the_zone_content_version` comprueban justo esto.
 
 ---
 
@@ -198,7 +260,7 @@ móvil ── posición + idioma ──► geo.user-positions.v1
                                                    │
                          hechos (ai.zone_facts) → LLM anclado o reglas
                                                    │
-                               Redis  ai:audioguide:v1:<zona>:<idioma>
+                               Redis  ai:audioguide:v2:<zona>:<idioma>:<versión>
                                                    ▲
                   app / notificaciones ── GET /v1/audioguides/<zona>?lang=es
 ```
@@ -265,8 +327,6 @@ Para cambiar la histéresis, en `infrastructure/.env` añade por ejemplo
 - **Panel de hechos**: una API de administración para dar de alta y revisar
   hechos por zona (hoy van en migraciones SQL).
 - **ACLs de Kafka** por servicio en producción (mínimo privilegio real).
-- **Invalidación al cambiar los hechos**: hoy un guion cambia al caducar; se
-  podría añadir la huella de los hechos a la clave.
 
 ---
 
@@ -282,6 +342,10 @@ Para cambiar la histéresis, en `infrastructure/.env` añade por ejemplo
 | **Single flight** | Técnica para que muchas peticiones iguales simultáneas se resuelvan con una sola ejecución. |
 | **Cerrojo distribuido** | Una "llave" en Redis que solo puede tener una copia del servicio a la vez. |
 | **TTL** | *Time to live*: cuánto tiempo vive un dato en la caché antes de borrarse solo. |
+| **Versión de contenido** | Un número por zona que sube cada vez que cambian sus hechos; va en la clave de caché para que un cambio cree una clave nueva. |
+| **Trigger** | Código que la base de datos ejecuta sola cuando pasa algo en una tabla (aquí: al tocar un hecho, sube la versión). |
+| **Consistencia eventual** | El sistema acaba mostrando el dato nuevo, pero no al instante: aquí, en 60 s como mucho. |
+| **Invalidación de caché** | Hacer que la caché deje de servir un dato que ya no es correcto. |
 | **Grounding** (anclaje) | Obligar a la IA a basarse solo en datos verificados que le damos. |
 | **Alucinación** | Cuando un modelo de IA se inventa algo y lo dice con seguridad. |
 | **Minimización de datos** | Principio del RGPD: tratar solo los datos personales imprescindibles. |

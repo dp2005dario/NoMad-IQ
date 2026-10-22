@@ -77,10 +77,16 @@ class Settings(BaseSettings):
     kafka_audioguides_group_id: str = "ai-orchestrator-audioguides"
     # Idioma si la app no indica uno (o pide uno que no sabemos redactar).
     audioguide_default_language: str = "en"
-    # Cuánto vive en caché un guion del LLM (7 días) y uno de reglas (1 hora:
-    # es el plan B y conviene reintentar pronto con el LLM).
-    audioguide_llm_ttl_seconds: int = Field(default=7 * 24 * 3600, ge=60, le=90 * 24 * 3600)
+    # Cuánto vive en caché un guion del LLM (24 horas) y uno de reglas (1 hora:
+    # es el plan B y conviene reintentar pronto con el LLM). Una corrección de
+    # hechos NO espera a esto: cambia la versión de la zona y con ella la clave.
+    audioguide_llm_ttl_seconds: int = Field(default=24 * 3600, ge=60, le=30 * 24 * 3600)
     audioguide_rules_ttl_seconds: int = Field(default=3600, ge=60, le=7 * 24 * 3600)
+    # Cuánto recuerda cada copia del servicio la versión de contenido de una
+    # zona (ver audioguides/versions.py). Es el retraso máximo con el que se
+    # nota una corrección de hechos, y a la vez lo que protege a PostgreSQL:
+    # como mucho una consulta por zona y por este intervalo.
+    audioguide_version_cache_seconds: float = Field(default=60.0, ge=1.0, le=3600.0)
     # Unas 260 palabras ≈ menos de dos minutos de audio.
     audioguide_max_words: int = Field(default=260, ge=50, le=1000)
     audioguide_max_output_tokens: int = Field(default=900, ge=128, le=4096)
