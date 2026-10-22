@@ -350,6 +350,12 @@ paket-files/
 **/__pycache__/
 *.pyc
 
+# Python (ai-orchestrator): entorno virtual y cachés de herramientas
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
 # Cake - Uncomment if you are using it
 #tools/**
 #!tools/packages.config

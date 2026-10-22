@@ -109,10 +109,39 @@ jobs:
       - name: Compilar y pasar todos los tests
         run: ./mvnw -B -ntp verify
 
+  ai-orchestrator:
+    name: ai-orchestrator (Python)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/ai-orchestrator
+    steps:
+      - uses: actions/checkout@v4
+      # uv instala Python 3.13 y las librerías EXACTAS de uv.lock (con caché).
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.32"
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: services/ai-orchestrator/uv.lock
+      - name: Instalar dependencias (falla si uv.lock no está al día)
+        run: uv sync --locked
+      - name: El código generado desde proto/ está al día
+        run: |
+          uv run python scripts/generate_proto.py
+          git diff --exit-code -- src/nomadiq || (echo "Ejecuta 'make proto-python' y sube src/nomadiq" && exit 1)
+      - name: Formato y estilo (ruff)
+        run: uv run ruff format --check . && uv run ruff check .
+      - name: Tipos (mypy estricto)
+        run: uv run mypy
+      # Sin Ollama real: los tests usan un LLM falso con respuestas de guion.
+      - name: Tests unitarios
+        run: uv run pytest -q
+
   integration:
     name: Integración (docker compose + Kafka real)
     runs-on: ubuntu-latest
-    needs: [flight-ingestor, price-consumer, auth-gateway]
+    needs: [flight-ingestor, price-consumer, auth-gateway, ai-orchestrator]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -121,6 +150,12 @@ jobs:
           cache-dependency-path: |
             services/flight-ingestor/go.sum
             services/price-consumer/go.sum
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.11.32"
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: services/ai-orchestrator/uv.lock
       - name: Generar secretos efímeros para la CI
         working-directory: infrastructure
         run: |
@@ -142,17 +177,19 @@ jobs:
         env:
           KAFKA_BROKERS: localhost:29092
         run: go test -tags integration -count=1 ./internal/publisher/
-      - name: Construir y arrancar flight-ingestor, price-consumer y auth-gateway
+      - name: Construir y arrancar flight-ingestor, price-consumer, auth-gateway y ai-orchestrator
         working-directory: infrastructure
         env:
           SEED_WATCHES: MAD-NRT:2026-12-01:ECONOMY
           SEED_SUBSCRIPTIONS: ci-user|MAD-NRT:2026-12-01:ECONOMY
           POLL_INTERVAL: 10s
         run: |
-          docker compose --profile apps up -d --build --wait flight-ingestor price-consumer auth-gateway
+          docker compose --profile apps up -d --build --wait flight-ingestor price-consumer auth-gateway ai-orchestrator
           curl -fsS http://127.0.0.1:8081/readyz
           curl -fsS http://127.0.0.1:8082/readyz
           curl -fsS http://127.0.0.1:8084/readyz
+          # Sin Ollama en la CI: el ai-orchestrator debe estar listo igualmente (plan B por reglas).
+          curl -fsS http://127.0.0.1:8086/readyz
       - name: auth-gateway en su contenedor (registro, login y token)
         run: |
           set -euo pipefail
@@ -182,6 +219,19 @@ jobs:
           set -a; . ../../infrastructure/.env; set +a
           export PGHOST=localhost PGUSER="$POSTGRES_USER" PGPASSWORD="$POSTGRES_PASSWORD" PGDATABASE="$POSTGRES_DB"
           go test -race -tags integration -count=1 ./internal/store/ ./internal/kafka/
+      - name: Tests de integración del ai-orchestrator (PostgreSQL + Kafka reales, LLM falso)
+        working-directory: services/ai-orchestrator
+        env:
+          KAFKA_BROKERS: localhost:29092
+        run: |
+          set -a; . ../../infrastructure/.env; set +a
+          export PGHOST=localhost PGUSER="$POSTGRES_USER" PGPASSWORD="$POSTGRES_PASSWORD" PGDATABASE="$POSTGRES_DB"
+          uv sync --locked
+          uv run pytest -m integration -q
+      - name: La API del ai-orchestrator exige identidad
+        run: |
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8085/v1/recommendations)" = 401
+          curl -fsS http://127.0.0.1:8085/v1/recommendations -H 'X-User-ID: ci-user' -H 'X-User-Roles: USER' | jq -e '.items | type == "array"'
       - name: Logs si algo falla
         if: failure()
         working-directory: infrastructure
