@@ -2,7 +2,7 @@
 # Cada "objetivo" (proto, test, up...) es un atajo: "make up" ejecuta los
 # comandos de debajo. Las líneas de comando deben empezar con un tabulador.
 # .PHONY indica que son nombres de tareas, no ficheros que generar.
-.PHONY: help proto proto-python test test-java test-python test-rust test-rust-integration test-integration up up-apps down logs alerts ollama recommendations audioguides voices audio-worker audio audio-gc zones
+.PHONY: help proto proto-python test test-java test-python test-rust test-rust-integration test-integration up up-apps down logs alerts ollama recommendations audioguides voices audio-worker audio audio-gc zones keys notifier-devices push-messages
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-18s %s\n", $$1, $$2}'
@@ -13,6 +13,7 @@ proto: ## Valida los .proto y regenera el código en gen/
 test: ## Tests unitarios de todos los servicios Go (con detector de carreras)
 	cd services/flight-ingestor && go vet ./... && go test -race ./...
 	cd services/price-consumer && go vet ./... && go test -race ./...
+	cd services/notifier && go vet ./... && go test -race ./...
 
 proto-python: ## Regenera el código Python de los .proto (ai-orchestrator)
 	cd services/ai-orchestrator && uv run python scripts/generate_proto.py
@@ -39,6 +40,9 @@ test-integration: ## Tests contra Kafka y PostgreSQL de docker compose (requiere
 	cd services/price-consumer && set -a && . ../../infrastructure/.env && set +a && \
 		KAFKA_BROKERS=localhost:29092 PGHOST=localhost PGUSER="$$POSTGRES_USER" PGPASSWORD="$$POSTGRES_PASSWORD" PGDATABASE="$$POSTGRES_DB" \
 		go test -tags integration -count=1 ./internal/store/ ./internal/kafka/
+	cd services/notifier && set -a && . ../../infrastructure/.env && set +a && \
+		PGHOST=localhost PGUSER="$$POSTGRES_USER" PGPASSWORD="$$POSTGRES_PASSWORD" PGDATABASE="$$POSTGRES_DB" REDIS_HOST=localhost \
+		go test -tags integration -count=1 ./internal/store/ ./internal/antispam/
 	cd services/ai-orchestrator && set -a && . ../../infrastructure/.env && set +a && \
 		KAFKA_BROKERS=localhost:29092 PGHOST=localhost PGUSER="$$POSTGRES_USER" PGPASSWORD="$$POSTGRES_PASSWORD" PGDATABASE="$$POSTGRES_DB" \
 		uv run pytest -m integration -q
@@ -46,7 +50,7 @@ test-integration: ## Tests contra Kafka y PostgreSQL de docker compose (requiere
 up: ## Arranca la infraestructura (Kafka, PostgreSQL, Redis, Qdrant)
 	cd infrastructure && docker compose up -d --wait
 
-up-apps: ## Arranca infraestructura + microservicios
+up-apps: keys ## Arranca infraestructura + microservicios
 	cd infrastructure && docker compose --profile apps up -d --build --wait
 
 down: ## Para todo (los datos se conservan en los volúmenes)
@@ -84,3 +88,19 @@ audio-gc: ## Pasa ya el recolector del audio viejo (respeta la ventana de gracia
 
 zones: ## Muestra las zonas de geofencing guardadas en PostGIS (geo-engine)
 	cd infrastructure && docker compose exec postgres sh -c 'PGPASSWORD="$$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -c "SELECT slug, kind, active, round(ST_Area(geom::geography)) AS m2, updated_at FROM geo.zones ORDER BY slug"'
+
+# Añade a infrastructure/.env las claves de las notificaciones si faltan (no
+# toca las que ya existen: cambiarlas obligaría a registrar de nuevo los teléfonos).
+keys: ## Crea las claves de las notificaciones push en infrastructure/.env si faltan
+	@for k in NOTIFY_PSEUDONYM_KEY NOTIFY_TOKEN_KEY; do \
+		if ! grep -Eq "^$$k=.+" infrastructure/.env; then \
+			sed -i.bak "/^$$k=$$/d" infrastructure/.env && rm -f infrastructure/.env.bak; \
+			echo "$$k=$$(openssl rand -hex 32)" >> infrastructure/.env; echo "creada $$k"; \
+		fi; \
+	done
+
+notifier-devices: ## Cuántos teléfonos hay registrados y cuántos avisos esperan en la cola
+	cd infrastructure && docker compose exec postgres sh -c 'PGPASSWORD="$$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -c "SELECT platform, count(*) AS telefonos, max(last_seen_at) AS ultimo FROM notify.devices GROUP BY platform" -c "SELECT count(*) AS pendientes, min(available_at) AS siguiente FROM notify.deliveries"'
+
+push-messages: ## Muestra los avisos que ha recibido el FCM falso (cifrados: así los ve Google)
+	@curl -fsS http://127.0.0.1:8099/messages | jq .

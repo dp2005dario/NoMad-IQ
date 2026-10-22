@@ -376,7 +376,7 @@ pub fn zone_entry_event(position: &Position, zone: &ZoneRef, producer: &str) -> 
     (event_id, event)
 }
 
-fn proto_zone_kind(kind: &str) -> pb::ZoneKind {
+pub(crate) fn proto_zone_kind(kind: &str) -> pb::ZoneKind {
     match ZoneKind::from_db(kind) {
         Some(ZoneKind::CityCenter) => pb::ZoneKind::CityCenter,
         Some(ZoneKind::TouristArea) => pb::ZoneKind::TouristArea,

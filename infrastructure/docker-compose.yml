@@ -380,6 +380,9 @@ services:
       # avisos cuando el GPS baila justo en el borde de una zona.
       GEOFENCE_EXIT_MARGIN_M: ${GEOFENCE_EXIT_MARGIN_M:-30}
       GEOFENCE_ENTER_DWELL: ${GEOFENCE_ENTER_DWELL:-15s}
+      # Clave de los seudónimos de las notificaciones push (la misma que el
+      # notifier). Vacía = el geo-engine no pide avisos. La crea "make keys".
+      NOTIFY_PSEUDONYM_KEY: ${NOTIFY_PSEUDONYM_KEY:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "127.0.0.1:50052:50052"   # gRPC GeoService
@@ -391,6 +394,77 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+  # Notificaciones push (Go): recibe del geo-engine órdenes SEUDÓNIMAS
+  # ("avisa a esta persona de que llegó a esta zona"), aplica el anti-spam en
+  # Redis, cifra cada aviso para el teléfono y lo entrega por FCM a un ritmo
+  # controlado. En local habla con el FCM falso (fcm-fake), no con Google.
+  # Las dos claves salen de .env: si faltan, ejecuta "make keys".
+  notifier:
+    <<: *hardening
+    profiles: ["apps"]
+    build:
+      context: ..
+      dockerfile: services/notifier/Dockerfile
+    read_only: true
+    cap_drop:
+      - ALL
+    environment:
+      KAFKA_BROKERS: kafka:9092
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:?Define POSTGRES_USER en .env}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
+      PGDATABASE: ${POSTGRES_DB:?Define POSTGRES_DB en .env}
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Define REDIS_PASSWORD en .env}
+      # Opcionales en compose para no romper un .env antiguo: el notifier se
+      # niega a arrancar sin ellas y explica cómo crearlas.
+      NOTIFY_PSEUDONYM_KEY: ${NOTIFY_PSEUDONYM_KEY:-}
+      NOTIFY_TOKEN_KEY: ${NOTIFY_TOKEN_KEY:-}
+      # Anti-spam: un aviso cada 45 min por persona, y nunca la misma zona dos veces al día.
+      NOTIFY_COOLDOWN: ${NOTIFY_COOLDOWN:-45m}
+      # Solo en local: sin TLS/mTLS y con el FCM falso (ver services/notifier/README.md).
+      PGSSLMODE: disable
+      DB_INSECURE_DEV: "true"
+      REDIS_TLS: "false"
+      REDIS_INSECURE_DEV: "true"
+      HTTP_INSECURE_DEV: "true"
+      FCM_PROJECT_ID: nomadiq-dev
+      FCM_ENDPOINT: http://fcm-fake:8099
+      FCM_INSECURE_DEV: "true"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "127.0.0.1:8089:8089"     # API: PUT/DELETE /v1/devices/{id} (en local sin mTLS)
+      - "127.0.0.1:8090:8090"     # /healthz y /readyz
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      fcm-fake:
+        condition: service_healthy
+
+  # Firebase Cloud Messaging FALSO: recibe los avisos del notifier y deja
+  # verlos en http://127.0.0.1:8099/messages. Solo para desarrollo y CI.
+  fcm-fake:
+    <<: *hardening
+    profiles: ["apps"]
+    build:
+      context: ..
+      dockerfile: services/notifier/Dockerfile
+    entrypoint: ["/fcm-fake"]
+    read_only: true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "/fcm-fake", "-healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "127.0.0.1:8099:8099"
 
   # Ollama: ejecuta el modelo de lenguaje en tu máquina (gratis, sin enviar
   # datos fuera). Perfil propio porque los modelos ocupan varios GB:

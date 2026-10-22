@@ -122,6 +122,11 @@ pub struct StreamConfig {
     pub topic_zone_entries: String,
     /// Topic de mensajes imposibles de procesar.
     pub topic_positions_dlq: String,
+    /// Topic de órdenes de notificación seudónimas (para el notifier).
+    pub topic_notify_requests: String,
+    /// Clave HMAC (en hexadecimal) con la que se calcula el seudónimo del
+    /// destinatario. None = no se piden notificaciones push.
+    pub notify_pseudonym_key: Option<Secret>,
     /// CA para TLS hacia Kafka (opcional; activa TLS si se indica).
     pub tls_ca_file: Option<PathBuf>,
     /// Posiciones con peor precisión que esto se ignoran (evita avisos falsos).
@@ -286,6 +291,33 @@ impl Reader<'_> {
         })
     }
 
+    /// Un secreto que llega en una variable o, mejor (producción), en un
+    /// fichero montado: `CLAVE_FILE=/run/secrets/...`. Así no aparece en
+    /// `docker inspect` ni en la lista de procesos.
+    fn secret_or_file(&mut self, key: &str) -> Option<Secret> {
+        let file_key = format!("{key}_FILE");
+        match (self.raw(key), self.path(&file_key)) {
+            (Some(_), Some(_)) => {
+                self.errors.push(format!("{key} y {file_key} son excluyentes: usa solo una"));
+                None
+            }
+            (Some(value), None) => Some(Secret::new(value)),
+            (None, Some(path)) => match std::fs::read_to_string(&path) {
+                Ok(value) if !value.trim().is_empty() => Some(Secret::new(value.trim())),
+                // No se incluye el contenido del fichero en el error, solo su ruta.
+                Ok(_) => {
+                    self.errors.push(format!("{file_key}: el fichero {} está vacío", path.display()));
+                    None
+                }
+                Err(e) => {
+                    self.errors.push(format!("{file_key}: no se pudo leer {}: {e}", path.display()));
+                    None
+                }
+            },
+            (None, None) => None,
+        }
+    }
+
     fn list(&self, key: &str) -> Vec<String> {
         self.raw(key).map(|raw| raw.split(',').map(str::trim).filter(|s| !s.is_empty()).map(str::to_owned).collect()).unwrap_or_default()
     }
@@ -394,6 +426,18 @@ impl Config {
                 topic_transitions: r.string("KAFKA_TOPIC_TRANSITIONS", "geo.geofence-transitions.v1"),
                 topic_zone_entries: r.string("KAFKA_TOPIC_ZONE_ENTRIES", "geo.zone-entries.v1"),
                 topic_positions_dlq: r.string("KAFKA_TOPIC_POSITIONS_DLQ", "geo.user-positions-dlq.v1"),
+                topic_notify_requests: r.string("KAFKA_TOPIC_NOTIFY_REQUESTS", "notify.zone-requests.v1"),
+                notify_pseudonym_key: r.secret_or_file("NOTIFY_PSEUDONYM_KEY").and_then(|key| {
+                    // Se valida aquí para que una clave mala pare el arranque
+                    // con un mensaje claro, en lugar de fallar más tarde.
+                    match crate::stream::notify::Pseudonymizer::from_hex(key.expose()) {
+                        Ok(_) => Some(key),
+                        Err(e) => {
+                            r.errors.push(format!("NOTIFY_PSEUDONYM_KEY: {e}"));
+                            None
+                        }
+                    }
+                }),
                 tls_ca_file: r.path("KAFKA_TLS_CA_FILE"),
                 max_accuracy_m: r.float("GEOFENCE_MAX_ACCURACY_M", 100.0, 1.0, 10_000.0),
                 // 30 m: algo más que el "baile" típico del GPS de un móvil en ciudad.
@@ -530,6 +574,26 @@ mod tests {
         let cfg = load(DEV)?;
         assert!(!format!("{cfg:?}").contains("secreto"));
         Ok(())
+    }
+
+    #[test]
+    fn clave_de_seudonimos_opcional_validada_y_oculta() {
+        let key = "00".repeat(32);
+        let mut vars = DEV.to_vec();
+        assert!(load(&vars).is_ok_and(|c| c.stream.is_some_and(|s| s.notify_pseudonym_key.is_none())));
+        vars.push(("NOTIFY_PSEUDONYM_KEY", key.as_str()));
+        let cfg = load(&vars);
+        assert!(cfg.as_ref().is_ok_and(|c| c.stream.as_ref().is_some_and(|s| s.notify_pseudonym_key.is_some())));
+        assert!(cfg.is_ok_and(|c| !format!("{c:?}").contains(&key)));
+
+        let mut short = DEV.to_vec();
+        short.push(("NOTIFY_PSEUDONYM_KEY", "abcd"));
+        let Err(ConfigError(errors)) = load(&short) else { unreachable!("debería fallar") };
+        assert!(errors.iter().any(|e| e.contains("NOTIFY_PSEUDONYM_KEY")), "{errors:?}");
+
+        let mut both = DEV.to_vec();
+        both.extend([("NOTIFY_PSEUDONYM_KEY", key.as_str()), ("NOTIFY_PSEUDONYM_KEY_FILE", "/run/secrets/k")]);
+        assert!(load(&both).is_err());
     }
 
     #[test]

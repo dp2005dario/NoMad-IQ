@@ -87,6 +87,25 @@ jobs:
       - name: Tests unitarios (con detector de carreras)
         run: go test -race -count=1 ./...
 
+  notifier:
+    name: notifier (Go)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/notifier
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache-dependency-path: services/notifier/go.sum
+      - name: Formato
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - name: go vet
+        run: go vet ./... && go vet -tags integration ./...
+      - name: Tests unitarios (con detector de carreras)
+        run: go test -race -count=1 ./...
+
   auth-gateway:
     name: auth-gateway (Java)
     runs-on: ubuntu-latest
@@ -167,7 +186,7 @@ jobs:
   integration:
     name: Integración (docker compose + Kafka real)
     runs-on: ubuntu-latest
-    needs: [flight-ingestor, price-consumer, auth-gateway, ai-orchestrator, geo-engine]
+    needs: [flight-ingestor, price-consumer, notifier, auth-gateway, ai-orchestrator, geo-engine]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -176,6 +195,7 @@ jobs:
           cache-dependency-path: |
             services/flight-ingestor/go.sum
             services/price-consumer/go.sum
+            services/notifier/go.sum
       - uses: astral-sh/setup-uv@v6
         with:
           version: "0.11.32"
@@ -198,6 +218,8 @@ jobs:
             echo "REDIS_PASSWORD=$(openssl rand -hex 24)"
             echo "QDRANT_API_KEY=$(openssl rand -hex 24)"
             echo "KAFKA_CLUSTER_ID=$(docker run --rm apache/kafka:3.9.1 /opt/kafka/bin/kafka-storage.sh random-uuid)"
+            echo "NOTIFY_PSEUDONYM_KEY=$(openssl rand -hex 32)"
+            echo "NOTIFY_TOKEN_KEY=$(openssl rand -hex 32)"
           } > .env
       - name: Levantar infraestructura
         working-directory: infrastructure
@@ -209,14 +231,14 @@ jobs:
         env:
           KAFKA_BROKERS: localhost:29092
         run: go test -tags integration -count=1 ./internal/publisher/
-      - name: Construir y arrancar flight-ingestor, price-consumer, auth-gateway, ai-orchestrator y geo-engine
+      - name: Construir y arrancar flight-ingestor, price-consumer, auth-gateway, ai-orchestrator, geo-engine y notifier
         working-directory: infrastructure
         env:
           SEED_WATCHES: MAD-NRT:2026-12-01:ECONOMY
           SEED_SUBSCRIPTIONS: ci-user|MAD-NRT:2026-12-01:ECONOMY
           POLL_INTERVAL: 10s
         run: |
-          docker compose --profile apps up -d --build --wait flight-ingestor price-consumer auth-gateway ai-orchestrator geo-engine
+          docker compose --profile apps up -d --build --wait flight-ingestor price-consumer auth-gateway ai-orchestrator geo-engine notifier fcm-fake
           curl -fsS http://127.0.0.1:8081/readyz
           curl -fsS http://127.0.0.1:8082/readyz
           curl -fsS http://127.0.0.1:8084/readyz
@@ -224,6 +246,8 @@ jobs:
           curl -fsS http://127.0.0.1:8086/readyz
           # El geo-engine está listo cuando ha cargado aeropuertos y zonas de PostGIS.
           curl -fsS http://127.0.0.1:8087/readyz | jq -e '.ready and .snapshot.airports > 1000 and .geofence_stream == "running"'
+          # El notifier está listo cuando llega a Kafka, PostgreSQL y Redis.
+          curl -fsS http://127.0.0.1:8090/readyz | jq -e '.ready'
       - name: auth-gateway en su contenedor (registro, login y token)
         run: |
           set -euo pipefail
@@ -273,6 +297,23 @@ jobs:
           set -a; . ../../infrastructure/.env; set +a
           export PGHOST=localhost PGUSER="$POSTGRES_USER" PGPASSWORD="$POSTGRES_PASSWORD" PGDATABASE="$POSTGRES_DB" REDIS_HOST=localhost
           cargo test --locked --test integration -- --ignored
+      - name: Tests de integración del notifier (PostgreSQL y Redis reales)
+        working-directory: services/notifier
+        run: |
+          set -a; . ../../infrastructure/.env; set +a
+          export PGHOST=localhost PGUSER="$POSTGRES_USER" PGPASSWORD="$POSTGRES_PASSWORD" PGDATABASE="$POSTGRES_DB" REDIS_HOST=localhost
+          go test -race -tags integration -count=1 ./internal/store/ ./internal/antispam/
+      # Notificaciones push de punta a punta, con los contenedores reales: el
+      # test hace de teléfono (claves propias + registro en la API), publica
+      # posiciones en Kafka y comprueba que al FCM falso llega UN aviso cifrado
+      # que solo él sabe abrir; que el enfriamiento calla el segundo; y que un
+      # teléfono desinstalado (UNREGISTERED) se olvida.
+      - name: Notificaciones push de punta a punta (geo-engine → notifier → FCM falso)
+        working-directory: services/notifier
+        env:
+          NOTIFIER_E2E: "1"
+          KAFKA_BROKERS: localhost:29092
+        run: go test -tags integration -count=1 -v -run TestPushNotificationEndToEnd ./internal/e2e/
       # El recorrido completo de las audioguías, con los contenedores reales:
       # el e2e del geo-engine metió a un usuario en la Puerta del Sol → entrada
       # anónima en geo.zone-entries.v1 → el ai-orchestrator la consume y deja el

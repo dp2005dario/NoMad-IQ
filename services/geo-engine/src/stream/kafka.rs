@@ -27,7 +27,8 @@ use rdkafka::util::Timeout;
 use tokio_util::sync::CancellationToken;
 
 use super::geofence::GeofenceRules;
-use super::processor::{EventSink, InboundRecord, OutboundRecord, Processor, ProcessorSettings, SinkError, TransientError};
+use super::notify::Pseudonymizer;
+use super::processor::{EventSink, InboundRecord, NotifyTarget, OutboundRecord, Processor, ProcessorSettings, SinkError, TransientError};
 use crate::cache::KeyValueStore;
 use crate::config::StreamConfig;
 use crate::health::{StreamState, StreamStatus};
@@ -157,6 +158,19 @@ pub async fn run<S: KeyValueStore>(
             () = tokio::time::sleep(Duration::from_millis(500)) => {}
         }
     }
+    // Notificaciones push: solo si hay clave de seudónimos (la config ya la validó).
+    let notify = match cfg.notify_pseudonym_key.as_ref() {
+        Some(key) => {
+            let pseudonymizer =
+                Pseudonymizer::from_hex(key.expose()).map_err(|e| KafkaError::ClientCreation(format!("NOTIFY_PSEUDONYM_KEY: {e}")))?;
+            tracing::info!(topic = %cfg.topic_notify_requests, "órdenes de notificación push activadas");
+            Some(NotifyTarget { topic: cfg.topic_notify_requests.clone(), pseudonymizer: Arc::new(pseudonymizer) })
+        }
+        None => {
+            tracing::info!("sin NOTIFY_PSEUDONYM_KEY: no se piden notificaciones push");
+            None
+        }
+    };
     let consumer = consumer(&cfg)?;
     consumer.subscribe(&[cfg.topic_positions.as_str()])?;
     let sink = Arc::new(KafkaSink::new(producer(&cfg)?));
@@ -168,6 +182,7 @@ pub async fn run<S: KeyValueStore>(
             topic_transitions: cfg.topic_transitions.clone(),
             topic_zone_entries: cfg.topic_zone_entries.clone(),
             topic_dlq: cfg.topic_positions_dlq.clone(),
+            notify,
             rules: GeofenceRules {
                 max_accuracy_m: cfg.max_accuracy_m,
                 exit_margin_m: cfg.exit_margin_m,

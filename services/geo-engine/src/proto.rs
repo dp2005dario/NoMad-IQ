@@ -24,7 +24,15 @@ pub mod nomadiq {
             tonic::include_proto!("nomadiq.geo.v1");
         }
     }
+    /// Contratos de la capa de notificaciones.
+    pub mod notify {
+        /// Versión 1 de los contratos de notificaciones.
+        pub mod v1 {
+            tonic::include_proto!("nomadiq.notify.v1");
+        }
+    }
 }
 
 pub use nomadiq::common::v1 as common;
 pub use nomadiq::geo::v1 as geo;
+pub use nomadiq::notify::v1 as notify;
