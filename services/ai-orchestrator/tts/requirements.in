@@ -1,0 +1,2 @@
+# Piper, el motor de voz. Va en un entorno APARTE del nuestro (ver tts/README.md).
+piper-tts==1.8.0

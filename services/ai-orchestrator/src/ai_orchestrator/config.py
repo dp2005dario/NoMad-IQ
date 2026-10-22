@@ -91,6 +91,28 @@ class Settings(BaseSettings):
     audioguide_max_words: int = Field(default=260, ge=50, le=1000)
     audioguide_max_output_tokens: int = Field(default=900, ge=128, le=4096)
 
+    # --- Audio de las audioguías (Piper + Opus, ver audioguides/audio_worker.py) ----
+    # Carpeta donde se guardan los .opus (un volumen de Docker). Si no se
+    # define, la API no ofrece audio (solo el guion de texto).
+    audio_dir: Path | None = None
+    # Prefijo de las URLs de audio que se dan a la app. En local, la propia
+    # API; en producción, la URL de la CDN delante del almacén de objetos.
+    audio_public_base_url: str = "/v1/audio"
+    # Cuánto recuerda la API el manifiesto de audio de una zona.
+    audio_manifest_cache_seconds: float = Field(default=60.0, ge=1.0, le=3600.0)
+    # Solo el worker: una carpeta por idioma con UNA voz de Piper dentro.
+    tts_voices_dir: Path = Path("/voices")
+    tts_piper_bin: str = "piper"
+    tts_opusenc_bin: str = "opusenc"
+    # 24 kbps: voz clara y ~180 KB por minuto.
+    tts_bitrate_kbps: int = Field(default=24, ge=6, le=64)
+    tts_timeout_seconds: float = Field(default=120.0, gt=0, le=900)
+    # Cola de trabajos (outbox): préstamo de un trabajo, revisión periódica y
+    # cuántos fallos seguidos se toleran antes de abandonarlo.
+    audio_job_lease_seconds: int = Field(default=900, ge=60, le=6 * 3600)
+    audio_poll_seconds: float = Field(default=30.0, ge=1.0, le=3600.0)
+    audio_max_attempts: int = Field(default=5, ge=1, le=20)
+
     # --- Redis (caché de audioguías) -----------------------------------------------
     redis_host: str | None = None
     redis_port: int = Field(default=6379, ge=1, le=65535)
@@ -200,6 +222,12 @@ class Settings(BaseSettings):
                 problems.append(
                     f"AUDIOGUIDE_DEFAULT_LANGUAGE debe ser uno de: {', '.join(SUPPORTED_LANGUAGES)}"
                 )
+
+        if not (
+            self.audio_public_base_url.startswith("https://")
+            or re.fullmatch(r"/[A-Za-z0-9/_-]*", self.audio_public_base_url)
+        ):
+            problems.append("AUDIO_PUBLIC_BASE_URL debe ser https://... o una ruta que empiece por /")
 
         if self.http_port == self.management_port:
             problems.append("HTTP_PORT y MANAGEMENT_PORT deben ser distintos")

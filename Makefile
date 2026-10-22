@@ -2,7 +2,7 @@
 # Cada "objetivo" (proto, test, up...) es un atajo: "make up" ejecuta los
 # comandos de debajo. Las líneas de comando deben empezar con un tabulador.
 # .PHONY indica que son nombres de tareas, no ficheros que generar.
-.PHONY: help proto proto-python test test-java test-python test-rust test-rust-integration test-integration up up-apps down logs alerts ollama recommendations audioguides zones
+.PHONY: help proto proto-python test test-java test-python test-rust test-rust-integration test-integration up up-apps down logs alerts ollama recommendations audioguides voices audio-worker audio zones
 
 help: ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-18s %s\n", $$1, $$2}'
@@ -50,7 +50,7 @@ up-apps: ## Arranca infraestructura + microservicios
 	cd infrastructure && docker compose --profile apps up -d --build --wait
 
 down: ## Para todo (los datos se conservan en los volúmenes)
-	cd infrastructure && docker compose --profile apps down
+	cd infrastructure && docker compose --profile apps --profile audio down
 
 logs: ## Sigue los logs de todos los contenedores
 	cd infrastructure && docker compose --profile apps logs -f
@@ -69,6 +69,15 @@ recommendations: ## Muestra las últimas recomendaciones generadas por el ai-orc
 
 audioguides: ## Muestra las audioguías por zona guardadas en Redis (ai-orchestrator)
 	cd infrastructure && docker compose exec redis sh -c 'redis-cli --scan --pattern "ai:audioguide:v2:*" | while read k; do echo "$$k  (caduca en $$(redis-cli ttl $$k) s)"; done'
+
+voices: ## Descarga las voces de Piper (una por idioma, ~230 MB; o solo algunas: make voices LANGS="es en")
+	./infrastructure/tts/download-voices.sh $(LANGS)
+
+audio-worker: voices ## Arranca el worker que graba las audioguías con Piper (necesita make up-apps)
+	cd infrastructure && docker compose --profile apps --profile audio up -d --build --wait audio-worker
+
+audio: ## Muestra el audio grabado por zona e idioma (y la cola de trabajos pendientes)
+	cd infrastructure && docker compose exec postgres sh -c 'PGPASSWORD="$$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -c "SELECT zone_slug, language, content_version AS version, source, voice, jsonb_array_length(parts) AS partes, created_at FROM ai.zone_audio ORDER BY created_at DESC LIMIT 20" -c "SELECT zone_slug, content_version AS version, attempts AS intentos, available_at, last_error FROM ai.audio_jobs WHERE done_at IS NULL ORDER BY available_at"'
 
 zones: ## Muestra las zonas de geofencing guardadas en PostGIS (geo-engine)
 	cd infrastructure && docker compose exec postgres sh -c 'PGPASSWORD="$$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -c "SELECT slug, kind, active, round(ST_Area(geom::geography)) AS m2, updated_at FROM geo.zones ORDER BY slug"'

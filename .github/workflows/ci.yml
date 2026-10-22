@@ -292,6 +292,49 @@ jobs:
           done
           echo "la audioguía no apareció (último código: $code)"
           exit 1
+      # La voz: el worker de audio graba con Piper la audioguía de madrid-centro
+      # (una sola voz en la CI, la española, para ir rápido) y la API la sirve
+      # con URLs inmutables. Después se corrige un hecho y se comprueba que el
+      # outbox (trigger → cola → worker) graba la versión nueva en otra ruta.
+      - name: Audio de la audioguía con Piper (outbox → worker → Opus → API)
+        working-directory: infrastructure
+        env:
+          AUDIO_POLL_SECONDS: "5"
+        run: |
+          set -euo pipefail
+          ./tts/download-voices.sh es
+          docker compose --profile apps --profile audio up -d --build --wait audio-worker
+          curl -fsS http://127.0.0.1:8088/readyz | jq -e '.checks.audio_worker'
+          psql_q() { docker compose exec -T -e Q="$1" postgres sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "$Q"'; }
+          zone=$(psql_q "SELECT zone_id FROM geo.zones WHERE slug = 'madrid-centro'")
+          api="http://127.0.0.1:8085/v1/audioguides/${zone}/audio?lang=es"
+          auth=(-H 'X-User-ID: ci-user' -H 'X-User-Roles: USER')
+          manifest() { curl -s -o /tmp/audio.json -w '%{http_code}' "$api" "${auth[@]}"; }
+          for i in $(seq 1 60); do
+            [ "$(manifest)" = 200 ] && break
+            sleep 3
+          done
+          jq -e '(.parts | length) >= 2 and .stale == false and .voice == "es-carlfm-x-low"' /tmp/audio.json
+          first=$(jq -r '.parts[0].url' /tmp/audio.json)
+          v1=$(jq -r '.audio_content_version' /tmp/audio.json)
+          # El archivo: Ogg Opus, cacheable "para siempre" y sin pedir identidad.
+          curl -fsS -D /tmp/headers -o /tmp/part.opus "http://127.0.0.1:8085${first}"
+          grep -qi '^content-type: audio/ogg' /tmp/headers
+          grep -qi '^cache-control: public, max-age=31536000, immutable' /tmp/headers
+          [ "$(head -c 4 /tmp/part.opus)" = OggS ]
+          # Corregimos un hecho: sube la versión, el trigger apunta el trabajo y
+          # el worker graba la versión nueva en rutas nuevas.
+          psql_q "UPDATE ai.zone_facts SET fact = fact WHERE zone_slug = 'madrid-centro' AND language = 'es' AND position = 1"
+          for i in $(seq 1 80); do
+            if [ "$(manifest)" = 200 ] && jq -e --argjson v "$v1" '.audio_content_version > $v and .stale == false' /tmp/audio.json >/dev/null; then
+              second=$(jq -r '.parts[0].url' /tmp/audio.json)
+              [ "$second" != "$first" ]
+              echo "audio nuevo: $second"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "el audio de la versión corregida no apareció"; cat /tmp/audio.json; exit 1
       - name: La API del ai-orchestrator exige identidad
         run: |
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8085/v1/recommendations)" = 401
@@ -299,8 +342,8 @@ jobs:
       - name: Logs si algo falla
         if: failure()
         working-directory: infrastructure
-        run: docker compose --profile apps logs --tail=100
+        run: docker compose --profile apps --profile audio logs --tail=100
       - name: Apagar
         if: always()
         working-directory: infrastructure
-        run: docker compose --profile apps down -v
+        run: docker compose --profile apps --profile audio down -v
