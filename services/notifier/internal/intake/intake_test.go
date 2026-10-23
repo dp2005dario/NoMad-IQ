@@ -80,6 +80,23 @@ func (f *fakeGate) Release(_ context.Context, r, z string) error {
 	return nil
 }
 
+func (f *fakeGate) AdmitOnce(_ context.Context, r, key string) (antispam.Verdict, error) {
+	if f.err != nil {
+		return 0, f.err
+	}
+	if f.zones[r+key] {
+		return antispam.Repeat, nil
+	}
+	f.zones[r+key] = true // sin tocar el enfriamiento
+	return antispam.Send, nil
+}
+
+func (f *fakeGate) ReleaseOnce(_ context.Context, r, key string) error {
+	delete(f.zones, r+key)
+	f.released++
+	return nil
+}
+
 type fakeDLQ struct{ got []events.Message }
 
 func (f *fakeDLQ) Publish(_ context.Context, m ...events.Message) error {

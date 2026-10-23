@@ -91,3 +91,31 @@ func TestNoCooldownMeansOnlyZoneRepeats(t *testing.T) {
 		t.Fatal("con NOTIFY_COOLDOWN=0 solo se evita repetir zona")
 	}
 }
+
+func TestAdmitOnceIgnoresTheCooldownInRealRedis(t *testing.T) {
+	g, _ := gate(t, time.Hour)
+	ctx := context.Background()
+	who := "test-" + uuid.NewString()
+	fare := "fare:" + uuid.NewString()
+	// Acaba de recibir un aviso de zona (enfriamiento activo)...
+	if v := admit(t, g, who, uuid.NewString(), false); v != Send {
+		t.Fatalf("zona: %s", v)
+	}
+	// ...y aun así la alerta de precio sale, una sola vez.
+	if v, err := g.AdmitOnce(ctx, who, fare); err != nil || v != Send {
+		t.Fatalf("alerta: %v %s", err, v)
+	}
+	if v, err := g.AdmitOnce(ctx, who, fare); err != nil || v != Repeat {
+		t.Fatalf("alerta repetida: %v %s", err, v)
+	}
+	// Deshacerla permite reintentar, y el enfriamiento de zona sigue ahí.
+	if err := g.ReleaseOnce(ctx, who, fare); err != nil {
+		t.Fatal(err)
+	}
+	if v, err := g.AdmitOnce(ctx, who, fare); err != nil || v != Send {
+		t.Fatalf("alerta tras deshacer: %v %s", err, v)
+	}
+	if v := admit(t, g, who, uuid.NewString(), false); v != Cooldown {
+		t.Fatalf("el enfriamiento de zona no debía desaparecer: %s", v)
+	}
+}

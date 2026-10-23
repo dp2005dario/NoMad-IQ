@@ -34,12 +34,16 @@ type Config struct {
 	KafkaGroupID         string
 	TopicRequests        string
 	TopicDLQ             string
+	TopicFareAlerts      string
+	TopicFareDLQ         string
 	KafkaTLSCAFile       string
 	KafkaMaxPollRecords  int
 	PseudonymKey         []byte // la MISMA clave que usa el geo-engine
 	TokenKey             []byte // cifra los tokens de FCM guardados (AES-256)
 	MaxRequestAge        time.Duration
 	DeliveryTTL          time.Duration
+	FareMaxAlertAge      time.Duration
+	FareDeliveryTTL      time.Duration
 	CooldownPeriod       time.Duration
 	ZoneRepeatWindow     time.Duration
 	MaxDevicesPerPerson  int
@@ -240,11 +244,14 @@ func Load(lookup LookupFunc, readFile ReadFileFunc) (Config, error) {
 	}
 	r := &reader{lookup: lookup, readFile: readFile}
 	cfg := Config{
-		KafkaBrokers:        r.list("KAFKA_BROKERS"),
-		KafkaClientID:       r.str("KAFKA_CLIENT_ID", "notifier"),
-		KafkaGroupID:        r.str("KAFKA_GROUP_ID", "notifier"),
-		TopicRequests:       r.str("KAFKA_TOPIC_NOTIFY_REQUESTS", "notify.zone-requests.v1"),
-		TopicDLQ:            r.str("KAFKA_TOPIC_NOTIFY_REQUESTS_DLQ", "notify.zone-requests-dlq.v1"),
+		KafkaBrokers:  r.list("KAFKA_BROKERS"),
+		KafkaClientID: r.str("KAFKA_CLIENT_ID", "notifier"),
+		KafkaGroupID:  r.str("KAFKA_GROUP_ID", "notifier"),
+		TopicRequests: r.str("KAFKA_TOPIC_NOTIFY_REQUESTS", "notify.zone-requests.v1"),
+		TopicDLQ:      r.str("KAFKA_TOPIC_NOTIFY_REQUESTS_DLQ", "notify.zone-requests-dlq.v1"),
+		// Alertas de precio del price-consumer (vuelos que vigila cada usuario).
+		TopicFareAlerts:     r.str("KAFKA_TOPIC_FARE_ALERTS", "flights.fare-alerts.v1"),
+		TopicFareDLQ:        r.str("KAFKA_TOPIC_FARE_ALERTS_DLQ", "notify.fare-alerts-dlq.v1"),
 		KafkaTLSCAFile:      r.str("KAFKA_TLS_CA_FILE", ""),
 		KafkaMaxPollRecords: r.integer("KAFKA_MAX_POLL_RECORDS", 500, 1, 10_000),
 		PseudonymKey:        r.key("NOTIFY_PSEUDONYM_KEY"),
@@ -253,6 +260,11 @@ func Load(lookup LookupFunc, readFile ReadFileFunc) (Config, error) {
 		// puede estar en otro sitio. Se descarta en lugar de molestar.
 		MaxRequestAge: r.duration("NOTIFY_MAX_REQUEST_AGE", 10*time.Minute, 30*time.Second, 2*time.Hour),
 		DeliveryTTL:   r.duration("NOTIFY_DELIVERY_TTL", 10*time.Minute, 30*time.Second, 2*time.Hour),
+		// Una alerta de precio de hace más de 6 horas ya no se avisa (el
+		// precio probablemente cambió), y en la cola de Google aguanta 6 horas
+		// con el teléfono apagado: una tarifa error merece esperar un poco.
+		FareMaxAlertAge: r.duration("NOTIFY_FARE_MAX_ALERT_AGE", 6*time.Hour, time.Minute, 48*time.Hour),
+		FareDeliveryTTL: r.duration("NOTIFY_FARE_DELIVERY_TTL", 6*time.Hour, time.Minute, 48*time.Hour),
 		// Anti-spam: como mucho un aviso cada 45 minutos por persona...
 		CooldownPeriod: r.duration("NOTIFY_COOLDOWN", 45*time.Minute, 0, 24*time.Hour),
 		// ...y nunca dos veces la misma zona en el mismo día.
@@ -313,6 +325,12 @@ func Load(lookup LookupFunc, readFile ReadFileFunc) (Config, error) {
 	// otra sigue protegiendo lo suyo.
 	if cfg.PseudonymKey != nil && cfg.TokenKey != nil && string(cfg.PseudonymKey) == string(cfg.TokenKey) {
 		r.errs = append(r.errs, errors.New("NOTIFY_PSEUDONYM_KEY y NOTIFY_TOKEN_KEY deben ser claves distintas"))
+	}
+
+	// Los dos topics de entrada se reparten por nombre: si fueran el mismo,
+	// las alertas de precio se leerían como órdenes de zona (y al revés).
+	if cfg.TopicFareAlerts == cfg.TopicRequests {
+		r.errs = append(r.errs, errors.New("KAFKA_TOPIC_FARE_ALERTS y KAFKA_TOPIC_NOTIFY_REQUESTS deben ser distintos"))
 	}
 
 	// --- Zero Trust: sin cifrado solo en local, y siempre a propósito ---

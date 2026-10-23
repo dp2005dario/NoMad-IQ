@@ -229,6 +229,12 @@
   "pushSafetyBody": "You're in a restricted area. Take care and follow local signs.",
   "pushChannelZones": "Zones and audio guides",
   "pushChannelSafety": "Safety notices",
+  "pushChannelFares": "Price alerts",
+  "pushFareDropTitle": "Price drop",
+  "pushFareErrorTitle": "Possible error fare",
+  "pushFareTargetTitle": "Target price reached",
+  "pushFareBody": "{origin} → {destination} · {date}: {price}",
+  "pushFareBodyDrop": "{origin} → {destination} · {date}: {price} (−{percent}%)",
   "travelServiceTitle": "NomadIQ · Travel mode",
   "travelServiceText": "Flyra is watching for zones you visit. Turn it off from the map.",
   "travelServiceChannel": "Travel mode",
@@ -243,5 +249,42 @@
   },
   "@travelServiceText": {
     "description": "Text of the persistent Android notification shown while travel mode tracks location with the app closed."
+  },
+  "@pushFareBody": {
+    "description": "Price alert push. {origin}/{destination} are IATA airport codes (MAD), {date} the flight day already formatted, {price} the price with currency symbol.",
+    "placeholders": {
+      "origin": {
+        "type": "String"
+      },
+      "destination": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "@pushFareBodyDrop": {
+    "description": "Like pushFareBody plus how much it dropped; {percent} is a whole number like 35.",
+    "placeholders": {
+      "origin": {
+        "type": "String"
+      },
+      "destination": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
   }
 }

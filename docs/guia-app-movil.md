@@ -338,6 +338,7 @@ seguridad en una zona restringida.
 | Botón **Modo viaje** (abajo a la izquierda en el Mapa) | Aparece con la ubicación activada y con cuenta. Al pulsarlo, Android pide permiso de notificaciones (Android 13+) |
 | Notificación fija "NomadIQ · Modo viaje" | Avisa de que la app sigue usando tu ubicación. No se puede quitar deslizando: así nunca te rastreamos sin que lo sepas |
 | "Audioguía cerca" | Al tocarla, se abre la audioguía de esa zona |
+| "Posible tarifa error · MAD → NRT · 15 mar: 315 € (−65 %)" | Alerta de precio de un vuelo que vigilas (canal propio "Alertas de precio", que puedes silenciar aparte). El precio y la fecha salen en el formato de tu idioma (`lib/core/money.dart`). De momento abre la ficha de Vuelos; con las pantallas de Vuelos abrirá tus alertas |
 
 ### Cómo funciona (con analogías)
 

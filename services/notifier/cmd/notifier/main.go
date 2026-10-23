@@ -146,7 +146,7 @@ func run() error {
 	}
 	kc, err := kafka.New(kafka.Config{
 		Brokers: cfg.KafkaBrokers, ClientID: cfg.KafkaClientID, GroupID: cfg.KafkaGroupID,
-		Topic: cfg.TopicRequests, TLS: kafkaTLS, MaxPollRecords: cfg.KafkaMaxPollRecords,
+		Topics: []string{cfg.TopicRequests, cfg.TopicFareAlerts}, TLS: kafkaTLS, MaxPollRecords: cfg.KafkaMaxPollRecords,
 	}, log.With(slog.String("component", "kafka")))
 	if err != nil {
 		return err
@@ -179,10 +179,25 @@ func run() error {
 		return err
 	}
 
+	fares, err := intake.NewFares(intake.FareConfig{DLQTopic: cfg.TopicFareDLQ, MaxAlertAge: cfg.FareMaxAlertAge, DeliveryTTL: cfg.FareDeliveryTTL},
+		pseudonyms, db, db, gate, kc, snd.Wake, log.With(slog.String("component", "fares")))
+	if err != nil {
+		return err
+	}
+
 	var consumerHealthy atomic.Bool
 	consumerHealthy.Store(true)
 	handle := func(ctx context.Context, rec events.Record) error {
-		outcome, err := proc.Handle(ctx, rec)
+		// Cada topic tiene su mostrador: órdenes de zona o alertas de precio.
+		var (
+			outcome intake.Outcome
+			err     error
+		)
+		if rec.Topic == cfg.TopicFareAlerts {
+			outcome, err = fares.Handle(ctx, rec)
+		} else {
+			outcome, err = proc.Handle(ctx, rec)
+		}
 		consumerHealthy.Store(err == nil)
 		if err == nil {
 			log.Debug("orden procesada", slog.String("outcome", string(outcome)))
@@ -209,7 +224,7 @@ func run() error {
 
 	g, gctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
-		log.Info("consumiendo órdenes de notificación", slog.String("topic", cfg.TopicRequests), slog.String("group", cfg.KafkaGroupID))
+		log.Info("consumiendo órdenes de notificación", slog.String("topic", cfg.TopicRequests), slog.String("fares_topic", cfg.TopicFareAlerts), slog.String("group", cfg.KafkaGroupID))
 		return kc.Consume(gctx, handle, kafka.Backoff{Initial: 500 * time.Millisecond, Max: 30 * time.Second}, nil)
 	})
 	g.Go(func() error { return snd.Run(gctx) })

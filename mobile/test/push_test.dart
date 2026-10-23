@@ -4,15 +4,19 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:nomadiq/auth/session.dart';
 import 'package:nomadiq/core/api_client.dart';
+import 'package:nomadiq/core/money.dart';
 import 'package:nomadiq/core/router.dart';
 import 'package:nomadiq/features/push/hpke.dart';
+import 'package:nomadiq/features/push/notices.dart' show noticeTexts;
 import 'package:nomadiq/features/push/push_notice.dart';
 import 'package:nomadiq/features/push/push_registrar.dart';
 import 'package:nomadiq/features/push/push_state.dart';
+import 'package:nomadiq/l10n/generated/app_localizations.dart';
 
 import 'helpers.dart';
 
@@ -182,6 +186,96 @@ void main() {
       expect(back.confirmed, isTrue);
       expect(back.token, 't');
       expect(PushState.fromJson(<String, Object?>{'device_id': 1}), isNull);
+    });
+  });
+
+  group('alerta de precio', () {
+    const String alertId = '5a4b3c2d-1e0f-4a9b-8c7d-6e5f4a3b2c1d';
+    Map<String, Object?> fare([Map<String, Object?> change = const {}]) =>
+        <String, Object?>{
+          'v': 1,
+          'type': 'fare_alert',
+          'alert_id': alertId,
+          'alert_type': 'error_fare',
+          'origin': 'MAD',
+          'destination': 'NRT',
+          'departure': '2027-03-15',
+          'cabin': 'ECONOMY',
+          'price': <String, Object?>{'amount_minor': 31500, 'currency': 'EUR'},
+          'drop_bp': 6500,
+          'at': '2026-10-23T10:00:00Z',
+          ...change,
+        };
+
+    test('se entiende y lleva a Vuelos', () {
+      final PushNotice? n = PushNotice.fromJson(fare());
+      expect(n?.kind, PushKind.fareAlert);
+      expect(n?.fare?.kind, FareAlertKind.errorFare);
+      expect(n?.fare?.origin, 'MAD');
+      expect(n?.fare?.departure, DateTime(2027, 3, 15));
+      expect(n?.fare?.amountMinor, 31500);
+      expect(n?.route, startsWith('/soon/'));
+      // Dos alertas distintas no se pisan en la barra de notificaciones.
+      final PushNotice? other = PushNotice.fromJson(
+        fare(<String, Object?>{
+          'alert_id': '6b5c4d3e-2f10-4b0c-9d8e-7f6a5b4c3d2e',
+        }),
+      );
+      expect(other?.notificationId, isNot(n?.notificationId));
+    });
+
+    test('con datos raros no se avisa', () {
+      for (final Map<String, Object?> bad in <Map<String, Object?>>[
+        <String, Object?>{'alert_type': 'flash_sale'},
+        <String, Object?>{'alert_id': '../signin'},
+        <String, Object?>{'origin': 'mad'},
+        <String, Object?>{'departure': '2027-03-15T10:00:00Z'},
+        <String, Object?>{'drop_bp': 20000},
+        <String, Object?>{
+          'price': <String, Object?>{'amount_minor': 0, 'currency': 'EUR'},
+        },
+        <String, Object?>{
+          'price': <String, Object?>{'amount_minor': 100, 'currency': 'euro'},
+        },
+      ]) {
+        expect(PushNotice.fromJson(fare(bad)), isNull, reason: '$bad');
+      }
+    });
+
+    test('el texto sale en el idioma del usuario', () async {
+      final PushNotice n = PushNotice.fromJson(fare())!;
+      final (String title, String body) = await noticeTexts(
+        n,
+        lookupAppLocalizations(const Locale('es')),
+      );
+      expect(title, 'Posible tarifa error');
+      expect(body, startsWith('MAD → NRT · 15 mar'));
+      expect(body, contains('315'));
+      expect(body, contains('€'));
+      expect(body, endsWith('(−65 %)'));
+      final (String enTitle, String enBody) = await noticeTexts(
+        n,
+        lookupAppLocalizations(const Locale('en')),
+      );
+      expect(enTitle, 'Possible error fare');
+      expect(enBody, 'MAD → NRT · Mar 15: €315 (−65%)');
+      // Sin bajada (precio objetivo): sin porcentaje.
+      final PushNotice target = PushNotice.fromJson(
+        fare(<String, Object?>{'alert_type': 'target_reached', 'drop_bp': 0}),
+      )!;
+      final (_, String plain) = await noticeTexts(
+        target,
+        lookupAppLocalizations(const Locale('en')),
+      );
+      expect(plain, 'MAD → NRT · Mar 15: €315');
+    });
+
+    test('los precios se escriben como en cada país', () {
+      expect(formatMoney(31500, 'EUR', 'en', compact: true), '€315');
+      expect(formatMoney(3999, 'EUR', 'en'), '€39.99');
+      expect(formatMoney(3999, 'EUR', 'es'), contains('39,99'));
+      // El yen no tiene céntimos: 31500 JPY son 31.500 yenes.
+      expect(formatMoney(31500, 'JPY', 'en'), '¥31,500');
     });
   });
 

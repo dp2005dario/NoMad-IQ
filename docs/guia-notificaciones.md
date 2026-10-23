@@ -217,6 +217,31 @@ del aviso para tenerla lista.
    su clave privada, ve `{"type":"zone_audioguide","zone_id":"…"}`, pide a la
    API el nombre y la audioguía de la zona y muestra el aviso en su idioma.
 
+### 4 bis. Alertas de precio de vuelos
+
+Cuando vigilas un vuelo en la app (por ejemplo Madrid → Lisboa el 2 de
+diciembre) y el price-consumer detecta que ha bajado, publica una alerta en
+`flights.fare-alerts.v1`. El notifier también la lee:
+
+1. Llega con tu **user_id real** (así la publica el price-consumer). El
+   notifier calcula tu seudónimo en ese instante y se olvida del user_id: no
+   lo guarda en la base de datos, ni en Redis, ni en los logs.
+2. **No hay enfriamiento:** si pediste que te avisemos de un vuelo, te
+   avisamos aunque hace 10 minutos te contáramos lo de la plaza. Y al revés:
+   la alerta tampoco "gasta" tu enfriamiento de zonas.
+3. **Nunca suena dos veces:** Kafka puede entregar la misma alerta dos veces
+   (por ejemplo, tras un reinicio). Redis apunta `fare:<id de la alerta>`
+   durante 24 h y el segundo intento se descarta.
+4. **Caduca más tarde:** una tarifa error merece la pena aunque enciendas el
+   teléfono dentro de unas horas, así que Google la guarda hasta 6 h (los
+   avisos de zona, 10 min). Una alerta de hace más de 6 h ya no se avisa: el
+   precio probablemente cambió.
+
+Lo que recibe la app (cifrado, Google no lo ve):
+`{"type":"fare_alert","alert_type":"error_fare","origin":"MAD","destination":"NRT","departure":"2027-03-15","price":{"amount_minor":31500,"currency":"EUR"},"drop_bp":6500,…}`.
+La app escribe "Posible tarifa error · Madrid → Tokio: 315 € (−65 %)" en tu
+idioma y, al tocarlo, abre tus alertas de vuelos.
+
 ---
 
 ## 5. Cómo probarlo en tu ordenador con Visual Studio Code
@@ -252,6 +277,15 @@ del aviso para tenerla lista.
    Verás una línea como
    `aviso descifrado por el teléfono: {"v":1,"type":"zone_audioguide",…}`.
 
+   Para la alerta de precio (publica una alerta falsa dos veces y comprueba
+   que suena una):
+
+   ```bash
+   cd services/notifier
+   NOTIFIER_E2E=1 go test -tags integration -count=1 -v -run TestFareAlertPushEndToEnd ./internal/e2e/
+   cd ../..
+   ```
+
 7. Mira lo que "vio Google" (solo bytes cifrados) y el estado de la cola:
 
    ```bash
@@ -282,7 +316,7 @@ del aviso para tenerla lista.
 - **Preferencias del usuario:** horas de silencio, desactivar por tipo de aviso.
   Lo ideal es que las aplique la propia app (no hace falta mandarlas al servidor).
 - **ACL de Kafka:** que el notifier solo pueda leer `notify.zone-requests.v1` y
-  escribir en su DLQ (hoy, en local, no hay ACL).
+  `flights.fare-alerts.v1` y escribir en sus DLQ (hoy, en local, no hay ACL).
 - **Ritmo global con varias copias:** el cubo de fichas es por copia; con 3
   copias el ritmo total es 3 × 50/s. Si hiciera falta un límite común, el cubo
   se puede mover a Redis.

@@ -78,6 +78,8 @@ func TestUnsafeOrContradictoryConfigIsRejected(t *testing.T) {
 		"tls a medias":           func(v map[string]string) { delete(v, "HTTP_INSECURE_DEV"); v["TLS_CERT_FILE"] = "/c.pem" },
 		"préstamo corto":         func(v map[string]string) { v["SEND_RATE_PER_SECOND"] = "1"; v["SEND_BATCH"] = "100" },
 		"enfriamiento de un año": func(v map[string]string) { v["NOTIFY_COOLDOWN"] = "8760h" },
+		"topics mezclados":       func(v map[string]string) { v["KAFKA_TOPIC_FARE_ALERTS"] = "notify.zone-requests.v1" },
+		"alerta de una semana":   func(v map[string]string) { v["NOTIFY_FARE_MAX_ALERT_AGE"] = "168h" },
 	}
 	for name, mutate := range cases {
 		vars := dev()

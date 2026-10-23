@@ -153,3 +153,36 @@ func (g *Gate) Release(ctx context.Context, recipient, zoneID string) error {
 	}
 	return nil
 }
+
+// AdmitOnce solo aplica la regla "no repetir": sirve para avisos que no son
+// de zona, como las alertas de precio (key = "fare:" + id de la alerta). Si
+// Kafka entrega la misma alerta dos veces (pasa tras un reinicio), el
+// segundo intento responde Repeat y el teléfono no suena dos veces.
+//
+// No toca el enfriamiento ni lo consulta: una bajada de precio no debe
+// callar la audioguía de la plaza a la que llegas, ni al revés.
+func (g *Gate) AdmitOnce(ctx context.Context, recipient, key string) (Verdict, error) {
+	zone, cooldown := g.keys(recipient, key)
+	// Con enfriamiento 0 el script no lo mira ni lo escribe.
+	res, err := admitScript.Run(ctx, g.rdb, []string{zone, cooldown}, g.zoneWindow.Milliseconds(), 0, "1").Text()
+	if err != nil {
+		return 0, fmt.Errorf("antispam: redis: %w", err)
+	}
+	switch res {
+	case "send":
+		return Send, nil
+	case "repeat":
+		return Repeat, nil
+	default:
+		return 0, fmt.Errorf("antispam: respuesta inesperada %q", res)
+	}
+}
+
+// ReleaseOnce deshace un AdmitOnce (sin tocar el enfriamiento).
+func (g *Gate) ReleaseOnce(ctx context.Context, recipient, key string) error {
+	zone, _ := g.keys(recipient, key)
+	if err := g.del(ctx, zone); err != nil {
+		return fmt.Errorf("antispam: redis: %w", err)
+	}
+	return nil
+}

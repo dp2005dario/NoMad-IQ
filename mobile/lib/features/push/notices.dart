@@ -4,15 +4,20 @@
 // usuario y se enseña con flutter_local_notifications. Tocarlo abre la
 // pantalla que toca (la audioguía de esa zona, el mapa...).
 //
-// Hay dos "canales" (Android deja al usuario silenciar cada uno aparte):
+// Hay tres "canales" (Android deja al usuario silenciar cada uno aparte):
 //   - zones:  audioguías y llegadas (importancia normal);
-//   - safety: avisos de seguridad (importancia alta: suenan y asoman arriba).
+//   - safety: avisos de seguridad (importancia alta: suenan y asoman arriba);
+//   - fares:  alertas de precio de vuelos que vigilas (importancia alta: un
+//             chollo puede durar minutos).
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:intl/date_symbol_data_local.dart' show initializeDateFormatting;
+import 'package:intl/intl.dart' show DateFormat;
 
+import '../../core/money.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'push_notice.dart';
 
@@ -51,6 +56,7 @@ class DeviceNotices implements NoticeCenter {
 
   static const String zonesChannel = 'zones';
   static const String safetyChannel = 'safety';
+  static const String faresChannel = 'fares';
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -114,12 +120,14 @@ class DeviceNotices implements NoticeCenter {
   /// Enseña el aviso con el texto en el idioma [t].
   Future<void> show(PushNotice notice, AppLocalizations t) async {
     await init();
-    final (String title, String body) = switch (notice.kind) {
-      PushKind.zoneAudioguide => (t.pushGuideTitle, t.pushGuideBody),
-      PushKind.airportArrival => (t.pushAirportTitle, t.pushAirportBody),
-      PushKind.zoneSafety => (t.pushSafetyTitle, t.pushSafetyBody),
-    };
-    final bool urgent = notice.urgent;
+    final (String title, String body) = await noticeTexts(notice, t);
+    final bool fare = notice.kind == PushKind.fareAlert;
+    final bool urgent = notice.urgent || fare;
+    final (String channel, String channelName) = fare
+        ? (faresChannel, t.pushChannelFares)
+        : urgent
+        ? (safetyChannel, t.pushChannelSafety)
+        : (zonesChannel, t.pushChannelZones);
     await _plugin.show(
       id: notice.notificationId,
       title: title,
@@ -127,12 +135,14 @@ class DeviceNotices implements NoticeCenter {
       payload: notice.route,
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
-          urgent ? safetyChannel : zonesChannel,
+          channel,
           // El nombre del canal se ve en Ajustes > Notificaciones: traducido.
-          urgent ? t.pushChannelSafety : t.pushChannelZones,
+          channelName,
           importance: urgent ? Importance.high : Importance.defaultImportance,
           priority: urgent ? Priority.high : Priority.defaultPriority,
-          category: urgent
+          category: fare
+              ? AndroidNotificationCategory.promo
+              : urgent
               ? AndroidNotificationCategory.status
               : AndroidNotificationCategory.recommendation,
           // En la pantalla de bloqueo no se enseña el texto, solo "NomadIQ".
@@ -148,6 +158,50 @@ class DeviceNotices implements NoticeCenter {
       payload != null && payload.startsWith('/') && !payload.startsWith('//')
       ? payload
       : null;
+}
+
+/// Título y texto de un aviso en el idioma [t].
+Future<(String, String)> noticeTexts(
+  PushNotice notice,
+  AppLocalizations t,
+) async {
+  final FareNotice? fare = notice.fare;
+  if (notice.kind != PushKind.fareAlert || fare == null) {
+    return switch (notice.kind) {
+      PushKind.zoneAudioguide => (t.pushGuideTitle, t.pushGuideBody),
+      PushKind.airportArrival => (t.pushAirportTitle, t.pushAirportBody),
+      PushKind.zoneSafety ||
+      PushKind.fareAlert => (t.pushSafetyTitle, t.pushSafetyBody),
+    };
+  }
+  final String locale = t.localeName;
+  // Los nombres de los meses de cada idioma (en segundo plano no están
+  // cargados todavía).
+  await initializeDateFormatting(locale);
+  final String date = DateFormat.MMMd(locale).format(fare.departure);
+  final String price = formatMoney(
+    fare.amountMinor,
+    fare.currency,
+    locale,
+    compact: true,
+  );
+  final String title = switch (fare.kind) {
+    FareAlertKind.priceDrop => t.pushFareDropTitle,
+    FareAlertKind.errorFare => t.pushFareErrorTitle,
+    FareAlertKind.targetReached => t.pushFareTargetTitle,
+  };
+  // Bajadas de menos de un 1 % no se anuncian como "−0 %".
+  final int percent = fare.dropBasisPoints ~/ 100;
+  final String body = percent >= 1
+      ? t.pushFareBodyDrop(
+          fare.origin,
+          fare.destination,
+          date,
+          price,
+          '$percent',
+        )
+      : t.pushFareBody(fare.origin, fare.destination, date, price);
+  return (title, body);
 }
 
 /// Sin notificaciones (los tests, o plataformas sin ellas): todo "permitido"

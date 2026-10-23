@@ -3,12 +3,14 @@
 Notificaciones push de NomadIQ. Recibe del geo-engine órdenes **seudónimas**
 ("avisa a este seudónimo de que entró en esta zona"), aplica el anti-spam,
 cifra cada aviso **para el teléfono** (HPKE) y lo entrega por Firebase Cloud
-Messaging a un ritmo controlado.
+Messaging a un ritmo controlado. También avisa de las **alertas de precio**
+de vuelos que publica el price-consumer (`flights.fare-alerts.v1`).
 
 ```
 geo-engine ──► notify.zone-requests.v1 ──► intake ──► notify.deliveries (PostgreSQL)
  (seudónimo + zona, sin coordenadas)        │ anti-spam (Redis, Lua)      │
                                             └ DLQ si es inválida           ▼
+price-consumer ──► flights.fare-alerts.v1 ──► intake (fares) ─┘ user_id → seudónimo al entrar; sin enfriamiento
 app ──► proxy de borde (JWT) ──mTLS──► API /v1/devices          sender (worker pool + token bucket) ──► FCM
 ```
 
@@ -22,10 +24,10 @@ Guía para principiantes: [`docs/guia-notificaciones.md`](../../docs/guia-notifi
 | `cmd/fcm-fake` | FCM falso para desarrollo y CI (`gone-…` → UNREGISTERED, `busy-…` → 429 una vez) |
 | `cmd/notifyctl` | `keygen` (claves de teléfono) y `open` (descifrar un aviso a mano) |
 | `internal/config` | Variables de entorno validadas; se niega a arrancar si algo es inseguro |
-| `internal/events` | Decodifica y valida `ZoneNotificationRequested`; mensajes a la DLQ |
+| `internal/events` | Decodifica y valida `ZoneNotificationRequested` y `FareAlertTriggered`; mensajes a la DLQ |
 | `internal/policy` | Tipo de zona → plantilla (`zone_audioguide`, `airport_arrival`, `zone_safety` urgente) |
 | `internal/antispam` | Enfriamiento por persona + no repetir zona, en un script Lua atómico |
-| `internal/intake` | Orden → avisos cifrados en la cola (nunca espera a Google) |
+| `internal/intake` | Orden de zona o alerta de precio (`fares.go`) → avisos cifrados en la cola (nunca espera a Google) |
 | `internal/sender` | Cola → FCM: `SKIP LOCKED` + préstamo, obreros, cubo de fichas, frenazo global en 429 |
 | `internal/fcm` | Cliente HTTP v1 de FCM (OAuth2 de cuenta de servicio) y clasificación de errores |
 | `internal/api` | `PUT`/`DELETE /v1/devices/{device_id}` con identidad del proxy de borde |
@@ -47,6 +49,13 @@ Guía para principiantes: [`docs/guia-notificaciones.md`](../../docs/guia-notifi
 - **Anti-spam.** Una orden por posición (geo-engine), enfriamiento de 45 min
   por persona (los avisos de seguridad se lo saltan), la misma zona como mucho
   una vez cada 24 h, y `collapse_key` común en FCM.
+- **Alertas de precio.** El user_id real solo vive un instante en memoria
+  (se convierte en seudónimo y se olvida). No respetan el enfriamiento de
+  zonas (si pediste vigilar un vuelo, te avisamos) ni lo activan, pero la
+  misma alerta nunca suena dos veces (`AdmitOnce` con `fare:<alert_id>`).
+  El aviso cifrado lleva `type: "fare_alert"`, `alert_id`, `alert_type`
+  (`price_drop`, `error_fare`, `target_reached`), ruta, fecha, cabina,
+  precio y `drop_bp`; la app pone el texto en el idioma del usuario.
 - **Entrega "al menos una vez" con caducidad.** El anti-spam se apunta antes de
   encolar y se deshace si encolar falla. Un aviso que no se entrega en
   `NOTIFY_DELIVERY_TTL` se tira. Un duplicado es posible si una copia muere
@@ -68,6 +77,8 @@ Guía para principiantes: [`docs/guia-notificaciones.md`](../../docs/guia-notifi
 |---|---|---|
 | `KAFKA_BROKERS` | **obligatoria** | Separados por comas |
 | `KAFKA_TOPIC_NOTIFY_REQUESTS` / `KAFKA_TOPIC_NOTIFY_REQUESTS_DLQ` | `notify.zone-requests.v1` / `notify.zone-requests-dlq.v1` | |
+| `KAFKA_TOPIC_FARE_ALERTS` / `KAFKA_TOPIC_FARE_ALERTS_DLQ` | `flights.fare-alerts.v1` / `notify.fare-alerts-dlq.v1` | Alertas de precio (clave = user_id) |
+| `NOTIFY_FARE_MAX_ALERT_AGE` / `NOTIFY_FARE_DELIVERY_TTL` | `6h` / `6h` | Alertas más viejas no se avisan; Google guarda el aviso 6 h si el teléfono está apagado |
 | `KAFKA_GROUP_ID` / `KAFKA_CLIENT_ID` / `KAFKA_TLS_CA_FILE` | `notifier` / `notifier` / — | Grupo nuevo = empieza por el final |
 | `NOTIFY_PSEUDONYM_KEY` (o `_FILE`) | **obligatoria** | Hex, ≥ 32 bytes. La misma que el geo-engine |
 | `NOTIFY_TOKEN_KEY` (o `_FILE`) | **obligatoria** | Hex, ≥ 32 bytes. Distinta de la anterior |

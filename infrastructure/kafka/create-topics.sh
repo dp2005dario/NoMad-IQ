@@ -41,6 +41,8 @@ TOPICS=(
   "notify.zone-requests.v1|6|3600000|delete"
   # Órdenes que el notifier no pudo leer (DLQ): 3 días.
   "notify.zone-requests-dlq.v1|3|259200000|delete"
+  # Alertas de precio que el notifier no pudo leer (DLQ): 3 días.
+  "notify.fare-alerts-dlq.v1|3|259200000|delete"
   # Negociación de grupo (ai-orchestrator). Órdenes de trabajo: solo llevan
   # el id de la negociación (las preferencias privadas viven en PostgreSQL).
   # Clave = negotiation_id. 7 días: de sobra para reintentar tras una caída.
