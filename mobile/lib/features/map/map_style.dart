@@ -31,6 +31,10 @@ abstract final class MapIds {
   static const String roadMajorPattern = 'nq-road-major';
   static const String roadMinorPattern = 'nq-road-minor';
   static const String pavingPattern = 'nq-paving';
+  static const String shopPattern = 'nq-shop';
+  static const String grassPattern = 'nq-grass';
+  static const String bikeIcon = 'nq-bike';
+  static String parkedIcon(int i) => 'nq-parked-$i';
   static const String lampIcon = 'nq-lamp';
   static String carIcon(int i) => 'nq-car-$i';
   static String facade(Facade f) => 'nq-facade-${f.name}';
@@ -67,6 +71,7 @@ class MapPalette {
     required this.laneMark,
     required this.cobble,
     required this.rail,
+    required this.bikeLane,
     required this.urban,
     required this.waterEdge,
     required this.light,
@@ -94,6 +99,9 @@ class MapPalette {
   final Color laneMark;
   final Color cobble;
   final Color rail;
+
+  /// Carril bici (verde, como en muchas ciudades europeas).
+  final Color bikeLane;
 
   /// Manzanas de casas y comercios (un tono apenas distinto del fondo).
   final Color urban;
@@ -127,6 +135,7 @@ class MapPalette {
     laneMark: Color(0xFFFFFFFF),
     cobble: Color(0xFFD9C7A8),
     rail: Color(0xFF9A948B),
+    bikeLane: Color(0xFF4E9F6E),
     urban: Color(0xFFD5D6CC),
     waterEdge: Color(0xFFA9D6F0),
     light: Color(0xFFFFF4E0),
@@ -151,6 +160,7 @@ class MapPalette {
     laneMark: Color(0xFFF2D9B8),
     cobble: Color(0xFFA48A7E),
     rail: Color(0xFF5B5260),
+    bikeLane: Color(0xFF3F7558),
     urban: Color(0xFF675E70),
     waterEdge: Color(0xFF8FAED4),
     light: Color(0xFFFFC08A),
@@ -177,6 +187,7 @@ class MapPalette {
     laneMark: Color(0xFFE8D9A0),
     cobble: Color(0xFF3A3A44),
     rail: Color(0xFF34405A),
+    bikeLane: Color(0xFF24493A),
     urban: Color(0xFF0F171E),
     waterEdge: Color(0xFF2F6E9E),
     light: Color(0xFF9DB4FF),
@@ -333,6 +344,15 @@ Map<String, Object?> buildMapStyle({
     <Object?>['get', 'render_min_height'],
     0,
   ];
+  // Bajos comerciales: los edificios de 9 m o más (unas 3 plantas) tienen
+  // la planta baja (4,5 m) de tiendas.
+  final List<Object?> hasShops = <Object?>['>=', height, 9];
+  final List<Object?> shopTop = <Object?>['+', base, 4.5];
+  final List<Object?> isCycleway = <Object?>[
+    '==',
+    <Object?>['get', 'subclass'],
+    'cycleway',
+  ];
   final List<Object?> isArea = <Object?>[
     '==',
     <Object?>['geometry-type'],
@@ -396,6 +416,15 @@ Map<String, Object?> buildMapStyle({
         'source': 'openmaptiles',
         'source-layer': 'park',
         'paint': <String, Object?>{'fill-color': hex(p.park)},
+      },
+      // De cerca, el verde del parque es césped con briznas.
+      <String, Object?>{
+        'id': 'park-grass',
+        'type': 'fill',
+        'source': 'openmaptiles',
+        'source-layer': 'park',
+        'minzoom': 16,
+        'paint': <String, Object?>{'fill-pattern': MapIds.grassPattern},
       },
       <String, Object?>{
         'id': 'landcover-green',
@@ -820,6 +849,35 @@ Map<String, Object?> buildMapStyle({
           'line-width': width(0.5, 10),
         },
       },
+      // Carriles bici: verdes, con bicis pintadas en el suelo.
+      <String, Object?>{
+        'id': 'cycleway',
+        'type': 'line',
+        'source': 'openmaptiles',
+        'source-layer': 'transportation',
+        'minzoom': 14,
+        'filter': <Object?>['all', isLine, isCycleway],
+        'layout': <String, Object?>{'line-cap': 'round', 'line-join': 'round'},
+        'paint': <String, Object?>{
+          'line-color': hex(p.bikeLane),
+          'line-width': width(0.5, 10),
+        },
+      },
+      <String, Object?>{
+        'id': 'cycleway-bikes',
+        'type': 'symbol',
+        'source': 'openmaptiles',
+        'source-layer': 'transportation',
+        'minzoom': 17,
+        'filter': <Object?>['all', isLine, isCycleway],
+        'layout': <String, Object?>{
+          'symbol-placement': 'line',
+          'symbol-spacing': 120,
+          'icon-image': MapIds.bikeIcon,
+          'icon-size': zoomed(0.3, 0.9),
+          ...flatOnGround,
+        },
+      },
       // Vías de tren y metro en superficie: una línea con "traviesas".
       <String, Object?>{
         'id': 'rail',
@@ -880,6 +938,52 @@ Map<String, Object?> buildMapStyle({
           ...flatOnGround,
         },
       },
+      // Coches aparcados en fila a los dos lados de las calles (muy de
+      // cerca). Tres capas por lado, desplazadas a lo largo de la calle, y
+      // cada una con un color según la calle: así la fila no es de clones.
+      for (final double side in <double>[-1, 1])
+        for (int i = 0; i < 3; i++)
+          <String, Object?>{
+            'id': 'parked-${side < 0 ? 'left' : 'right'}-$i',
+            'type': 'symbol',
+            'source': 'openmaptiles',
+            'source-layer': 'transportation',
+            'minzoom': 17.5,
+            'filter': <Object?>[
+              'all',
+              isLine,
+              classIn(<String>['minor']),
+            ],
+            'layout': <String, Object?>{
+              'symbol-placement': 'line',
+              'symbol-spacing': 96,
+              'icon-image': <Object?>[
+                'match',
+                <Object?>[
+                  '%',
+                  <Object?>[
+                    '+',
+                    <Object?>[
+                      'to-number',
+                      <Object?>['id'],
+                      0,
+                    ],
+                    i,
+                  ],
+                  carColors.length,
+                ],
+                for (int k = 1; k < carColors.length; k++) ...<Object?>[
+                  k,
+                  MapIds.parkedIcon(k),
+                ],
+                MapIds.parkedIcon(0),
+              ],
+              'icon-size': zoomed(0.25, 0.85),
+              // x: hueco a lo largo de la calle; y: pegados al bordillo.
+              'icon-offset': <double>[i * 32.0 - 32, side * 14],
+              ...flatOnGround,
+            },
+          },
       // Árboles a los dos lados de las calles (muy de cerca).
       for (final double side in <double>[-1, 1])
         <String, Object?>{
@@ -1017,6 +1121,23 @@ Map<String, Object?> buildMapStyle({
             ],
           ],
           'fill-extrusion-height': height,
+          // Si tiene bajos comerciales, la fachada empieza encima de ellos.
+          'fill-extrusion-base': <Object?>['case', hasShops, shopTop, base],
+          'fill-extrusion-opacity': 1,
+        },
+      },
+      // Bajos comerciales: la planta baja de los edificios de 3 o más
+      // plantas lleva escaparates con toldo (ver paintShopfront).
+      <String, Object?>{
+        'id': 'building-shops',
+        'type': 'fill-extrusion',
+        'source': 'openmaptiles',
+        'source-layer': 'building',
+        'minzoom': 16,
+        'filter': hasShops,
+        'paint': <String, Object?>{
+          'fill-extrusion-pattern': MapIds.shopPattern,
+          'fill-extrusion-height': shopTop,
           'fill-extrusion-base': base,
           'fill-extrusion-opacity': 1,
         },

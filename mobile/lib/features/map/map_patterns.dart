@@ -40,6 +40,9 @@ Future<Map<String, Uint8List>> _paintAll(MapLook look) async {
     MapIds.arrowIcon: await _png((Canvas c) => paintArrow(c, p), size: 32),
     MapIds.treeIcon: await _png((Canvas c) => paintTree(c, p), size: 48),
     MapIds.pavingPattern: await _png((Canvas c) => paintPaving(c, p)),
+    MapIds.shopPattern: await _png((Canvas c) => paintShopfront(c, look)),
+    MapIds.grassPattern: await _png((Canvas c) => paintGrass(c, p)),
+    MapIds.bikeIcon: await _png(paintBike, size: 32),
     MapIds.roadMajorPattern: await _png(
       (Canvas c) => paintRoad(c, p, major: true),
     ),
@@ -51,6 +54,11 @@ Future<Map<String, Uint8List>> _paintAll(MapLook look) async {
   for (int i = 0; i < carColors.length; i++) {
     out[MapIds.carIcon(i)] = await _png(
       (Canvas c) => paintCar(c, carColors[i], look),
+      size: 32,
+    );
+    // Los aparcados, con los faros apagados.
+    out[MapIds.parkedIcon(i)] = await _png(
+      (Canvas c) => paintCar(c, carColors[i], look, lights: false),
       size: 32,
     );
   }
@@ -160,8 +168,107 @@ void paintFacade(Canvas c, MapLook look, Facade f) {
           ? Rect.fromLTWH(x * cell + 2.5, y * cell + 1, cell - 5, cell - 2.5)
           : Rect.fromLTWH(x * cell + 2, y * cell + 1.5, cell - 4, cell - 3);
       c.drawRect(win, Paint()..color = on ? warm : glass);
+      // Alféizar: una rayita clara bajo cada ventana.
+      c.drawRect(
+        Rect.fromLTWH(win.left - 0.5, win.bottom, win.width + 1, 0.8),
+        Paint()..color = _shade(wall, night ? -0.5 : 0.35),
+      );
+      // Balcones (uno de cada tres, más o menos): barandilla oscura un poco
+      // más ancha que la ventana, como en las calles de Madrid o París.
+      if (r.nextDouble() < 0.35) {
+        final Paint iron = Paint()
+          ..color = night ? const Color(0xFF05070A) : const Color(0xFF2A2522);
+        final double top = win.bottom - win.height * 0.35;
+        c.drawRect(
+          Rect.fromLTWH(win.left - 1.2, top, win.width + 2.4, 0.9),
+          iron,
+        );
+        for (double bx = win.left - 1; bx <= win.right + 1; bx += 1.6) {
+          c.drawRect(Rect.fromLTWH(bx, top, 0.5, win.bottom - top + 0.8), iron);
+        }
+      }
     }
   }
+}
+
+/// Bajos comerciales: la planta baja de los edificios de 3 o más plantas.
+/// Escaparates grandes con toldo de color, una puerta y un rótulo. Al
+/// atardecer y de noche, los escaparates están encendidos.
+void paintShopfront(Canvas c, MapLook look) {
+  final bool day = look == MapLook.day;
+  c.drawRect(
+    const Rect.fromLTWH(0, 0, _s, _s),
+    Paint()..color = day ? const Color(0xFF8C7B6B) : const Color(0xFF2B2420),
+  );
+  const List<Color> awnings = <Color>[Color(0xFF2E7D5B), Color(0xFFB8463A)];
+  for (int i = 0; i < 2; i++) {
+    final double x = i * 32.0;
+    final Color awning = awnings[i];
+    // Rótulo.
+    c.drawRect(
+      Rect.fromLTWH(x + 3, 4, 26, 6),
+      Paint()..color = day ? const Color(0xFFF2EBDD) : const Color(0xFFFFE9B0),
+    );
+    // Toldo a rayas.
+    for (int k = 0; k < 6; k++) {
+      c.drawRect(
+        Rect.fromLTWH(x + 2 + k * 4.66, 12, 4.66, 8),
+        Paint()..color = k.isEven ? awning : _shade(awning, 0.55),
+      );
+    }
+    // Escaparate y puerta.
+    final Color window = day
+        ? const Color(0xFF9DB7C6)
+        : const Color(0xFFFFD27A);
+    c.drawRect(Rect.fromLTWH(x + 3, 22, 17, 38), Paint()..color = window);
+    c.drawRect(
+      Rect.fromLTWH(x + 22, 26, 7, 34),
+      Paint()..color = day ? const Color(0xFF4A3B2F) : const Color(0xFFE0A85A),
+    );
+    // Marco del escaparate.
+    c.drawRect(
+      Rect.fromLTWH(x + 3, 40, 17, 1),
+      Paint()..color = const Color(0x66000000),
+    );
+  }
+}
+
+/// Césped de los parques (de cerca): briznas claras y oscuras sobre el verde.
+void paintGrass(Canvas c, MapPalette p) {
+  c.drawRect(const Rect.fromLTWH(0, 0, _s, _s), Paint()..color = p.park);
+  final math.Random r = math.Random(21);
+  for (int i = 0; i < 180; i++) {
+    final double x = r.nextDouble() * _s, y = r.nextDouble() * _s;
+    final Paint blade = Paint()
+      ..color = _shade(p.park, (r.nextDouble() - 0.5) * 0.3)
+      ..strokeWidth = 1;
+    c.drawLine(Offset(x, y), Offset(x + r.nextDouble() - 0.5, y - 2.5), blade);
+  }
+}
+
+/// Una bici pintada en el suelo del carril bici, mirando a la derecha.
+void paintBike(Canvas c) {
+  final Paint white = Paint()
+    ..color = const Color(0xE6FFFFFF)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.6;
+  c.drawCircle(const Offset(9, 19), 5, white);
+  c.drawCircle(const Offset(23, 19), 5, white);
+  c.drawPath(
+    Path()
+      ..moveTo(9, 19)
+      ..lineTo(14, 11)
+      ..lineTo(21, 11)
+      ..lineTo(23, 19)
+      ..moveTo(14, 11)
+      ..lineTo(16, 19)
+      ..lineTo(21, 11)
+      ..moveTo(12, 9)
+      ..lineTo(16, 9)
+      ..moveTo(21, 11)
+      ..lineTo(20, 7),
+    white,
+  );
 }
 
 /// Copas de árboles vistas desde arriba (fondo transparente: se pinta
@@ -494,7 +601,7 @@ const List<Color> carColors = <Color>[
 
 /// Un coche visto desde arriba, mirando a la derecha (MapLibre lo gira con
 /// la calle). De noche lleva los faros encendidos.
-void paintCar(Canvas c, Color body, MapLook look) {
+void paintCar(Canvas c, Color body, MapLook look, {bool lights = true}) {
   c.drawRRect(
     RRect.fromLTRBR(5, 11, 29, 23, const Radius.circular(4)),
     Paint()..color = const Color(0x40000000),
@@ -510,7 +617,7 @@ void paintCar(Canvas c, Color body, MapLook look) {
     glass,
   );
   c.drawRRect(RRect.fromLTRBR(7, 12, 9.5, 19, const Radius.circular(1)), glass);
-  if (look != MapLook.day) {
+  if (lights && look != MapLook.day) {
     final Paint beam = Paint()..color = const Color(0x88FFF1B8);
     c.drawPath(
       Path()
