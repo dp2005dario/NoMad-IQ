@@ -54,4 +54,12 @@ flutter {
 dependencies {
     // La biblioteca que hace posible el "desugaring" de arriba.
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Lector de tickets (ML Kit): el alfabeto latino ya viene con el plugin.
+    // Estos añaden los tickets en chino, japonés, coreano e hindi/devanagari
+    // (Tokio, Seúl, Delhi... son destinos de viaje muy comunes). Cada uno
+    // pesa unos MB, pero Play solo descarga lo de tu tipo de móvil.
+    implementation("com.google.mlkit:text-recognition-chinese:16.0.1")
+    implementation("com.google.mlkit:text-recognition-japanese:16.0.1")
+    implementation("com.google.mlkit:text-recognition-korean:16.0.1")
+    implementation("com.google.mlkit:text-recognition-devanagari:16.0.1")
 }

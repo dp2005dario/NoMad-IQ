@@ -1801,5 +1801,332 @@
   "cameraCredits": "Data: Wikipedia, Wikidata and Wikimedia Commons",
   "@cameraCredits": {
     "description": "Data credits under the card."
+  },
+  "moneyTitle": "Money",
+  "@moneyTitle": {
+    "description": "Title of the Money screen."
+  },
+  "moneyTabExpenses": "Your money",
+  "@moneyTabExpenses": {
+    "description": "Money tab: shared expenses."
+  },
+  "moneyTabAbroad": "Money abroad",
+  "@moneyTabAbroad": {
+    "description": "Money tab: ATMs, cards, budget, insurance."
+  },
+  "moneyTabKitty": "Shared kitty",
+  "@moneyTabKitty": {
+    "description": "Money tab: common kitty."
+  },
+  "moneyTabRooms": "Rooms",
+  "@moneyTabRooms": {
+    "description": "Money tab: splitting rooms."
+  },
+  "moneyTabFx": "Currencies",
+  "@moneyTabFx": {
+    "description": "Money tab: currency exchange."
+  },
+  "moneySoon": "Coming very soon.",
+  "@moneySoon": {
+    "description": "Placeholder for a money tab not built yet."
+  },
+  "moneyExpensesIntro": "Share a pot with your friends: snap the receipt, Flyra reads it and tells everyone what they owe.",
+  "@moneyExpensesIntro": {
+    "description": "Intro text of shared expenses."
+  },
+  "moneySignIn": "Sign in to share expenses with your friends.",
+  "@moneySignIn": {
+    "description": "Shared expenses need an account."
+  },
+  "moneyNewPot": "New pot",
+  "@moneyNewPot": {
+    "description": "Button: create a new pot."
+  },
+  "moneyJoinPot": "Join with a code",
+  "@moneyJoinPot": {
+    "description": "Button: join a pot with a code."
+  },
+  "moneyNoPots": "You have no pots yet. Create one for your next trip or your shared flat.",
+  "@moneyNoPots": {
+    "description": "Empty list of pots."
+  },
+  "moneyPotMeta": "{count, plural, =1{1 person} other{{count} people}} · {total} spent",
+  "@moneyPotMeta": {
+    "description": "Pot card: people and total spent.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "moneyOwedToYou": "You're owed {amount}",
+  "@moneyOwedToYou": {
+    "description": "Positive balance.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "moneyYouOwe": "You owe {amount}",
+  "@moneyYouOwe": {
+    "description": "Negative balance.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "moneySettled": "All square",
+  "@moneySettled": {
+    "description": "Balance is zero / payment recorded."
+  },
+  "moneyPotName": "Pot name",
+  "@moneyPotName": {
+    "description": "Field: pot name."
+  },
+  "moneyPotNameHint": "Japan with friends",
+  "@moneyPotNameHint": {
+    "description": "Hint for pot name."
+  },
+  "moneyPotCurrency": "Currency for the accounts",
+  "@moneyPotCurrency": {
+    "description": "Field: pot currency."
+  },
+  "moneyYourNameHelp": "It's what the others in the pot will see.",
+  "@moneyYourNameHelp": {
+    "description": "Helper under your name."
+  },
+  "moneyCreate": "Create pot",
+  "@moneyCreate": {
+    "description": "Button: create pot."
+  },
+  "moneyPotFull": "This pot is full (20 people).",
+  "@moneyPotFull": {
+    "description": "Pot is full."
+  },
+  "moneyPotGone": "This pot doesn't exist or you're not in it.",
+  "@moneyPotGone": {
+    "description": "Pot not found."
+  },
+  "moneyCodeCopied": "Code copied: send it to your friends.",
+  "@moneyCodeCopied": {
+    "description": "Snack: invite code copied."
+  },
+  "moneyCopyCode": "Copy the invite code",
+  "@moneyCopyCode": {
+    "description": "Tooltip: copy invite code."
+  },
+  "moneyInviteCode": "Code to join",
+  "@moneyInviteCode": {
+    "description": "Label of invite code card."
+  },
+  "moneyAddExpense": "Add expense",
+  "@moneyAddExpense": {
+    "description": "Button/title: add expense."
+  },
+  "moneyScanReceipt": "Scan the receipt",
+  "@moneyScanReceipt": {
+    "description": "Option: scan receipt with camera."
+  },
+  "moneyScanPrivacy": "Read on your phone: the photo never leaves it.",
+  "@moneyScanPrivacy": {
+    "description": "Privacy note for receipt scan."
+  },
+  "moneyReceiptFromGallery": "Use a photo of the receipt",
+  "@moneyReceiptFromGallery": {
+    "description": "Option: receipt photo from gallery."
+  },
+  "moneyAddByHand": "Type it in",
+  "@moneyAddByHand": {
+    "description": "Option: type the expense."
+  },
+  "moneyScanNothing": "I couldn't read any lines on this receipt: type it in.",
+  "@moneyScanNothing": {
+    "description": "Receipt read but nothing found."
+  },
+  "moneyExpenseSaved": "Expense saved",
+  "@moneyExpenseSaved": {
+    "description": "Snack: expense saved."
+  },
+  "moneySettleTitle": "Pay {name}",
+  "@moneySettleTitle": {
+    "description": "Dialog title: pay someone.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "moneySettleHelp": "Pay them as usual (cash, bank transfer…) and record it here so the accounts add up for everyone.",
+  "@moneySettleHelp": {
+    "description": "Explains that settling only records a payment."
+  },
+  "moneyAmount": "Amount",
+  "@moneyAmount": {
+    "description": "Field: amount."
+  },
+  "moneySettleConfirm": "I've paid",
+  "@moneySettleConfirm": {
+    "description": "Button: record payment."
+  },
+  "moneyBalances": "Who owes what",
+  "@moneyBalances": {
+    "description": "Header: who owes what."
+  },
+  "moneyExpenses": "Expenses · {total}",
+  "@moneyExpenses": {
+    "description": "Header of expense list with total.",
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "moneyNoExpenses": "No expenses yet. Add the first one with the button below.",
+  "@moneyNoExpenses": {
+    "description": "Empty expense list."
+  },
+  "moneyPaidBy": "Paid by {name} · {date}",
+  "@moneyPaidBy": {
+    "description": "Expense subtitle: payer and date.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "moneyYouOweTo": "You owe {name}",
+  "@moneyYouOweTo": {
+    "description": "Debt line before the amount.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "moneySettle": "Settle",
+  "@moneySettle": {
+    "description": "Button: settle up."
+  },
+  "moneyScannedLines": "{count, plural, =0{No lines read: add them below} =1{1 line read from the receipt} other{{count} lines read from the receipt}}",
+  "@moneyScannedLines": {
+    "description": "How many receipt lines were read.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "moneyWhat": "What was it?",
+  "@moneyWhat": {
+    "description": "Field: what was it."
+  },
+  "moneyWhatHint": "Dinner in La Latina",
+  "@moneyWhatHint": {
+    "description": "Hint for expense title."
+  },
+  "moneyWhoPaid": "Who paid?",
+  "@moneyWhoPaid": {
+    "description": "Field: who paid."
+  },
+  "moneyForWhom": "Between whom?",
+  "@moneyForWhom": {
+    "description": "Header: who shares this expense."
+  },
+  "moneySplitEqual": "Equal parts",
+  "@moneySplitEqual": {
+    "description": "Split mode: equal parts."
+  },
+  "moneySplitItems": "By what each had",
+  "@moneySplitItems": {
+    "description": "Split mode: by what each had."
+  },
+  "moneyItemsHelp": "Tap the circles to say who had each line. Lines with nobody are shared by everyone.",
+  "@moneyItemsHelp": {
+    "description": "How to assign receipt lines."
+  },
+  "moneyAddLine": "Add line",
+  "@moneyAddLine": {
+    "description": "Button: add receipt line."
+  },
+  "moneyLinesMismatch": "The lines add up to {lines} and the total is {total}: the difference is shared in proportion.",
+  "@moneyLinesMismatch": {
+    "description": "Receipt lines don't add up to the total.",
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "moneyAmountInvalid": "Write an amount, like 12.50",
+  "@moneyAmountInvalid": {
+    "description": "Invalid amount."
+  },
+  "moneyNobody": "Pick at least one person.",
+  "@moneyNobody": {
+    "description": "No participants selected."
+  },
+  "moneyNoLines": "Add the receipt lines, or split in equal parts.",
+  "@moneyNoLines": {
+    "description": "Split by items without lines."
+  },
+  "moneyCheckFields": "Something doesn't add up: check the fields.",
+  "@moneyCheckFields": {
+    "description": "Server rejected the expense."
+  },
+  "moneySave": "Save expense",
+  "@moneySave": {
+    "description": "Button: save expense."
+  },
+  "moneyLineName": "Item",
+  "@moneyLineName": {
+    "description": "Hint: line name."
+  },
+  "moneyRemoveLine": "Remove line",
+  "@moneyRemoveLine": {
+    "description": "Tooltip: remove line."
+  },
+  "moneyEveryone": "Everyone",
+  "@moneyEveryone": {
+    "description": "Chip: shared by everyone."
+  },
+  "moneyClaimHelp": "Tap a line to say \"I had this\" (or tap again to undo).",
+  "@moneyClaimHelp": {
+    "description": "How to claim receipt lines."
+  },
+  "moneyDelete": "Delete",
+  "@moneyDelete": {
+    "description": "Button: delete expense."
+  },
+  "moneyDeleteTitle": "Delete this expense?",
+  "@moneyDeleteTitle": {
+    "description": "Dialog: delete expense?"
+  },
+  "moneyDeleteHelp": "The accounts will be recalculated for everyone in the pot.",
+  "@moneyDeleteHelp": {
+    "description": "Dialog body: delete expense."
+  },
+  "moneyOriginal": "On the receipt: {amount}",
+  "@moneyOriginal": {
+    "description": "Original amount in another currency.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "moneyTotal": "TOTAL",
+  "@moneyTotal": {
+    "description": "Receipt total label."
   }
 }

@@ -18,6 +18,7 @@ import 'features/audioguide/guide_player.dart';
 import 'features/map/location.dart';
 import 'features/map/map_surface.dart';
 import 'features/push/firebase_push.dart';
+import 'features/money/receipt_scanner.dart';
 import 'features/push/notices.dart';
 import 'features/push/push_registrar.dart';
 import 'features/push/push_state.dart';
@@ -58,6 +59,7 @@ Future<void> main() async {
     newPlayer: JustAudioGuidePlayer.new,
     newCamera: DeviceCamera.new,
     speaker: DeviceSpeaker(),
+    receipts: DeviceReceiptScanner(),
     tilesUrl: AppConfig.tilesUrl,
     glyphsUrl: AppConfig.glyphsUrl,
     notices: notices,

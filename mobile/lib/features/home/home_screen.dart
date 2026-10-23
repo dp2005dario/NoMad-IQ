@@ -55,16 +55,19 @@ class HomeScreen extends StatelessWidget {
                 final double width =
                     (box.maxWidth - gap * (columns - 1)) / columns;
                 final List<Widget> tiles = <Widget>[
-                  for (final Feature f in const <Feature>[
-                    Feature.vault,
-                    Feature.expenses,
-                  ])
-                    _Shortcut(
-                      icon: f.icon,
-                      color: f.color,
-                      label: f.label(t),
-                      onTap: () => context.push(Routes.soon(f)),
-                    ),
+                  _Shortcut(
+                    icon: Feature.vault.icon,
+                    color: Feature.vault.color,
+                    label: Feature.vault.label(t),
+                    onTap: () => context.push(Routes.soon(Feature.vault)),
+                  ),
+                  // Gastos: los botes compartidos (Dinero → Tu dinero).
+                  _Shortcut(
+                    icon: Feature.expenses.icon,
+                    color: Feature.expenses.color,
+                    label: Feature.expenses.label(t),
+                    onTap: () => context.push(Routes.money()),
+                  ),
                   // Las audioguías viven en el Mapa: se abren al tocar una zona.
                   _Shortcut(
                     icon: Feature.audioguides.icon,

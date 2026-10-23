@@ -21,6 +21,8 @@ import '../features/group/trip_create_screen.dart';
 import '../features/group/trip_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/map/map_screen.dart';
+import '../features/money/expense_group_screen.dart';
+import '../features/money/money_screen.dart';
 import '../features/settings/language_screen.dart';
 import '../features/shell/app_shell.dart';
 import '../features/welcome/welcome_screen.dart';
@@ -89,6 +91,16 @@ abstract final class Routes {
     path: '/flyra',
     queryParameters: question == null ? null : <String, String>{'q': question},
   ).toString();
+
+  /// Dinero (gastos, divisas...). [tab] abre una pestaña concreta.
+  static String money({MoneyTab? tab}) => Uri(
+    path: '/money',
+    queryParameters: tab == null ? null : <String, String>{'tab': tab.name},
+  ).toString();
+
+  /// Un bote de gastos compartidos por dentro.
+  static String expenseGroup(String id) =>
+      '/money/group/${Uri.encodeComponent(id)}';
 
   /// Pantalla "Muy pronto" de una función aún sin construir.
   static String soon(Feature feature) => '/soon/${feature.name}';
@@ -197,6 +209,19 @@ GoRouter buildRouter({
       path: '/flyra',
       builder: (BuildContext context, GoRouterState state) =>
           FlyraChatScreen(draft: state.uri.queryParameters['q']),
+    ),
+    GoRoute(
+      path: '/money',
+      builder: (BuildContext context, GoRouterState state) => MoneyScreen(
+        tab:
+            MoneyTab.values.asNameMap()[state.uri.queryParameters['tab']] ??
+            MoneyTab.expenses,
+      ),
+    ),
+    GoRoute(
+      path: '/money/group/:id',
+      builder: (BuildContext context, GoRouterState state) =>
+          ExpenseGroupScreen(groupId: state.pathParameters['id'] ?? ''),
     ),
     GoRoute(
       path: Routes.groupNew,

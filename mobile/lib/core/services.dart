@@ -20,6 +20,8 @@ import '../features/map/location.dart';
 import '../features/map/location_tracker.dart';
 import '../features/map/map_surface.dart';
 import '../features/map/street_photos_api.dart';
+import '../features/money/expenses_api.dart';
+import '../features/money/receipt_scanner.dart';
 import '../features/push/notices.dart';
 import '../features/route/flight3d.dart';
 import '../features/route/places_api.dart';
@@ -39,6 +41,7 @@ class AppServices {
     this.webScene,
     this.newCamera,
     this.speaker = const SilentSpeaker(),
+    this.receipts = const NoReceiptScanner(),
     SettingsStore? prefs,
   }) : geo = GeoApi(api),
        audioguides = AudioguideApi(api),
@@ -46,6 +49,7 @@ class AppServices {
        flyra = FlyraApi(api),
        landmarks = LandmarksApi(api),
        group = GroupApi(api),
+       expenses = ExpensesApi(api),
        places = PlacesApi(api),
        streetPhotos = StreetPhotosApi(api),
        prefs = prefs ?? MemorySettingsStore() {
@@ -77,6 +81,12 @@ class AppServices {
 
   /// Viajes en grupo: invitar, preferencias y la negociación de los agentes.
   final GroupApi group;
+
+  /// Gastos compartidos: botes, tickets y "¿cuánto le debo a Álex?".
+  final ExpensesApi expenses;
+
+  /// Lee el ticket de una foto dentro del móvil (en los tests, uno falso).
+  final ReceiptScanner receipts;
 
   /// Fichas de ciudad (Wikipedia) para la Ruta del vuelo.
   final PlacesApi places;

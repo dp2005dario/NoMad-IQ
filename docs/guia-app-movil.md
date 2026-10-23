@@ -601,8 +601,22 @@ cd mobile
 flutter test test/camera_test.dart
 ```
 
+## 9 sexies. Dinero: gastos compartidos
+
+El atajo **Gastos** de Inicio abre **Dinero** (maqueta "Gastos"). En **Tu
+dinero** creas un bote para un viaje o un piso, invitas con un código y
+apuntáis lo que paga cada uno. Puedes **escanear el ticket**: el móvil lo lee
+sin mandar la foto a nadie y cada amigo marca lo que se pidió. Arriba ves
+"Le debes a Álex 21,50 €" y el botón **Saldar**. Todo en
+`docs/guia-gastos.md`.
+
+```bash
+cd mobile
+flutter test test/money_test.dart
+```
+
 ## 10. Lo siguiente
 
 Cada PR sustituye una pantalla "Muy pronto" por la de verdad, siguiendo las
 maquetas, en este orden: (Vuelos, Ruta del vuelo, Vuelo 3D, Grupo, el chat
-con Flyra y la Cámara ya están) Dinero y Bóveda.
+con Flyra, la Cámara y los Gastos ya están) el resto de Dinero y la Bóveda.
