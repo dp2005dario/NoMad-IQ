@@ -25,6 +25,9 @@ const (
 	TemplateZoneAudioguide Template = "zone_audioguide"
 	TemplateAirportArrival Template = "airport_arrival"
 	TemplateZoneSafety     Template = "zone_safety"
+	// TemplateFareAlert: un vuelo que vigilas ha bajado de precio (no es de
+	// zona: lo decide el price-consumer, ver intake/fares.go).
+	TemplateFareAlert Template = "fare_alert"
 )
 
 // Decision es lo que hay que hacer con una entrada a zona.

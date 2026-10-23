@@ -33,6 +33,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	commonv1 "github.com/dp2005dario/NoMad-IQ/gen/go/nomadiq/common/v1"
+	flightsv1 "github.com/dp2005dario/NoMad-IQ/gen/go/nomadiq/flights/v1"
 	geov1 "github.com/dp2005dario/NoMad-IQ/gen/go/nomadiq/geo/v1"
 
 	"github.com/dp2005dario/NoMad-IQ/services/notifier/internal/sealbox"
@@ -208,4 +209,75 @@ func TestPushNotificationEndToEnd(t *testing.T) {
 	if resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("baja: HTTP %d", resp.StatusCode)
 	}
+}
+
+// TestFareAlertPushEndToEnd publica una alerta de precio en
+// flights.fare-alerts.v1 (lo que haría el price-consumer) y comprueba que al
+// teléfono le llega UN aviso cifrado "fare_alert", aunque Kafka la entregue dos veces.
+func TestFareAlertPushEndToEnd(t *testing.T) {
+	if os.Getenv("NOTIFIER_E2E") == "" {
+		t.Skip("NOTIFIER_E2E no definido: necesita make up-apps")
+	}
+	brokers := os.Getenv("KAFKA_BROKERS")
+	if brokers == "" {
+		brokers = "localhost:29092"
+	}
+	cl, err := kgo.NewClient(kgo.SeedBrokers(brokers))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cl.Close()
+
+	leo := newPhone(t, "e2e-fare-")
+	alertID := uuid.NewString()
+	value, err := proto.Marshal(&flightsv1.FareAlertTriggered{
+		Metadata:        &commonv1.EventMetadata{EventId: alertID, OccurredAt: timestamppb.Now(), Producer: "e2e-test"},
+		AlertId:         alertID,
+		UserId:          leo.user,
+		AlertType:       flightsv1.FareAlertType_FARE_ALERT_TYPE_ERROR_FARE,
+		Route:           &flightsv1.Route{OriginIata: "MAD", DestinationIata: "NRT"},
+		DepartureDate:   &commonv1.Date{Year: int32(time.Now().Year() + 1), Month: 3, Day: 15},
+		Cabin:           flightsv1.CabinClass_CABIN_CLASS_ECONOMY,
+		ReferencePrice:  &commonv1.Money{CurrencyCode: "EUR", AmountMinor: 90000},
+		CurrentPrice:    &commonv1.Money{CurrencyCode: "EUR", AmountMinor: 31500},
+		DropBasisPoints: 6500,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	rec := &kgo.Record{Topic: "flights.fare-alerts.v1", Key: []byte(leo.user), Value: value, Headers: []kgo.RecordHeader{
+		{Key: "content-type", Value: []byte("application/x-protobuf")},
+		{Key: "ce_type", Value: []byte("nomadiq.flights.v1.FareAlertTriggered")},
+	}}
+	// Dos veces, como tras un reinicio del price-consumer.
+	for range 2 {
+		if err := cl.ProduceSync(context.Background(), rec).FirstErr(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	waitFor(t, "la alerta de precio en el FCM falso", 60*time.Second, func() bool { return len(messagesFor(t, leo.token)) > 0 })
+	time.Sleep(5 * time.Second) // margen para ver si llega una segunda
+	msgs := messagesFor(t, leo.token)
+	if len(msgs) != 1 {
+		t.Fatalf("se esperaba 1 aviso, llegaron %d", len(msgs))
+	}
+	envelope, err := base64.RawURLEncoding.DecodeString(msgs[0].Data["p"])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(envelope, []byte("NRT")) || bytes.Contains(envelope, []byte(leo.user)) {
+		t.Fatal("Google (el FCM falso) no puede ver la ruta ni el usuario")
+	}
+	plain, err := sealbox.OpenOnDevice(leo.priv, envelope, []byte(leo.deviceID))
+	if err != nil {
+		t.Fatalf("el teléfono no pudo descifrar su alerta: %v", err)
+	}
+	var notice map[string]any
+	if err := json.Unmarshal(plain, &notice); err != nil {
+		t.Fatal(err)
+	}
+	if notice["type"] != "fare_alert" || notice["alert_id"] != alertID || notice["alert_type"] != "error_fare" || notice["destination"] != "NRT" {
+		t.Fatalf("alerta inesperada: %s", plain)
+	}
+	fmt.Printf("alerta de precio descifrada por el teléfono: %s\n", plain)
 }

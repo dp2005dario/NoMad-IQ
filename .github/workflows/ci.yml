@@ -386,12 +386,12 @@ jobs:
       # posiciones en Kafka y comprueba que al FCM falso llega UN aviso cifrado
       # que solo él sabe abrir; que el enfriamiento calla el segundo; y que un
       # teléfono desinstalado (UNREGISTERED) se olvida.
-      - name: Notificaciones push de punta a punta (geo-engine → notifier → FCM falso)
+      - name: Notificaciones push de punta a punta (geo-engine y alertas de precio → notifier → FCM falso)
         working-directory: services/notifier
         env:
           NOTIFIER_E2E: "1"
           KAFKA_BROKERS: localhost:29092
-        run: go test -tags integration -count=1 -v -run TestPushNotificationEndToEnd ./internal/e2e/
+        run: go test -tags integration -count=1 -v -run 'TestPushNotificationEndToEnd|TestFareAlertPushEndToEnd' ./internal/e2e/
       # El recorrido completo de las audioguías, con los contenedores reales:
       # el e2e del geo-engine metió a un usuario en la Puerta del Sol → entrada
       # anónima en geo.zone-entries.v1 → el ai-orchestrator la consume y deja el

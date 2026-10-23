@@ -38,7 +38,7 @@ type Config struct {
 	Brokers  []string
 	ClientID string
 	GroupID  string
-	Topic    string // topic que se consume
+	Topics   []string // topics que se consumen (órdenes de zona y alertas de precio)
 	TLS      *tls.Config
 	// MaxPollRecords limita cuántos mensajes se traen de golpe (memoria acotada).
 	MaxPollRecords int
@@ -53,8 +53,8 @@ type Client struct {
 
 // New crea el cliente. La conexión se abre de forma perezosa.
 func New(cfg Config, log *slog.Logger) (*Client, error) {
-	if len(cfg.Brokers) == 0 || cfg.GroupID == "" || cfg.Topic == "" {
-		return nil, errors.New("kafka: brokers, group id y topic son obligatorios")
+	if len(cfg.Brokers) == 0 || cfg.GroupID == "" || len(cfg.Topics) == 0 {
+		return nil, errors.New("kafka: brokers, group id y topics son obligatorios")
 	}
 	if cfg.MaxPollRecords < 1 {
 		return nil, errors.New("kafka: MaxPollRecords debe ser >= 1")
@@ -65,7 +65,7 @@ func New(cfg Config, log *slog.Logger) (*Client, error) {
 
 		// --- Consumo ---
 		kgo.ConsumerGroup(cfg.GroupID),
-		kgo.ConsumeTopics(cfg.Topic),
+		kgo.ConsumeTopics(cfg.Topics...),
 		// Si el grupo es nuevo, empezar por el FINAL: las órdenes viejas ya no
 		// sirven ("acabas de llegar" de hace horas). Las que se acumulen
 		// mientras el servicio está parado sí se leen (el offset confirmado
