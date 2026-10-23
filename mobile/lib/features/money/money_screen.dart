@@ -15,6 +15,7 @@ import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'expenses_api.dart';
+import 'abroad_view.dart';
 import 'fx_view.dart';
 import 'kitty_view.dart';
 import 'rooms_view.dart';
@@ -89,27 +90,13 @@ class _MoneyScreenState extends State<MoneyScreen> {
               MoneyTab.fx => const FxView(),
               MoneyTab.rooms => const RoomsView(),
               MoneyTab.kitty => const KittyView(),
-              _ => _Soon(text: t.moneySoon),
+              MoneyTab.abroad => const AbroadView(),
             },
           ),
         ],
       ),
     );
   }
-}
-
-class _Soon extends StatelessWidget {
-  const _Soon({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(32),
-      child: Text(text, textAlign: TextAlign.center),
-    ),
-  );
 }
 
 /// "Tu dinero": tus botes de gastos compartidos.

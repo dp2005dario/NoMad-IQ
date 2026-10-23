@@ -182,6 +182,16 @@ class Settings(BaseSettings):
     fx_enabled: bool = True
     fx_ttl_seconds: int = Field(default=6 * 3600, ge=600, le=48 * 3600)
 
+    # --- Cajeros cercanos (ver el paquete atms/): OpenStreetMap, gratis y sin clave ----
+    atms_enabled: bool = True
+    # El buscador Overpass. Se puede cambiar por otro espejo o uno propio.
+    overpass_url: str = "https://overpass-api.de/api/interpreter"
+    # Su norma de uso justo: muy pocas peticiones por segundo (por copia).
+    overpass_rate_per_second: float = Field(default=1.0, gt=0, le=10)
+    overpass_burst: int = Field(default=3, ge=1, le=20)
+    overpass_timeout_seconds: float = Field(default=25.0, gt=0, le=60)
+    atm_ttl_seconds: int = Field(default=24 * 3600, ge=3600, le=7 * 24 * 3600)
+
     # --- Chat libre con Flyra (ver el paquete flyra/) --------------------------------
     # Necesita Ollama (LLM_ENABLED) y Redis (el contador de preguntas diarias).
     flyra_enabled: bool = True

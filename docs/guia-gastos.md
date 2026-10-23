@@ -164,3 +164,31 @@ mochila: todos ponen al principio y se paga desde ahí.
 
 Ficheros: `migrations/0009_kitty_weights.sql`, `expenses/domain.py`
 (`KITTY`, `kitty()`), `mobile/lib/features/money/kitty_view.dart`.
+
+## 10. Tu dinero fuera
+
+La pestaña **Tu dinero fuera** tiene cuatro partes:
+
+**Cajeros.** Al tocar "Buscar cajeros cerca" se pide la ubicación (solo
+entonces). El móvil manda la zona **redondeada a ~1 km** (dos decimales) a
+`GET /v1/atms`; el servidor (`services/ai-orchestrator/src/ai_orchestrator/atms/`)
+pregunta a **Overpass**, el buscador gratuito de OpenStreetMap, por la casilla
+y sus vecinas (~3 km) y lo guarda un día en Redis. El móvil ordena por
+distancia con tu posición real y los dibuja en un "radar". Colores: verde =
+sin comisión, amarillo = no se sabe, rojo = cobra. Debajo, el consejo que más
+dinero ahorra: si el cajero ofrece "cobrar en tu moneda", di que no.
+
+**Tarjetas.** Apuntas cada tarjeta con lo que cobra fuera (pagar %, sacar % y
+lo fijo por cada retirada) y cuánto piensas gastar. `travel_cards.dart`
+calcula el coste: lo pagado con tarjeta × % de pagar + lo sacado × % de sacar
++ una comisión fija por cada 200 que saques. La más barata sale con "MEJOR
+AQUÍ". Se guarda **solo en el móvil** y del número solo los 4 últimos dígitos.
+
+**Presupuesto.** Eliges un bote, tu límite y las fechas. Cuenta **tu parte**
+de cada gasto del bote (`trip_budget.dart`). La gráfica enseña lo gastado y
+hacia dónde vas con tres ritmos: seguir igual, un 25 % menos o la mitad.
+
+**Seguro.** Se pregunta a la póliza guardada en la Bóveda (llega con ella).
+
+Para probarlo en VS Code: `pytest tests/test_atms.py -q` (servidor) y
+`flutter test test/abroad_test.dart` (app).

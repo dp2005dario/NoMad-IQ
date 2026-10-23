@@ -54,6 +54,8 @@ from pydantic import SecretStr, ValidationError
 from redis.asyncio import Redis
 
 from ai_orchestrator.api import create_api, create_management_api
+from ai_orchestrator.atms.overpass import OverpassBusyError, OverpassClient
+from ai_orchestrator.atms.service import AtmService, AtmSettings, RedisAtmCache
 from ai_orchestrator.audioguides.audio_catalog import AudioCatalog
 from ai_orchestrator.audioguides.audio_gc import AudioGarbageCollector, GcSettings
 from ai_orchestrator.audioguides.audio_jobs import NOTIFY_CHANNEL, PostgresAudioJobs, PostgresAudioManifests
@@ -289,6 +291,28 @@ def _streetview(
     )
 
 
+def _atms(settings: Settings, redis: Redis, stack: AsyncExitStack) -> AtmService:
+    """Cajeros: Overpass (OpenStreetMap) con límite de ritmo + caché en Redis."""
+    http = httpx.AsyncClient(
+        timeout=httpx.Timeout(settings.overpass_timeout_seconds, connect=5.0),
+        follow_redirects=False,
+    )
+    stack.push_async_callback(http.aclose)
+    return AtmService(
+        overpass=OverpassClient(
+            http,
+            url=settings.overpass_url,
+            limiter=RateLimiter(
+                settings.overpass_rate_per_second,
+                settings.overpass_burst,
+                busy=lambda: OverpassBusyError("límite de peticiones a Overpass"),
+            ),
+        ),
+        cache=RedisAtmCache(redis),
+        settings=AtmSettings(ttl_seconds=settings.atm_ttl_seconds),
+    )
+
+
 class _NoRatesCache:
     """Sin Redis: los tipos se guardan solo en la memoria del proceso."""
 
@@ -479,6 +503,7 @@ async def run(settings: Settings) -> int:
             or settings.landmarks_enabled
             or settings.mapillary_token is not None
             or (settings.flyra_enabled and llm is not None)
+            or settings.atms_enabled
             else None
         )
         wikimedia = (
@@ -497,6 +522,11 @@ async def run(settings: Settings) -> int:
         streetview: StreetViewService | None = None
         if settings.mapillary_token is not None and public_redis is not None:
             streetview = _streetview(settings, settings.mapillary_token, public_redis, stack)
+
+        # --- Cajeros cercanos (OpenStreetMap con caché en Redis) ------------------------
+        atms: AtmService | None = None
+        if settings.atms_enabled and public_redis is not None:
+            atms = _atms(settings, public_redis, stack)
 
         # --- Chat libre con Flyra (Ollama + cupo diario en Redis) ------------------------
         # Sin LLM no hay chat: la ruta no existe y la app lo explica.
@@ -549,6 +579,7 @@ async def run(settings: Settings) -> int:
                 flyra=flyra,
                 landmarks=landmarks,
                 fx=fx,
+                atms=atms,
                 expose_docs=settings.expose_api_docs,
             ),
             settings.http_port,

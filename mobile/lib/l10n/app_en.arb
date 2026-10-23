@@ -2475,5 +2475,301 @@
         "type": "int"
       }
     }
+  },
+  "abroadAtms": "ATMs",
+  "@abroadAtms": {
+    "description": "Abroad part: ATMs."
+  },
+  "abroadCards": "Cards",
+  "@abroadCards": {
+    "description": "Abroad part: cards."
+  },
+  "abroadBudget": "Budget",
+  "@abroadBudget": {
+    "description": "Abroad part: budget."
+  },
+  "abroadInsurance": "Insurance",
+  "@abroadInsurance": {
+    "description": "Abroad part: insurance."
+  },
+  "abroadInsuranceIntro": "Save your travel insurance policy in the Vault and ask it things like \"Does it cover lost luggage?\". It is read on your phone and never leaves it.",
+  "@abroadInsuranceIntro": {
+    "description": "Insurance part explanation (until the vault is ready)."
+  },
+  "abroadAtmsIntro": "Find ATMs around you, the ones open 24 h and the ones that don't charge a fee. We only ask for your location when you tap the button.",
+  "@abroadAtmsIntro": {
+    "description": "ATMs intro."
+  },
+  "abroadAtmsSearch": "Find ATMs nearby",
+  "@abroadAtmsSearch": {
+    "description": "Button: search nearby ATMs."
+  },
+  "abroadAtmsNone": "No ATMs are mapped around here yet.",
+  "@abroadAtmsNone": {
+    "description": "No ATMs found nearby."
+  },
+  "abroadAtmUnnamed": "ATM",
+  "@abroadAtmUnnamed": {
+    "description": "ATM without a name."
+  },
+  "abroadMeters": "{m} m",
+  "@abroadMeters": {
+    "description": "Distance in meters.",
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "abroadKm": "{km} km",
+  "@abroadKm": {
+    "description": "Distance in km.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadOpen24h": "Open 24 h",
+  "@abroadOpen24h": {
+    "description": "ATM open 24 hours."
+  },
+  "abroadInBank": "inside a bank",
+  "@abroadInBank": {
+    "description": "ATM inside a bank branch."
+  },
+  "abroadFeeNo": "No fee",
+  "@abroadFeeNo": {
+    "description": "ATM charges no fee."
+  },
+  "abroadFeeYes": "Fee",
+  "@abroadFeeYes": {
+    "description": "ATM charges a fee."
+  },
+  "abroadFeeUnknown": "Fee?",
+  "@abroadFeeUnknown": {
+    "description": "ATM fee unknown."
+  },
+  "abroadRadarLabel": "{count} ATMs within {range}",
+  "@abroadRadarLabel": {
+    "description": "Accessibility label of the ATM radar.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadDccTitle": "If the ATM offers to charge you in your currency, say no",
+  "@abroadDccTitle": {
+    "description": "ATM tip title: dynamic currency conversion."
+  },
+  "abroadDccText": "That conversion is usually 5-10% more expensive. Always choose the local currency and let your bank convert it.",
+  "@abroadDccText": {
+    "description": "ATM tip text."
+  },
+  "abroadCardsIntro": "Add your cards with what they charge abroad (it's in your bank's terms) and we'll tell you which one is cheapest for this trip.",
+  "@abroadCardsIntro": {
+    "description": "Cards intro."
+  },
+  "abroadTripSpend": "Expected spending on the trip",
+  "@abroadTripSpend": {
+    "description": "Field: expected spend in the trip."
+  },
+  "abroadCashShare": "In cash (from ATMs): {pct}%",
+  "@abroadCashShare": {
+    "description": "Label: share in cash.",
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "abroadAddCard": "Add a card",
+  "@abroadAddCard": {
+    "description": "Button/dialog: add a card."
+  },
+  "abroadEditCard": "Edit card",
+  "@abroadEditCard": {
+    "description": "Dialog: edit a card."
+  },
+  "abroadBest": "BEST HERE",
+  "@abroadBest": {
+    "description": "Badge: cheapest card here."
+  },
+  "abroadCardFees": "Pay {pay} · withdraw {atm} + {fixed}",
+  "@abroadCardFees": {
+    "description": "Card fees line.",
+    "placeholders": {
+      "pay": {
+        "type": "String"
+      },
+      "atm": {
+        "type": "String"
+      },
+      "fixed": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadInYourTrip": "in your trip",
+  "@abroadInYourTrip": {
+    "description": "Under the card cost: in your trip."
+  },
+  "abroadCardTip": "Pay and withdraw with \"{card}\": you save about {amount} compared with the worst one.",
+  "@abroadCardTip": {
+    "description": "Tip: use the cheapest card.",
+    "placeholders": {
+      "card": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadCardsPrivacy": "Saved only on this phone. We never store the full card number.",
+  "@abroadCardsPrivacy": {
+    "description": "Cards privacy note."
+  },
+  "abroadCardName": "Name (e.g. My bank's debit)",
+  "@abroadCardName": {
+    "description": "Field: card name."
+  },
+  "abroadCardLast4": "Last 4 digits (optional)",
+  "@abroadCardLast4": {
+    "description": "Field: last 4 digits."
+  },
+  "abroadCardLast4Help": "Only to tell your cards apart",
+  "@abroadCardLast4Help": {
+    "description": "Help: why only 4 digits."
+  },
+  "abroadCardPayPct": "Fee when paying in another currency",
+  "@abroadCardPayPct": {
+    "description": "Field: fee when paying abroad."
+  },
+  "abroadCardAtmPct": "Fee when withdrawing cash",
+  "@abroadCardAtmPct": {
+    "description": "Field: % fee when withdrawing."
+  },
+  "abroadCardAtmFixed": "Fixed fee per withdrawal",
+  "@abroadCardAtmFixed": {
+    "description": "Field: fixed fee per withdrawal."
+  },
+  "abroadCardInvalid": "Write a name, 4 digits (or none) and fees between 0 and 20%.",
+  "@abroadCardInvalid": {
+    "description": "Error: card data invalid."
+  },
+  "abroadBudgetIntro": "Pick a pot, your limit and the trip days. Your share of each expense counts, and we show where you're heading.",
+  "@abroadBudgetIntro": {
+    "description": "Budget intro."
+  },
+  "abroadBudgetNoPots": "Create a pot in Expenses first (it can be just for you).",
+  "@abroadBudgetNoPots": {
+    "description": "Budget needs a pot."
+  },
+  "abroadBudgetPot": "Pot",
+  "@abroadBudgetPot": {
+    "description": "Field: which pot."
+  },
+  "abroadBudgetLimit": "My limit for the trip",
+  "@abroadBudgetLimit": {
+    "description": "Field: budget limit."
+  },
+  "abroadBudgetInvalid": "Choose a pot and write a limit greater than 0.",
+  "@abroadBudgetInvalid": {
+    "description": "Error: budget invalid."
+  },
+  "abroadBudgetHeader": "{title} · day {day} of {days} · budget {limit}",
+  "@abroadBudgetHeader": {
+    "description": "Budget header.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "day": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadOver": "At this pace you go over by {amount}",
+  "@abroadOver": {
+    "description": "Verdict: you go over.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadUnder": "You'd finish with {amount} to spare",
+  "@abroadUnder": {
+    "description": "Verdict: money left over.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadBudgetChart": "Spent so far {spent}; at the end {end}",
+  "@abroadBudgetChart": {
+    "description": "Accessibility label of budget chart.",
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadDayN": "day {n}",
+  "@abroadDayN": {
+    "description": "Chart label: day n.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "abroadToday": "today",
+  "@abroadToday": {
+    "description": "Chart label: today."
+  },
+  "abroadIfFromToday": "If from today…",
+  "@abroadIfFromToday": {
+    "description": "Section: if from today..."
+  },
+  "abroadPaceSame": "Keep the same",
+  "@abroadPaceSame": {
+    "description": "Pace: same as now."
+  },
+  "abroadPaceLess": "I spend 25% less",
+  "@abroadPaceLess": {
+    "description": "Pace: 25% less."
+  },
+  "abroadPaceHalf": "I spend half",
+  "@abroadPaceHalf": {
+    "description": "Pace: half."
+  },
+  "abroadPerDay": "≈ {amount} a day",
+  "@abroadPerDay": {
+    "description": "Per day amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadBudgetEdit": "Change budget",
+  "@abroadBudgetEdit": {
+    "description": "Button: change budget."
   }
 }

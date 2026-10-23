@@ -48,6 +48,8 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from ai_orchestrator.atms.domain import Atms
+from ai_orchestrator.atms.service import AtmBusyError, AtmService, AtmUnavailableError
 from ai_orchestrator.audioguides.audio_catalog import AudioCatalog, AudioLookup
 from ai_orchestrator.audioguides.cache import CacheError
 from ai_orchestrator.audioguides.domain import AudioguideScript
@@ -197,6 +199,8 @@ PLACE_CACHE = "public, max-age=86400"
 STREET_CACHE = "public, max-age=3600"
 # Los tipos de cambio cambian una vez al día: una hora en cachés intermedias.
 FX_CACHE = "public, max-age=3600"
+# Los cajeros casi nunca cambian: seis horas en el móvil y en la CDN.
+ATM_CACHE = "public, max-age=21600"
 # "Esta ciudad no tiene ficha" se recuerda menos (por si aparece).
 PLACE_MISSING_CACHE = "public, max-age=3600"
 
@@ -213,6 +217,7 @@ def create_api(
     flyra: FlyraService | None = None,
     landmarks: LandmarkService | None = None,
     fx: FxService | None = None,
+    atms: AtmService | None = None,
     expose_docs: bool = False,
 ) -> FastAPI:
     """Crea la API pública (puerto con mTLS)."""
@@ -357,6 +362,22 @@ def create_api(
                 return resp
             # Sin fotos también es 200 (lista vacía): la app lo explica.
             return JSONResponse(photos.model_dump(mode="json"), headers={"Cache-Control": STREET_CACHE})
+
+    if atms is not None:
+
+        @app.get("/v1/atms", response_model=Atms)
+        async def get_atms(
+            lat: Annotated[float, Query(ge=-85, le=85)],
+            lon: Annotated[float, Query(ge=-180, le=180)],
+        ) -> JSONResponse:
+            try:
+                found = await atms.near(lat, lon)
+            except (AtmBusyError, AtmUnavailableError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "cajeros ocupados")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            # Sin cajeros también es 200 (lista vacía): la app lo explica.
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": ATM_CACHE})
 
     if fx is not None:
 

@@ -11,6 +11,7 @@ import 'package:nomadiq/auth/session.dart';
 import 'package:nomadiq/core/api_client.dart';
 import 'package:nomadiq/core/router.dart';
 import 'package:nomadiq/core/settings.dart';
+import 'package:nomadiq/features/flights/booking.dart';
 import 'package:nomadiq/features/money/expenses_api.dart';
 import 'package:nomadiq/features/money/fx_api.dart';
 import 'package:nomadiq/features/money/money_screen.dart';
@@ -210,6 +211,8 @@ Future<MoneyBackend> pumpMoney(
   ReceiptScanner? scanner,
   bool guest = false,
   MemorySettingsStore? prefs,
+  FakeLocation? location,
+  OpenBooking? openBooking,
 }) async {
   tester.view.physicalSize = const Size(1200, 9000);
   tester.view.devicePixelRatio = 3;
@@ -223,7 +226,14 @@ Future<MoneyBackend> pumpMoney(
     locale: 'es',
     session: s,
     initialLocation: initialLocation,
-    services: fakeServices(s, gateway: b.g, receipts: scanner, prefs: prefs),
+    services: fakeServices(
+      s,
+      gateway: b.g,
+      receipts: scanner,
+      prefs: prefs,
+      location: location,
+      openBooking: openBooking,
+    ),
   );
   return b;
 }

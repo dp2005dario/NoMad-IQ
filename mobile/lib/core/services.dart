@@ -20,6 +20,7 @@ import '../features/map/location.dart';
 import '../features/map/location_tracker.dart';
 import '../features/map/map_surface.dart';
 import '../features/map/street_photos_api.dart';
+import '../features/money/atms_api.dart';
 import '../features/money/expenses_api.dart';
 import '../features/money/fx_api.dart';
 import '../features/money/receipt_scanner.dart';
@@ -51,6 +52,7 @@ class AppServices {
        landmarks = LandmarksApi(api),
        group = GroupApi(api),
        expenses = ExpensesApi(api),
+       atms = AtmsApi(api),
        places = PlacesApi(api),
        streetPhotos = StreetPhotosApi(api),
        prefs = prefs ?? MemorySettingsStore() {
@@ -85,6 +87,9 @@ class AppServices {
 
   /// Gastos compartidos: botes, tickets y "¿cuánto le debo a Álex?".
   final ExpensesApi expenses;
+
+  /// Cajeros cercanos (OpenStreetMap, por zonas de ~1 km).
+  final AtmsApi atms;
 
   /// Tipos de cambio del BCE (con copia en el móvil para usarlos sin red).
   late final FxApi fx = FxApi(api, prefs);

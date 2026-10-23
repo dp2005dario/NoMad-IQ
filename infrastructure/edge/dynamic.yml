@@ -95,6 +95,14 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 
+    # Cajeros cercanos (OpenStreetMap): públicos como las fichas. La app manda
+    # el punto ya redondeado a ~1 km. Solo GET y esa ruta exacta.
+    atms:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/atms`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
     # Tipos de cambio del BCE (pestaña Divisas): públicos y gratis, iguales
     # para todos. Solo GET y esa ruta exacta.
     fx:

@@ -12,6 +12,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 enum LocalData {
   /// Los últimos tipos de cambio buenos (Divisas funciona sin red).
   fxRates,
+
+  /// Tus tarjetas (nombre, 4 últimos dígitos y comisiones) y el gasto previsto.
+  travelCards,
+
+  /// El presupuesto del viaje (qué bote, límite y fechas).
+  tripBudget,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real
