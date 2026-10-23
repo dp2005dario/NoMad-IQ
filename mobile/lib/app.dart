@@ -3,15 +3,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 
+import 'auth/session.dart';
 import 'core/router.dart';
 import 'core/settings.dart';
 import 'core/theme.dart';
 import 'l10n/generated/app_localizations.dart';
 
 class NomadIqApp extends StatefulWidget {
-  const NomadIqApp({super.key, required this.settings, this.router});
+  const NomadIqApp({
+    super.key,
+    required this.settings,
+    required this.session,
+    this.router,
+  });
 
   final SettingsController settings;
+  final SessionController session;
 
   /// Los tests pueden pasar un router que empiece en otra pantalla.
   final GoRouter? router;
@@ -22,7 +29,8 @@ class NomadIqApp extends StatefulWidget {
 
 class _NomadIqAppState extends State<NomadIqApp> {
   // Se crea UNA vez: si se recreara en cada dibujado, se perdería la pantalla actual.
-  late final GoRouter _router = widget.router ?? buildRouter();
+  late final GoRouter _router =
+      widget.router ?? buildRouter(session: widget.session);
 
   @override
   void dispose() {
@@ -32,31 +40,34 @@ class _NomadIqAppState extends State<NomadIqApp> {
 
   @override
   Widget build(BuildContext context) {
-    return SettingsScope(
-      controller: widget.settings,
-      // ListenableBuilder redibuja la app cuando cambia un ajuste (el idioma).
-      child: ListenableBuilder(
-        listenable: widget.settings,
-        builder: (BuildContext context, Widget? _) => MaterialApp.router(
-          // El título que ve Android en "apps recientes", traducido.
-          onGenerateTitle: (BuildContext context) =>
-              AppLocalizations.of(context).appTitle,
-          debugShowCheckedModeBanner: false,
-          theme: buildNomadTheme(),
-          // null = idioma del móvil (ver resolveLocale, abajo).
-          locale: widget.settings.locale,
-          supportedLocales: AppLocalizations.supportedLocales,
-          localeListResolutionCallback: resolveLocale,
-          localizationsDelegates: const <LocalizationsDelegate<Object>>[
-            AppLocalizations.delegate,
-            // Textos del propio Flutter (copiar, pegar, calendario...) y la
-            // dirección del texto: en árabe o hebreo todo se dibuja de derecha
-            // a izquierda (RTL) automáticamente.
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          routerConfig: _router,
+    return SessionScope(
+      controller: widget.session,
+      child: SettingsScope(
+        controller: widget.settings,
+        // ListenableBuilder redibuja la app cuando cambia un ajuste (el idioma).
+        child: ListenableBuilder(
+          listenable: widget.settings,
+          builder: (BuildContext context, Widget? _) => MaterialApp.router(
+            // El título que ve Android en "apps recientes", traducido.
+            onGenerateTitle: (BuildContext context) =>
+                AppLocalizations.of(context).appTitle,
+            debugShowCheckedModeBanner: false,
+            theme: buildNomadTheme(),
+            // null = idioma del móvil (ver resolveLocale, abajo).
+            locale: widget.settings.locale,
+            supportedLocales: AppLocalizations.supportedLocales,
+            localeListResolutionCallback: resolveLocale,
+            localizationsDelegates: const <LocalizationsDelegate<Object>>[
+              AppLocalizations.delegate,
+              // Textos del propio Flutter (copiar, pegar, calendario...) y la
+              // dirección del texto: en árabe o hebreo todo se dibuja de derecha
+              // a izquierda (RTL) automáticamente.
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            routerConfig: _router,
+          ),
         ),
       ),
     );

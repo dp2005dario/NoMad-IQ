@@ -134,7 +134,7 @@ Cosas que la app ya hace sola:
 cd mobile
 dart format lib test     # ordena el código
 flutter analyze          # busca errores sin ejecutar nada
-flutter test             # 23 tests: pantallas, idiomas, RTL, navegación...
+flutter test             # tests: pantallas, idiomas, RTL, navegación, sesión...
 ```
 
 En VS Code también puedes abrir el panel **Testing** (el icono del matraz)
@@ -179,8 +179,64 @@ Algunas decisiones y su porqué:
 | Recarga en caliente | Ver los cambios al guardar, sin reiniciar la app |
 | APK | El archivo instalable de una app Android |
 
-## 7. Lo siguiente
+## 7. Iniciar sesión (conectada al auth-gateway)
+
+La app ya crea cuentas y entra con **correo y contraseña** usando el
+[auth-gateway](guia-auth-gateway.md). El botón de Google todavía avisa de
+que llega pronto, porque el servidor aún no sabe comprobar cuentas de Google.
+
+### Cómo funciona (con analogías)
+
+- **Dos pases, como en un hotel:**
+  - El **pase corto** (*access token*) es como la tarjeta de la habitación:
+    caduca a los 15 minutos y solo se guarda en la memoria de la app.
+  - El **pase largo** (*refresh token*) es como el resguardo de la reserva:
+    sirve para pedir una tarjeta nueva. Se guarda **cifrado** con
+    `flutter_secure_storage`, que usa el chip de seguridad del móvil
+    (Android Keystore o el Llavero de iOS).
+- **El pase largo solo vale una vez.** Cada renovación da uno nuevo. Si dos
+  pantallas piden renovar a la vez, la app hace **una sola** renovación. Si
+  hiciera dos, el servidor pensaría que alguien ha robado el pase y cerraría la
+  sesión.
+- **El portero** (`sessionRedirect` en `core/router.dart`) decide a qué
+  pantalla vas:
+  - **Sin sesión:** solo puedes ver Bienvenida, Iniciar sesión e Idioma.
+  - **Con sesión:** vas directo a Inicio.
+  - **Invitado:** puede crear su cuenta desde el círculo de su inicial, arriba
+    a la derecha.
+- **Sin cobertura** la app abre igual con la sesión guardada y renueva el pase
+  cuando vuelve la red. Si la sesión caducó, vuelves a la Bienvenida.
+- **Errores en tu idioma.** El servidor responde con un código (401, 409,
+  429…) y la app muestra el texto traducido que corresponde. Nunca muestra el
+  mensaje original del servidor.
+- **Seguridad extra:**
+  - La versión publicada **solo** acepta `https://`; si no, no arranca.
+  - Android bloquea HTTP sin cifrar, salvo hacia tu PC en la versión de
+    desarrollo.
+  - `allowBackup="false"` evita que la sesión se copie a otro móvil.
+
+### Probarlo en tu PC
+
+1. Arranca el backend:
+   ```powershell
+   make up
+   ```
+   O `docker compose up` dentro de `infrastructure/`.
+2. Ejecuta la app en el **emulador** con F5. Por defecto habla con
+   `http://10.0.2.2:8083`, que es "tu PC" visto desde el emulador.
+3. Si usas tu **móvil por USB**, ejecuta antes:
+   ```powershell
+   adb reverse tcp:8083 tcp:8083
+   ```
+   Y arranca la app con:
+   ```powershell
+   flutter run --dart-define=NOMADIQ_API_URL=http://localhost:8083
+   ```
+4. Pulsa **Continuar con correo → ¿Eres nuevo? Crea una cuenta**. La
+   contraseña necesita **12 caracteres como mínimo**.
+
+## 8. Lo siguiente
 
 Cada PR sustituye una pantalla "Muy pronto" por la de verdad, siguiendo las
-maquetas: inicio de sesión (auth-gateway), Vuelos (alertas de precio), Mapa con
-geofencing y audioguías, Grupo con la negociación de Flyra, etc.
+maquetas, en este orden: Mapa con geofencing y audioguías, Vuelos con
+alertas de precio y Grupo con la negociación de Flyra.

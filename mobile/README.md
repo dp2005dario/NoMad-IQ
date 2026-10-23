@@ -6,7 +6,8 @@ Guía paso a paso para principiantes: [`docs/guia-app-movil.md`](../docs/guia-ap
 ```bash
 cd mobile
 flutter pub get        # descarga librerías y genera las traducciones
-flutter run            # abre la app en el móvil o emulador conectado
+flutter run            # abre la app (backend en http://10.0.2.2:8083 por defecto)
+flutter run --dart-define=NOMADIQ_API_URL=https://...   # otro backend
 flutter test           # tests
 flutter analyze        # revisión estática (la CI no admite ni un aviso)
 ```
@@ -14,6 +15,7 @@ flutter analyze        # revisión estática (la CI no admite ni un aviso)
 | Carpeta | Qué hay |
 |---|---|
 | `lib/core/` | tema (colores y letras de las maquetas), rutas, ajustes, nombres de idiomas |
+| `lib/auth/` | inicio de sesión: cliente del auth-gateway, sesión y almacén cifrado del pase |
 | `lib/features/` | una carpeta por pantalla (bienvenida, inicio, idioma...) |
 | `lib/widgets/` | piezas reutilizables (el avatar de Flyra) |
 | `lib/l10n/` | textos en cada idioma (`app_XX.arb`); `generated/` se crea solo |

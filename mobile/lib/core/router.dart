@@ -4,6 +4,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
+import '../auth/session.dart';
+import '../features/auth/sign_in_screen.dart';
 import '../features/coming_soon/coming_soon_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/settings/language_screen.dart';
@@ -19,13 +21,29 @@ abstract final class Routes {
   static const String flights = '/flights';
   static const String group = '/group';
   static const String language = '/settings/language';
+  static const String signIn = '/signin';
 
   /// Pantalla "Muy pronto" de una función aún sin construir.
   static String soon(Feature feature) => '/soon/${feature.name}';
 }
 
-GoRouter buildRouter({String initialLocation = Routes.welcome}) => GoRouter(
+/// Pantallas que se pueden ver sin haber entrado (ni como invitado).
+const Set<String> _public = <String>{
+  Routes.welcome,
+  Routes.signIn,
+  Routes.language,
+};
+
+GoRouter buildRouter({
+  required SessionController session,
+  String initialLocation = Routes.welcome,
+}) => GoRouter(
   initialLocation: initialLocation,
+  // Cada vez que la sesión cambia (entrar, salir, caducar), el router
+  // vuelve a pasar por "redirect" y lleva a la pantalla que toca.
+  refreshListenable: session,
+  redirect: (BuildContext context, GoRouterState state) =>
+      sessionRedirect(session.status, state.matchedLocation),
   routes: <RouteBase>[
     GoRoute(
       path: Routes.welcome,
@@ -58,6 +76,11 @@ GoRouter buildRouter({String initialLocation = Routes.welcome}) => GoRouter(
       ],
     ),
     GoRoute(
+      path: Routes.signIn,
+      builder: (BuildContext context, GoRouterState state) =>
+          const SignInScreen(),
+    ),
+    GoRoute(
       path: Routes.language,
       builder: (BuildContext context, GoRouterState state) =>
           const LanguageScreen(),
@@ -86,3 +109,20 @@ StatefulShellBranch _tab(String path, Widget Function(BuildContext) page) =>
         ),
       ],
     );
+
+/// El "portero": decide a dónde va cada uno según su sesión.
+/// - Sin sesión: solo Bienvenida, Iniciar sesión e Idioma.
+/// - Con sesión: la Bienvenida y el login ya no pintan nada, a Inicio.
+/// - Invitado: puede ir a Iniciar sesión para crear su cuenta.
+String? sessionRedirect(SessionStatus status, String location) {
+  switch (status) {
+    case SessionStatus.signedOut:
+      return _public.contains(location) ? null : Routes.welcome;
+    case SessionStatus.guest:
+      return location == Routes.welcome ? Routes.home : null;
+    case SessionStatus.signedIn:
+      return location == Routes.welcome || location == Routes.signIn
+          ? Routes.home
+          : null;
+  }
+}
