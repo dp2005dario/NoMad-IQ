@@ -178,6 +178,10 @@ class Settings(BaseSettings):
     # --- Gastos compartidos (ver el paquete expenses/): solo necesita PostgreSQL ---
     expenses_enabled: bool = True
 
+    # --- Tipos de cambio (ver el paquete fx/): del BCE, gratis y sin clave --------------
+    fx_enabled: bool = True
+    fx_ttl_seconds: int = Field(default=6 * 3600, ge=600, le=48 * 3600)
+
     # --- Chat libre con Flyra (ver el paquete flyra/) --------------------------------
     # Necesita Ollama (LLM_ENABLED) y Redis (el contador de preguntas diarias).
     flyra_enabled: bool = True

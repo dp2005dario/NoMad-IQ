@@ -527,5 +527,18 @@
   "moneyDeleteTitle": "Apagar esta despesa?",
   "moneyDeleteHelp": "As contas vão ser recalculadas para todos na vaquinha.",
   "moneyOriginal": "No talão: {amount}",
-  "moneyTotal": "TOTAL"
+  "moneyTotal": "TOTAL",
+  "fxAmount": "Quantia",
+  "fxFrom": "De",
+  "fxTo": "Para",
+  "fxSwap": "Trocar moedas",
+  "fxReady": "PRONTA A LANÇAR",
+  "fxInTheAir": "NO AR!",
+  "fxLanded": "CONVERTIDO EM {currency}",
+  "fxAre": "{amount} são",
+  "fxHint": "Lança a moeda para converter",
+  "fxThrow": "Lançar a moeda",
+  "fxThrowAgain": "Lançar outra vez",
+  "fxRateLine": "{one} = {rate} {symbol} · câmbio oficial do Banco Central Europeu de {day}",
+  "fxOffline": "Sem ligação: uso as taxas guardadas de {day}."
 }

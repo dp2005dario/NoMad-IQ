@@ -10,7 +10,10 @@ import 'package:http/http.dart' as http;
 import 'package:nomadiq/auth/session.dart';
 import 'package:nomadiq/core/api_client.dart';
 import 'package:nomadiq/core/router.dart';
+import 'package:nomadiq/core/settings.dart';
 import 'package:nomadiq/features/money/expenses_api.dart';
+import 'package:nomadiq/features/money/fx_api.dart';
+import 'package:nomadiq/features/money/money_screen.dart';
 import 'package:nomadiq/features/money/receipt_parser.dart';
 import 'package:nomadiq/features/money/receipt_scanner.dart';
 
@@ -123,6 +126,9 @@ class MoneyBackend {
       current = groupJson(withExpense: false);
       return FakeGateway.json(current!, 201);
     };
+    g.services['/v1/fx/rates'] = (http.Request r) =>
+        FakeGateway.json(ratesJson);
+    g.publicPrefixes.add('/v1/fx/');
     g.services['$base/$groupId'] = (http.Request r) =>
         current == null ? http.Response('', 404) : FakeGateway.json(current!);
     g.services['$base/$groupId/expenses'] = (http.Request r) {
@@ -166,12 +172,20 @@ class FakeScanner implements ReceiptScanner {
   }
 }
 
+const Map<String, Object?> ratesJson = <String, Object?>{
+  'base': 'EUR',
+  'date': '2026-10-23',
+  'rates': <String, Object?>{'EUR': 1.0, 'USD': 1.0812, 'JPY': 163.21},
+  'source': 'Banco Central Europeo (BCE)',
+};
+
 Future<MoneyBackend> pumpMoney(
   WidgetTester tester, {
   String initialLocation = '/money',
   MoneyBackend? backend,
   ReceiptScanner? scanner,
   bool guest = false,
+  MemorySettingsStore? prefs,
 }) async {
   tester.view.physicalSize = const Size(1200, 9000);
   tester.view.devicePixelRatio = 3;
@@ -185,7 +199,7 @@ Future<MoneyBackend> pumpMoney(
     locale: 'es',
     session: s,
     initialLocation: initialLocation,
-    services: fakeServices(s, gateway: b.g, receipts: scanner),
+    services: fakeServices(s, gateway: b.g, receipts: scanner, prefs: prefs),
   );
   return b;
 }
@@ -375,5 +389,57 @@ void main() {
     await tester.pumpAndSettle();
     expect(b.claims.single, <String, Object?>{'claimed': true});
     expect(find.text('Todos'), findsNothing); // ahora son mías
+  });
+
+  group('divisas', () {
+    test('convertir con los tipos del BCE', () {
+      final FxRates r = FxRates.parse(ratesJson);
+      expect(r.convert(5000, 'EUR', 'JPY'), 8161); // 50 € = 8.161 ¥
+      expect(r.convert(8161, 'JPY', 'EUR'), 5000);
+      expect(r.convert(10000, 'USD', 'EUR'), 9249);
+      expect(
+        () => FxRates.parse(<String, Object?>{...ratesJson, 'base': 'USD'}),
+        throwsA(isA<ApiException>()),
+      );
+    });
+
+    testWidgets('lanzar la moneda: 50 € en yenes', (WidgetTester tester) async {
+      final MemorySettingsStore prefs = MemorySettingsStore();
+      await pumpMoney(
+        tester,
+        initialLocation: Routes.money(tab: MoneyTab.fx),
+        guest: true, // los tipos son públicos
+        prefs: prefs,
+      );
+      await tester.tap(find.text('USD').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('JPY').last);
+      await tester.pumpAndSettle();
+      expect(find.text('LISTA PARA LANZAR'), findsOneWidget);
+      await tester.tap(find.text('Lanzar la moneda'));
+      await tester.pump(const Duration(milliseconds: 800));
+      expect(find.text('¡AL AIRE!'), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(find.text('CAMBIADO A JPY'), findsOneWidget);
+      expect(find.textContaining('8.161'), findsOneWidget);
+      // Se guardó una copia para usarla sin red.
+      expect(prefs.data[LocalData.fxRates], contains('163.21'));
+    });
+
+    testWidgets('sin red usa la copia guardada y lo dice', (
+      WidgetTester tester,
+    ) async {
+      final MemorySettingsStore prefs = MemorySettingsStore()
+        ..data[LocalData.fxRates] = jsonEncode(ratesJson);
+      final MoneyBackend b = MoneyBackend()..g.failWith = 503;
+      await pumpMoney(
+        tester,
+        backend: b,
+        initialLocation: Routes.money(tab: MoneyTab.fx),
+        guest: true,
+        prefs: prefs,
+      );
+      expect(find.textContaining('Sin conexión'), findsOneWidget);
+    });
   });
 }

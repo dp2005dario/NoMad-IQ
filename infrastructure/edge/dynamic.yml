@@ -95,6 +95,14 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 
+    # Tipos de cambio del BCE (pestaña Divisas): públicos y gratis, iguales
+    # para todos. Solo GET y esa ruta exacta.
+    fx:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/fx/rates`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
     # Vuelos SIN cuenta: chollos e historial de precios. Son iguales para todo
     # el mundo, así que también los ve quien entra como invitado (precios
     # reales para todos). Solo lectura (GET) y con el mismo límite por IP.

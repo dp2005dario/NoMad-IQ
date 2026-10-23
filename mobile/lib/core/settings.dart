@@ -7,6 +7,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Otros datos pequeños que se guardan en el móvil como texto JSON, cada
+/// uno con su nombre fijo (así nadie puede escribir claves inventadas).
+enum LocalData {
+  /// Los últimos tipos de cambio buenos (Divisas funciona sin red).
+  fxRates,
+}
+
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real
 /// se conecta SharedPreferences y en los tests una versión en memoria.
 abstract interface class SettingsStore {
@@ -31,6 +38,10 @@ abstract interface class SettingsStore {
   /// Tus sellos de monumentos (texto JSON) para el Pasaporte; null = ninguno.
   String? readStamps();
   Future<void> writeStamps(String json);
+
+  /// Otros datos del móvil (ver [LocalData]); null = no hay / borrar.
+  String? readData(LocalData key);
+  Future<void> writeData(LocalData key, String? json);
 }
 
 /// Versión real: guarda en el almacenamiento del móvil (SharedPreferences).
@@ -48,7 +59,7 @@ final class PreferencesSettingsStore implements SettingsStore {
   static Future<PreferencesSettingsStore> open() async {
     final SharedPreferencesWithCache prefs =
         await SharedPreferencesWithCache.create(
-          cacheOptions: const SharedPreferencesWithCacheOptions(
+          cacheOptions: SharedPreferencesWithCacheOptions(
             // Solo puede leer/escribir estas claves.
             allowList: <String>{
               _localeKey,
@@ -57,6 +68,7 @@ final class PreferencesSettingsStore implements SettingsStore {
               _groupNameKey,
               _flyraKey,
               _stampsKey,
+              for (final LocalData d in LocalData.values) 'data_${d.name}',
             },
           ),
         );
@@ -104,6 +116,14 @@ final class PreferencesSettingsStore implements SettingsStore {
 
   @override
   Future<void> writeStamps(String json) => _prefs.setString(_stampsKey, json);
+
+  @override
+  String? readData(LocalData key) => _prefs.getString('data_${key.name}');
+
+  @override
+  Future<void> writeData(LocalData key, String? json) => json == null
+      ? _prefs.remove('data_${key.name}')
+      : _prefs.setString('data_${key.name}', json);
 }
 
 /// Versión en memoria para los tests (no toca el disco).
@@ -157,6 +177,15 @@ final class MemorySettingsStore implements SettingsStore {
 
   @override
   Future<void> writeStamps(String json) async => stamps = json;
+
+  final Map<LocalData, String> data = <LocalData, String>{};
+
+  @override
+  String? readData(LocalData key) => data[key];
+
+  @override
+  Future<void> writeData(LocalData key, String? json) async =>
+      json == null ? data.remove(key) : data[key] = json;
 }
 
 class SettingsController extends ChangeNotifier {

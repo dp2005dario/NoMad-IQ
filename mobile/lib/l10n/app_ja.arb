@@ -527,5 +527,18 @@
   "moneyDeleteTitle": "この支出を削除しますか？",
   "moneyDeleteHelp": "財布の全員の精算が再計算されます。",
   "moneyOriginal": "レシート上：{amount}",
-  "moneyTotal": "合計"
+  "moneyTotal": "合計",
+  "fxAmount": "金額",
+  "fxFrom": "から",
+  "fxTo": "へ",
+  "fxSwap": "通貨を入れ替える",
+  "fxReady": "投げる準備OK",
+  "fxInTheAir": "空中へ！",
+  "fxLanded": "{currency} に換算",
+  "fxAre": "{amount} は",
+  "fxHint": "コインを投げて換算",
+  "fxThrow": "コインを投げる",
+  "fxThrowAgain": "もう一度投げる",
+  "fxRateLine": "{one} = {rate} {symbol} · 欧州中央銀行の公式レート（{day}）",
+  "fxOffline": "オフライン：{day} に保存したレートを使います。"
 }

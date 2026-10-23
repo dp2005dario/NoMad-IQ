@@ -21,6 +21,7 @@ import '../features/map/location_tracker.dart';
 import '../features/map/map_surface.dart';
 import '../features/map/street_photos_api.dart';
 import '../features/money/expenses_api.dart';
+import '../features/money/fx_api.dart';
 import '../features/money/receipt_scanner.dart';
 import '../features/push/notices.dart';
 import '../features/route/flight3d.dart';
@@ -84,6 +85,9 @@ class AppServices {
 
   /// Gastos compartidos: botes, tickets y "¿cuánto le debo a Álex?".
   final ExpensesApi expenses;
+
+  /// Tipos de cambio del BCE (con copia en el móvil para usarlos sin red).
+  late final FxApi fx = FxApi(api, prefs);
 
   /// Lee el ticket de una foto dentro del móvil (en los tests, uno falso).
   final ReceiptScanner receipts;

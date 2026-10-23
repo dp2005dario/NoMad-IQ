@@ -527,5 +527,18 @@
   "moneyDeleteTitle": "¿Borrar este gasto?",
   "moneyDeleteHelp": "Las cuentas se recalcularán para todos los del bote.",
   "moneyOriginal": "En el ticket: {amount}",
-  "moneyTotal": "TOTAL"
+  "moneyTotal": "TOTAL",
+  "fxAmount": "Cantidad",
+  "fxFrom": "De",
+  "fxTo": "A",
+  "fxSwap": "Intercambiar monedas",
+  "fxReady": "LISTA PARA LANZAR",
+  "fxInTheAir": "¡AL AIRE!",
+  "fxLanded": "CAMBIADO A {currency}",
+  "fxAre": "{amount} son",
+  "fxHint": "Lanza la moneda para convertir",
+  "fxThrow": "Lanzar la moneda",
+  "fxThrowAgain": "Lanzar otra vez",
+  "fxRateLine": "{one} = {rate} {symbol} · cambio oficial del Banco Central Europeo del {day}",
+  "fxOffline": "Sin conexión: uso los tipos guardados del {day}."
 }

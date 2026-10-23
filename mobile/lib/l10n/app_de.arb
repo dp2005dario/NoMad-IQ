@@ -527,5 +527,18 @@
   "moneyDeleteTitle": "Diese Ausgabe löschen?",
   "moneyDeleteHelp": "Die Abrechnung wird für alle in der Kasse neu berechnet.",
   "moneyOriginal": "Auf dem Beleg: {amount}",
-  "moneyTotal": "SUMME"
+  "moneyTotal": "SUMME",
+  "fxAmount": "Betrag",
+  "fxFrom": "Von",
+  "fxTo": "Nach",
+  "fxSwap": "Währungen tauschen",
+  "fxReady": "BEREIT ZUM WERFEN",
+  "fxInTheAir": "IN DER LUFT!",
+  "fxLanded": "IN {currency} UMGERECHNET",
+  "fxAre": "{amount} sind",
+  "fxHint": "Wirf die Münze zum Umrechnen",
+  "fxThrow": "Münze werfen",
+  "fxThrowAgain": "Nochmal werfen",
+  "fxRateLine": "{one} = {rate} {symbol} · offizieller Kurs der Europäischen Zentralbank vom {day}",
+  "fxOffline": "Keine Verbindung: Ich nutze die gespeicherten Kurse vom {day}."
 }

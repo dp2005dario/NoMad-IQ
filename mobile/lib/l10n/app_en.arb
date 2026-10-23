@@ -2128,5 +2128,86 @@
   "moneyTotal": "TOTAL",
   "@moneyTotal": {
     "description": "Receipt total label."
+  },
+  "fxAmount": "Amount",
+  "@fxAmount": {
+    "description": "Field: amount to convert."
+  },
+  "fxFrom": "From",
+  "@fxFrom": {
+    "description": "Field: source currency."
+  },
+  "fxTo": "To",
+  "@fxTo": {
+    "description": "Field: target currency."
+  },
+  "fxSwap": "Swap currencies",
+  "@fxSwap": {
+    "description": "Tooltip: swap currencies."
+  },
+  "fxReady": "READY TO THROW",
+  "@fxReady": {
+    "description": "Coin stage label before the toss."
+  },
+  "fxInTheAir": "IN THE AIR!",
+  "@fxInTheAir": {
+    "description": "Coin stage label while flying."
+  },
+  "fxLanded": "CONVERTED TO {currency}",
+  "@fxLanded": {
+    "description": "Coin stage label after landing.",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "fxAre": "{amount} is",
+  "@fxAre": {
+    "description": "Result line before the converted amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "fxHint": "Throw the coin to convert",
+  "@fxHint": {
+    "description": "Hint before throwing the coin."
+  },
+  "fxThrow": "Throw the coin",
+  "@fxThrow": {
+    "description": "Button: throw the coin."
+  },
+  "fxThrowAgain": "Throw again",
+  "@fxThrowAgain": {
+    "description": "Button: throw again."
+  },
+  "fxRateLine": "{one} = {rate} {symbol} · official European Central Bank rate of {day}",
+  "@fxRateLine": {
+    "description": "Official rate and its date.",
+    "placeholders": {
+      "one": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      },
+      "symbol": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "fxOffline": "No connection: using the rates saved on {day}.",
+  "@fxOffline": {
+    "description": "Rates come from the saved copy.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
   }
 }

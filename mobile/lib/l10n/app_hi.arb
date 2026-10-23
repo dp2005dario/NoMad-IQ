@@ -527,5 +527,18 @@
   "moneyDeleteTitle": "यह ख़र्च हटाएँ?",
   "moneyDeleteHelp": "कोष में सबका हिसाब दोबारा लगेगा।",
   "moneyOriginal": "रसीद पर: {amount}",
-  "moneyTotal": "कुल"
+  "moneyTotal": "कुल",
+  "fxAmount": "राशि",
+  "fxFrom": "से",
+  "fxTo": "में",
+  "fxSwap": "मुद्राएँ बदलें",
+  "fxReady": "उछालने को तैयार",
+  "fxInTheAir": "हवा में!",
+  "fxLanded": "{currency} में बदला",
+  "fxAre": "{amount} बराबर है",
+  "fxHint": "बदलने के लिए सिक्का उछालें",
+  "fxThrow": "सिक्का उछालें",
+  "fxThrowAgain": "फिर उछालें",
+  "fxRateLine": "{one} = {rate} {symbol} · यूरोपीय केंद्रीय बैंक की {day} की आधिकारिक दर",
+  "fxOffline": "कनेक्शन नहीं: {day} की सहेजी दरें इस्तेमाल हो रही हैं।"
 }

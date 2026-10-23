@@ -527,5 +527,18 @@
   "moneyDeleteTitle": "حذف هذا المصروف؟",
   "moneyDeleteHelp": "ستُعاد حسابات الجميع في الصندوق.",
   "moneyOriginal": "في الإيصال: {amount}",
-  "moneyTotal": "الإجمالي"
+  "moneyTotal": "الإجمالي",
+  "fxAmount": "المبلغ",
+  "fxFrom": "من",
+  "fxTo": "إلى",
+  "fxSwap": "تبديل العملتين",
+  "fxReady": "جاهزة للرمي",
+  "fxInTheAir": "في الهواء!",
+  "fxLanded": "تم التحويل إلى {currency}",
+  "fxAre": "{amount} تساوي",
+  "fxHint": "ارمِ العملة للتحويل",
+  "fxThrow": "ارمِ العملة",
+  "fxThrowAgain": "ارمِ مجددًا",
+  "fxRateLine": "{one} = {rate} {symbol} · السعر الرسمي للبنك المركزي الأوروبي بتاريخ {day}",
+  "fxOffline": "لا يوجد اتصال: أستخدم الأسعار المحفوظة بتاريخ {day}."
 }

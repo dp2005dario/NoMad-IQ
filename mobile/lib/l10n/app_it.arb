@@ -527,5 +527,18 @@
   "moneyDeleteTitle": "Eliminare questa spesa?",
   "moneyDeleteHelp": "I conti verranno ricalcolati per tutti nella cassa.",
   "moneyOriginal": "Sullo scontrino: {amount}",
-  "moneyTotal": "TOTALE"
+  "moneyTotal": "TOTALE",
+  "fxAmount": "Importo",
+  "fxFrom": "Da",
+  "fxTo": "A",
+  "fxSwap": "Inverti le valute",
+  "fxReady": "PRONTA DA LANCIARE",
+  "fxInTheAir": "IN ARIA!",
+  "fxLanded": "CONVERTITO IN {currency}",
+  "fxAre": "{amount} sono",
+  "fxHint": "Lancia la moneta per convertire",
+  "fxThrow": "Lancia la moneta",
+  "fxThrowAgain": "Lancia di nuovo",
+  "fxRateLine": "{one} = {rate} {symbol} · cambio ufficiale della Banca centrale europea del {day}",
+  "fxOffline": "Nessuna connessione: uso i cambi salvati del {day}."
 }

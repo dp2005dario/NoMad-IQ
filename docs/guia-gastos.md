@@ -104,3 +104,22 @@ diferencia se reparte en proporción a lo que tomó cada uno.
   revisa antes de guardar.
 - Las cuentas se hacen en la moneda del bote. Si pagas en otra moneda,
   conviértelo antes (la pestaña **Divisas** lo hará por ti).
+
+## 7. Divisas: la moneda que vuela
+
+La pestaña **Divisas** de Dinero convierte entre monedas con los tipos
+**oficiales del Banco Central Europeo** (BCE), que se publican gratis cada
+día laborable hacia las 16:00 de Fráncfort.
+
+- El servidor (`services/ai-orchestrator/src/ai_orchestrator/fx/`) los pide
+  al BCE como mucho una vez cada 6 horas y los guarda en Redis y en memoria.
+  Si el BCE no responde, sigue dando la última copia buena.
+- `GET /v1/fx/rates` es pública (también para invitados).
+- La app guarda la última respuesta en el móvil: sin red, Divisas sigue
+  funcionando y avisa de qué día son los tipos.
+- Al tocar **Lanzar la moneda**, la moneda sube girando 3 vueltas y media y
+  cae enseñando la otra cara: la cantidad ya convertida.
+
+Monedas: las ~30 que publica el BCE (dólar, libra, yen, franco suizo,
+yuan, rupia, peso mexicano, real brasileño...). Las que el BCE no publica no
+salen en la lista.

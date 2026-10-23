@@ -55,6 +55,7 @@ from ai_orchestrator.audioguides.service import AudioguideService
 from ai_orchestrator.domain import Recommendation, Verdict
 from ai_orchestrator.flyra.domain import ChatReply, ChatRequest
 from ai_orchestrator.flyra.service import FlyraBusyError, FlyraService
+from ai_orchestrator.fx.service import FxRates, FxService, FxUnavailableError
 from ai_orchestrator.identity import Principal, current_principal
 from ai_orchestrator.landmarks.domain import Landmark, Recognition, RecognizeRequest
 from ai_orchestrator.landmarks.service import LandmarkBusyError, LandmarkService
@@ -194,6 +195,8 @@ IMMUTABLE_CACHE = "public, max-age=31536000, immutable"
 PLACE_CACHE = "public, max-age=86400"
 # Las fotos de calle: una hora (sus direcciones caducan a los pocos días).
 STREET_CACHE = "public, max-age=3600"
+# Los tipos de cambio cambian una vez al día: una hora en cachés intermedias.
+FX_CACHE = "public, max-age=3600"
 # "Esta ciudad no tiene ficha" se recuerda menos (por si aparece).
 PLACE_MISSING_CACHE = "public, max-age=3600"
 
@@ -209,6 +212,7 @@ def create_api(
     streetview: StreetViewService | None = None,
     flyra: FlyraService | None = None,
     landmarks: LandmarkService | None = None,
+    fx: FxService | None = None,
     expose_docs: bool = False,
 ) -> FastAPI:
     """Crea la API pública (puerto con mTLS)."""
@@ -353,6 +357,19 @@ def create_api(
                 return resp
             # Sin fotos también es 200 (lista vacía): la app lo explica.
             return JSONResponse(photos.model_dump(mode="json"), headers={"Cache-Control": STREET_CACHE})
+
+    if fx is not None:
+
+        @app.get("/v1/fx/rates", response_model=FxRates)
+        async def get_fx_rates() -> JSONResponse:
+            # Pública (también para invitados): son datos oficiales y gratuitos.
+            try:
+                rates = await fx.rates()
+            except FxUnavailableError:
+                resp = _problem(503, "Servicio no disponible temporalmente", "tipos de cambio no disponibles")
+                resp.headers["Retry-After"] = "300"
+                return resp
+            return JSONResponse(rates.model_dump(mode="json"), headers={"Cache-Control": FX_CACHE})
 
     if flyra is not None:
 

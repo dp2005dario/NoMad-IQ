@@ -72,6 +72,8 @@ from ai_orchestrator.expenses.api import expense_router
 from ai_orchestrator.expenses.store import PostgresExpenses
 from ai_orchestrator.flyra.service import KEY_PREFIX as FLYRA_QUOTA_PREFIX
 from ai_orchestrator.flyra.service import FlyraService, FlyraSettings
+from ai_orchestrator.fx.ecb import EcbClient
+from ai_orchestrator.fx.service import FxService, RedisRatesCache
 from ai_orchestrator.landmarks.service import QUOTA_PREFIX as LANDMARK_QUOTA_PREFIX
 from ai_orchestrator.landmarks.service import LandmarkService, LandmarkSettings, RedisLandmarkCache
 from ai_orchestrator.landmarks.wikidata import LandmarkSource
@@ -287,6 +289,27 @@ def _streetview(
     )
 
 
+class _NoRatesCache:
+    """Sin Redis: los tipos se guardan solo en la memoria del proceso."""
+
+    async def get(self) -> None:
+        return None
+
+    async def put(self, rates: object, *, ttl_seconds: int) -> None:
+        return None
+
+
+def _fx(settings: Settings, redis: Redis | None, stack: AsyncExitStack) -> FxService:
+    """Tipos de cambio del BCE con caché (memoria + Redis si lo hay)."""
+    http = httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0), follow_redirects=False)
+    stack.push_async_callback(http.aclose)
+    return FxService(
+        source=EcbClient(http),
+        cache=RedisRatesCache(redis) if redis is not None else _NoRatesCache(),
+        ttl_seconds=settings.fx_ttl_seconds,
+    )
+
+
 def _audioguides(
     settings: Settings, pool: Pool, llm: LLMClient | None, stack: AsyncExitStack
 ) -> tuple[AudioguideService, RedisScriptCache, ZoneVersionCache]:
@@ -487,6 +510,9 @@ async def run(settings: Settings) -> int:
                 ),
             )
 
+        # --- Tipos de cambio (BCE, públicos y gratis) --------------------------------------
+        fx = _fx(settings, public_redis, stack) if settings.fx_enabled else None
+
         # --- Gastos compartidos (solo PostgreSQL) --------------------------------------
         expenses = expense_router(PostgresExpenses(pool)) if settings.expenses_enabled else None
 
@@ -522,6 +548,7 @@ async def run(settings: Settings) -> int:
                 streetview=streetview,
                 flyra=flyra,
                 landmarks=landmarks,
+                fx=fx,
                 expose_docs=settings.expose_api_docs,
             ),
             settings.http_port,

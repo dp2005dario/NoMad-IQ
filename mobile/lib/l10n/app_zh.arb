@@ -527,5 +527,18 @@
   "moneyDeleteTitle": "删除这笔支出？",
   "moneyDeleteHelp": "账本里所有人的账会重新计算。",
   "moneyOriginal": "小票上：{amount}",
-  "moneyTotal": "合计"
+  "moneyTotal": "合计",
+  "fxAmount": "金额",
+  "fxFrom": "从",
+  "fxTo": "到",
+  "fxSwap": "交换货币",
+  "fxReady": "准备抛出",
+  "fxInTheAir": "飞起来了！",
+  "fxLanded": "已换算为 {currency}",
+  "fxAre": "{amount} 等于",
+  "fxHint": "抛出硬币来换算",
+  "fxThrow": "抛硬币",
+  "fxThrowAgain": "再抛一次",
+  "fxRateLine": "{one} = {rate} {symbol} · 欧洲央行 {day} 官方汇率",
+  "fxOffline": "无网络：使用 {day} 保存的汇率。"
 }
