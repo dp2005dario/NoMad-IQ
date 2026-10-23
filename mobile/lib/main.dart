@@ -81,7 +81,9 @@ Future<void> main() async {
       store: SecurePushStateStore(),
       transport: const FirebasePushTransport(),
       session: session,
+      prefs: services.prefs,
     )..start();
+    services.push = registrar;
     // Cada vez que se vuelve a la app, se comprueba el registro (si falló
     // por falta de red, aquí se reintenta). Casi siempre no hace nada.
     AppLifecycleListener(onResume: () => unawaited(registrar.sync()));

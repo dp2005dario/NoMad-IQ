@@ -3112,5 +3112,89 @@
   "exportFailed": "We couldn't save the copy.",
   "@exportFailed": {
     "description": "Error: export couldn't be saved."
+  },
+  "privacyTitle": "Privacy",
+  "@privacyTitle": {
+    "description": "Privacy screen title."
+  },
+  "settingsPrivacy": "Privacy and security",
+  "@settingsPrivacy": {
+    "description": "Settings row to Privacy."
+  },
+  "privacyProtected": "This phone is protected",
+  "@privacyProtected": {
+    "description": "Status card title."
+  },
+  "privacyProtectedSub": "Notifications encrypted for this phone · encrypted vault",
+  "@privacyProtectedSub": {
+    "description": "Status card subtitle."
+  },
+  "privacyBackground": "Location in the background",
+  "@privacyBackground": {
+    "description": "Toggle: background location (travel mode)."
+  },
+  "privacyBackgroundSub": "To tell you when you enter a place with history, even with the app closed.",
+  "@privacyBackgroundSub": {
+    "description": "Toggle subtitle."
+  },
+  "privacyGuides": "Audioguide notifications",
+  "@privacyGuides": {
+    "description": "Toggle: audioguide notifications."
+  },
+  "privacyGuidesSub": "When you enter a place with history.",
+  "@privacyGuidesSub": {
+    "description": "Toggle subtitle."
+  },
+  "privacyDeals": "Flight deals",
+  "@privacyDeals": {
+    "description": "Toggle: flight deal notifications."
+  },
+  "privacyDealsSub": "When a route you watch drops in price.",
+  "@privacyDealsSub": {
+    "description": "Toggle subtitle."
+  },
+  "privacySafety": "Safety alerts",
+  "@privacySafety": {
+    "description": "Toggle: safety notifications (locked on)."
+  },
+  "privacySafetySub": "Always on.",
+  "@privacySafetySub": {
+    "description": "Toggle subtitle."
+  },
+  "privacyWhatWeKnow": "What we know about you",
+  "@privacyWhatWeKnow": {
+    "description": "Section title."
+  },
+  "privacyKnow1": "Your position, only at that moment, to know which zone you're in.",
+  "@privacyKnow1": {
+    "description": "Bullet."
+  },
+  "privacyKnow2": "For notifications you're a pseudonym, never your name.",
+  "@privacyKnow2": {
+    "description": "Bullet."
+  },
+  "privacyKnow3": "No history of the places you pass through.",
+  "@privacyKnow3": {
+    "description": "Bullet."
+  },
+  "privacyKnow4": "Not even Google can read your notifications: they're encrypted for this phone.",
+  "@privacyKnow4": {
+    "description": "Bullet."
+  },
+  "privacyForget": "Forget this phone",
+  "@privacyForget": {
+    "description": "Button: forget this phone (push)."
+  },
+  "privacyForgetSub": "Deletes its registration and its key right now. You can turn it back on whenever you want.",
+  "@privacyForgetSub": {
+    "description": "Explanation."
+  },
+  "privacyForgotten": "This phone gets no notifications.",
+  "@privacyForgotten": {
+    "description": "Shown when the phone is forgotten."
+  },
+  "privacyTurnBackOn": "Turn notifications back on",
+  "@privacyTurnBackOn": {
+    "description": "Button: re-enable push."
   }
 }

@@ -58,6 +58,21 @@ Si un servicio no responde, la copia sale igual y ese apartado dice
 `"unavailable"`. Los documentos de la Bóveda **no** van en la copia: sacarlos
 en claro a un archivo sería un riesgo. Se ven en la propia Bóveda.
 
+## 3 bis. Privacidad
+
+**Ajustes → Privacidad y seguridad**:
+
+- **Ubicación en segundo plano**: es el mismo "modo viaje" del Mapa.
+- **Avisos de audioguías** y **Chollos de vuelos**: se pueden apagar. Ojo
+  al truco: el servidor NO se entera. El aviso llega cifrado, el móvil lo
+  abre y, si es de un tipo apagado, no lo enseña
+  (`mobile/lib/features/push/notice_prefs.dart`). Así no guardamos tus gustos.
+- **Avisos de seguridad**: siempre encendidos (el interruptor se ve, pero no
+  se mueve).
+- **Olvidar este teléfono**: da de baja el móvil en el notifier, borra su
+  llave de avisos y el token de Firebase, y no vuelve a registrarse solo
+  hasta que tocas **Volver a activar los avisos**.
+
 ## 4. Fichero a fichero
 
 | Fichero | Para qué sirve |
@@ -68,6 +83,8 @@ en claro a un archivo sería un riesgo. Se ven en la propia Bóveda.
 | `services/price-consumer/internal/store/fares.go` | `EraseUser` |
 | `mobile/lib/features/settings/settings_screen.dart` | La pantalla y los diálogos |
 | `mobile/lib/features/settings/account_data.dart` | La copia y el borrado, sin pantallas (fácil de probar) |
+| `mobile/lib/features/settings/privacy_screen.dart` | La pantalla Privacidad |
+| `mobile/lib/features/push/notice_prefs.dart` | Qué tipos de aviso has apagado |
 
 ## 5. Probarlo desde Visual Studio Code
 

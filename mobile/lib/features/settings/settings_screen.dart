@@ -218,6 +218,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const Divider(height: 1),
                     ListTile(
                       leading: const Icon(
+                        Icons.privacy_tip_rounded,
+                        color: NomadColors.mint,
+                      ),
+                      title: Text(t.settingsPrivacy),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => context.push(Routes.privacy),
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(
                         Icons.lock_rounded,
                         color: NomadColors.safety,
                       ),

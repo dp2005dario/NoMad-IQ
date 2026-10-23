@@ -25,6 +25,7 @@ import '../features/money/expenses_api.dart';
 import '../features/money/fx_api.dart';
 import '../features/money/receipt_scanner.dart';
 import '../features/push/notices.dart';
+import '../features/push/push_registrar.dart';
 import '../features/route/flight3d.dart';
 import '../features/route/places_api.dart';
 import '../features/vault/doc_source.dart';
@@ -137,6 +138,10 @@ class AppServices {
 
   /// Notificaciones en la barra del móvil (permiso y toques).
   final NoticeCenter notices;
+
+  /// El registro de avisos push de este móvil (null = esta compilación no
+  /// tiene Firebase, o en los tests). Lo pone main.dart al arrancar.
+  PushRegistrar? push;
 
   /// Dónde se ve el Vuelo 3D (un WebView en la app). Sin él (tests), el
   /// botón "Despegar" hace la animación del mapa plano de siempre.

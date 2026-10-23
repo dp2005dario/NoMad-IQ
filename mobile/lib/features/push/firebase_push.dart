@@ -16,6 +16,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../core/config.dart';
+import '../../core/settings.dart';
+import 'notice_prefs.dart';
 import 'notices.dart';
 import 'push_notice.dart';
 import 'push_registrar.dart';
@@ -73,5 +75,9 @@ Future<void> showPush(Map<String, dynamic> data, PushStateStore store) async {
     state,
   );
   if (notice == null) return;
+  // ¿Lo has apagado en Privacidad? Entonces se queda en silencio.
+  if (mutedKinds(await PreferencesSettingsStore.open()).contains(notice.kind)) {
+    return;
+  }
   await DeviceNotices.instance.show(notice, localizationsFor(notice.language));
 }

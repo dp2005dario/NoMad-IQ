@@ -8,6 +8,8 @@ import 'package:http/http.dart' as http;
 import 'package:nomadiq/auth/session.dart';
 import 'package:nomadiq/core/router.dart';
 import 'package:nomadiq/core/settings.dart';
+import 'package:nomadiq/features/push/notice_prefs.dart';
+import 'package:nomadiq/features/push/push_notice.dart';
 import 'package:nomadiq/features/settings/account_data.dart';
 import 'package:nomadiq/features/settings/settings_screen.dart';
 import 'package:nomadiq/features/vault/vault.dart';
@@ -274,5 +276,37 @@ void main() {
         );
       },
     );
+  });
+
+  testWidgets('Privacidad: apagar los chollos se guarda; seguridad fija', (
+    WidgetTester tester,
+  ) async {
+    final FakeGateway g = FakeGateway();
+    final SessionController session = await signedInSession(g);
+    final MemorySettingsStore prefs = MemorySettingsStore();
+    tester.view.physicalSize = const Size(1200, 3000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.settings,
+      services: fakeServices(session, gateway: g, prefs: prefs),
+    );
+    await tester.tap(find.text('Privacidad y seguridad'));
+    await tester.pumpAndSettle();
+    expect(find.text('Este teléfono está protegido'), findsOneWidget);
+    expect(find.text('Qué sabemos de ti'), findsOneWidget);
+    await tester.tap(find.text('Chollos de vuelos'));
+    await tester.pumpAndSettle();
+    expect(mutedKinds(prefs), <PushKind>{PushKind.fareAlert});
+    final SwitchListTile safety = tester.widget(
+      find.widgetWithText(SwitchListTile, 'Avisos de seguridad'),
+    );
+    expect(safety.value, isTrue);
+    expect(safety.onChanged, isNull);
+    // Sin Firebase (tests) no hay "Olvidar este teléfono".
+    expect(find.text('Olvidar este teléfono'), findsNothing);
   });
 }

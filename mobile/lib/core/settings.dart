@@ -18,6 +18,12 @@ enum LocalData {
 
   /// El presupuesto del viaje (qué bote, límite y fechas).
   tripBudget,
+
+  /// Tipos de aviso que NO quieres (["fareAlert"]). Se filtran en el móvil.
+  mutedNotices,
+
+  /// "1" = has pedido "Olvidar este teléfono": no se registra para avisos.
+  pushOff,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real
