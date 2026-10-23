@@ -139,6 +139,20 @@ class _FlightsScreenState extends State<FlightsScreen> {
                 ],
               ),
               const SizedBox(height: 8),
+              // El buscador normal: origen, destino, fechas y viajeros.
+              Card(
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.search_rounded,
+                    color: NomadColors.flights,
+                  ),
+                  title: Text(t.searchOpen),
+                  subtitle: Text(t.searchOpenHint),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.push(Routes.fareSearch(origin: _origin)),
+                ),
+              ),
+              const SizedBox(height: 8),
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: ActionChip(

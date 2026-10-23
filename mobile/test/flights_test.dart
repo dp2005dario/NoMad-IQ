@@ -43,7 +43,63 @@ String enc(String key) => Uri.encodeComponent(key);
 /// historial y un aviso. Apunta lo que la app le pide.
 class FaresBackend {
   FaresBackend() {
-    g.publicPrefixes.addAll(<String>['/v1/fares/deals', '/v1/fares/history/']);
+    g.publicPrefixes.addAll(<String>[
+      '/v1/fares/deals',
+      '/v1/fares/history/',
+      '/v1/fares/search',
+    ]);
+    g.services['/v1/fares/search'] = (http.Request r) {
+      searches.add(r.url.queryParameters);
+      if (searchBusy) return http.Response('{}', 429);
+      final Map<String, String> q = r.url.queryParameters;
+      final int adults = int.parse(q['adults']!);
+      final String key = FareRoute.keyFor(
+        q['origin']!,
+        q['destination']!,
+        DateTime.parse(q['departure']!),
+        returnDate: q['return'] == null ? null : DateTime.parse(q['return']!),
+      );
+      final FareRoute route = FareRoute.fromKey(key)!;
+      Map<String, Object?> offer(
+        int price,
+        int stops,
+        String link,
+      ) => <String, Object?>{
+        'price_per_adult': <String, Object?>{
+          'amount_minor': price,
+          'currency': 'EUR',
+        },
+        'total': <String, Object?>{
+          'amount_minor': price * adults,
+          'currency': 'EUR',
+        },
+        'carrier': 'IB',
+        'departure_at': '${q['departure']}T22:40:00+01:00',
+        if (q['return'] != null) 'return_at': '${q['return']}T09:05:00+09:00',
+        'transfers': stops,
+        'return_transfers': stops,
+        'duration_minutes': 1505,
+        'booking_url': link,
+      };
+      return FakeGateway.json(<String, Object?>{
+        'route': <String, Object?>{
+          'route_key': key,
+          'origin': route.origin,
+          'destination': route.destination,
+          'departure_date': q['departure'],
+          'return_date': q['return'],
+          'cabin': 'ECONOMY',
+        },
+        'adults': adults,
+        'provider': 'travelpayouts',
+        'observed_at': '2026-10-23T10:00:00Z',
+        'offers': <Object?>[
+          offer(31550, 0, 'https://www.aviasales.com/search/MAD1512NRT22122'),
+          offer(42000, 1, 'https://www.aviasales.com/search/x'),
+          offer(100, 0, 'javascript:alert(1)'), // nunca se enseña
+        ],
+      });
+    };
     g.services['/v1/fares/deals'] = (http.Request r) {
       origins.add(r.url.queryParameters['origin']!);
       return FakeGateway.json(<String, Object?>{
@@ -123,6 +179,8 @@ class FaresBackend {
   final FakeGateway g = FakeGateway();
   final List<String> origins = <String>[];
   final Map<String, int?> watched = <String, int?>{lisbon: 30000};
+  final List<Map<String, String>> searches = <Map<String, String>>[];
+  bool searchBusy = false;
   int limit = 50;
 }
 
@@ -132,12 +190,13 @@ Future<FaresBackend> pumpFlights(
   List<Uri>? opened,
   MemorySettingsStore? prefs,
   bool guest = false,
+  FaresBackend? backend,
 }) async {
   // Pantalla alta: la lista entera cabe sin desplazarse.
   tester.view.physicalSize = const Size(1200, 6000);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
-  final FaresBackend b = FaresBackend();
+  final FaresBackend b = backend ?? FaresBackend();
   final SessionController s = guest
       ? (newSession(b.g)..continueAsGuest())
       : await signedInSession(b.g);
@@ -210,6 +269,102 @@ void main() {
     );
     expect(find.byType(PriceChart), findsOneWidget);
     expect(find.textContaining('crea una cuenta gratis'), findsOneWidget);
+  });
+
+  group('buscador', () {
+    final DateTime dep = DateTime.now().add(const Duration(days: 40));
+    final DateTime ret = dep.add(const Duration(days: 7));
+    final String searchUrl = Routes.fareSearch(
+      origin: 'MAD',
+      destination: 'NRT',
+      departure: isoDay(dep),
+      returnDate: isoDay(ret),
+    );
+
+    testWidgets('invitado: busca ida y vuelta para 2 y reserva', (
+      WidgetTester tester,
+    ) async {
+      final List<Uri> opened = <Uri>[];
+      final FaresBackend b = await pumpFlights(
+        tester,
+        guest: true,
+        opened: opened,
+        initialLocation: searchUrl,
+      );
+      await tester.tap(find.byTooltip('Añadir viajero'));
+      await tester.pump();
+      expect(find.text('2 adultos'), findsOneWidget);
+      await tester.tap(find.text('Buscar'));
+      await tester.pumpAndSettle();
+
+      final Map<String, String> q = b.searches.single;
+      expect(q['origin'], 'MAD');
+      expect(q['destination'], 'NRT');
+      expect(q['departure'], isoDay(dep));
+      expect(q['return'], isoDay(ret));
+      expect(q['adults'], '2');
+      // Dos ofertas (la del enlace "javascript:" no sale), la barata primero.
+      expect(find.text('2 vuelos'), findsOneWidget);
+      expect(find.textContaining('por persona'), findsNWidgets(2));
+      expect(find.textContaining('Total para 2 adultos'), findsNWidgets(2));
+      expect(find.textContaining('22:40 · Directo'), findsOneWidget);
+      expect(find.textContaining('1 escala'), findsWidgets);
+      expect(find.text('Duración: 25 h 5 min'), findsNWidgets(2));
+
+      await tester.tap(find.text('Reservar ya').first);
+      await tester.pumpAndSettle();
+      expect(opened.single.host, 'www.aviasales.com');
+
+      // Vigilar pide cuenta al invitado.
+      await tester.tap(find.text('Avisar si baja').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Guardar alerta'), findsNothing);
+    });
+
+    testWidgets('solo ida, datos que faltan y mucha gente buscando', (
+      WidgetTester tester,
+    ) async {
+      final FaresBackend b = await pumpFlights(
+        tester,
+        initialLocation: Routes.fareSearch(origin: 'MAD'),
+      );
+      await tester.tap(find.text('Buscar'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('código de 3 letras'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).last, 'mad');
+      await tester.tap(find.text('Buscar'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('no pueden ser el mismo'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).last, 'lis');
+      await tester.tap(find.text('Solo ida'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Buscar'));
+      await tester.pumpAndSettle();
+      expect(find.text('Elige las fechas del viaje.'), findsOneWidget);
+      expect(b.searches, isEmpty);
+    });
+
+    testWidgets('si el servidor pide frenar, se explica', (
+      WidgetTester tester,
+    ) async {
+      final FaresBackend b = FaresBackend()..searchBusy = true;
+      await pumpFlights(tester, backend: b, initialLocation: searchUrl);
+      await tester.tap(find.text('Buscar'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Mucha gente buscando'), findsOneWidget);
+    });
+
+    testWidgets('el cazador abre el buscador con tu aeropuerto', (
+      WidgetTester tester,
+    ) async {
+      await pumpFlights(tester);
+      await tester.tap(find.text('Buscar vuelos'));
+      await tester.pumpAndSettle();
+      final TextField from = tester.widget(find.byType(TextField).first);
+      expect(from.controller!.text, 'MAD');
+    });
   });
 
   testWidgets('avisar si baja: con precio objetivo', (

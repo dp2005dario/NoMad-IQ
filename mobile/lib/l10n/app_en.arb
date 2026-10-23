@@ -431,5 +431,141 @@
   "planStopover": "Free stopover",
   "planEvents": "What's on",
   "planCopyTrip": "Copy a trip",
-  "planFlightRoute": "Flight route"
+  "planFlightRoute": "Flight route",
+  "searchOpen": "Search flights",
+  "@searchOpen": {
+    "description": "Flight search screen text."
+  },
+  "searchOpenHint": "From, to, dates and travelers",
+  "@searchOpenHint": {
+    "description": "Flight search screen text."
+  },
+  "searchTitle": "Search flights",
+  "@searchTitle": {
+    "description": "Flight search screen text."
+  },
+  "searchRoundTrip": "Round trip",
+  "@searchRoundTrip": {
+    "description": "Flight search screen text."
+  },
+  "searchFrom": "From",
+  "@searchFrom": {
+    "description": "Flight search screen text."
+  },
+  "searchTo": "To",
+  "@searchTo": {
+    "description": "Flight search screen text."
+  },
+  "searchSwap": "Swap origin and destination",
+  "@searchSwap": {
+    "description": "Flight search screen text."
+  },
+  "searchDeparture": "Outbound",
+  "@searchDeparture": {
+    "description": "Flight search screen text."
+  },
+  "searchReturn": "Return",
+  "@searchReturn": {
+    "description": "Flight search screen text."
+  },
+  "searchPickDate": "pick a date",
+  "@searchPickDate": {
+    "description": "Flight search screen text."
+  },
+  "searchAddTraveler": "Add traveler",
+  "@searchAddTraveler": {
+    "description": "Flight search screen text."
+  },
+  "searchRemoveTraveler": "Remove traveler",
+  "@searchRemoveTraveler": {
+    "description": "Flight search screen text."
+  },
+  "searchGo": "Search",
+  "@searchGo": {
+    "description": "Flight search screen text."
+  },
+  "searchSameAirport": "Origin and destination can’t be the same.",
+  "@searchSameAirport": {
+    "description": "Flight search screen text."
+  },
+  "searchMissingDates": "Choose your travel dates.",
+  "@searchMissingDates": {
+    "description": "Flight search screen text."
+  },
+  "searchNoResults": "No prices for those dates yet. Try a nearby day.",
+  "@searchNoResults": {
+    "description": "Flight search screen text."
+  },
+  "searchBusy": "Lots of people searching right now. Try again in a few seconds.",
+  "@searchBusy": {
+    "description": "Flight search screen text."
+  },
+  "searchPricesNote": "Real prices seen recently; the final price is confirmed when you book.",
+  "@searchPricesNote": {
+    "description": "Flight search screen text."
+  },
+  "searchDirect": "Direct",
+  "@searchDirect": {
+    "description": "Flight search screen text."
+  },
+  "searchAdults": "{count, plural, =1{1 adult} other{{count} adults}}",
+  "@searchAdults": {
+    "description": "Flight search screen text with placeholders.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchResults": "{count, plural, =1{1 flight} other{{count} flights}}",
+  "@searchResults": {
+    "description": "Flight search screen text with placeholders.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchStops": "{count, plural, =1{1 stop} other{{count} stops}}",
+  "@searchStops": {
+    "description": "Flight search screen text with placeholders.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchPerPerson": "{price} per person",
+  "@searchPerPerson": {
+    "description": "Flight search screen text with placeholders.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "searchTotal": "Total for {travelers}: {price}",
+  "@searchTotal": {
+    "description": "Flight search screen text with placeholders.",
+    "placeholders": {
+      "travelers": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "searchDuration": "Duration: {hours} h {minutes} min",
+  "@searchDuration": {
+    "description": "Flight search screen text with placeholders.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -447,6 +447,7 @@ price-consumer:
 | "Avisar si baja" | Vigila esa ruta. Puedes poner un precio objetivo ("avísame si baja de 300 €") o dejarlo vacío |
 | "Chollos de hoy" y "Mis alertas" | El resto de chollos y las rutas que vigilas, con su último precio |
 | Campana (arriba) | Tus últimos avisos de precio. Tocar la notificación del móvil también abre esta lista |
+| "Buscar vuelos" | El buscador normal: origen, destino, ida y vuelta (o solo ida), fechas y de 1 a 9 viajeros. Da las opciones de la más barata a la más cara, con precio por persona, total, horarios (hora local del aeropuerto), escalas y duración. "Reservar ya" abre la web con el número de viajeros ya puesto |
 | Modo invitado | Ve los mismos chollos y gráficas con precios reales. Solo "Avisar si baja" y "Mis alertas" piden crear una cuenta gratis (los avisos se guardan a tu nombre) |
 | Detalle de una ruta | Gráfica del precio más bajo de cada día, el mínimo, reservar y "Dejar de vigilar" |
 | "Planea tu viaje" | Ruta del vuelo (globo y 3D), Explorar, Dormir barato, Escala gratis, Qué pasa y Copiar viaje: llegan en los siguientes PR |

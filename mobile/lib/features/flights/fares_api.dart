@@ -5,6 +5,8 @@
 //   DELETE /v1/fares/watches/{ruta}        → dejar de vigilar
 //   GET    /v1/fares/history/{ruta}        → precio mínimo de cada día (gráfica)
 //   GET    /v1/fares/alerts                → tus últimos avisos de precio
+//   GET    /v1/fares/search?origin=…       → BUSCADOR: origen, destino, fechas
+//                                            y viajeros (también invitados)
 //
 // Una "ruta" es una clave como "MAD-NRT:2026-12-15:ECONOMY" (origen, destino,
 // fecha de ida, fecha de vuelta opcional y cabina). Aquí se valida TODO lo que
@@ -29,6 +31,12 @@ class Money {
 }
 
 final RegExp _code3 = RegExp(r'^[A-Z]{3}$');
+
+/// Un día como "2026-12-15" (lo que entiende el servidor).
+String isoDay(DateTime t) =>
+    '${t.year.toString().padLeft(4, '0')}-'
+    '${t.month.toString().padLeft(2, '0')}-'
+    '${t.day.toString().padLeft(2, '0')}';
 
 /// Una ruta concreta: de dónde a dónde, qué día y en qué cabina.
 class FareRoute {
@@ -121,14 +129,10 @@ class FareRoute {
     DateTime? returnDate,
     String cabin = 'ECONOMY',
   }) {
-    String d(DateTime t) =>
-        '${t.year.toString().padLeft(4, '0')}-'
-        '${t.month.toString().padLeft(2, '0')}-'
-        '${t.day.toString().padLeft(2, '0')}';
     return <String>[
       '$origin-$destination',
-      d(departure),
-      if (returnDate != null) d(returnDate),
+      isoDay(departure),
+      if (returnDate != null) isoDay(returnDate),
       cabin,
     ].join(':');
   }
@@ -305,6 +309,83 @@ class FareAlert {
   }
 }
 
+/// Una opción de vuelo del buscador.
+class Offer {
+  const Offer({
+    required this.pricePerAdult,
+    required this.total,
+    required this.departureAt,
+    required this.bookingUrl,
+    this.carrier = '',
+    this.returnAt,
+    this.transfers = 0,
+    this.returnTransfers = 0,
+    this.durationMinutes = 0,
+  });
+
+  final Money pricePerAdult;
+
+  /// Para todos los viajeros.
+  final Money total;
+  final String carrier;
+
+  /// Salida tal y como la da la aerolínea, en hora LOCAL del aeropuerto:
+  /// "2026-12-15T22:40". (No se pasa a la hora del móvil: el billete dice
+  /// la hora de allí.)
+  final String departureAt;
+  final String? returnAt;
+
+  /// Escalas (0 = directo).
+  final int transfers;
+  final int returnTransfers;
+
+  /// Duración total en minutos (0 = no se sabe).
+  final int durationMinutes;
+  final Uri bookingUrl;
+
+  static final RegExp _local = RegExp(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}');
+
+  /// "2026-12-15T22:40:00+01:00" → "2026-12-15T22:40". null si no encaja.
+  static String? _localTime(Object? raw) =>
+      raw is String && _local.hasMatch(raw) ? raw.substring(0, 16) : null;
+
+  static int _count(Object? raw, int max) =>
+      raw is int && raw >= 0 && raw <= max ? raw : 0;
+
+  /// null = oferta que no se puede enseñar (sin enlace de reserva seguro).
+  static Offer? parse(Object? json) {
+    if (json is! Map<String, Object?>) _bad();
+    final Uri? url = safeBookingUrl(json['booking_url']);
+    final String? departure = _localTime(json['departure_at']);
+    if (url == null || departure == null) return null;
+    final Object? carrier = json['carrier'];
+    return Offer(
+      pricePerAdult: Money.parse(json['price_per_adult']),
+      total: Money.parse(json['total']),
+      carrier: carrier is String && carrier.length <= 3 ? carrier : '',
+      departureAt: departure,
+      returnAt: _localTime(json['return_at']),
+      transfers: _count(json['transfers'], 6),
+      returnTransfers: _count(json['return_transfers'], 6),
+      durationMinutes: _count(json['duration_minutes'], 6000),
+      bookingUrl: url,
+    );
+  }
+}
+
+/// La respuesta del buscador.
+class SearchResult {
+  const SearchResult({
+    required this.route,
+    required this.adults,
+    required this.offers,
+  });
+
+  final FareRoute route;
+  final int adults;
+  final List<Offer> offers;
+}
+
 /// Resultado de pedir vigilar una ruta.
 enum WatchResult { added, updated }
 
@@ -378,6 +459,38 @@ class FaresApi {
 
   Future<List<FareAlert>> alerts() async =>
       _list(await _api.getJson('/v1/fares/alerts'), 'alerts', FareAlert.parse);
+
+  /// El buscador. Lo puede usar cualquiera, también un invitado.
+  /// ApiError.rateLimited = mucha gente buscando: inténtalo en unos segundos.
+  Future<SearchResult> search({
+    required String origin,
+    required String destination,
+    required DateTime departure,
+    DateTime? returnDate,
+    int adults = 1,
+  }) async {
+    final Object? json = await _api.getJson(
+      '/v1/fares/search',
+      query: <String, String>{
+        'origin': origin,
+        'destination': destination,
+        'departure': isoDay(departure),
+        if (returnDate != null) 'return': isoDay(returnDate),
+        'adults': '$adults',
+      },
+      public: true,
+    );
+    if (json is! Map<String, Object?>) _bad();
+    final Object? route = json['route'];
+    final Object? n = json['adults'];
+    if (route is! Map<String, Object?> || n is! int || n < 1 || n > 9) _bad();
+    final List<Offer?> offers = _list(json, 'offers', Offer.parse);
+    return SearchResult(
+      route: FareRoute.parse(route),
+      adults: n,
+      offers: <Offer>[for (final Offer? o in offers) ?o],
+    );
+  }
 
   static List<T> _list<T>(Object? json, String key, T Function(Object?) parse) {
     if (json is! Map<String, Object?>) _bad();
