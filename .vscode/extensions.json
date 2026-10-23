@@ -16,6 +16,7 @@
     "redhat.vscode-yaml",                 // YAML: valida docker-compose.yml y la CI de GitHub
     "github.vscode-github-actions",       // GitHub Actions: ver la CI sin salir del editor
     "ckolkman.vscode-postgres",           // PostgreSQL: explorar tablas y lanzar consultas
-    "yzhang.markdown-all-in-one"          // Markdown: vista previa cómoda de las guías de docs/
+    "yzhang.markdown-all-in-one",         // Markdown: vista previa cómoda de las guías de docs/
+    "Dart-Code.flutter"                   // Flutter + Dart: ejecutar la app en el móvil/emulador, recarga en caliente y tests (mobile/)
   ]
 }

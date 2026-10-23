@@ -1,0 +1,28 @@
+# Reglas del "corrector" de Dart (flutter analyze). En la CI, cualquier aviso
+# hace fallar el build: así el código se mantiene limpio desde el principio.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  # Tipado estricto: nada de conversiones implícitas ni tipos "dynamic" escondidos.
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    missing_required_param: error
+    missing_return: error
+  exclude:
+    - build/**
+    - lib/l10n/generated/**
+    - android/**
+    - ios/**
+
+linter:
+  rules:
+    - always_declare_return_types
+    - avoid_dynamic_calls
+    - prefer_final_locals
+    - prefer_single_quotes
+    - require_trailing_commas
+    - unawaited_futures
+    - use_super_parameters

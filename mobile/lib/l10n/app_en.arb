@@ -1,0 +1,66 @@
+{
+  "@@locale": "en",
+  "appTitle": "NomadIQ",
+  "@appTitle": {
+    "description": "App name. Never translate."
+  },
+  "welcomeTagline": "Your trip, always one step ahead.",
+  "@welcomeTagline": {
+    "description": "Slogan on the welcome screen."
+  },
+  "welcomeFlyraIntro": "Hi, I'm Flyra. I watch prices, weather and plans so you don't have to.",
+  "@welcomeFlyraIntro": {
+    "description": "Flyra (the in-app AI, female) introduces herself. Keep the name Flyra."
+  },
+  "continueWithGoogle": "Continue with Google",
+  "continueWithEmail": "Continue with email",
+  "continueAsGuest": "Continue as guest",
+  "signInSoon": "Sign-in arrives in the next version. Continue as a guest for now.",
+  "@signInSoon": {
+    "description": "Shown when tapping Google/email sign-in before it exists."
+  },
+  "navHome": "Home",
+  "navMap": "Map",
+  "navCamera": "Camera",
+  "@navCamera": {
+    "description": "Raised central button of the bottom bar."
+  },
+  "navFlights": "Flights",
+  "navGroup": "Group",
+  "homeGreetingGuest": "Hi, traveller",
+  "@homeGreetingGuest": {
+    "description": "Greeting on Home when not signed in."
+  },
+  "homeFlyraPrompt": "Ask Flyra anything about your trip",
+  "@homeFlyraPrompt": {
+    "description": "Placeholder of the ask-Flyra box."
+  },
+  "talkToFlyra": "Talk to Flyra",
+  "shortcutsTitle": "Shortcuts",
+  "shortcutVault": "Vault",
+  "shortcutExpenses": "Expenses",
+  "shortcutAudioguides": "Audio guides",
+  "shortcutLanguage": "Language",
+  "comingSoonTitle": "Coming soon",
+  "comingSoonBody": "{feature} is on its way. Flyra is getting it ready.",
+  "@comingSoonBody": {
+    "description": "Body of a screen not built yet. {feature} is the screen name, e.g. Map.",
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "languageTitle": "Language",
+  "languageSystem": "Device language",
+  "languageSearchHint": "Search language",
+  "languageNoResults": "No language matches “{query}”",
+  "@languageNoResults": {
+    "description": "{query} is what the user typed.",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  }
+}

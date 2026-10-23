@@ -1,0 +1,12 @@
+# Configuración de las traducciones (flutter gen-l10n).
+# El inglés es la plantilla: cada texto nuevo se añade primero en app_en.arb.
+# Cualquier idioma nuevo = un archivo app_XX.arb más en lib/l10n/. Nada más.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+# El código generado no se guarda en git: se crea solo con "flutter pub get".
+output-dir: lib/l10n/generated
+# Si falta una traducción, la compilación avisa (y el test de idiomas falla).
+untranslated-messages-file: build/untranslated.json
+nullable-getter: false

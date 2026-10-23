@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Idiomas de la app para Android 13+: así aparecen en
+     Ajustes > Apps > NomadIQ > Idioma, aunque el móvil esté en otro idioma.
+     Debe coincidir con los archivos lib/l10n/app_XX.arb (lo vigila test/l10n_test.dart). -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="ar" />
+    <locale android:name="de" />
+    <locale android:name="es" />
+    <locale android:name="fr" />
+    <locale android:name="hi" />
+    <locale android:name="it" />
+    <locale android:name="ja" />
+    <locale android:name="pt" />
+    <locale android:name="zh" />
+</locale-config>
