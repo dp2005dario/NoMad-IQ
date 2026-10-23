@@ -27,6 +27,9 @@ import '../features/money/receipt_scanner.dart';
 import '../features/push/notices.dart';
 import '../features/route/flight3d.dart';
 import '../features/route/places_api.dart';
+import '../features/vault/doc_source.dart';
+import '../features/vault/vault.dart';
+import '../features/vault/vault_store.dart';
 import 'api_client.dart';
 import 'settings.dart';
 
@@ -44,6 +47,9 @@ class AppServices {
     this.newCamera,
     this.speaker = const SilentSpeaker(),
     this.receipts = const NoReceiptScanner(),
+    this.docSource = const NoDocSource(),
+    this.docReader = const NoDocTextReader(),
+    Vault? vault,
     SettingsStore? prefs,
   }) : geo = GeoApi(api),
        audioguides = AudioguideApi(api),
@@ -55,7 +61,14 @@ class AppServices {
        atms = AtmsApi(api),
        places = PlacesApi(api),
        streetPhotos = StreetPhotosApi(api),
-       prefs = prefs ?? MemorySettingsStore() {
+       prefs = prefs ?? MemorySettingsStore(),
+       vault =
+           vault ??
+           Vault(
+             keys: MemoryVaultKeyStore(),
+             files: MemoryVaultFiles(),
+             unlocker: const _NoUnlocker(),
+           ) {
     tracker = LocationTracker(
       location: location,
       geo: geo,
@@ -97,6 +110,15 @@ class AppServices {
   /// Lee el ticket de una foto dentro del móvil (en los tests, uno falso).
   final ReceiptScanner receipts;
 
+  /// La Bóveda: documentos cifrados en el móvil, abiertos con huella.
+  final Vault vault;
+
+  /// De dónde entran los documentos (cámara, galería o PDF).
+  final DocSource docSource;
+
+  /// Lee el texto de los documentos dentro del móvil (y dibuja los PDF).
+  final DocTextReader docReader;
+
   /// Fichas de ciudad (Wikipedia) para la Ruta del vuelo.
   final PlacesApi places;
 
@@ -129,6 +151,14 @@ class AppServices {
   /// De dónde salen los mapas (ver AppConfig).
   final Uri tilesUrl;
   final String glyphsUrl;
+}
+
+/// Sin huella configurada (solo en pruebas): la Bóveda no se abre.
+class _NoUnlocker implements Unlocker {
+  const _NoUnlocker();
+
+  @override
+  Future<UnlockResult> unlock(String reason) async => UnlockResult.unavailable;
 }
 
 class ServicesScope extends InheritedWidget {

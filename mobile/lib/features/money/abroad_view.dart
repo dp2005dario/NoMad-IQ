@@ -3,7 +3,7 @@
 //   atms_panel.dart    → cajeros cercanos (OpenStreetMap) y el aviso DCC
 //   cards_panel.dart   → ¿con qué tarjeta pago aquí?
 //   budget_panel.dart  → ¿me llega el dinero?
-// El seguro llega con la Bóveda (la póliza se lee en el móvil).
+//   insurance_panel.dart → ¿me cubre el seguro? (la póliza de la Bóveda)
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
@@ -11,6 +11,7 @@ import '../../l10n/generated/app_localizations.dart';
 import 'atms_panel.dart';
 import 'budget_panel.dart';
 import 'cards_panel.dart';
+import 'insurance_panel.dart';
 
 enum AbroadPart { atms, cards, budget, insurance }
 
@@ -111,30 +112,4 @@ class _PartButton extends StatelessWidget {
       ),
     ),
   );
-}
-
-/// El seguro de viaje: se pregunta a la póliza guardada en la Bóveda.
-class InsurancePanel extends StatelessWidget {
-  const InsurancePanel({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
-      children: <Widget>[
-        const Icon(
-          Icons.health_and_safety_rounded,
-          size: 56,
-          color: NomadColors.flights,
-        ),
-        const SizedBox(height: 12),
-        Text(
-          t.abroadInsuranceIntro,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
-      ],
-    );
-  }
 }

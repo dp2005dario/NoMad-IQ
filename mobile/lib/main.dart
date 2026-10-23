@@ -11,6 +11,9 @@ import 'auth/token_store.dart';
 import 'core/api_client.dart';
 import 'core/config.dart';
 import 'core/services.dart';
+import 'features/vault/doc_source.dart';
+import 'features/vault/vault.dart';
+import 'features/vault/vault_store.dart';
 import 'features/camera/camera_device.dart';
 import 'features/camera/speaker.dart';
 import 'core/settings.dart';
@@ -60,6 +63,13 @@ Future<void> main() async {
     newCamera: DeviceCamera.new,
     speaker: DeviceSpeaker(),
     receipts: DeviceReceiptScanner(),
+    docSource: DeviceDocSource(),
+    docReader: const DeviceDocTextReader(),
+    vault: Vault(
+      keys: SecureVaultKeyStore(),
+      files: DirVaultFiles(),
+      unlocker: DeviceUnlocker(),
+    ),
     tilesUrl: AppConfig.tilesUrl,
     glyphsUrl: AppConfig.glyphsUrl,
     notices: notices,

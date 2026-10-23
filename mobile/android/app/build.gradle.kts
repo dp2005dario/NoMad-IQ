@@ -62,4 +62,7 @@ dependencies {
     implementation("com.google.mlkit:text-recognition-japanese:16.0.1")
     implementation("com.google.mlkit:text-recognition-korean:16.0.1")
     implementation("com.google.mlkit:text-recognition-devanagari:16.0.1")
+    // La ventana de la huella (local_auth) necesita temas "AppCompat" para no
+    // fallar en Android 8 y anteriores (ver res/values/styles.xml).
+    implementation("androidx.appcompat:appcompat:1.7.0")
 }

@@ -2771,5 +2771,248 @@
   "abroadBudgetEdit": "Change budget",
   "@abroadBudgetEdit": {
     "description": "Button: change budget."
+  },
+  "vaultTitle": "Vault",
+  "@vaultTitle": {
+    "description": "Vault screen title."
+  },
+  "vaultTapToOpen": "Tap to open with your fingerprint",
+  "@vaultTapToOpen": {
+    "description": "Locked vault: tap to open."
+  },
+  "vaultLockedText": "Your documents are stored encrypted on this phone. Without your fingerprint, nobody can see them, not even us.",
+  "@vaultLockedText": {
+    "description": "Locked vault explanation."
+  },
+  "vaultUnlockReason": "Open your NomadIQ vault",
+  "@vaultUnlockReason": {
+    "description": "System biometric prompt reason."
+  },
+  "vaultUnlockFailed": "The vault is still closed.",
+  "@vaultUnlockFailed": {
+    "description": "Unlock cancelled or failed."
+  },
+  "vaultNoLock": "Set a screen lock (fingerprint or PIN) on your phone to use the vault.",
+  "@vaultNoLock": {
+    "description": "Device has no screen lock."
+  },
+  "vaultOpenChip": "Open · closes by itself in {minutes} min",
+  "@vaultOpenChip": {
+    "description": "Open vault chip.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "vaultNumberHidden": "number hidden",
+  "@vaultNumberHidden": {
+    "description": "Passport number is hidden."
+  },
+  "vaultExpires": "Expires {date}",
+  "@vaultExpires": {
+    "description": "Expiry date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "vaultExpiresSoon": "Expires soon: {date}",
+  "@vaultExpiresSoon": {
+    "description": "Expires soon.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "vaultExpired": "Expired on {date}",
+  "@vaultExpired": {
+    "description": "Already expired.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "vaultScan": "Scan document",
+  "@vaultScan": {
+    "description": "Button: scan a document with the camera."
+  },
+  "vaultFromGallery": "From gallery",
+  "@vaultFromGallery": {
+    "description": "Button: add from gallery."
+  },
+  "vaultFromPdf": "A PDF",
+  "@vaultFromPdf": {
+    "description": "Button: add a PDF."
+  },
+  "vaultClose": "Close the vault",
+  "@vaultClose": {
+    "description": "Button: close the vault."
+  },
+  "vaultEmpty": "Nothing here yet. Scan your passport, ID or the insurance policy.",
+  "@vaultEmpty": {
+    "description": "Vault is empty."
+  },
+  "vaultReading": "Reading the document on your phone…",
+  "@vaultReading": {
+    "description": "Reading the document (OCR)."
+  },
+  "vaultSaved": "Saved encrypted in the vault",
+  "@vaultSaved": {
+    "description": "Document saved."
+  },
+  "vaultFull": "The vault is full (100 documents).",
+  "@vaultFull": {
+    "description": "Vault full."
+  },
+  "vaultTooBig": "That file is too big (maximum 15 MB).",
+  "@vaultTooBig": {
+    "description": "Document too big or empty."
+  },
+  "vaultKindPassport": "Passport",
+  "@vaultKindPassport": {
+    "description": "Document kind."
+  },
+  "vaultKindIdCard": "ID card",
+  "@vaultKindIdCard": {
+    "description": "Document kind."
+  },
+  "vaultKindBoarding": "Boarding pass",
+  "@vaultKindBoarding": {
+    "description": "Document kind."
+  },
+  "vaultKindInsurance": "Travel insurance",
+  "@vaultKindInsurance": {
+    "description": "Document kind."
+  },
+  "vaultKindBooking": "Booking",
+  "@vaultKindBooking": {
+    "description": "Document kind."
+  },
+  "vaultKindVisa": "Visa / ESTA",
+  "@vaultKindVisa": {
+    "description": "Document kind."
+  },
+  "vaultKindMedical": "Medical",
+  "@vaultKindMedical": {
+    "description": "Document kind."
+  },
+  "vaultKindOther": "Other",
+  "@vaultKindOther": {
+    "description": "Document kind."
+  },
+  "vaultDocKind": "Type",
+  "@vaultDocKind": {
+    "description": "Form: document kind."
+  },
+  "vaultDocTitle": "Name",
+  "@vaultDocTitle": {
+    "description": "Form: document name."
+  },
+  "vaultDocDetail": "Detail (optional)",
+  "@vaultDocDetail": {
+    "description": "Form: optional detail."
+  },
+  "vaultDocExpires": "Expiry date (optional)",
+  "@vaultDocExpires": {
+    "description": "Form: expiry date button."
+  },
+  "vaultNoExpiry": "No expiry date",
+  "@vaultNoExpiry": {
+    "description": "Tooltip: remove expiry."
+  },
+  "vaultEdit": "Edit",
+  "@vaultEdit": {
+    "description": "Tooltip: edit document."
+  },
+  "vaultDeleteConfirm": "Delete \"{title}\" from the vault?",
+  "@vaultDeleteConfirm": {
+    "description": "Confirm delete document.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "vaultCantShow": "This document can't be shown.",
+  "@vaultCantShow": {
+    "description": "Document can't be shown."
+  },
+  "vaultPrivacyNote": "AES-256 encrypted on this phone, with its key in the phone's secure chip. No screenshots while it's open, and it never goes to our server or any cloud.",
+  "@vaultPrivacyNote": {
+    "description": "Vault privacy note."
+  },
+  "insuranceOpenVault": "Open the vault",
+  "@insuranceOpenVault": {
+    "description": "Button: open vault for insurance."
+  },
+  "insuranceNoPolicy": "Save your policy in the vault with the type \"Travel insurance\" and you can ask it things here.",
+  "@insuranceNoPolicy": {
+    "description": "No insurance policy in the vault."
+  },
+  "insuranceReadOnPhone": "{pages} pages · read on your phone, never leaves it",
+  "@insuranceReadOnPhone": {
+    "description": "Policy subtitle.",
+    "placeholders": {
+      "pages": {
+        "type": "int"
+      }
+    }
+  },
+  "insuranceLuggage": "Lost luggage?",
+  "@insuranceLuggage": {
+    "description": "Insurance quick question."
+  },
+  "insuranceMedical": "If I get sick?",
+  "@insuranceMedical": {
+    "description": "Insurance quick question."
+  },
+  "insuranceCancellation": "If I cancel the trip?",
+  "@insuranceCancellation": {
+    "description": "Insurance quick question."
+  },
+  "insuranceDelay": "Delays and missed flights?",
+  "@insuranceDelay": {
+    "description": "Insurance quick question."
+  },
+  "insuranceTheft": "Theft?",
+  "@insuranceTheft": {
+    "description": "Insurance quick question."
+  },
+  "insuranceSports": "Skiing and sports?",
+  "@insuranceSports": {
+    "description": "Insurance quick question."
+  },
+  "insuranceAsk": "Ask something else",
+  "@insuranceAsk": {
+    "description": "Field: ask something else."
+  },
+  "insuranceNoHits": "I can't find anything about this in the policy. Call the assistance phone number to be sure.",
+  "@insuranceNoHits": {
+    "description": "Nothing found in policy."
+  },
+  "insurancePage": "Page {n}",
+  "@insurancePage": {
+    "description": "Policy page number.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "insuranceExclusion": "Looks like an exclusion",
+  "@insuranceExclusion": {
+    "description": "Looks like an exclusion."
+  },
+  "insuranceDisclaimer": "For guidance only: what counts is your policy. If in doubt, call the assistance number.",
+  "@insuranceDisclaimer": {
+    "description": "Insurance disclaimer."
+  },
+  "insuranceNoText": "I couldn't read the text of this policy (is it a blurry photo?). Try adding it again as a PDF.",
+  "@insuranceNoText": {
+    "description": "Couldn't read the policy text."
   }
 }

@@ -29,6 +29,8 @@ import 'package:nomadiq/core/settings.dart';
 import 'package:nomadiq/features/camera/camera_device.dart';
 import 'package:nomadiq/features/camera/speaker.dart';
 import 'package:nomadiq/features/money/receipt_scanner.dart';
+import 'package:nomadiq/features/vault/doc_source.dart';
+import 'package:nomadiq/features/vault/vault.dart';
 
 /// Un auth-gateway falso, en memoria, que se comporta como el de verdad:
 /// una cuenta, pases largos de un solo uso y errores con sus códigos HTTP.
@@ -144,6 +146,9 @@ AppServices fakeServices(
   CameraFactory? newCamera,
   Speaker? speaker,
   ReceiptScanner? receipts,
+  Vault? vault,
+  DocSource? docSource,
+  DocTextReader? docReader,
 }) {
   final FakeGateway g = gateway ?? FakeGateway();
   final FakeMap m = map ?? FakeMap();
@@ -168,6 +173,9 @@ AppServices fakeServices(
     newCamera: newCamera,
     speaker: speaker ?? const SilentSpeaker(),
     receipts: receipts ?? const NoReceiptScanner(),
+    vault: vault,
+    docSource: docSource ?? const NoDocSource(),
+    docReader: docReader ?? const NoDocTextReader(),
   );
 }
 

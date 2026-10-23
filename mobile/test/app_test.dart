@@ -74,7 +74,7 @@ void main() {
     await pumpApp(tester, locale: 'es', initialLocation: Routes.home);
     await tester.tap(find.text('Bóveda'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Bóveda está en camino'), findsOneWidget);
+    expect(find.text('Toca para abrir con tu huella'), findsOneWidget);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.text('Hola, viajero'), findsOneWidget);

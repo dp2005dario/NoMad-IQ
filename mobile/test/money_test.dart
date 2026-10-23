@@ -18,6 +18,7 @@ import 'package:nomadiq/features/money/money_screen.dart';
 import 'package:nomadiq/features/money/receipt_parser.dart';
 import 'package:nomadiq/features/money/receipt_scanner.dart';
 import 'package:nomadiq/features/money/rooms_view.dart';
+import 'package:nomadiq/features/vault/vault.dart';
 
 import 'helpers.dart';
 
@@ -213,6 +214,7 @@ Future<MoneyBackend> pumpMoney(
   MemorySettingsStore? prefs,
   FakeLocation? location,
   OpenBooking? openBooking,
+  Vault? vault,
 }) async {
   tester.view.physicalSize = const Size(1200, 9000);
   tester.view.devicePixelRatio = 3;
@@ -233,6 +235,7 @@ Future<MoneyBackend> pumpMoney(
       prefs: prefs,
       location: location,
       openBooking: openBooking,
+      vault: vault,
     ),
   );
   return b;

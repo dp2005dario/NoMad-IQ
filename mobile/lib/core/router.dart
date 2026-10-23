@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../auth/session.dart';
+import '../features/vault/vault_screen.dart';
 import '../features/audioguide/audioguide_screen.dart';
 import '../features/camera/camera_screen.dart';
 import '../features/auth/sign_in_screen.dart';
@@ -38,6 +39,7 @@ abstract final class Routes {
   static const String group = '/group';
   static const String language = '/settings/language';
   static const String signIn = '/signin';
+  static const String vault = '/vault';
 
   /// La audioguía de una zona. El nombre va en la dirección para poder
   /// enseñarlo en el título mientras se carga el resto.
@@ -232,6 +234,11 @@ GoRouter buildRouter({
       path: '/group/trip/:id',
       builder: (BuildContext context, GoRouterState state) =>
           TripScreen(tripId: state.pathParameters['id'] ?? ''),
+    ),
+    GoRoute(
+      path: Routes.vault,
+      builder: (BuildContext context, GoRouterState state) =>
+          const VaultScreen(),
     ),
     GoRoute(
       path: '/soon/:feature',
