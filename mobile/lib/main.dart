@@ -1,4 +1,7 @@
 // Punto de entrada: lo primero que se ejecuta al abrir la app.
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'app.dart';
@@ -12,6 +15,10 @@ import 'core/settings.dart';
 import 'features/audioguide/guide_player.dart';
 import 'features/map/location.dart';
 import 'features/map/map_surface.dart';
+import 'features/push/firebase_push.dart';
+import 'features/push/notices.dart';
+import 'features/push/push_registrar.dart';
+import 'features/push/push_state.dart';
 
 Future<void> main() async {
   // Necesario antes de usar plugins (como el almacenamiento) en main().
@@ -24,6 +31,19 @@ Future<void> main() async {
   // Si quedó una sesión abierta, se recupera ANTES de la primera pantalla:
   // así quien ya entró no ve la Bienvenida ni un instante.
   await session.restore();
+  // Notificaciones en la barra del móvil (avisos push y modo viaje).
+  final bool mobile =
+      defaultTargetPlatform == TargetPlatform.android ||
+      defaultTargetPlatform == TargetPlatform.iOS;
+  final NoticeCenter notices = mobile
+      ? DeviceNotices.instance
+      : const SilentNotices();
+  if (notices is DeviceNotices) await notices.init();
+  // Avisos push: de momento solo Android (el notifier aún no habla con
+  // Apple). Si esta compilación no trae los datos de Firebase, sin push.
+  final bool push =
+      defaultTargetPlatform == TargetPlatform.android &&
+      await startFirebasePush();
   final AppServices services = AppServices(
     api: ApiClient(baseUrl: AppConfig.apiBaseUrl, session: session),
     location: const DeviceLocationSource(),
@@ -31,7 +51,20 @@ Future<void> main() async {
     newPlayer: JustAudioGuidePlayer.new,
     tilesUrl: AppConfig.tilesUrl,
     glyphsUrl: AppConfig.glyphsUrl,
+    notices: notices,
+    prefs: store,
   );
+  if (push) {
+    final PushRegistrar registrar = PushRegistrar(
+      devices: DevicesApi(services.api),
+      store: SecurePushStateStore(),
+      transport: const FirebasePushTransport(),
+      session: session,
+    )..start();
+    // Cada vez que se vuelve a la app, se comprueba el registro (si falló
+    // por falta de red, aquí se reintenta). Casi siempre no hace nada.
+    AppLifecycleListener(onResume: () => unawaited(registrar.sync()));
+  }
   runApp(
     NomadIqApp(
       settings: SettingsController(store),

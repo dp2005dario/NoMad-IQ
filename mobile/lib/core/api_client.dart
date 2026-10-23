@@ -19,6 +19,7 @@ enum ApiError {
   signedOut, // no hay cuenta (invitado) o la sesión caducó
   notFound, // 404: no existe... o aún no está lista (una audioguía)
   gone, // 410: existió pero se retiró (un audio antiguo)
+  conflict, // 409: choca con algo que ya existe (p. ej. un id de móvil ajeno)
   invalidInput, // 400/422: el servidor rechaza lo que mandamos
   rateLimited, // 429: demasiadas peticiones, esperar
   unavailable, // 5xx o una respuesta que no entendemos
@@ -66,6 +67,17 @@ class ApiClient {
 
   Future<Object?> postJson(String path, Object body) =>
       _send('POST', _base.resolve(path), jsonEncode(body));
+
+  /// PUT = "guarda esto con este nombre" (si ya existía, se sustituye).
+  Future<Object?> putJson(String path, Object body) =>
+      _send('PUT', _base.resolve(path), jsonEncode(body));
+
+  Future<Object?> delete(String path) =>
+      _send('DELETE', _base.resolve(path), null);
+
+  /// La sesión con la que se firman las peticiones (para quien necesite
+  /// enterarse de cuándo se entra o se sale).
+  SessionController get session => _session;
 
   void close() => _client.close();
 
@@ -142,6 +154,7 @@ class ApiClient {
     throw switch (status) {
       401 || 403 => const ApiException(ApiError.signedOut),
       404 => const ApiException(ApiError.notFound),
+      409 => const ApiException(ApiError.conflict),
       410 => const ApiException(ApiError.gone),
       400 || 422 => const ApiException(ApiError.invalidInput),
       429 => ApiException(

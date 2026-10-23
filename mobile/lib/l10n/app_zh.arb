@@ -104,5 +104,22 @@
   "guideOldVersion": "新版本正在录制中。你现在听到的是上一版。",
   "guideOtherLanguage": "暂不支持你的语言，当前为：{language}。",
   "guideAudioFailed": "无法播放音频。请检查网络连接。",
-  "guideSignIn": "语音导览仅限 NomadIQ 账户使用。登录即可收听。"
+  "guideSignIn": "语音导览仅限 NomadIQ 账户使用。登录即可收听。",
+  "pushGuideTitle": "附近有语音导览",
+  "pushGuideBody": "你刚进入一个有语音导览的区域。点按即可收听。",
+  "pushAirportTitle": "欢迎！",
+  "pushAirportBody": "你已到达机场。Flyra 帮你前往市区。",
+  "pushSafetyTitle": "安全提示",
+  "pushSafetyBody": "你正处于限制区域。请注意安全并遵守当地指示。",
+  "pushChannelZones": "区域和语音导览",
+  "pushChannelSafety": "安全提示",
+  "travelServiceTitle": "NomadIQ · 旅行模式",
+  "travelServiceText": "Flyra 正在留意你到访的区域。可在地图上关闭。",
+  "travelServiceChannel": "旅行模式",
+  "travelMode": "旅行模式",
+  "travelExplain": "即使关闭应用，也能收到语音导览和安全提醒。",
+  "travelOn": "旅行模式已开启：即使关闭应用我也会提醒你。",
+  "travelOff": "旅行模式已关闭。仅在应用打开时使用位置。",
+  "travelNeedsAccount": "旅行模式仅限 NomadIQ 账户。请登录后使用。",
+  "travelNeedsNotifications": "没有通知权限我无法提醒你。请在设置中开启。"
 }

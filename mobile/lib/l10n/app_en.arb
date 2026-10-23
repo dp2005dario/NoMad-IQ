@@ -220,5 +220,28 @@
     }
   },
   "guideAudioFailed": "The audio couldn't play. Check your connection.",
-  "guideSignIn": "Audio guides are for NomadIQ accounts. Sign in to listen."
+  "guideSignIn": "Audio guides are for NomadIQ accounts. Sign in to listen.",
+  "pushGuideTitle": "Audio guide nearby",
+  "pushGuideBody": "You've just entered a zone with an audio guide. Tap to listen.",
+  "pushAirportTitle": "Welcome!",
+  "pushAirportBody": "You've arrived at the airport. Flyra can help you get into town.",
+  "pushSafetyTitle": "Safety notice",
+  "pushSafetyBody": "You're in a restricted area. Take care and follow local signs.",
+  "pushChannelZones": "Zones and audio guides",
+  "pushChannelSafety": "Safety notices",
+  "travelServiceTitle": "NomadIQ · Travel mode",
+  "travelServiceText": "Flyra is watching for zones you visit. Turn it off from the map.",
+  "travelServiceChannel": "Travel mode",
+  "travelMode": "Travel mode",
+  "travelExplain": "Get audio guide and safety notices even with the app closed.",
+  "travelOn": "Travel mode on: I'll let you know even if you close the app.",
+  "travelOff": "Travel mode off. Location only while the app is open.",
+  "travelNeedsAccount": "Travel mode is for NomadIQ accounts. Sign in to use it.",
+  "travelNeedsNotifications": "Without notification permission I can't let you know. Enable it in Settings.",
+  "@pushGuideBody": {
+    "description": "Push notification when the server detects the user entered a city/tourist zone. The zone name is NOT available (privacy)."
+  },
+  "@travelServiceText": {
+    "description": "Text of the persistent Android notification shown while travel mode tracks location with the app closed."
+  }
 }

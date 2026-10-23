@@ -18,7 +18,11 @@ import 'package:nomadiq/core/router.dart';
 import 'package:nomadiq/core/services.dart';
 import 'package:nomadiq/features/audioguide/guide_player.dart';
 import 'package:nomadiq/features/map/geo.dart';
+import 'package:nomadiq/features/map/geo_api.dart';
 import 'package:nomadiq/features/map/location.dart';
+import 'package:nomadiq/features/map/location_tracker.dart';
+import 'package:nomadiq/features/map/position_reporter.dart';
+import 'package:nomadiq/features/push/notices.dart';
 import 'package:nomadiq/features/map/map_surface.dart';
 import 'package:nomadiq/core/settings.dart';
 
@@ -120,6 +124,8 @@ AppServices fakeServices(
   FakeLocation? location,
   FakeMap? map,
   List<FakePlayer>? players,
+  NoticeCenter? notices,
+  SettingsStore? prefs,
 }) {
   final FakeGateway g = gateway ?? FakeGateway();
   final FakeMap m = map ?? FakeMap();
@@ -138,7 +144,30 @@ AppServices fakeServices(
     },
     tilesUrl: Uri.parse('https://tiles.test/planet'),
     glyphsUrl: 'https://tiles.test/fonts/{fontstack}/{range}.pbf',
+    notices: notices ?? FakeNotices(),
+    prefs: prefs,
   );
+}
+
+/// Notificaciones falsas: el test decide el permiso y "toca" avisos.
+class FakeNotices implements NoticeCenter {
+  bool allow = true;
+  int asked = 0;
+  String? launch;
+  final StreamController<String> tapsController =
+      StreamController<String>.broadcast();
+
+  @override
+  Future<bool> requestPermission() async {
+    asked++;
+    return allow;
+  }
+
+  @override
+  Stream<String> get taps => tapsController.stream;
+
+  @override
+  Future<String?> launchRoute() async => launch;
 }
 
 /// Un GPS falso: el test decide la respuesta al permiso y manda posiciones.
@@ -148,6 +177,9 @@ class FakeLocation implements LocationSource {
   /// Lo que se contestará cuando la app pregunte.
   LocationAccess onRequest = LocationAccess.granted;
   int requests = 0;
+
+  /// Cuántas veces se abrió el GPS y si fue en modo viaje (con notificación).
+  final List<bool> watches = <bool>[];
   final StreamController<PositionFix> fixes =
       StreamController<PositionFix>.broadcast();
 
@@ -162,7 +194,10 @@ class FakeLocation implements LocationSource {
   }
 
   @override
-  Stream<PositionFix> watch() => fixes.stream;
+  Stream<PositionFix> watch({TrackingNotice? background}) {
+    watches.add(background != null);
+    return fixes.stream;
+  }
 
   @override
   Future<void> openSettings() async {}
@@ -254,6 +289,30 @@ class FakePlayer implements GuidePlayer {
   @override
   Future<void> dispose() async => disposed = true;
 }
+
+/// Un rastreador de ubicación con GPS falso, para probar el mapa y el modo
+/// viaje sin móvil.
+LocationTracker fakeTracker(
+  SessionController session, {
+  FakeLocation? location,
+  FakeGateway? gateway,
+  SettingsStore? prefs,
+  Future<bool> Function()? askNotifications,
+  PositionReporter Function(SendPositions send)? newReporter,
+}) => LocationTracker(
+  location: location ?? FakeLocation(),
+  geo: GeoApi(
+    ApiClient(
+      baseUrl: Uri.parse('http://gateway.test'),
+      session: session,
+      client: (gateway ?? FakeGateway()).client,
+    ),
+  ),
+  session: session,
+  prefs: prefs ?? MemorySettingsStore(),
+  askNotifications: askNotifications,
+  newReporter: newReporter,
+);
 
 SessionController newSession([FakeGateway? gateway, TokenStore? store]) =>
     SessionController(

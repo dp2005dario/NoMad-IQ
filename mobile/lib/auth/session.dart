@@ -31,6 +31,8 @@ class SessionController extends ChangeNotifier {
   String? _refreshToken; // copia en memoria del que está en el almacén seguro
   UserProfile? _user;
   Future<String>? _refreshing;
+  final List<Future<void> Function()> _beforeSignOut =
+      <Future<void> Function()>[];
 
   SessionStatus get status => _status;
   UserProfile? get user => _user;
@@ -72,6 +74,18 @@ class SessionController extends ChangeNotifier {
   /// y después se avisa al servidor para que anule los pases; si no hay
   /// conexión, el servidor los dará por caducados igualmente al expirar.
   Future<void> signOut() async {
+    // Antes de olvidar los pases, quien lo necesite se despide del servidor
+    // con la sesión aún abierta (p. ej. "no mandéis más avisos a este móvil").
+    // Cada despedida tiene 5 s como mucho: salir nunca se queda colgado.
+    for (final Future<void> Function() hook in List<Future<void> Function()>.of(
+      _beforeSignOut,
+    )) {
+      try {
+        await hook().timeout(const Duration(seconds: 5));
+      } on Object {
+        // Mejor esfuerzo: salir es más importante que despedirse.
+      }
+    }
     final String? access = _tokens?.accessToken;
     final String? refresh = _refreshToken;
     await _forget();
@@ -84,6 +98,10 @@ class SessionController extends ChangeNotifier {
       }
     }
   }
+
+  /// [hook] se ejecuta al pulsar "Cerrar sesión", justo ANTES de olvidar
+  /// los pases (todavía se puede llamar al servidor).
+  void addSignOutHook(Future<void> Function() hook) => _beforeSignOut.add(hook);
 
   /// Pase corto válido para llamar a cualquier servicio. Si le quedan menos
   /// de 30 s, se renueva antes. Si dos pantallas lo piden a la vez, se hace

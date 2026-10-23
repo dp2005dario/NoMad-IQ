@@ -104,5 +104,22 @@
   "guideOldVersion": "新しいバージョンを録音中です。現在は前のバージョンを再生しています。",
   "guideOtherLanguage": "まだあなたの言語には対応していません。言語：{language}",
   "guideAudioFailed": "音声を再生できませんでした。接続を確認してください。",
-  "guideSignIn": "音声ガイドは NomadIQ アカウント向けです。ログインして聴いてください。"
+  "guideSignIn": "音声ガイドは NomadIQ アカウント向けです。ログインして聴いてください。",
+  "pushGuideTitle": "近くに音声ガイドがあります",
+  "pushGuideBody": "音声ガイドのあるエリアに入りました。タップして聴きましょう。",
+  "pushAirportTitle": "ようこそ！",
+  "pushAirportBody": "空港に到着しました。Flyra が市内への移動をお手伝いします。",
+  "pushSafetyTitle": "安全のお知らせ",
+  "pushSafetyBody": "立入制限区域にいます。注意して現地の案内に従ってください。",
+  "pushChannelZones": "エリアと音声ガイド",
+  "pushChannelSafety": "安全のお知らせ",
+  "travelServiceTitle": "NomadIQ · 旅行モード",
+  "travelServiceText": "Flyra が訪れたエリアを見守っています。地図からオフにできます。",
+  "travelServiceChannel": "旅行モード",
+  "travelMode": "旅行モード",
+  "travelExplain": "アプリを閉じていても音声ガイドと安全のお知らせを受け取れます。",
+  "travelOn": "旅行モードをオンにしました。アプリを閉じてもお知らせします。",
+  "travelOff": "旅行モードをオフにしました。位置情報はアプリ使用中のみです。",
+  "travelNeedsAccount": "旅行モードは NomadIQ アカウント向けです。ログインしてご利用ください。",
+  "travelNeedsNotifications": "通知の許可がないとお知らせできません。設定で有効にしてください。"
 }

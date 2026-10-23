@@ -315,10 +315,8 @@ tu posición y la audioguía de cada zona.
 
 ### Lo que falta y por qué
 
-- **Ubicación con la app cerrada.** Necesita el permiso "todo el tiempo" y
-  un formulario de Google Play que explique para qué. Llega en otro PR,
-  junto a las geovallas nativas que acordamos (ver
-  [geo-engine](guia-geo-engine.md)).
+- **Ubicación con la app cerrada:** ya está, con el **modo viaje** (ver la
+  sección 9).
 - **Audioguías en iPhone.** El iPhone no reproduce `.opus` dentro de `.ogg`:
   el servidor tendrá que grabar también otro formato.
 - **Fotos reales de cada zona** (Wikimedia Commons, con sus créditos) y el
@@ -327,8 +325,116 @@ tu posición y la audioguía de cada zona.
 - **Rótulos en hindi.** MapLibre aún no dibuja bien la escritura devanagari:
   si falta el nombre en tu idioma, se usa el alfabeto latino.
 
-## 9. Lo siguiente
+## 9. Modo viaje y avisos push
+
+Con el **modo viaje** encendido, NomadIQ te avisa aunque cierres la app:
+"Audioguía cerca", "¡Bienvenido!" al llegar al aeropuerto o un aviso de
+seguridad en una zona restringida.
+
+### Qué ves
+
+| En pantalla | Qué hace |
+|---|---|
+| Botón **Modo viaje** (abajo a la izquierda en el Mapa) | Aparece con la ubicación activada y con cuenta. Al pulsarlo, Android pide permiso de notificaciones (Android 13+) |
+| Notificación fija "NomadIQ · Modo viaje" | Avisa de que la app sigue usando tu ubicación. No se puede quitar deslizando: así nunca te rastreamos sin que lo sepas |
+| "Audioguía cerca" | Al tocarla, se abre la audioguía de esa zona |
+
+### Cómo funciona (con analogías)
+
+- **El rastreador** (`lib/features/map/location_tracker.dart`) es ahora el
+  único que enciende el GPS, para toda la app (antes lo hacía el mapa).
+  - **Sin modo viaje:** GPS solo con la app en pantalla, como antes.
+  - **Con modo viaje:** sigue con la app cerrada gracias a un *servicio en
+    primer plano*: un "trabajo" que Android deja vivo porque enseña una
+    notificación fija.
+  - Pide algo menos de precisión (cada 50 m en vez de 20 m): basta para
+    saber en qué barrio estás, y la batería dura todo el día.
+  - Se recuerda entre aperturas: si lo dejaste encendido, sigue al abrir.
+- **Sin el permiso "todo el tiempo".** Como el modo viaje se enciende con la
+  app abierta, a Android le basta el permiso "mientras se usa la app". Así
+  nos ahorramos el formulario especial de Google Play.
+- **Cómo llega un aviso.** El servidor ve que entraste en una zona (con las
+  posiciones que manda el rastreador) y el **notifier** te manda el aviso
+  por **Firebase Cloud Messaging** (FCM, gratis), el "cartero" de Google.
+- **El aviso va cifrado SOLO para tu móvil** (`lib/features/push/`).
+  - Analogía: el móvil reparte **candados abiertos** (clave pública) y se
+    queda la **única llave** (clave privada). El notifier mete el aviso en
+    una caja, la cierra con tu candado y Google solo transporta la caja.
+  - La técnica se llama **HPKE** (un estándar, RFC 9180). El móvil la
+    implementa en `hpke.dart` y un test comprueba que abre exactamente lo
+    que cifra el notifier en Go.
+  - El aviso no lleva texto, solo el tipo ("zone_audioguide"). El móvil
+    escribe el texto en tu idioma. Google no sabe ni de qué trata.
+- **Registro del móvil** (`push_registrar.dart`). Al entrar en tu cuenta,
+  la app le dice al notifier: "este móvil (un número al azar) tiene este
+  token de Firebase y este candado".
+  - Solo repite el registro si algo cambia, o una vez por semana. Con
+    millones de usuarios, ahorra muchísimas peticiones.
+  - Cambia de llave cada 30 días y guarda la anterior un tiempo: un aviso
+    que ya venía de camino se sigue abriendo.
+  - Al **cerrar sesión**: baja en el servidor, se borran las llaves y
+    Firebase olvida el token. Un aviso que llegue después ya no se abre.
+- **Con la app cerrada**, Android arranca un "mini motor" solo para abrir
+  el aviso y enseñarlo. A propósito no renueva ningún pase desde ahí: el
+  pase largo es de un solo uso y dos motores renovando a la vez cerrarían
+  tu sesión.
+
+### Crear tu proyecto de Firebase (gratis, una vez)
+
+Sin estos datos la app funciona igual, pero sin avisos push.
+
+1. Entra en <https://console.firebase.google.com> con tu cuenta de Google y
+   pulsa **Crear un proyecto**. Llámalo, por ejemplo, `nomadiq`. Google
+   Analytics no hace falta.
+2. En el proyecto, pulsa el icono de **Android** ("Añadir app").
+   - **Nombre del paquete:** `com.nomadiq.app` (exactamente este).
+   - Pulsa **Registrar app**. El archivo `google-services.json` que te
+     ofrece **no hace falta**: sáltalo con **Siguiente** hasta terminar.
+3. Ve a ⚙️ **Configuración del proyecto** → pestaña **General**. En "Tus
+   apps" verás los datos. Copia `mobile/firebase.example.json` como
+   `mobile/firebase.json` (este no se sube a GitHub) y rellénalo:
+   - `NOMADIQ_FIREBASE_API_KEY` = "Clave de API web" (empieza por `AIza`).
+   - `NOMADIQ_FIREBASE_APP_ID` = "ID de la app" (empieza por `1:`).
+   - `NOMADIQ_FIREBASE_SENDER_ID` = "Número del proyecto".
+   - `NOMADIQ_FIREBASE_PROJECT_ID` = "ID del proyecto".
+4. Para el **notifier** (el servidor que manda los avisos): pestaña
+   **Cuentas de servicio** → **Generar nueva clave privada**. Ese archivo SÍ
+   es secreto: guárdalo fuera del repositorio y sigue
+   [la guía del notifier](../services/notifier/README.md)
+   (`FCM_PROJECT_ID` y `FCM_CREDENTIALS_FILE`).
+5. En VS Code, ejecuta la app con tus datos:
+   ```powershell
+   cd mobile
+   flutter run --dart-define-from-file=firebase.json
+   ```
+   O añade `"args": ["--dart-define-from-file=firebase.json"]` a tu
+   configuración de `.vscode/launch.json` para que F5 lo haga solo.
+
+### Probarlo en tu PC
+
+1. Entra con tu cuenta, ve a **Mapa**, pulsa **Activar ubicación** y luego
+   **Modo viaje**. Acepta el permiso de notificaciones.
+2. Sal de la app (botón de inicio del emulador). La notificación fija
+   "NomadIQ · Modo viaje" sigue ahí.
+3. Con `⋮` → **Location**, pon la Puerta del Sol (`40.41694, -3.70361`).
+   Si el notifier usa tu Firebase de verdad (paso 4 de arriba), en unos
+   segundos llega
+   "Audioguía cerca". Tócala y se abre la audioguía.
+4. Sin Firebase propio puedes ver los avisos que "se habrían mandado" en el
+   FCM falso del docker compose: <http://127.0.0.1:8099/messages> (ver la
+   guía del notifier).
+
+### Lo que falta y por qué
+
+- **Avisos push en iPhone.** El notifier aún no habla con Apple (APNs). El
+  modo viaje ya funciona en iPhone (con la "píldora" azul de ubicación).
+- **Geovallas nativas** (Android/iOS vigilando zonas sin GPS continuo): una
+  mejora de batería para más adelante. El modo viaje ya cubre la función.
+- **Icono propio de notificación** (una silueta blanca): de momento se usa
+  el de la app.
+
+## 10. Lo siguiente
 
 Cada PR sustituye una pantalla "Muy pronto" por la de verdad, siguiendo las
-maquetas, en este orden: ubicación con la app cerrada y avisos push, Vuelos
-con alertas de precio y Grupo con la negociación de Flyra.
+maquetas, en este orden: Vuelos con alertas de precio, Grupo con la
+negociación de Flyra, Cámara, Dinero y Bóveda.

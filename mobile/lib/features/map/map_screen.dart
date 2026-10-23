@@ -19,6 +19,7 @@ import '../../widgets/flyra_avatar.dart';
 import '../coming_soon/coming_soon_screen.dart';
 import 'geo.dart';
 import 'location.dart';
+import 'location_tracker.dart';
 import 'map_model.dart';
 import 'map_style.dart';
 import 'map_surface.dart';
@@ -44,9 +45,7 @@ class _MapScreenState extends State<MapScreen> {
   MapSurfaceController? _map;
   Timer? _idleDebounce;
   Timer? _lookTimer;
-  AppLifecycleListener? _lifecycle;
 
-  String _language = 'en';
   MapLook _chosenLook = MapLook.auto;
   bool _tilted = true;
   final TextEditingController _search = TextEditingController();
@@ -63,10 +62,6 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    _lifecycle = AppLifecycleListener(
-      onPause: () => unawaited(_model?.pause()),
-      onResume: () => unawaited(_model?.resumeLocation()),
-    );
     // El modo "auto" cambia solo al atardecer y al anochecer.
     _lookTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (_chosenLook == MapLook.auto && mounted) setState(() {});
@@ -77,7 +72,6 @@ class _MapScreenState extends State<MapScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _services = ServicesScope.of(context);
-    _language = Localizations.localeOf(context).languageCode;
     // Si el invitado crea su cuenta, el mapa se rehace con zonas y envío de
     // posiciones (que son solo para cuentas).
     final SessionStatus status = SessionScope.of(context).status;
@@ -90,10 +84,7 @@ class _MapScreenState extends State<MapScreen> {
     _modelFor = status;
     final MapModel model = MapModel(
       geo: status == SessionStatus.signedIn ? _services.geo : null,
-      location: _services.location,
-      // Se lee del campo (no del context): el último envío de posiciones
-      // puede ocurrir cuando la pantalla ya se ha cerrado.
-      language: () => _language,
+      tracker: _services.tracker,
       clock: widget.clock,
     )..onFocus = _focus;
     model.addListener(_onModel);
@@ -107,7 +98,6 @@ class _MapScreenState extends State<MapScreen> {
   void dispose() {
     _idleDebounce?.cancel();
     _lookTimer?.cancel();
-    _lifecycle?.dispose();
     _model?.removeListener(_onModel);
     _model?.dispose();
     _search.dispose();
@@ -219,6 +209,32 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  /// Encender o apagar el modo viaje, explicando qué falta si no se puede.
+  Future<void> _setTravel(bool on) async {
+    final TravelModeResult result = await _services.tracker.setTravelMode(on);
+    if (!mounted) return;
+    final AppLocalizations t = AppLocalizations.of(context);
+    final String text = switch (result) {
+      TravelModeResult.on => on ? t.travelOn : t.travelOff,
+      TravelModeResult.needsAccount => t.travelNeedsAccount,
+      TravelModeResult.needsLocation => t.mapLocationDenied,
+      TravelModeResult.needsNotifications => t.travelNeedsNotifications,
+    };
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(text),
+          action: result == TravelModeResult.needsNotifications
+              ? SnackBarAction(
+                  label: t.mapOpenSettings,
+                  onPressed: () => unawaited(_m.openLocationSettings()),
+                )
+              : null,
+        ),
+      );
+  }
+
   void _toggleTilt() {
     setState(() => _tilted = !_tilted);
     unawaited(_map?.setTilt(_tilted ? 55 : 0));
@@ -308,28 +324,38 @@ class _MapScreenState extends State<MapScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: Padding(
-                    padding: const EdgeInsetsDirectional.only(
-                      end: 16,
-                      bottom: 10,
-                    ),
-                    child: FloatingActionButton.small(
-                      heroTag: 'map-me',
-                      tooltip: t.mapMyLocation,
-                      elevation: 1,
-                      backgroundColor: NomadColors.surfaceHigh,
-                      foregroundColor: _m.tracking
-                          ? NomadColors.mint
-                          : NomadColors.text,
-                      onPressed: () => unawaited(_myLocation()),
-                      child: Icon(
-                        _m.tracking
-                            ? Icons.my_location_rounded
-                            : Icons.location_searching_rounded,
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(
+                    start: 16,
+                    end: 16,
+                    bottom: 10,
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      // El modo viaje solo tiene sentido con el GPS ya
+                      // encendido y con cuenta (el servidor avisa a cuentas).
+                      if (_m.tracking && _services.tracker.canTravel)
+                        _TravelChip(
+                          on: _services.tracker.travelMode,
+                          onChanged: (bool on) => unawaited(_setTravel(on)),
+                        ),
+                      const Spacer(),
+                      FloatingActionButton.small(
+                        heroTag: 'map-me',
+                        tooltip: t.mapMyLocation,
+                        elevation: 1,
+                        backgroundColor: NomadColors.surfaceHigh,
+                        foregroundColor: _m.tracking
+                            ? NomadColors.mint
+                            : NomadColors.text,
+                        onPressed: () => unawaited(_myLocation()),
+                        child: Icon(
+                          _m.tracking
+                              ? Icons.my_location_rounded
+                              : Icons.location_searching_rounded,
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
                 if (selected != null)
@@ -723,6 +749,39 @@ class _LocationCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// El interruptor del "modo viaje": avisos aunque cierres la app.
+class _TravelChip extends StatelessWidget {
+  const _TravelChip({required this.on, required this.onChanged});
+
+  final bool on;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    return Tooltip(
+      message: t.travelExplain,
+      child: FilterChip(
+        selected: on,
+        showCheckmark: false,
+        avatar: Icon(
+          Icons.luggage_rounded,
+          size: 18,
+          color: on ? NomadColors.background : NomadColors.mint,
+        ),
+        label: Text(t.travelMode),
+        labelStyle: TextStyle(
+          color: on ? NomadColors.background : NomadColors.text,
+          fontWeight: FontWeight.w600,
+        ),
+        backgroundColor: NomadColors.surfaceHigh,
+        selectedColor: NomadColors.mint,
+        onSelected: onChanged,
       ),
     );
   }

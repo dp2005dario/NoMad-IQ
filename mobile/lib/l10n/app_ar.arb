@@ -104,5 +104,22 @@
   "guideOldVersion": "يجري تسجيل نسخة أحدث. أنت تستمع إلى النسخة السابقة.",
   "guideOtherLanguage": "غير متوفر بلغتك بعد. إنه باللغة: {language}.",
   "guideAudioFailed": "تعذّر تشغيل الصوت. تحقّق من اتصالك.",
-  "guideSignIn": "الأدلة الصوتية متاحة لحسابات NomadIQ. سجّل الدخول للاستماع."
+  "guideSignIn": "الأدلة الصوتية متاحة لحسابات NomadIQ. سجّل الدخول للاستماع.",
+  "pushGuideTitle": "دليل صوتي قريب",
+  "pushGuideBody": "دخلت للتو منطقة فيها دليل صوتي. اضغط للاستماع.",
+  "pushAirportTitle": "أهلاً بك!",
+  "pushAirportBody": "وصلت إلى المطار. فلايرا تساعدك في الوصول إلى المدينة.",
+  "pushSafetyTitle": "تنبيه أمان",
+  "pushSafetyBody": "أنت في منطقة محظورة. كن حذراً واتبع الإرشادات المحلية.",
+  "pushChannelZones": "المناطق والأدلة الصوتية",
+  "pushChannelSafety": "تنبيهات الأمان",
+  "travelServiceTitle": "NomadIQ · وضع السفر",
+  "travelServiceText": "فلايرا تتابع المناطق التي تزورها. أوقفه من الخريطة.",
+  "travelServiceChannel": "وضع السفر",
+  "travelMode": "وضع السفر",
+  "travelExplain": "تنبيهات الأدلة الصوتية والأمان حتى مع إغلاق التطبيق.",
+  "travelOn": "تم تشغيل وضع السفر: سأنبهك حتى لو أغلقت التطبيق.",
+  "travelOff": "تم إيقاف وضع السفر. الموقع فقط والتطبيق مفتوح.",
+  "travelNeedsAccount": "وضع السفر لحسابات NomadIQ. سجّل الدخول لاستخدامه.",
+  "travelNeedsNotifications": "بدون إذن الإشعارات لا أستطيع تنبيهك. فعّله من الإعدادات."
 }
