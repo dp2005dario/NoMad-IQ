@@ -8,6 +8,12 @@
     PUT  /v1/expense-groups/{id}/expenses/{e}/items/{i}/claim   "me lo pedí yo" (o ya no)
     DELETE /v1/expense-groups/{id}/expenses/{e}      borrar un gasto (quien lo apuntó o lo pagó)
     POST /v1/expense-groups/{id}/payments            "Saldar": apuntar que le pagaste a alguien
+                                                     (o que pusiste dinero en el bote común)
+    PUT  /v1/expense-groups/{id}/kitty               cuánto se pide a cada uno para el bote común
+    PUT  /v1/expense-groups/{id}/weights             el reparto habitual (modo pareja: 60/40)
+
+El bote común es el asiento 0 ("la hucha"): pagar con él es un gasto con
+payer_seat 0 y poner dinero es un pago con to_seat 0.
 
 Privacidad: nunca se devuelve el user_id de nadie; cada uno es un asiento con
 el nombre que eligió. A quien no es del bote se le responde 404.
@@ -23,7 +29,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Response
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
 from ai_orchestrator.domain import CurrencyCode
-from ai_orchestrator.expenses.domain import MAX_ITEMS, Item, Split, balances, settle, shares
+from ai_orchestrator.expenses.domain import KITTY, MAX_ITEMS, Item, Split, balances, kitty, settle, shares
 from ai_orchestrator.expenses.store import (
     ExpenseNotFoundError,
     ExpenseRecord,
@@ -54,6 +60,8 @@ def _clean(value: str) -> str:
 Name = Annotated[str, Field(min_length=1, max_length=40), AfterValidator(_clean)]
 Title = Annotated[str, Field(min_length=1, max_length=80), AfterValidator(_clean)]
 Seat = Annotated[int, Field(ge=1, le=20)]
+# Un asiento o el bote común (0).
+SeatOrKitty = Annotated[int, Field(ge=0, le=20)]
 Minor = Annotated[int, Field(ge=1, le=MAX_MINOR)]
 
 
@@ -86,9 +94,10 @@ class CreateExpense(BaseModel):
 
     title: Title
     amount_minor: Minor
-    payer_seat: Seat
+    payer_seat: SeatOrKitty
     split: Split = "equal"
     participants: list[Seat] = Field(min_length=1, max_length=20)
+    weights: list[Annotated[int, Field(ge=1, le=100)]] = Field(default_factory=list, max_length=20)
     items: list[ItemIn] = Field(default_factory=list, max_length=MAX_ITEMS)
     spent_on: date
     original_minor: Minor | None = None
@@ -112,8 +121,31 @@ class Claim(BaseModel):
 class CreatePayment(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    to_seat: Seat
+    # 0 = poner dinero en el bote común.
+    to_seat: SeatOrKitty = KITTY
     amount_minor: Minor
+    # True = el bote común TE devuelve dinero (to_seat se ignora: eres tú).
+    from_kitty: bool = False
+
+
+class KittyAsk(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    ask_minor: Minor | None
+
+
+class WeightIn(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    seat: Seat
+    weight: int = Field(ge=1, le=100)
+
+
+class DefaultWeights(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    # Vacío = volver a partes iguales.
+    weights: list[WeightIn] = Field(default_factory=list, max_length=20)
 
 
 class MemberView(BaseModel):
@@ -148,6 +180,7 @@ class ExpenseView(BaseModel):
     created_at: datetime
     original_minor: int | None
     original_currency: str | None
+    weights: list[int]
 
     @classmethod
     def of(cls, e: ExpenseRecord) -> ExpenseView:
@@ -168,6 +201,7 @@ class ExpenseView(BaseModel):
             created_at=e.created_at,
             original_minor=e.original_minor,
             original_currency=e.original_currency,
+            weights=list(e.weights),
         )
 
 
@@ -201,6 +235,20 @@ class TransferView(BaseModel):
     amount_minor: int
 
 
+class KittyView(BaseModel):
+    # Lo que queda en la hucha (puede ser negativo si se gastó de más).
+    left_minor: int
+    spent_minor: int
+    ask_minor: int | None
+    # Lo que ha puesto cada uno (descontando lo que el bote le devolvió).
+    contributed: list[ShareView]
+
+
+class WeightView(BaseModel):
+    seat: int
+    weight: int
+
+
 class GroupView(BaseModel):
     group_id: str
     title: str
@@ -213,6 +261,9 @@ class GroupView(BaseModel):
     balances: list[BalanceView]
     transfers: list[TransferView]
     total_minor: int
+    # Solo si el bote común se ha usado o se ha pedido dinero para él.
+    kitty: KittyView | None
+    default_weights: list[WeightView]
 
     @classmethod
     def of(cls, g: GroupRecord, user_id: str) -> GroupView:
@@ -223,6 +274,18 @@ class GroupView(BaseModel):
             [e.as_expense() for e in g.expenses],
             [p.as_payment() for p in g.payments],
         )
+        put, spent = kitty([e.as_expense() for e in g.expenses], [p.as_payment() for p in g.payments])
+        used = bool(put) or spent > 0 or g.kitty_ask_minor is not None
+        kitty_view = (
+            KittyView(
+                left_minor=-bal.get(KITTY, 0),
+                spent_minor=spent,
+                ask_minor=g.kitty_ask_minor,
+                contributed=[ShareView(seat=m.seat, amount_minor=put.get(m.seat, 0)) for m in g.members],
+            )
+            if used
+            else None
+        )
         return cls(
             group_id=g.group_id,
             title=g.title,
@@ -232,12 +295,15 @@ class GroupView(BaseModel):
             members=[MemberView(seat=m.seat, name=m.name, me=m.seat == me) for m in g.members],
             expenses=[ExpenseView.of(e) for e in g.expenses],
             payments=[PaymentView.of(p) for p in g.payments],
-            balances=[BalanceView(seat=s, balance_minor=b) for s, b in sorted(bal.items())],
+            # El bote común no es una persona: su saldo va en "kitty".
+            balances=[BalanceView(seat=s, balance_minor=b) for s, b in sorted(bal.items()) if s != KITTY],
             transfers=[
                 TransferView(from_seat=t.from_seat, to_seat=t.to_seat, amount_minor=t.amount_minor)
                 for t in settle(bal)
             ],
             total_minor=sum(e.amount_minor for e in g.expenses),
+            kitty=kitty_view,
+            default_weights=[WeightView(seat=s, weight=w) for s, w in g.default_weights],
         )
 
 
@@ -328,6 +394,7 @@ def expense_router(store: ExpenseStore) -> APIRouter:
             ),
             original_minor=body.original_minor,
             original_currency=body.original_currency,
+            weights=tuple(body.weights),
         )
         try:
             return ExpenseView.of(await store.add_expense(str(group_id), principal.user_id, new))
@@ -374,12 +441,37 @@ def expense_router(store: ExpenseStore) -> APIRouter:
     ) -> PaymentView:
         try:
             record = await store.add_payment(
-                str(group_id), principal.user_id, body.to_seat, body.amount_minor
+                str(group_id), principal.user_id, body.to_seat, body.amount_minor, from_kitty=body.from_kitty
             )
         except GroupNotFoundError as exc:
             raise HTTPException(status_code=404, detail="bote no encontrado") from exc
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return PaymentView.of(record)
+
+    @router.put("/{group_id}/kitty", status_code=204)
+    async def set_kitty(
+        principal: Annotated[Principal, Depends(current_principal)], group_id: GroupId, body: KittyAsk
+    ) -> Response:
+        try:
+            await store.set_kitty_ask(str(group_id), principal.user_id, body.ask_minor)
+        except GroupNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="bote no encontrado") from exc
+        return Response(status_code=204)
+
+    @router.put("/{group_id}/weights", status_code=204)
+    async def set_weights(
+        principal: Annotated[Principal, Depends(current_principal)], group_id: GroupId, body: DefaultWeights
+    ) -> Response:
+        weights = {w.seat: w.weight for w in body.weights}
+        if len(weights) != len(body.weights):
+            raise HTTPException(status_code=400, detail="asientos repetidos")
+        try:
+            await store.set_default_weights(str(group_id), principal.user_id, weights)
+        except GroupNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="bote no encontrado") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return Response(status_code=204)
 
     return router

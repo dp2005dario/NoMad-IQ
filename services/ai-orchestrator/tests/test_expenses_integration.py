@@ -110,3 +110,37 @@ async def test_unknown_code_and_full_group(pool: asyncpg.Pool[asyncpg.Record]) -
     await asyncio.gather(*(store.join(group.invite_code, person(), f"P{i}") for i in range(19)))
     with pytest.raises(GroupFullError):
         await store.join(group.invite_code, person(), "Sobra")
+
+
+async def test_kitty_and_weights(pool: asyncpg.Pool[asyncpg.Record]) -> None:
+    store = PostgresExpenses(pool)
+    ana, dario = person(), person()
+    group = await store.create(ana, "Ana", "Lisboa", "EUR")
+    await store.join(group.invite_code, dario, "Darío")
+    await store.set_kitty_ask(group.group_id, ana, 10000)
+    await store.add_payment(group.group_id, ana, 0, 10000)
+    await store.add_payment(group.group_id, dario, 0, 10000)
+    # El bote (asiento 0) paga un tuk-tuk; luego un gasto de pareja 60/40.
+    await store.add_expense(
+        group.group_id,
+        dario,
+        NewExpense("Tuk-tuk", 4800, 0, "equal", (1, 2), date(2026, 10, 23)),
+    )
+    await store.add_expense(
+        group.group_id,
+        ana,
+        NewExpense("Cena", 10000, 1, "weights", (1, 2), date(2026, 10, 23), weights=(60, 40)),
+    )
+    await store.set_default_weights(group.group_id, ana, {1: 60, 2: 40})
+    back = await store.add_payment(group.group_id, dario, 1, 1000, from_kitty=True)
+    assert (back.from_seat, back.to_seat) == (0, 2)
+    loaded = await store.get_for_member(group.group_id, ana)
+    assert loaded is not None
+    assert loaded.kitty_ask_minor == 10000
+    assert loaded.default_weights == ((1, 60), (2, 40))
+    assert {e.title: e.weights for e in loaded.expenses} == {"Tuk-tuk": (), "Cena": (60, 40)}
+    bal = balances(
+        (1, 2), [e.as_expense() for e in loaded.expenses], [p.as_payment() for p in loaded.payments]
+    )
+    # Hucha: 200 puestos - 48 de tuk-tuk - 10 devueltos = 142.
+    assert -bal[0] == 14200

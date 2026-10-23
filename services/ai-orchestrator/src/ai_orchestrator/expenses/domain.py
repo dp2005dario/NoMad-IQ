@@ -17,7 +17,11 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
-Split = Literal["equal", "items"]
+Split = Literal["equal", "items", "weights"]
+
+# El bote común ("la hucha") es el asiento 0: poner dinero en él es un pago
+# al 0 y pagar con él es un gasto cuyo pagador es el 0.
+KITTY = 0
 
 MAX_MEMBERS = 20
 MAX_ITEMS = 100
@@ -40,6 +44,9 @@ class Expense:
     split: Split
     participants: tuple[int, ...]
     items: tuple[Item, ...] = ()
+    # Con split "weights": un peso por participante, en el mismo orden
+    # (modo pareja "según sueldo": 60 y 40).
+    weights: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,7 +88,9 @@ def divide(total: int, weights: dict[int, int]) -> dict[int, int]:
 def shares(expense: Expense) -> dict[int, int]:
     """Cuánto le toca pagar a cada asiento de este gasto (suma = el total)."""
     people = tuple(dict.fromkeys(expense.participants))
-    if expense.split == "equal" or not expense.items:
+    if expense.split == "weights" and len(expense.weights) == len(expense.participants):
+        return divide(expense.amount_minor, dict(zip(expense.participants, expense.weights, strict=True)))
+    if expense.split != "items" or not expense.items:
         return divide(expense.amount_minor, dict.fromkeys(people, 1))
     # Por platos: primero, lo que se ha pedido cada uno según el ticket.
     # Una línea pedida por dos se parte entre los dos; una sin dueño, entre
@@ -141,15 +150,34 @@ def settle(balance: dict[int, int]) -> list[Transfer]:
     return out
 
 
+def kitty(expenses: Iterable[Expense], payments: Iterable[Payment]) -> tuple[dict[int, int], int]:
+    """El bote común: (lo que ha puesto cada asiento, lo gastado con él)."""
+    put: dict[int, int] = {}
+    for p in payments:
+        if p.to_seat == KITTY:
+            put[p.from_seat] = put.get(p.from_seat, 0) + p.amount_minor
+        elif p.from_seat == KITTY:
+            # El bote le devuelve a alguien lo que sobró.
+            put[p.to_seat] = put.get(p.to_seat, 0) - p.amount_minor
+    spent = sum(e.amount_minor for e in expenses if e.payer_seat == KITTY)
+    return put, spent
+
+
 def check_expense(expense: Expense, seats: Sequence[int]) -> None:
     """Errores de sentido común (ValueError) antes de guardar un gasto."""
     known = set(seats)
-    if expense.payer_seat not in known:
+    if expense.payer_seat not in known and expense.payer_seat != KITTY:
         raise ValueError("quien pagó no está en el bote")
     if not expense.participants or any(s not in known for s in expense.participants):
         raise ValueError("participantes que no están en el bote")
     if expense.split == "items" and not expense.items:
         raise ValueError("para repartir por platos hacen falta las líneas del ticket")
+    if expense.split == "weights" and (
+        len(expense.weights) != len(expense.participants) or any(not 1 <= w <= 100 for w in expense.weights)
+    ):
+        raise ValueError("hace falta un peso (1-100) por participante")
+    if expense.split != "weights" and expense.weights:
+        raise ValueError("los pesos solo valen para repartir con pesos")
     for item in expense.items:
         if any(s not in expense.participants for s in item.claimed_by):
             raise ValueError("una línea pedida por alguien que no participa")

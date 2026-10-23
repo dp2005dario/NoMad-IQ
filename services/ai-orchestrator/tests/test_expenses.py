@@ -21,6 +21,7 @@ from ai_orchestrator.expenses.domain import (
     balances,
     check_expense,
     divide,
+    kitty,
     settle,
     shares,
 )
@@ -41,6 +42,8 @@ DARIO = "11111111-1111-4111-8111-111111111111"
 ALEX = "22222222-2222-4222-8222-222222222222"
 MARTA = "33333333-3333-4333-8333-333333333333"
 STRANGER = "44444444-4444-4444-8444-444444444444"
+ANA = MARTA
+BASE = "/v1/expense-groups"
 
 # --- Las cuentas -------------------------------------------------------------------------
 
@@ -154,7 +157,7 @@ class MemoryExpenses:
     async def add_expense(self, group_id: str, user_id: str, new: NewExpense) -> ExpenseRecord:
         g = self._find(group_id, user_id)
         check_expense(
-            Expense(new.amount_minor, new.payer_seat, new.split, new.participants, new.items),
+            Expense(new.amount_minor, new.payer_seat, new.split, new.participants, new.items, new.weights),
             [m.seat for m in g.members],
         )
         rec = ExpenseRecord(
@@ -170,6 +173,7 @@ class MemoryExpenses:
             NOW,
             new.original_minor,
             new.original_currency,
+            new.weights,
         )
         self.groups[group_id] = replace(g, expenses=(rec, *g.expenses))
         return rec
@@ -202,15 +206,28 @@ class MemoryExpenses:
         self.groups[group_id] = replace(g, expenses=tuple(x for x in g.expenses if x is not e))
 
     async def add_payment(
-        self, group_id: str, user_id: str, to_seat: int, amount_minor: int
+        self, group_id: str, user_id: str, to_seat: int, amount_minor: int, *, from_kitty: bool = False
     ) -> PaymentRecord:
         g = self._find(group_id, user_id)
         me = g.seat_of(user_id) or 0
-        if to_seat == me or to_seat not in [m.seat for m in g.members]:
+        payer = 0 if from_kitty else me
+        if from_kitty:
+            to_seat = me
+        elif to_seat == me or (to_seat != 0 and to_seat not in [m.seat for m in g.members]):
             raise ValueError("a quién pagas no está en el bote")
-        p = PaymentRecord(str(uuid.uuid4()), me, to_seat, amount_minor, NOW)
+        p = PaymentRecord(str(uuid.uuid4()), payer, to_seat, amount_minor, NOW)
         self.groups[group_id] = replace(g, payments=(p, *g.payments))
         return p
+
+    async def set_kitty_ask(self, group_id: str, user_id: str, ask_minor: int | None) -> None:
+        g = self._find(group_id, user_id)
+        self.groups[group_id] = replace(g, kitty_ask_minor=ask_minor)
+
+    async def set_default_weights(self, group_id: str, user_id: str, weights: dict[int, int]) -> None:
+        g = self._find(group_id, user_id)
+        if any(s not in [m.seat for m in g.members] for s in weights):
+            raise ValueError("pesos de asientos que no están en el bote")
+        self.groups[group_id] = replace(g, default_weights=tuple(sorted(weights.items())))
 
 
 def h(user: str) -> dict[str, str]:
@@ -316,3 +333,65 @@ async def test_bad_input() -> None:
             )
         ).status_code == 400
         assert (await c.get("/v1/expense-groups")).status_code == 401
+
+
+def test_weights_and_kitty_domain() -> None:
+    # Modo pareja "según sueldo": 60 % y 40 %.
+    couple = Expense(10001, 1, "weights", (1, 2), weights=(60, 40))
+    assert shares(couple) == {1: 6001, 2: 4000}
+    with pytest.raises(ValueError):
+        check_expense(Expense(100, 1, "weights", (1, 2), weights=(60,)), [1, 2])
+    with pytest.raises(ValueError):
+        check_expense(Expense(100, 1, "equal", (1, 2), weights=(1, 1)), [1, 2])
+    # Bote común: cada uno pone 100 y el bote paga una cena de 150 entre 3.
+    pays = [Payment(s, 0, 10000) for s in (1, 2, 3)]
+    dinner = Expense(15000, 0, "equal", (1, 2, 3))
+    check_expense(dinner, [1, 2, 3])
+    put, spent = kitty([dinner], pays)
+    assert put == {1: 10000, 2: 10000, 3: 10000} and spent == 15000
+    bal = balances((1, 2, 3), [dinner], pays)
+    assert bal[0] == -15000  # quedan 150 en la hucha
+    assert bal[1] == bal[2] == bal[3] == 5000
+    # Al cerrar, el bote devuelve a cada uno lo suyo.
+    assert sorted((t.from_seat, t.to_seat, t.amount_minor) for t in settle(bal)) == [
+        (0, 1, 5000),
+        (0, 2, 5000),
+        (0, 3, 5000),
+    ]
+
+
+async def test_kitty_and_couple_api() -> None:
+    store = MemoryExpenses()
+    async with client(store) as c:
+        gid = (
+            await c.post(BASE, json={"title": "Lisboa", "currency": "EUR", "my_name": "Ana"}, headers=h(ANA))
+        ).json()["group_id"]
+        await c.post(f"{BASE}/join", json={"code": "7K2M9QXD", "my_name": "Darío"}, headers=h(DARIO))
+        assert (await c.get(f"{BASE}/{gid}", headers=h(ANA))).json()["kitty"] is None
+        assert (
+            await c.put(f"{BASE}/{gid}/kitty", json={"ask_minor": 10000}, headers=h(ANA))
+        ).status_code == 204
+        for who in (ANA, DARIO):
+            ok = await c.post(f"{BASE}/{gid}/payments", json={"amount_minor": 10000}, headers=h(who))
+            assert ok.status_code == 201 and ok.json()["to_seat"] == 0
+        spend = {**DINNER, "payer_seat": 0, "participants": [1, 2], "split": "equal", "items": []}
+        assert (await c.post(f"{BASE}/{gid}/expenses", json=spend, headers=h(DARIO))).status_code == 201
+        view = (await c.get(f"{BASE}/{gid}", headers=h(ANA))).json()
+        assert view["kitty"]["left_minor"] == 20000 - 8600
+        assert view["kitty"]["ask_minor"] == 10000
+        assert [b["seat"] for b in view["balances"]] == [1, 2]
+        # El bote me devuelve lo que sobra.
+        back = await c.post(
+            f"{BASE}/{gid}/payments", json={"amount_minor": 5700, "from_kitty": True}, headers=h(ANA)
+        )
+        assert back.json()["from_seat"] == 0 and back.json()["to_seat"] == 1
+        # Modo pareja: reparto habitual 60/40 y un gasto con pesos.
+        w = {"weights": [{"seat": 1, "weight": 60}, {"seat": 2, "weight": 40}]}
+        assert (await c.put(f"{BASE}/{gid}/weights", json=w, headers=h(ANA))).status_code == 204
+        couple = {**spend, "payer_seat": 1, "split": "weights", "weights": [60, 40], "amount_minor": 10000}
+        made = (await c.post(f"{BASE}/{gid}/expenses", json=couple, headers=h(ANA))).json()
+        assert made["shares"] == [{"seat": 1, "amount_minor": 6000}, {"seat": 2, "amount_minor": 4000}]
+        view = (await c.get(f"{BASE}/{gid}", headers=h(DARIO))).json()
+        assert view["default_weights"] == [{"seat": 1, "weight": 60}, {"seat": 2, "weight": 40}]
+        bad = {**couple, "weights": [60]}
+        assert (await c.post(f"{BASE}/{gid}/expenses", json=bad, headers=h(ANA))).status_code == 400

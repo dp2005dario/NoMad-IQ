@@ -19,6 +19,7 @@ from typing import Protocol
 import asyncpg
 
 from ai_orchestrator.expenses.domain import (
+    KITTY,
     MAX_EXPENSES,
     MAX_MEMBERS,
     Expense,
@@ -75,6 +76,7 @@ class ExpenseRecord:
     created_at: datetime
     original_minor: int | None = None
     original_currency: str | None = None
+    weights: tuple[int, ...] = ()
 
     def as_expense(self) -> Expense:
         return Expense(
@@ -83,6 +85,7 @@ class ExpenseRecord:
             split=self.split,
             participants=self.participants,
             items=self.items,
+            weights=self.weights,
         )
 
 
@@ -108,6 +111,10 @@ class GroupRecord:
     members: tuple[Member, ...]
     expenses: tuple[ExpenseRecord, ...] = ()
     payments: tuple[PaymentRecord, ...] = ()
+    # Bote común: cuánto se pide a cada uno (None = sin pedir).
+    kitty_ask_minor: int | None = None
+    # Reparto habitual (modo pareja): asiento -> peso. Vacío = a partes iguales.
+    default_weights: tuple[tuple[int, int], ...] = ()
 
     def seat_of(self, user_id: str) -> int | None:
         return next((m.seat for m in self.members if m.user_id == user_id), None)
@@ -124,6 +131,7 @@ class NewExpense:
     items: tuple[Item, ...] = field(default=())
     original_minor: int | None = None
     original_currency: str | None = None
+    weights: tuple[int, ...] = ()
 
 
 class ExpenseStore(Protocol):
@@ -144,8 +152,12 @@ class ExpenseStore(Protocol):
     async def delete_expense(self, group_id: str, expense_id: str, user_id: str) -> None: ...
 
     async def add_payment(
-        self, group_id: str, user_id: str, to_seat: int, amount_minor: int
+        self, group_id: str, user_id: str, to_seat: int, amount_minor: int, *, from_kitty: bool = False
     ) -> PaymentRecord: ...
+
+    async def set_kitty_ask(self, group_id: str, user_id: str, ask_minor: int | None) -> None: ...
+
+    async def set_default_weights(self, group_id: str, user_id: str, weights: dict[int, int]) -> None: ...
 
 
 class PostgresExpenses:
@@ -245,7 +257,9 @@ class PostgresExpenses:
                 seats = await self._lock_seats(conn, group_id, user_id)
                 me = seats[user_id]
                 check_expense(
-                    Expense(new.amount_minor, new.payer_seat, new.split, new.participants, new.items),
+                    Expense(
+                        new.amount_minor, new.payer_seat, new.split, new.participants, new.items, new.weights
+                    ),
                     list(seats.values()),
                 )
                 count = await conn.fetchval(
@@ -257,8 +271,9 @@ class PostgresExpenses:
                     """
                     INSERT INTO ai.expenses
                         (expense_id, group_id, title, amount_minor, payer_seat, split, participants,
-                         original_minor, original_currency, spent_on, created_by)
-                    VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7::smallint[], $8, $9, $10, $11)
+                         original_minor, original_currency, spent_on, created_by, weights)
+                    VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7::smallint[], $8, $9, $10, $11,
+                            $12::smallint[])
                     """,
                     expense_id,
                     group_id,
@@ -271,6 +286,7 @@ class PostgresExpenses:
                     new.original_currency,
                     new.spent_on,
                     me,
+                    list(new.weights) or None,
                 )
                 await conn.executemany(
                     "INSERT INTO ai.expense_items (expense_id, idx, name, qty, price_minor, claimed_by) "
@@ -340,29 +356,68 @@ class PostgresExpenses:
             raise StoreError(f"borrar gasto: {exc}") from exc
 
     async def add_payment(
-        self, group_id: str, user_id: str, to_seat: int, amount_minor: int
+        self, group_id: str, user_id: str, to_seat: int, amount_minor: int, *, from_kitty: bool = False
     ) -> PaymentRecord:
+        """Apunta un pago. Tú solo puedes apuntar lo que pagas TÚ (a alguien o
+        al bote común) o lo que el bote común TE devuelve a ti."""
         payment_id = str(uuid.uuid4())
         try:
             async with self._pool.acquire() as conn, conn.transaction():
                 seats = await self._lock_seats(conn, group_id, user_id)
                 me = seats[user_id]
-                if to_seat not in seats.values() or to_seat == me:
-                    raise ValueError("a quién pagas no está en el bote")
+                if from_kitty:
+                    payer, to_seat = KITTY, me
+                else:
+                    payer = me
+                    if to_seat == me or (to_seat not in seats.values() and to_seat != KITTY):
+                        raise ValueError("a quién pagas no está en el bote")
                 created_at = await conn.fetchval(
                     "INSERT INTO ai.expense_payments "
                     "(payment_id, group_id, from_seat, to_seat, amount_minor) "
                     "VALUES ($1::uuid, $2::uuid, $3, $4, $5) RETURNING created_at",
                     payment_id,
                     group_id,
-                    me,
+                    payer,
                     to_seat,
                     amount_minor,
                 )
                 await self._touch(conn, group_id)
         except _DB_ERRORS as exc:
             raise StoreError(f"apuntar pago: {exc}") from exc
-        return PaymentRecord(payment_id, me, to_seat, amount_minor, created_at)
+        return PaymentRecord(payment_id, payer, to_seat, amount_minor, created_at)
+
+    async def set_kitty_ask(self, group_id: str, user_id: str, ask_minor: int | None) -> None:
+        try:
+            async with self._pool.acquire() as conn, conn.transaction():
+                await self._lock_seats(conn, group_id, user_id)
+                await conn.execute(
+                    "UPDATE ai.expense_groups SET kitty_ask_minor = $2, updated_at = now() "
+                    "WHERE group_id = $1::uuid",
+                    group_id,
+                    ask_minor,
+                )
+        except _DB_ERRORS as exc:
+            raise StoreError(f"pedir para el bote: {exc}") from exc
+
+    async def set_default_weights(self, group_id: str, user_id: str, weights: dict[int, int]) -> None:
+        try:
+            async with self._pool.acquire() as conn, conn.transaction():
+                seats = await self._lock_seats(conn, group_id, user_id)
+                if any(s not in seats.values() for s in weights) or any(
+                    not 1 <= w <= 100 for w in weights.values()
+                ):
+                    raise ValueError("pesos de asientos que no están en el bote")
+                # Posición i = asiento i+1 (0 = sin peso: a partes iguales).
+                top = max(seats.values())
+                array = [weights.get(seat, 0) for seat in range(1, top + 1)] if weights else None
+                await conn.execute(
+                    "UPDATE ai.expense_groups SET default_weights = $2::smallint[], updated_at = now() "
+                    "WHERE group_id = $1::uuid",
+                    group_id,
+                    array,
+                )
+        except _DB_ERRORS as exc:
+            raise StoreError(f"guardar el reparto: {exc}") from exc
 
     # --- Ayudantes ---------------------------------------------------------------------
 
@@ -387,7 +442,8 @@ class PostgresExpenses:
 
     async def _load(self, conn: Conn, group_id: str) -> GroupRecord | None:
         row = await conn.fetchrow(
-            "SELECT group_id, title, currency, invite_code, created_at FROM ai.expense_groups "
+            "SELECT group_id, title, currency, invite_code, created_at, kitty_ask_minor, default_weights "
+            "FROM ai.expense_groups "
             "WHERE group_id = $1::uuid",
             group_id,
         )
@@ -417,6 +473,8 @@ class PostgresExpenses:
                 )
                 for p in payments
             ),
+            kitty_ask_minor=row["kitty_ask_minor"],
+            default_weights=tuple((i + 1, w) for i, w in enumerate(row["default_weights"] or ()) if w > 0),
         )
 
     async def _expenses(
@@ -424,7 +482,7 @@ class PostgresExpenses:
     ) -> list[ExpenseRecord]:
         rows = await conn.fetch(
             "SELECT expense_id, title, amount_minor, payer_seat, split, participants, original_minor, "
-            "original_currency, spent_on, created_by, created_at FROM ai.expenses "
+            "original_currency, spent_on, created_by, created_at, weights FROM ai.expenses "
             "WHERE group_id = $1::uuid AND ($2::uuid IS NULL OR expense_id = $2::uuid) "
             "ORDER BY spent_on DESC, created_at DESC",
             group_id,
@@ -458,4 +516,5 @@ def _expense(r: asyncpg.Record, items: Sequence[Item]) -> ExpenseRecord:
         created_at=r["created_at"],
         original_minor=r["original_minor"],
         original_currency=r["original_currency"],
+        weights=tuple(r["weights"] or ()),
     )
