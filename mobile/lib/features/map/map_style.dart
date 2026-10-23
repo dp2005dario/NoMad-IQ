@@ -28,6 +28,9 @@ abstract final class MapIds {
   static const String wavesPattern = 'nq-waves';
   static const String arrowIcon = 'nq-oneway';
   static const String treeIcon = 'nq-tree';
+  static const String roadMajorPattern = 'nq-road-major';
+  static const String roadMinorPattern = 'nq-road-minor';
+  static const String pavingPattern = 'nq-paving';
   static const String lampIcon = 'nq-lamp';
   static String carIcon(int i) => 'nq-car-$i';
   static String facade(Facade f) => 'nq-facade-${f.name}';
@@ -118,9 +121,9 @@ class MapPalette {
     buildingTop: Color(0xFFF7F2E9),
     label: Color(0xFF39474F),
     labelHalo: Color(0xFFF4F1EA),
-    asphalt: Color(0xFF8A8F94),
-    sidewalk: Color(0xFFE4DED2),
-    curb: Color(0xFFB9B1A3),
+    asphalt: Color(0xFF6B7178),
+    sidewalk: Color(0xFFEEE8DC),
+    curb: Color(0xFFA39B8E),
     laneMark: Color(0xFFFFFFFF),
     cobble: Color(0xFFD9C7A8),
     rail: Color(0xFF9A948B),
@@ -238,6 +241,11 @@ Map<String, Object?> buildMapStyle({
     z12,
     18,
     z18,
+    // Más allá de 18 crecen como el mundo real (x2 por nivel de zoom): si
+    // no, al acercarse mucho las calles se quedarían finas entre edificios
+    // cada vez más grandes.
+    20,
+    z18 * 4,
   ];
 
   // Un color que cambia con el zoom: de lejos, la calle "de plano" de
@@ -289,6 +297,8 @@ Map<String, Object?> buildMapStyle({
     z16,
     19,
     z19,
+    20,
+    z19 * 2,
   ];
   // Iconos "tumbados" en el suelo, girados con la calle y sin tapar a nadie.
   const Map<String, Object?> flatOnGround = <String, Object?>{
@@ -629,7 +639,7 @@ Map<String, Object?> buildMapStyle({
         'layout': <String, Object?>{'line-cap': 'round', 'line-join': 'round'},
         'paint': <String, Object?>{
           'line-color': hex(p.curb),
-          'line-width': width(0.8, 24),
+          'line-width': width(0.8, 36),
         },
       },
       <String, Object?>{
@@ -642,7 +652,7 @@ Map<String, Object?> buildMapStyle({
         'layout': <String, Object?>{'line-cap': 'round', 'line-join': 'round'},
         'paint': <String, Object?>{
           'line-color': hex(p.sidewalk),
-          'line-width': width(0.7, 22),
+          'line-width': width(0.7, 33),
         },
       },
       <String, Object?>{
@@ -655,7 +665,7 @@ Map<String, Object?> buildMapStyle({
         'layout': <String, Object?>{'line-cap': 'round', 'line-join': 'round'},
         'paint': <String, Object?>{
           'line-color': hex(p.curb),
-          'line-width': width(1.2, 34),
+          'line-width': width(1.2, 52),
         },
       },
       <String, Object?>{
@@ -668,9 +678,40 @@ Map<String, Object?> buildMapStyle({
         'layout': <String, Object?>{'line-cap': 'round', 'line-join': 'round'},
         'paint': <String, Object?>{
           'line-color': hex(p.sidewalk),
-          'line-width': width(1.2, 31),
+          'line-width': width(1.2, 48),
         },
       },
+      // Baldosas de la acera (de cerca): encima del color liso de la acera.
+      for (final bool major in <bool>[false, true])
+        <String, Object?>{
+          'id': major ? 'road-major-paving' : 'road-minor-paving',
+          'type': 'line',
+          'source': 'openmaptiles',
+          'source-layer': 'transportation',
+          'minzoom': 17,
+          'filter': <Object?>[
+            'all',
+            isLine,
+            classIn(major ? majorClasses : minorClasses),
+          ],
+          'layout': <String, Object?>{
+            'line-cap': 'round',
+            'line-join': 'round',
+          },
+          'paint': <String, Object?>{
+            'line-pattern': MapIds.pavingPattern,
+            'line-width': major ? width(1.2, 48) : width(0.7, 33),
+            'line-opacity': <Object?>[
+              'interpolate',
+              <Object?>['linear'],
+              <Object?>['zoom'],
+              17,
+              0,
+              17.6,
+              1,
+            ],
+          },
+        },
       <String, Object?>{
         'id': 'road-minor',
         'type': 'line',
@@ -681,7 +722,7 @@ Map<String, Object?> buildMapStyle({
         'layout': <String, Object?>{'line-cap': 'round', 'line-join': 'round'},
         'paint': <String, Object?>{
           'line-color': byZoom(p.minorRoad, p.asphalt),
-          'line-width': width(0.5, 14),
+          'line-width': width(0.5, 20),
         },
       },
       <String, Object?>{
@@ -693,24 +734,42 @@ Map<String, Object?> buildMapStyle({
         'layout': <String, Object?>{'line-cap': 'round', 'line-join': 'round'},
         'paint': <String, Object?>{
           'line-color': byZoom(p.majorRoad, p.asphalt),
-          'line-width': width(1.2, 24),
+          'line-width': width(1.2, 34),
         },
       },
-      // Línea discontinua en el centro de las avenidas (solo de cerca).
-      <String, Object?>{
-        'id': 'road-lane-marks',
-        'type': 'line',
-        'source': 'openmaptiles',
-        'source-layer': 'transportation',
-        'minzoom': 16,
-        'filter': <Object?>['all', isLine, classIn(majorClasses)],
-        'paint': <String, Object?>{
-          'line-color': hex(p.laneMark),
-          'line-width': width(0.1, 1.2),
-          'line-dasharray': <double>[4, 4],
-          'line-opacity': 0.85,
+      // De cerca, la calzada "de verdad": asfalto con grano, cunetas, líneas
+      // de borde, carriles y raya del centro (ver paintRoad). Va encima del
+      // color liso de arriba, que es lo que se ve de lejos.
+      for (final bool major in <bool>[false, true])
+        <String, Object?>{
+          'id': major ? 'road-major-texture' : 'road-minor-texture',
+          'type': 'line',
+          'source': 'openmaptiles',
+          'source-layer': 'transportation',
+          'minzoom': 16,
+          'filter': <Object?>[
+            'all',
+            isLine,
+            classIn(major ? majorClasses : minorClasses),
+          ],
+          'layout': <String, Object?>{'line-cap': 'butt', 'line-join': 'round'},
+          'paint': <String, Object?>{
+            'line-pattern': major
+                ? MapIds.roadMajorPattern
+                : MapIds.roadMinorPattern,
+            'line-width': major ? width(1.2, 34) : width(0.5, 20),
+            // Aparece poco a poco al acercarse (sin "salto").
+            'line-opacity': <Object?>[
+              'interpolate',
+              <Object?>['linear'],
+              <Object?>['zoom'],
+              16,
+              0,
+              16.6,
+              1,
+            ],
+          },
         },
-      },
       // Flechas de sentido único (muy de cerca).
       <String, Object?>{
         'id': 'oneway-arrows',
@@ -828,14 +887,16 @@ Map<String, Object?> buildMapStyle({
           'type': 'symbol',
           'source': 'openmaptiles',
           'source-layer': 'transportation',
-          'minzoom': 17,
+          'minzoom': 17.5,
           'filter': <Object?>['all', isLine, classIn(minorClasses)],
           'layout': <String, Object?>{
             'symbol-placement': 'line',
             'symbol-spacing': 45,
             'icon-image': MapIds.treeIcon,
-            'icon-size': zoomed(0.35, 1.1),
-            'icon-offset': <double>[0, side * 26],
+            // Pequeños: una copa cabe en la acera, no tapa la calle.
+            'icon-size': zoomed(0.2, 0.75),
+            // En medio de la acera (el desplazamiento crece con el icono).
+            'icon-offset': <double>[0, side * 36],
             ...flatOnGround,
           },
         },

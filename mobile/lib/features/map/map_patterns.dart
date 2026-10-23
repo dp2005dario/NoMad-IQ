@@ -38,7 +38,14 @@ Future<Map<String, Uint8List>> _paintAll(MapLook look) async {
     MapIds.treesPattern: await _png((Canvas c) => paintTrees(c, p)),
     MapIds.wavesPattern: await _png((Canvas c) => paintWaves(c, p)),
     MapIds.arrowIcon: await _png((Canvas c) => paintArrow(c, p), size: 32),
-    MapIds.treeIcon: await _png((Canvas c) => paintTree(c, p), size: 32),
+    MapIds.treeIcon: await _png((Canvas c) => paintTree(c, p), size: 48),
+    MapIds.pavingPattern: await _png((Canvas c) => paintPaving(c, p)),
+    MapIds.roadMajorPattern: await _png(
+      (Canvas c) => paintRoad(c, p, major: true),
+    ),
+    MapIds.roadMinorPattern: await _png(
+      (Canvas c) => paintRoad(c, p, major: false),
+    ),
     MapIds.lampIcon: await _png(paintLampGlow, size: 32),
   };
   for (int i = 0; i < carColors.length; i++) {
@@ -339,24 +346,122 @@ void paintPoi(Canvas c, PoiKind k) {
   }
 }
 
-/// Un árbol de la acera visto desde arriba, con su sombra.
+/// Un árbol de la acera visto desde arriba: una copa de varias "bolas" de
+/// hojas (como se ve en una foto aérea), con su sombra en el suelo, el borde
+/// más oscuro y la luz por arriba a la izquierda. Así se lee como árbol y no
+/// como un punto verde.
 void paintTree(Canvas c, MapPalette p) {
-  c.drawCircle(
-    const Offset(18, 18),
-    11,
-    Paint()..color = const Color(0x45000000),
+  const Offset centre = Offset(22, 22);
+  // Las "bolas" de hojas alrededor del centro (ángulo, distancia, radio).
+  const List<(double, double, double)> lobes = <(double, double, double)>[
+    (0.0, 8.0, 8.0),
+    (1.2, 8.5, 7.5),
+    (2.3, 7.5, 8.0),
+    (3.4, 8.0, 7.0),
+    (4.5, 8.5, 7.5),
+    (5.5, 7.5, 7.0),
+    (0.0, 0.0, 10.0),
+  ];
+  Offset at((double, double, double) l, Offset o) =>
+      o + Offset(math.cos(l.$1) * l.$2, math.sin(l.$1) * l.$2);
+  // Sombra: la misma copa, desplazada hacia abajo a la derecha.
+  final Paint shadow = Paint()..color = const Color(0x38000000);
+  for (final (double, double, double) l in lobes) {
+    c.drawCircle(at(l, centre + const Offset(4, 5)), l.$3, shadow);
+  }
+  // Borde oscuro (un poco más grande) y luego la copa.
+  final Paint edge = Paint()..color = _shade(p.park, -0.45);
+  for (final (double, double, double) l in lobes) {
+    c.drawCircle(at(l, centre), l.$3 + 1, edge);
+  }
+  final Paint leaves = Paint()..color = _shade(p.park, -0.2);
+  for (final (double, double, double) l in lobes) {
+    c.drawCircle(at(l, centre), l.$3, leaves);
+  }
+  // Luz: brillos en la parte de arriba a la izquierda de cada bola.
+  final Paint light = Paint()..color = _shade(p.park, 0.12);
+  for (final (double, double, double) l in lobes) {
+    c.drawCircle(
+      at(l, centre) - Offset(l.$3 * 0.3, l.$3 * 0.3),
+      l.$3 * 0.55,
+      light,
+    );
+  }
+}
+
+/// Baldosas de la acera: cuadrados claros con junta, alguno algo más
+/// oscuro (como las baldosas gastadas de verdad).
+void paintPaving(Canvas c, MapPalette p) {
+  c.drawRect(
+    const Rect.fromLTWH(0, 0, _s, _s),
+    Paint()..color = _shade(p.sidewalk, -0.12),
   );
-  c.drawCircle(
-    const Offset(16, 16),
-    11,
-    Paint()..color = _shade(p.park, -0.25),
-  );
-  c.drawCircle(const Offset(13, 13), 6, Paint()..color = _shade(p.park, 0.05));
-  c.drawCircle(
-    const Offset(11, 11),
-    2.5,
-    Paint()..color = _shade(p.park, 0.25),
-  );
+  final math.Random r = math.Random(5);
+  const int n = 8;
+  const double t = _s / n;
+  for (int y = 0; y < n; y++) {
+    for (int x = 0; x < n; x++) {
+      c.drawRect(
+        Rect.fromLTWH(x * t + 0.6, y * t + 0.6, t - 1.2, t - 1.2),
+        Paint()..color = _shade(p.sidewalk, (r.nextDouble() - 0.6) * 0.08),
+      );
+    }
+  }
+}
+
+/// El asfalto de una calle, para "line-pattern": MapLibre repite la imagen
+/// a lo largo de la calle y la estira a lo ANCHO de la calzada. Por eso aquí
+/// el eje vertical es "de un bordillo al otro" y el horizontal, "avanzar".
+///
+/// - Avenidas: líneas blancas en los bordes, separación de carriles
+///   discontinua y raya doble en el centro.
+/// - Calles: solo una raya discontinua suave en el centro.
+/// En las dos, grano de asfalto (puntitos claros y oscuros), la cuneta más
+/// oscura junto al bordillo y alguna tapa de alcantarilla.
+void paintRoad(Canvas c, MapPalette p, {required bool major}) {
+  c.drawRect(const Rect.fromLTWH(0, 0, _s, _s), Paint()..color = p.asphalt);
+  // Cuneta: los bordes de la calzada se ven algo más oscuros.
+  final Paint gutter = Paint()..color = _shade(p.asphalt, -0.18);
+  c.drawRect(const Rect.fromLTWH(0, 0, _s, 4), gutter);
+  c.drawRect(const Rect.fromLTWH(0, _s - 4, _s, 4), gutter);
+  // Grano del asfalto.
+  final math.Random r = math.Random(11);
+  for (int i = 0; i < 260; i++) {
+    final bool lighter = r.nextBool();
+    c.drawRect(
+      Rect.fromLTWH(r.nextDouble() * _s, r.nextDouble() * _s, 1, 1),
+      Paint()..color = _shade(p.asphalt, lighter ? 0.14 : -0.14),
+    );
+  }
+  final Paint paint = Paint()..color = p.laneMark;
+  if (major) {
+    // Líneas continuas de los bordes.
+    c.drawRect(const Rect.fromLTWH(0, 5, _s, 1.6), paint);
+    c.drawRect(const Rect.fromLTWH(0, _s - 6.6, _s, 1.6), paint);
+    // Separación de carriles: discontinua (la mitad pintada, la mitad no).
+    for (final double y in <double>[_s * 0.25, _s * 0.75]) {
+      c.drawRect(Rect.fromLTWH(4, y - 0.7, _s / 2 - 8, 1.4), paint);
+    }
+    // Raya doble del centro.
+    c.drawRect(Rect.fromLTWH(0, _s / 2 - 2.4, _s, 1.4), paint);
+    c.drawRect(Rect.fromLTWH(0, _s / 2 + 1, _s, 1.4), paint);
+  } else {
+    c.drawRect(
+      Rect.fromLTWH(6, _s / 2 - 0.8, _s / 2 - 12, 1.6),
+      Paint()..color = p.laneMark.withValues(alpha: 0.7),
+    );
+    // Una tapa de alcantarilla de vez en cuando (en el carril de la derecha).
+    c.drawCircle(
+      const Offset(_s * 0.8, _s * 0.72),
+      3,
+      Paint()..color = _shade(p.asphalt, -0.3),
+    );
+    c.drawCircle(
+      const Offset(_s * 0.8, _s * 0.72),
+      2,
+      Paint()..color = _shade(p.asphalt, -0.1),
+    );
+  }
 }
 
 /// El halo de luz de una farola (para el atardecer y la noche).

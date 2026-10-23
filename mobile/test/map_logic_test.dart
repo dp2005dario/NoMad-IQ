@@ -292,7 +292,7 @@ void main() {
       );
       expect(
         ids.indexOf('road-major'),
-        lessThan(ids.indexOf('road-lane-marks')),
+        lessThan(ids.indexOf('road-major-texture')),
       );
       expect(
         ids.indexOf('building-facade'),
@@ -320,6 +320,22 @@ void main() {
           MapIds.facade(Facade.brick),
         ]),
       );
+      // Cada imagen que nombra el estilo (calles, árboles, coches...) existe:
+      // si faltara una, MapLibre dejaría ese hueco vacío.
+      final String nightStyle = jsonEncode(
+        buildMapStyle(
+          look: MapLook.night,
+          language: 'es',
+          tilesUrl: Uri.parse('https://tiles.test/planet'),
+          glyphsUrl: 'https://tiles.test/fonts/{fontstack}/{range}.pbf',
+        ),
+      );
+      final Set<String> named = RegExp(r'"(nq-[a-z0-9-]+)"')
+          .allMatches(nightStyle)
+          .map((RegExpMatch m) => m.group(1)!)
+          .toSet();
+      expect(named, containsAll(<String>[MapIds.roadMajorPattern]));
+      expect(night.keys, containsAll(named));
       for (final Uint8List png in night.values) {
         // Firma de un PNG: 0x89 'P' 'N' 'G'.
         expect(png.sublist(0, 4), <int>[0x89, 0x50, 0x4E, 0x47]);
