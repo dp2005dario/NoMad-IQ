@@ -35,6 +35,8 @@ PROTO_FILES = [
     # Entradas anónimas a zonas (geo.zone-entries.v1) para las audioguías.
     "nomadiq/geo/v1/geo.proto",
     "nomadiq/geo/v1/events.proto",
+    # Negociación de grupo: orden de trabajo y resultado.
+    "nomadiq/ai/v1/negotiation.proto",
 ]
 
 

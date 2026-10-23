@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package nomadiq.ai.v1;
+
+import "nomadiq/common/v1/common.proto";
+
+// Eventos de la negociación de grupo (ai-orchestrator).
+// Regla de evolución: solo se AÑADEN campos con números nuevos.
+//
+// ¿Por qué Kafka y no una llamada gRPC?
+//   Una negociación son varias rondas en las que cada agente de IA "piensa"
+//   (segundos por agente). Puede durar minutos: nadie debe quedarse esperando
+//   con una conexión abierta. Se pide con un evento, se trabaja en segundo
+//   plano y el resultado se anuncia con otro evento.
+//
+// Privacidad: ninguno de los dos eventos lleva presupuestos, gustos, notas ni
+// user_id. Eso vive solo en PostgreSQL del ai-orchestrator. Por Kafka viaja
+// lo imprescindible para coordinar.
+
+// GroupNegotiationRequested se publica en "ai.group-negotiation-requests.v1"
+// cuando una negociación está lista para arrancar: todos los miembros han
+// enviado sus preferencias (o venció el plazo y hay al menos dos).
+// Es una ORDEN de trabajo: el ai-orchestrator la consume y negocia.
+//
+// Clave del mensaje Kafka: negotiation_id (una negociación = una partición =
+// un solo consumidor a la vez).
+//
+// Se publica con el patrón "outbox": primero se guarda en PostgreSQL en la
+// misma transacción que el cambio de estado, y un relé lo manda a Kafka. Así
+// nunca hay negociaciones "listas" sin orden, ni órdenes sin negociación.
+message GroupNegotiationRequested {
+  nomadiq.common.v1.EventMetadata metadata = 1;
+  // UUID de la negociación (ai.group_negotiations.negotiation_id).
+  string negotiation_id = 2;
+}
+
+// NegotiationOutcome dice CÓMO terminó una negociación.
+enum NegotiationOutcome {
+  NEGOTIATION_OUTCOME_UNSPECIFIED = 0;
+  // Todos los agentes aceptaron la opción elegida.
+  NEGOTIATION_OUTCOME_CONSENSUS = 1;
+  // No hubo acuerdo en las rondas permitidas: decidió el árbitro determinista.
+  NEGOTIATION_OUTCOME_ARBITRATION = 2;
+  // Ninguna opción cabe en el presupuesto de todos: no se elige nada.
+  NEGOTIATION_OUTCOME_NO_FEASIBLE_OPTION = 3;
+}
+
+// GroupNegotiationConcluded se publica en "ai.group-negotiations.v1" cuando
+// una negociación termina. Lo podrá consumir el notifier para avisar a los
+// miembros ("¡Vuestro viaje ya tiene destino!").
+//
+// Clave del mensaje Kafka: negotiation_id.
+message GroupNegotiationConcluded {
+  nomadiq.common.v1.EventMetadata metadata = 1;
+  string negotiation_id = 2;
+  NegotiationOutcome outcome = 3;
+  // option_id elegido. Vacío si outcome = NO_FEASIBLE_OPTION.
+  string chosen_option_id = 4;
+  // Rondas usadas (0 si no hizo falta negociar: una sola opción posible o ninguna).
+  uint32 rounds = 5;
+  // Miembros del grupo como SEUDÓNIMOS: HMAC-SHA256 del user_id con la misma
+  // clave y etiqueta que usan el geo-engine y el notifier
+  // (ver nomadiq/notify/v1/events.proto). Vacío si el ai-orchestrator no
+  // tiene configurada la clave (NOTIFY_PSEUDONYM_KEY).
+  repeated string recipients = 6;
+  // true si al menos un agente razonó con el LLM; false si todo salió de las
+  // reglas deterministas (plan B, por ejemplo con Ollama caído).
+  bool llm_used = 7;
+}

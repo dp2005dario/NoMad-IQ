@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import uuid
 from collections.abc import Sequence
+from dataclasses import replace
 from datetime import UTC, date, datetime
 from typing import Any
 
@@ -26,6 +27,17 @@ from ai_orchestrator.domain import (
     Recommendation,
 )
 from ai_orchestrator.llm.client import ChatMessage, LLMUnavailableError
+from ai_orchestrator.negotiation.domain import MemberPreferences, NegotiationResult, Status
+from ai_orchestrator.negotiation.events import request_message
+from ai_orchestrator.negotiation.store import (
+    MemberRecord,
+    NegotiationClosedError,
+    NegotiationNotFoundError,
+    NegotiationRecord,
+    NewNegotiation,
+    alias_for,
+)
+from ai_orchestrator.outbox import OutboxMessage
 from ai_orchestrator.recommender import RecommenderSettings
 from nomadiq.common.v1 import common_pb2
 from nomadiq.flights.v1 import events_pb2, flights_pb2
@@ -249,3 +261,100 @@ def recommender_settings() -> RecommenderSettings:
 
 def new_uuid() -> str:
     return str(uuid.uuid4())
+
+
+# --- Negociación de grupo ------------------------------------------------------
+
+
+class InMemoryNegotiations:
+    """NegotiationStore en memoria, con las mismas transiciones de estado que PostgreSQL."""
+
+    def __init__(self) -> None:
+        self.records: dict[str, NegotiationRecord] = {}
+        self.outbox: list[OutboxMessage] = []
+        self.now = FIXED_NOW
+
+    async def create(self, draft: NewNegotiation) -> NegotiationRecord:
+        negotiation_id = new_uuid()
+        record = NegotiationRecord(
+            negotiation_id=negotiation_id,
+            organizer_id=draft.organizer_id,
+            title=draft.title,
+            currency=draft.currency,
+            language=draft.language,
+            options=draft.options,
+            max_rounds=draft.max_rounds,
+            status=Status.COLLECTING,
+            deadline=draft.deadline,
+            created_at=self.now,
+            concluded_at=None,
+            result=None,
+            members=tuple(
+                MemberRecord(user_id=u, seat=i, alias=alias_for(i), preferences=None, submitted_at=None)
+                for i, u in enumerate(draft.member_ids, start=1)
+            ),
+        )
+        self.records[negotiation_id] = record
+        return record
+
+    async def get_for_member(self, negotiation_id: str, user_id: str) -> NegotiationRecord | None:
+        record = self.records.get(negotiation_id)
+        return record if record and any(m.user_id == user_id for m in record.members) else None
+
+    async def list_for_member(self, user_id: str, *, limit: int) -> list[NegotiationRecord]:
+        mine = [r for r in self.records.values() if any(m.user_id == user_id for m in r.members)]
+        return mine[:limit]
+
+    async def submit_preferences(
+        self, negotiation_id: str, user_id: str, preferences: MemberPreferences
+    ) -> NegotiationRecord:
+        record = await self.get_for_member(negotiation_id, user_id)
+        if record is None:
+            raise NegotiationNotFoundError(negotiation_id)
+        if record.status is not Status.COLLECTING or record.deadline < self.now:
+            raise NegotiationClosedError(negotiation_id)
+        members = tuple(
+            replace(m, preferences=preferences, submitted_at=self.now) if m.user_id == user_id else m
+            for m in record.members
+        )
+        status = Status.QUEUED if all(m.submitted_at for m in members) else Status.COLLECTING
+        if status is Status.QUEUED:
+            self.outbox.append(request_message("requests", negotiation_id, self.now))
+        record = replace(record, members=members, status=status)
+        self.records[negotiation_id] = record
+        return record
+
+    async def claim(self, negotiation_id: str, *, lease_seconds: int) -> NegotiationRecord | None:
+        record = self.records.get(negotiation_id)
+        if record is None or record.status is not Status.QUEUED:
+            return None
+        record = replace(record, status=Status.RUNNING)
+        self.records[negotiation_id] = record
+        return record
+
+    async def conclude(self, negotiation_id: str, result: NegotiationResult, message: OutboxMessage) -> bool:
+        record = self.records[negotiation_id]
+        if record.status is not Status.RUNNING:
+            return False
+        self.records[negotiation_id] = replace(
+            record,
+            status=Status.CONCLUDED,
+            result=result,
+            concluded_at=self.now,
+            members=tuple(replace(m, preferences=None) for m in record.members),
+        )
+        self.outbox.append(message)
+        return True
+
+    async def expire(self, negotiation_id: str) -> bool:
+        record = self.records[negotiation_id]
+        if record.status is not Status.RUNNING:
+            return False
+        self.records[negotiation_id] = replace(
+            record, status=Status.EXPIRED, members=tuple(replace(m, preferences=None) for m in record.members)
+        )
+        return True
+
+
+def negotiation_turn_json(ranking: Sequence[str], acceptable: Sequence[str], argument: str) -> str:
+    return json.dumps({"ranking": list(ranking), "acceptable": list(acceptable), "argument": argument})

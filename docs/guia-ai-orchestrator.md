@@ -115,7 +115,7 @@ Lo importante: **la IA razona y redacta; los datos los ponemos nosotros.**
 | **2. JSON frágil.** El modelo añade "¡Claro! Aquí tienes…" o rompe el JSON. | Esquema JSON generado por Pydantic y enviado a Ollama, temperatura 0,1, validación estricta (campos de más = error, valores cerrados), se tolera el envoltorio de texto alrededor del JSON pero no se "adivina" JSON roto, y **reintentos acotados** con el error explicado. | `llm/structured.py`, `recommender.py` (`FareAdvice`) |
 | **3. Alucinaciones.** Precios u horarios inventados. | **RAG** con el historial real (PostgreSQL) y notas de Qdrant. Y algo más fuerte: el modelo **no puede escribir dígitos**; usa huecos que rellenamos con los datos reales. Una respuesta con un número escrito a mano o un hueco inexistente se rechaza. Si persiste, plan B por reglas. Se guardan los hechos usados (`facts`) para auditar. | `grounding.py`, `retrieval.py`, `store.py` |
 | **4. Explosión de tokens.** El historial de un chat de grupo no cabe. | Presupuesto de tokens por llamada (ventana − respuesta × intentos). Las notas de Qdrant se recortan y solo entran las que caben; los hechos, siempre. Para chats: se conservan instrucciones + mensajes recientes y lo antiguo se sustituye por un resumen de tamaño máximo. | `context.py`, `recommender.py` |
-| **5. Bucles infinitos entre agentes.** | Esqueleto del motor de negociación: **máximo de rondas** (techo absoluto 10), tiempo por ronda (el agente lento o roto no bloquea), cada agente solo ve la última postura de los demás y, sin consenso, decide un **árbitro determinista** (recuento Borda; empate → más barato → orden alfabético). Las opciones inventadas por un agente se descartan. | `negotiation.py`, `tests/test_negotiation.py` |
+| **5. Bucles infinitos entre agentes.** | Motor de negociación con **máximo de rondas** (techo absoluto 10), tiempo por ronda y total (el agente lento o roto no bloquea), concesiones que no se retiran, parada por estancamiento y, sin consenso, un **árbitro determinista** (primero el peor parado, luego Borda, luego precio, luego orden alfabético). Las opciones inventadas por un agente se descartan. Todo explicado en la [guía de la negociación de grupo](guia-negociacion-grupo.md). | `negotiation/engine.py`, `tests/test_negotiation.py` |
 
 ---
 
@@ -139,7 +139,7 @@ Lo importante: **la IA razona y redacta; los datos los ponemos nosotros.**
 | `src/ai_orchestrator/retrieval.py` | Las fuentes de contexto (RAG): historial y Qdrant. |
 | `src/ai_orchestrator/recommender.py` | El prompt, la llamada al modelo y el plan B por reglas. |
 | `src/ai_orchestrator/context.py` | Cuenta tokens, recorta y resume. |
-| `src/ai_orchestrator/negotiation.py` | Motor de negociación acotado (base para los viajes en grupo). |
+| `src/ai_orchestrator/negotiation/` | Negociación de grupo con agentes de IA (ver [su guía](guia-negociacion-grupo.md)). |
 | `src/ai_orchestrator/store.py` | PostgreSQL: migraciones, historial y recomendaciones. |
 | `src/ai_orchestrator/migrations/0001_*.sql` | La tabla `ai.fare_recommendations`. |
 | `src/ai_orchestrator/consumer.py` | El bucle de Kafka: lotes, commits, DLQ y reintentos. |
@@ -290,10 +290,8 @@ En la columna `source` verás `llm` (redactada por el modelo) o `rules`
 
 ## 8. Lo que NO está hecho todavía (siguientes pasos)
 
-- **Agentes LLM reales para la negociación en grupo**: el motor y sus reglas
-  de parada están; falta el agente que convierte las preferencias de cada
-  persona en un ranking (usando `generate_structured` y `fit_messages_with_summary`)
-  y la API para crear una negociación.
+- ~~**Agentes LLM reales para la negociación en grupo**~~: hecho, ver la
+  [guía de la negociación de grupo](guia-negociacion-grupo.md).
 - **Cargar la base de conocimiento de Qdrant**: el buscador está listo, pero
   la colección `travel_knowledge` está vacía. Falta un proceso que la llene
   (guías de destinos con su fuente) y vectorice con `nomic-embed-text`.

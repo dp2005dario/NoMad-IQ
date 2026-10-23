@@ -389,6 +389,33 @@ jobs:
         run: |
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8085/v1/recommendations)" = 401
           curl -fsS http://127.0.0.1:8085/v1/recommendations -H 'X-User-ID: ci-user' -H 'X-User-Roles: USER' | jq -e '.items | type == "array"'
+      # Negociación de grupo de punta a punta contra el contenedor: API -> outbox
+      # -> Kafka -> agentes (sin Ollama en la CI: plan B por reglas) -> resultado.
+      - name: Negociación de grupo de punta a punta (API → Kafka → agentes → resultado)
+        run: |
+          ana='X-User-ID: ci-ana'; beto='X-User-ID: ci-beto'; role='X-User-Roles: USER'
+          body='{"title":"CI","currency":"EUR","members":["ci-beto"],"options":[
+            {"option_id":"lisboa","label":"Lisboa","price_minor":30000,"tags":["playa"]},
+            {"option_id":"roma","label":"Roma","price_minor":40000,"tags":["museos"]}]}'
+          id=$(curl -fsS -X POST http://127.0.0.1:8085/v1/group-negotiations -H "$ana" -H "$role" \
+                 -H 'Content-Type: application/json' -d "$body" | jq -r .negotiation_id)
+          for who in "$ana" "$beto"; do
+            curl -fsS -X PUT "http://127.0.0.1:8085/v1/group-negotiations/$id/preferences" -H "$who" -H "$role" \
+              -H 'Content-Type: application/json' -d '{"budget_max_minor":35000,"interests":["playa"]}' >/dev/null
+          done
+          for i in $(seq 1 40); do
+            curl -fsS "http://127.0.0.1:8085/v1/group-negotiations/$id" -H "$beto" -H "$role" > /tmp/neg.json
+            if jq -e '.status == "concluded"' /tmp/neg.json >/dev/null; then
+              cat /tmp/neg.json
+              # Roma (400 €) supera los 350 € de presupuesto: solo puede ganar Lisboa.
+              jq -e '.result.chosen_option_id == "lisboa" and .result.excluded_over_budget == ["roma"]' /tmp/neg.json
+              # Las preferencias privadas se borraron al terminar.
+              jq -e '.my_preferences == null' /tmp/neg.json
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "la negociación no terminó"; cat /tmp/neg.json; exit 1
       - name: Logs si algo falla
         if: failure()
         working-directory: infrastructure
