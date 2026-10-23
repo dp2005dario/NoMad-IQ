@@ -123,3 +123,19 @@ día laborable hacia las 16:00 de Fráncfort.
 Monedas: las ~30 que publica el BCE (dólar, libra, yen, franco suizo,
 yuan, rupia, peso mexicano, real brasileño...). Las que el BCE no publica no
 salen en la lista.
+
+## 8. Habitaciones justas
+
+La pestaña **Habitaciones** reparte un alojamiento entre la gente de un bote:
+
+1. Eliges el bote (sus personas son las que duermen), el precio total y las
+   habitaciones (doble con baño, doble, individual, sofá cama).
+2. Las camas **se sortean** (botón "Sortear de nuevo").
+3. **Según la habitación**: cada tipo tiene un peso (1,4 / 1 / 0,9 / 0,6) y
+   quien duerme mejor paga un poco más. **Todos igual**: a partes iguales.
+4. **Apuntar en el bote** crea un gasto "por lo que tomó cada uno": cada
+   habitación es una línea y la "toman" quienes duermen en ella. Así queda en
+   las cuentas del bote como cualquier otro gasto.
+
+El reparto usa el mismo método que el servidor (resto mayor): nunca se
+pierde ni sobra un céntimo.

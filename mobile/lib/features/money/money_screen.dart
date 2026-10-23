@@ -16,6 +16,7 @@ import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'expenses_api.dart';
 import 'fx_view.dart';
+import 'rooms_view.dart';
 import 'money_widgets.dart';
 
 /// Las pestañas de Dinero (el nombre va en la dirección: /money?tab=fx).
@@ -85,6 +86,7 @@ class _MoneyScreenState extends State<MoneyScreen> {
             child: switch (_tab) {
               MoneyTab.expenses => const ExpenseGroupsView(),
               MoneyTab.fx => const FxView(),
+              MoneyTab.rooms => const RoomsView(),
               _ => _Soon(text: t.moneySoon),
             },
           ),

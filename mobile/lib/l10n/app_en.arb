@@ -2209,5 +2209,103 @@
         "type": "String"
       }
     }
+  },
+  "roomsSuite": "Double with bathroom",
+  "@roomsSuite": {
+    "description": "Room type: best double room."
+  },
+  "roomsDouble": "Double",
+  "@roomsDouble": {
+    "description": "Room type: double."
+  },
+  "roomsSingle": "Single",
+  "@roomsSingle": {
+    "description": "Room type: single."
+  },
+  "roomsSofa": "Sofa bed",
+  "@roomsSofa": {
+    "description": "Room type: sofa bed."
+  },
+  "roomsDefaultTitle": "Accommodation",
+  "@roomsDefaultTitle": {
+    "description": "Default expense title for rooms."
+  },
+  "roomsSaved": "Saved in the pot {pot}",
+  "@roomsSaved": {
+    "description": "Snack: rooms saved to a pot.",
+    "placeholders": {
+      "pot": {
+        "type": "String"
+      }
+    }
+  },
+  "roomsNeedPot": "First create a pot in “Your money” with the people you're sleeping with: then they'll appear here.",
+  "@roomsNeedPot": {
+    "description": "Rooms need a pot first."
+  },
+  "roomsIntro": "Beds are drawn at random and whoever sleeps better pays a little more.",
+  "@roomsIntro": {
+    "description": "Intro for fair rooms."
+  },
+  "roomsPot": "Pot",
+  "@roomsPot": {
+    "description": "Field: which pot."
+  },
+  "roomsPlace": "Accommodation",
+  "@roomsPlace": {
+    "description": "Field: accommodation name."
+  },
+  "roomsPlaceHint": "Flat in Porto · 4 nights",
+  "@roomsPlaceHint": {
+    "description": "Hint for accommodation name."
+  },
+  "roomsTotal": "Total price",
+  "@roomsTotal": {
+    "description": "Field: total price."
+  },
+  "roomsFair": "By room",
+  "@roomsFair": {
+    "description": "Mode: by room."
+  },
+  "roomsEqual": "Everyone equal",
+  "@roomsEqual": {
+    "description": "Mode: everyone equal."
+  },
+  "roomsEach": "per person",
+  "@roomsEach": {
+    "description": "Per person label."
+  },
+  "roomsRemove": "Remove room",
+  "@roomsRemove": {
+    "description": "Tooltip: remove room."
+  },
+  "roomsEmpty": "Nobody here",
+  "@roomsEmpty": {
+    "description": "Room with nobody."
+  },
+  "roomsNotEnoughBeds": "{count, plural, =1{1 person has no bed: add a room.} other{{count} people have no bed: add rooms.}}",
+  "@roomsNotEnoughBeds": {
+    "description": "More people than beds.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "roomsHowFair": "Each room has a weight: the double with bathroom counts 1.4, a double 1, a single 0.9 and the sofa bed 0.6. The total is split by those weights without losing a cent.",
+  "@roomsHowFair": {
+    "description": "How the fair split works."
+  },
+  "roomsHowEqual": "The total is split equally and the beds are drawn at random.",
+  "@roomsHowEqual": {
+    "description": "How the equal split works."
+  },
+  "roomsShuffle": "Draw again",
+  "@roomsShuffle": {
+    "description": "Button: draw again."
+  },
+  "roomsSave": "Save in the pot",
+  "@roomsSave": {
+    "description": "Button: save in expenses."
   }
 }

@@ -16,6 +16,7 @@ import 'package:nomadiq/features/money/fx_api.dart';
 import 'package:nomadiq/features/money/money_screen.dart';
 import 'package:nomadiq/features/money/receipt_parser.dart';
 import 'package:nomadiq/features/money/receipt_scanner.dart';
+import 'package:nomadiq/features/money/rooms_view.dart';
 
 import 'helpers.dart';
 
@@ -440,6 +441,63 @@ void main() {
         prefs: prefs,
       );
       expect(find.textContaining('Sin conexión'), findsOneWidget);
+    });
+  });
+
+  group('habitaciones justas', () {
+    test('repartir por pesos sin perder céntimos', () {
+      // El ejemplo de la maqueta: 900 € entre 5, balcón 1,4 / doble 1 / sofá 0,6.
+      final List<int> shares = divideByWeights(90000, <double>[
+        1.4,
+        1.4,
+        1,
+        1,
+        0.6,
+      ]);
+      expect(shares, <int>[23333, 23333, 16667, 16667, 10000]);
+      expect(shares.reduce((int a, int b) => a + b), 90000);
+      expect(divideByWeights(1000, <double>[1, 1, 1]), <int>[334, 333, 333]);
+    });
+
+    test('las camas se llenan por orden', () {
+      expect(
+        assignBeds(<RoomKind>[RoomKind.suite, RoomKind.sofa], <int>[3, 1, 2]),
+        <List<int>>[
+          <int>[3, 1],
+          <int>[2],
+        ],
+      );
+      expect(assignBeds(<RoomKind>[RoomKind.sofa], <int>[1, 2]), <List<int>>[
+        <int>[1],
+      ]);
+    });
+
+    testWidgets('sortear y apuntar en el bote', (WidgetTester tester) async {
+      final MoneyBackend b = MoneyBackend()..current = groupJson();
+      await pumpMoney(
+        tester,
+        backend: b,
+        initialLocation: Routes.money(tab: MoneyTab.rooms),
+      );
+      await tester.enterText(find.byType(TextField).last, '900');
+      await tester.pumpAndSettle();
+      // Los dos caben en la doble con baño (la primera): 450 € cada uno.
+      expect(find.textContaining('450,00'), findsOneWidget);
+      await tester.tap(find.text('Todos igual'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('450,00'), findsOneWidget);
+      await tester.tap(find.text('Apuntar en el bote'));
+      await tester.pumpAndSettle();
+      final Map<String, Object?> sent = b.expenses.single;
+      expect(sent['amount_minor'], 90000);
+      expect(sent['split'], 'items');
+      final List<Object?> items = sent['items']! as List<Object?>;
+      expect(items, hasLength(1));
+      expect(
+        (items.single! as Map<String, Object?>)['claimed_by'],
+        hasLength(2),
+      );
+      expect(find.text('Apuntado en el bote Madrid'), findsOneWidget);
     });
   });
 }
