@@ -175,6 +175,9 @@ class Settings(BaseSettings):
     mapillary_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
     street_ttl_seconds: int = Field(default=6 * 3600, ge=600, le=48 * 3600)
 
+    # --- Gastos compartidos (ver el paquete expenses/): solo necesita PostgreSQL ---
+    expenses_enabled: bool = True
+
     # --- Chat libre con Flyra (ver el paquete flyra/) --------------------------------
     # Necesita Ollama (LLM_ENABLED) y Redis (el contador de preguntas diarias).
     flyra_enabled: bool = True

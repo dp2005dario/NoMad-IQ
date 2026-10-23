@@ -204,6 +204,7 @@ def create_api(
     audioguides: AudioguideService | None = None,
     audio: AudioCatalog | None = None,
     negotiations: APIRouter | None = None,
+    expenses: APIRouter | None = None,
     places: PlaceService | None = None,
     streetview: StreetViewService | None = None,
     flyra: FlyraService | None = None,
@@ -413,6 +414,10 @@ def create_api(
             return JSONResponse(
                 card.model_dump(mode="json"), headers={"Cache-Control": "private, max-age=86400"}
             )
+
+    if expenses is not None:
+        # Las rutas /v1/expense-groups viven en expenses/api.py.
+        app.include_router(expenses)
 
     if negotiations is not None:
         # Las rutas /v1/group-negotiations viven en negotiation/api.py.

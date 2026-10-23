@@ -68,6 +68,8 @@ from ai_orchestrator.audioguides.versions import ZoneVersionCache
 from ai_orchestrator.audioguides.writer import AudioguideWriter, WriterSettings
 from ai_orchestrator.config import Settings
 from ai_orchestrator.consumer import AlertProcessor, FareAlertConsumer
+from ai_orchestrator.expenses.api import expense_router
+from ai_orchestrator.expenses.store import PostgresExpenses
 from ai_orchestrator.flyra.service import KEY_PREFIX as FLYRA_QUOTA_PREFIX
 from ai_orchestrator.flyra.service import FlyraService, FlyraSettings
 from ai_orchestrator.landmarks.service import QUOTA_PREFIX as LANDMARK_QUOTA_PREFIX
@@ -485,6 +487,9 @@ async def run(settings: Settings) -> int:
                 ),
             )
 
+        # --- Gastos compartidos (solo PostgreSQL) --------------------------------------
+        expenses = expense_router(PostgresExpenses(pool)) if settings.expenses_enabled else None
+
         # --- Negociación de grupo (tercer consumidor + relé del outbox) -----------------
         negotiations: APIRouter | None = None
         negotiation_consumer: NegotiationRequestConsumer | None = None
@@ -512,6 +517,7 @@ async def run(settings: Settings) -> int:
                 audioguides=audioguides,
                 audio=audio,
                 negotiations=negotiations,
+                expenses=expenses,
                 places=places,
                 streetview=streetview,
                 flyra=flyra,
