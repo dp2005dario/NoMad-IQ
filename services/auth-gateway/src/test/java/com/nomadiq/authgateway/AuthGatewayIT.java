@@ -221,6 +221,32 @@ class AuthGatewayIT {
     }
 
     @Test
+    void borrarMiCuentaPideLaContrasenaYLoBorraTodo() throws Exception {
+        String email = newEmail();
+        register(email);
+        Resp session = login(email, PASSWORD);
+        String access = (String) session.body().get("access_token");
+        String refresh = (String) session.body().get("refresh_token");
+
+        // Con la contraseña mal no se borra nada.
+        assertThat(delete("/v1/me", Map.of("password", "contraseña equivocada"), access).status()).isEqualTo(401);
+        // Sin contraseña: datos inválidos.
+        assertThat(delete("/v1/me", Map.of(), access).status()).isEqualTo(400);
+        assertThat(get("/v1/me", access).status()).isEqualTo(200);
+
+        assertThat(delete("/v1/me", Map.of("password", PASSWORD), access).status()).isEqualTo(204);
+
+        // Ya no queda nada: ni el pase, ni el refresh, ni el login, ni la fila.
+        assertThat(get("/v1/me", access).status()).isEqualTo(401);
+        assertThat(post("/v1/auth/refresh", Map.of("refresh_token", refresh), null).status()).isEqualTo(401);
+        assertThat(login(email, PASSWORD).status()).isEqualTo(401);
+        assertThat(jdbc.sql("SELECT count(*) FROM users WHERE email = :e").param("e", email)
+                .query(Long.class).single()).isZero();
+        // El email queda libre: se puede volver a crear una cuenta nueva.
+        assertThat(register(email).status()).isEqualTo(201);
+    }
+
+    @Test
     void sinTokenOConTokenFalsoNoSeEntra() throws Exception {
         assertThat(get("/v1/me", null).status()).isEqualTo(401);
         assertThat(get("/v1/me", "esto.no.es-un-jwt").status()).isEqualTo(401);
@@ -265,6 +291,12 @@ class AuthGatewayIT {
         HttpRequest.Builder b = request(path, bearer).header("Content-Type", "application/json")
                 .POST(body == null ? HttpRequest.BodyPublishers.noBody()
                         : HttpRequest.BodyPublishers.ofString(json.writeValueAsString(body)));
+        return send(b);
+    }
+
+    private Resp delete(String path, Map<String, ?> body, String bearer) throws Exception {
+        HttpRequest.Builder b = request(path, bearer).header("Content-Type", "application/json")
+                .method("DELETE", HttpRequest.BodyPublishers.ofString(json.writeValueAsString(body)));
         return send(b);
     }
 

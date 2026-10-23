@@ -140,6 +140,30 @@ func (p *Postgres) DeleteSubscription(ctx context.Context, userID, routeKey stri
 	return nil
 }
 
+// EraseUser borra todo lo de una persona: las rutas que vigilaba y sus avisos
+// (también los que aún no se habían enviado). Es "Borrar mi cuenta". Los
+// precios en sí no son de nadie: se quedan. Devuelve cuántas filas se fueron.
+func (p *Postgres) EraseUser(ctx context.Context, userID string) (int64, error) {
+	// Una sola transacción: o se borra todo o nada.
+	tx, err := p.pool.Begin(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("borrar usuario: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }() // no hace nada si ya se confirmó
+	subs, err := tx.Exec(ctx, `DELETE FROM flights.fare_subscriptions WHERE user_id = $1`, userID)
+	if err != nil {
+		return 0, fmt.Errorf("borrar seguimientos: %w", err)
+	}
+	alerts, err := tx.Exec(ctx, `DELETE FROM flights.fare_alerts WHERE user_id = $1`, userID)
+	if err != nil {
+		return 0, fmt.Errorf("borrar avisos: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return 0, fmt.Errorf("borrar usuario: %w", err)
+	}
+	return subs.RowsAffected() + alerts.RowsAffected(), nil
+}
+
 // History devuelve el precio más bajo de cada día desde since (para la
 // gráfica). Si la ruta tiene precios en varias divisas, solo la más usada.
 func (p *Postgres) History(ctx context.Context, routeKey string, since time.Time) (string, []domain.PricePoint, error) {

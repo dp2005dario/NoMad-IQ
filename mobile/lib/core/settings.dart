@@ -48,7 +48,14 @@ abstract interface class SettingsStore {
   /// Otros datos del móvil (ver [LocalData]); null = no hay / borrar.
   String? readData(LocalData key);
   Future<void> writeData(LocalData key, String? json);
+
+  /// Borra todo lo personal (al borrar la cuenta). Se quedan el idioma y los
+  /// tipos de cambio, que no dicen nada de ti.
+  Future<void> wipePersonal();
 }
+
+/// Lo que NO se borra con [SettingsStore.wipePersonal].
+const Set<LocalData> _notPersonal = <LocalData>{LocalData.fxRates};
 
 /// Versión real: guarda en el almacenamiento del móvil (SharedPreferences).
 final class PreferencesSettingsStore implements SettingsStore {
@@ -83,6 +90,22 @@ final class PreferencesSettingsStore implements SettingsStore {
 
   @override
   String? readLocale() => _prefs.getString(_localeKey);
+
+  @override
+  Future<void> wipePersonal() async {
+    for (final String key in <String>[
+      _travelKey,
+      _originKey,
+      _groupNameKey,
+      _flyraKey,
+      _stampsKey,
+    ]) {
+      await _prefs.remove(key);
+    }
+    for (final LocalData d in LocalData.values) {
+      if (!_notPersonal.contains(d)) await _prefs.remove('data_${d.name}');
+    }
+  }
 
   @override
   Future<void> writeLocale(String? tag) => tag == null
@@ -192,6 +215,16 @@ final class MemorySettingsStore implements SettingsStore {
   @override
   Future<void> writeData(LocalData key, String? json) async =>
       json == null ? data.remove(key) : data[key] = json;
+
+  @override
+  Future<void> wipePersonal() async {
+    travelMode = false;
+    flightOrigin = null;
+    groupName = null;
+    flyraChat = null;
+    stamps = null;
+    data.removeWhere((LocalData k, _) => !_notPersonal.contains(k));
+  }
 }
 
 class SettingsController extends ChangeNotifier {

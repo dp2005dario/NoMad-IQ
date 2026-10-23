@@ -3014,5 +3014,103 @@
   "insuranceNoText": "I couldn't read the text of this policy (is it a blurry photo?). Try adding it again as a PDF.",
   "@insuranceNoText": {
     "description": "Couldn't read the policy text."
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Settings screen title."
+  },
+  "settingsSubtitle": "The important stuff, one tap away",
+  "@settingsSubtitle": {
+    "description": "Settings subtitle."
+  },
+  "settingsCopyId": "ID: {id} · copy",
+  "@settingsCopyId": {
+    "description": "Button that copies the short account ID.",
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsIdCopied": "ID copied",
+  "@settingsIdCopied": {
+    "description": "Shown after copying the ID."
+  },
+  "settingsSectionApp": "YOUR APP",
+  "@settingsSectionApp": {
+    "description": "Section header (uppercase in UI)."
+  },
+  "settingsSectionAccount": "ACCOUNT",
+  "@settingsSectionAccount": {
+    "description": "Section header (uppercase in UI)."
+  },
+  "settingsVault": "Vault and fingerprint",
+  "@settingsVault": {
+    "description": "Row that opens the vault settings."
+  },
+  "settingsDeleteAccount": "Delete my account and my data",
+  "@settingsDeleteAccount": {
+    "description": "Destructive row in settings."
+  },
+  "settingsFooter": "NomadIQ {version} · Made with love for travellers all over the world",
+  "@settingsFooter": {
+    "description": "Footer with the app version.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteTitle": "Delete your account?",
+  "@deleteTitle": {
+    "description": "Delete account dialog title."
+  },
+  "deleteBody": "We delete your account, your trips, your shared expenses, your price alerts and this phone's vault right away. Server backups disappear within 30 days. This can't be undone, so you can download a copy of your data first.",
+  "@deleteBody": {
+    "description": "Delete account dialog body."
+  },
+  "downloadMyData": "Download my data",
+  "@downloadMyData": {
+    "description": "Button: export my data as a file."
+  },
+  "downloadDone": "Copy saved",
+  "@downloadDone": {
+    "description": "Snackbar after saving the export."
+  },
+  "deleteConfirm": "Yes, delete my account",
+  "@deleteConfirm": {
+    "description": "Destructive confirm button."
+  },
+  "deletePasswordTitle": "Type your password",
+  "@deletePasswordTitle": {
+    "description": "Password prompt title before deleting."
+  },
+  "deletePasswordWhy": "So nobody holding your phone can delete your account.",
+  "@deletePasswordWhy": {
+    "description": "Why we ask the password again."
+  },
+  "deletePasswordLabel": "Password",
+  "@deletePasswordLabel": {
+    "description": "Password field label."
+  },
+  "deleteNow": "Delete forever",
+  "@deleteNow": {
+    "description": "Final delete button inside password prompt."
+  },
+  "deleteWrongPassword": "That password isn't right.",
+  "@deleteWrongPassword": {
+    "description": "Error: wrong password."
+  },
+  "deleteFailed": "We couldn't finish. Check your connection and try again: your account is still there.",
+  "@deleteFailed": {
+    "description": "Error: deletion failed (network); account untouched."
+  },
+  "deleteDone": "Your account has been deleted. Safe travels!",
+  "@deleteDone": {
+    "description": "Shown after the account is deleted."
+  },
+  "exportFailed": "We couldn't save the copy.",
+  "@exportFailed": {
+    "description": "Error: export couldn't be saved."
   }
 }

@@ -42,7 +42,7 @@ from collections.abc import Awaitable, Callable
 from datetime import datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Query, Request
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
@@ -55,6 +55,7 @@ from ai_orchestrator.audioguides.cache import CacheError
 from ai_orchestrator.audioguides.domain import AudioguideScript
 from ai_orchestrator.audioguides.service import AudioguideService
 from ai_orchestrator.domain import Recommendation, Verdict
+from ai_orchestrator.erasure import UserDataEraser
 from ai_orchestrator.flyra.domain import ChatReply, ChatRequest
 from ai_orchestrator.flyra.service import FlyraBusyError, FlyraService
 from ai_orchestrator.fx.service import FxRates, FxService, FxUnavailableError
@@ -218,6 +219,7 @@ def create_api(
     landmarks: LandmarkService | None = None,
     fx: FxService | None = None,
     atms: AtmService | None = None,
+    eraser: UserDataEraser | None = None,
     expose_docs: bool = False,
 ) -> FastAPI:
     """Crea la API pública (puerto con mTLS)."""
@@ -452,6 +454,16 @@ def create_api(
             return JSONResponse(
                 card.model_dump(mode="json"), headers={"Cache-Control": "private, max-age=86400"}
             )
+
+    if eraser is not None:
+
+        @app.delete("/v1/me/data", status_code=204)
+        async def erase_my_data(principal: Annotated[Principal, Depends(current_principal)]) -> Response:
+            # "Borrar mi cuenta": la app llama aquí ANTES de borrar la cuenta
+            # en el auth-gateway (después ya no tendría pase). Repetirlo no
+            # hace daño: la segunda vez no encuentra nada que borrar.
+            await eraser.erase(principal.user_id)
+            return Response(status_code=204)
 
     if expenses is not None:
         # Las rutas /v1/expense-groups viven en expenses/api.py.

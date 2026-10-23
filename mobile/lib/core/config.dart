@@ -8,6 +8,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
 abstract final class AppConfig {
+  /// La versión que se enseña en Ajustes. Debe coincidir con "version" de
+  /// pubspec.yaml (la parte antes del +).
+  static const String version = '1.0.0';
+
   static const String _apiUrl = String.fromEnvironment(
     'NOMADIQ_API_URL',
     defaultValue: 'http://10.0.2.2:8080',

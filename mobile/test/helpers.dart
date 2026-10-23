@@ -77,6 +77,17 @@ class FakeGateway {
       case '/v1/auth/logout':
         liveRefresh.remove(body['refresh_token']);
         return http.Response('', 204);
+      case '/v1/me' when req.method == 'DELETE':
+        // Borrar la cuenta: como el de verdad, pide la contraseña.
+        final String? email = accounts.keys.isEmpty
+            ? null
+            : accounts.keys.first;
+        if (email == null || accounts[email] != body['password']) {
+          return http.Response('{}', 401);
+        }
+        accounts.remove(email);
+        liveRefresh.clear();
+        return http.Response('', 204);
       case '/v1/me':
         return _json(<String, Object?>{
           'id': 'u1',

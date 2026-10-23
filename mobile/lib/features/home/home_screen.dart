@@ -112,7 +112,7 @@ String? displayName(String? email) {
 }
 
 /// El círculo con tu inicial (maquetas: "tu avatar D en cada pantalla").
-/// Abre la hoja de cuenta: idioma y cerrar sesión (o entrar, si eres invitado).
+/// Abre Ajustes: idioma, Bóveda, cerrar sesión, borrar la cuenta...
 class _AccountButton extends StatelessWidget {
   const _AccountButton({required this.session, required this.name});
 
@@ -125,56 +125,7 @@ class _AccountButton extends StatelessWidget {
     final String? initial = name?.characters.first;
     return IconButton(
       tooltip: t.accountMenu,
-      onPressed: () => showModalBottomSheet<void>(
-        context: context,
-        // Por encima de TODO, también de la barra de pestañas y la cámara
-        // (si no, la hoja se abriría "dentro" de la pestaña, debajo de ellas).
-        useRootNavigator: true,
-        showDragHandle: true,
-        builder: (BuildContext sheet) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                leading: const Icon(Icons.person_rounded),
-                title: Text(session.user?.email ?? t.accountGuest),
-              ),
-              ListTile(
-                leading: const Icon(Icons.translate_rounded),
-                title: Text(t.languageTitle),
-                onTap: () {
-                  Navigator.pop(sheet);
-                  context.push(Routes.language);
-                },
-              ),
-              if (session.status == SessionStatus.signedIn)
-                ListTile(
-                  leading: const Icon(
-                    Icons.logout_rounded,
-                    color: NomadColors.safety,
-                  ),
-                  title: Text(t.signOut),
-                  onTap: () {
-                    Navigator.pop(sheet);
-                    session.signOut();
-                  },
-                )
-              else
-                ListTile(
-                  leading: const Icon(
-                    Icons.login_rounded,
-                    color: NomadColors.mint,
-                  ),
-                  title: Text(t.signInFromGuest),
-                  onTap: () {
-                    Navigator.pop(sheet);
-                    context.push(Routes.signIn);
-                  },
-                ),
-            ],
-          ),
-        ),
-      ),
+      onPressed: () => context.push(Routes.settings),
       icon: CircleAvatar(
         backgroundColor: NomadColors.group,
         foregroundColor: NomadColors.background,

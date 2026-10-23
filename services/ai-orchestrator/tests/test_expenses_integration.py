@@ -144,3 +144,27 @@ async def test_kitty_and_weights(pool: asyncpg.Pool[asyncpg.Record]) -> None:
     )
     # Hucha: 200 puestos - 48 de tuk-tuk - 10 devueltos = 142.
     assert -bal[0] == 14200
+
+
+async def test_erase_my_data(pool: asyncpg.Pool[asyncpg.Record]) -> None:
+    from ai_orchestrator.erasure import ERASED_NAME, PostgresEraser
+
+    store = PostgresExpenses(pool)
+    alex, bea = person(), person()
+    solo = await store.create(alex, "Álex", "Solo yo", "EUR")
+    shared = await store.create(alex, "Álex", "Con Bea", "EUR")
+    await store.join(shared.invite_code, bea, "Bea")
+
+    report = await PostgresEraser(pool).erase(alex)
+    assert report.groups_deleted == 1
+    assert report.seats_anonymized == 1
+
+    # El bote de Álex solo ya no existe; Bea sigue viendo el suyo, con Álex tachado.
+    assert await store.get_for_member(solo.group_id, alex) is None
+    assert await store.list_for_member(alex, limit=10) == []
+    left = await store.get_for_member(shared.group_id, bea)
+    assert left is not None
+    assert [m.name for m in left.members] == [ERASED_NAME, "Bea"]
+    # Repetir no rompe nada.
+    again = await PostgresEraser(pool).erase(alex)
+    assert again.groups_deleted == again.seats_anonymized == 0

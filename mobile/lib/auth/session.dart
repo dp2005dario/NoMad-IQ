@@ -74,18 +74,7 @@ class SessionController extends ChangeNotifier {
   /// y después se avisa al servidor para que anule los pases; si no hay
   /// conexión, el servidor los dará por caducados igualmente al expirar.
   Future<void> signOut() async {
-    // Antes de olvidar los pases, quien lo necesite se despide del servidor
-    // con la sesión aún abierta (p. ej. "no mandéis más avisos a este móvil").
-    // Cada despedida tiene 5 s como mucho: salir nunca se queda colgado.
-    for (final Future<void> Function() hook in List<Future<void> Function()>.of(
-      _beforeSignOut,
-    )) {
-      try {
-        await hook().timeout(const Duration(seconds: 5));
-      } on Object {
-        // Mejor esfuerzo: salir es más importante que despedirse.
-      }
-    }
+    await _sayGoodbye();
     final String? access = _tokens?.accessToken;
     final String? refresh = _refreshToken;
     await _forget();
@@ -95,6 +84,42 @@ class SessionController extends ChangeNotifier {
         await _api.logout(access, refresh);
       } on AuthException {
         // Mejor esfuerzo: el usuario ya está fuera en el móvil.
+      }
+    }
+  }
+
+  /// Vuelve a comprobar la contraseña (entra otra vez con ella). Se usa
+  /// antes de algo que no tiene vuelta atrás, como borrar la cuenta: si el
+  /// móvil está desbloqueado en manos de otro, no basta con tenerlo.
+  /// Lanza [AuthException] con invalidCredentials si no es la buena.
+  Future<void> confirmPassword(String password) async {
+    if (_user == null) await _loadProfile();
+    final String? email = _user?.email;
+    if (email == null) throw const AuthException(AuthError.sessionExpired);
+    await _accept(await _api.login(email, password));
+  }
+
+  /// Borra la cuenta en el auth-gateway (para siempre) y sale. Antes, como al
+  /// cerrar sesión, cada pieza se despide del servidor. Los datos de los
+  /// demás servicios se borran ANTES de llamar aquí (ver AccountEraser).
+  Future<void> deleteAccount(String password) async {
+    await _sayGoodbye();
+    await _api.deleteAccount(await accessToken(), password);
+    await _forget();
+    notifyListeners();
+  }
+
+  /// Antes de olvidar los pases, quien lo necesite se despide del servidor
+  /// con la sesión aún abierta (p. ej. "no mandéis más avisos a este móvil").
+  /// Cada despedida tiene 5 s como mucho: salir nunca se queda colgado.
+  Future<void> _sayGoodbye() async {
+    for (final Future<void> Function() hook in List<Future<void> Function()>.of(
+      _beforeSignOut,
+    )) {
+      try {
+        await hook().timeout(const Duration(seconds: 5));
+      } on Object {
+        // Mejor esfuerzo: salir es más importante que despedirse.
       }
     }
   }

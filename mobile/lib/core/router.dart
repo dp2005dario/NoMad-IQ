@@ -25,6 +25,7 @@ import '../features/map/map_screen.dart';
 import '../features/money/expense_group_screen.dart';
 import '../features/money/money_screen.dart';
 import '../features/settings/language_screen.dart';
+import '../features/settings/settings_screen.dart';
 import '../features/shell/app_shell.dart';
 import '../features/welcome/welcome_screen.dart';
 import 'services.dart';
@@ -40,6 +41,7 @@ abstract final class Routes {
   static const String language = '/settings/language';
   static const String signIn = '/signin';
   static const String vault = '/vault';
+  static const String settings = '/settings';
 
   /// La audioguía de una zona. El nombre va en la dirección para poder
   /// enseñarlo en el título mientras se carga el resto.
@@ -234,6 +236,11 @@ GoRouter buildRouter({
       path: '/group/trip/:id',
       builder: (BuildContext context, GoRouterState state) =>
           TripScreen(tripId: state.pathParameters['id'] ?? ''),
+    ),
+    GoRoute(
+      path: Routes.settings,
+      builder: (BuildContext context, GoRouterState state) =>
+          const SettingsScreen(),
     ),
     GoRoute(
       path: Routes.vault,

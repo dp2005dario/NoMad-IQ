@@ -19,6 +19,7 @@
 //	       [&return=2026-12-22][&adults=2][&cabin=ECONOMY]
 //	                                            buscador de vuelos (público)
 //	GET    /v1/fares/alerts                    mis últimos avisos de precio
+//	DELETE /v1/fares/me                        borrar todo lo mío (al borrar la cuenta)
 //
 // route_key tiene el formato ORIGEN-DESTINO:AAAA-MM-DD[:AAAA-MM-DD]:CABINA,
 // por ejemplo MAD-NRT:2026-12-01:2026-12-15:ECONOMY.
@@ -63,6 +64,7 @@ type Store interface {
 	DeleteSubscription(ctx context.Context, userID, routeKey string) error
 	History(ctx context.Context, routeKey string, since time.Time) (string, []domain.PricePoint, error)
 	Alerts(ctx context.Context, userID string, limit int) ([]domain.AlertView, error)
+	EraseUser(ctx context.Context, userID string) (int64, error)
 }
 
 // Watcher pide al flight-ingestor que empiece a consultar una ruta. Es "mejor
@@ -105,6 +107,7 @@ func New(cfg Config, st Store, watcher Watcher, log *slog.Logger) http.Handler {
 	mux.HandleFunc("GET /v1/fares/history/{route_key}", public(h.history))
 	mux.HandleFunc("GET /v1/fares/search", public(h.search))
 	mux.HandleFunc("GET /v1/fares/alerts", h.withUser(h.alerts))
+	mux.HandleFunc("DELETE /v1/fares/me", h.withUser(h.eraseMe))
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
 		problem(w, http.StatusNotFound, "no encontrado")
 	})
@@ -433,6 +436,19 @@ func (h *handler) unwatch(w http.ResponseWriter, r *http.Request, userID string)
 	default:
 		h.unavailable(w, "unwatch", err)
 	}
+}
+
+// eraseMe es "Borrar mi cuenta": la app lo llama antes de borrar la cuenta en
+// el auth-gateway. Repetirlo no hace daño (la segunda vez no hay nada).
+func (h *handler) eraseMe(w http.ResponseWriter, r *http.Request, userID string) {
+	n, err := h.store.EraseUser(r.Context(), userID)
+	if err != nil {
+		h.unavailable(w, "erase", err)
+		return
+	}
+	// Solo el número: nunca quién.
+	h.log.Info("datos de una persona borrados", "rows", n)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *handler) history(w http.ResponseWriter, r *http.Request, _ string) {

@@ -70,6 +70,7 @@ from ai_orchestrator.audioguides.versions import ZoneVersionCache
 from ai_orchestrator.audioguides.writer import AudioguideWriter, WriterSettings
 from ai_orchestrator.config import Settings
 from ai_orchestrator.consumer import AlertProcessor, FareAlertConsumer
+from ai_orchestrator.erasure import PostgresEraser
 from ai_orchestrator.expenses.api import expense_router
 from ai_orchestrator.expenses.store import PostgresExpenses
 from ai_orchestrator.flyra.service import KEY_PREFIX as FLYRA_QUOTA_PREFIX
@@ -580,6 +581,7 @@ async def run(settings: Settings) -> int:
                 landmarks=landmarks,
                 fx=fx,
                 atms=atms,
+                eraser=PostgresEraser(pool),
                 expose_docs=settings.expose_api_docs,
             ),
             settings.http_port,

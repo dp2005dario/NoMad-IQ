@@ -64,6 +64,12 @@ func (f *fakeStore) DeleteSubscription(_ context.Context, user, key string) erro
 	return store.ErrNotFound
 }
 
+func (f *fakeStore) EraseUser(_ context.Context, user string) (int64, error) {
+	n := int64(len(f.subs[user]))
+	delete(f.subs, user)
+	return n, nil
+}
+
 func (f *fakeStore) History(context.Context, string, time.Time) (string, []domain.PricePoint, error) {
 	return "EUR", f.points, nil
 }
@@ -383,5 +389,27 @@ func TestSearchValidatesAndDegrades(t *testing.T) {
 	}
 	if rec := get(newSearchAPI(nil), "/v1/fares/search?origin=MAD&destination=NRT&departure=2026-12-15"); rec.Code != http.StatusServiceUnavailable {
 		t.Errorf("sin buscador: %d", rec.Code)
+	}
+}
+
+func TestEraseMe(t *testing.T) {
+	st := &fakeStore{}
+	h := newAPI(st, &fakeWatcher{})
+	call(h, http.MethodPut, "/v1/fares/watches/MAD-JFK:2026-12-01:ECONOMY", "")
+	if len(st.subs["u1"]) != 1 {
+		t.Fatalf("no se guardó la ruta: %v", st.subs)
+	}
+	for i := 0; i < 2; i++ { // la segunda vez tampoco falla
+		if rec := call(h, http.MethodDelete, "/v1/fares/me", ""); rec.Code != http.StatusNoContent {
+			t.Fatalf("borrar: %d %s", rec.Code, rec.Body)
+		}
+	}
+	if len(st.subs["u1"]) != 0 {
+		t.Errorf("quedan rutas: %v", st.subs)
+	}
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodDelete, "/v1/fares/me", nil))
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("sin identidad: %d", rec.Code)
 	}
 }
