@@ -315,3 +315,100 @@ type PendingAlert struct {
 	DeepLink      string
 	CorrelationID string
 }
+
+// ---------------------------------------------------------------------------
+// Rutas (lo que el usuario elige vigilar desde la app)
+// ---------------------------------------------------------------------------
+
+// RouteSpec es una ruta concreta: de dónde a dónde, qué días y en qué clase.
+// Su forma de texto es la clave de ruta (RouteKey).
+type RouteSpec struct {
+	Origin      string
+	Destination string
+	Departure   Date
+	Return      *Date // nil = solo ida
+	Cabin       Cabin
+}
+
+// Key devuelve la clave de ruta, idéntica a la del flight-ingestor.
+func (s RouteSpec) Key() string {
+	parts := []string{s.Origin + "-" + s.Destination, s.Departure.String()}
+	if s.Return != nil {
+		parts = append(parts, s.Return.String())
+	}
+	parts = append(parts, string(s.Cabin))
+	return strings.Join(parts, ":")
+}
+
+// ParseRouteKey lee una clave como "MAD-NRT:2026-12-01:2026-12-15:ECONOMY".
+// Además del formato, comprueba que tenga sentido: origen distinto del
+// destino y vuelta no anterior a la ida.
+func ParseRouteKey(key string) (RouteSpec, error) {
+	if err := ValidateRouteKey(key); err != nil {
+		return RouteSpec{}, err
+	}
+	parts := strings.Split(key, ":")
+	airports := strings.Split(parts[0], "-")
+	spec := RouteSpec{Origin: airports[0], Destination: airports[1], Cabin: Cabin(parts[len(parts)-1])}
+	spec.Departure, _ = ParseDate("route_key", parts[1])
+	if len(parts) == 4 {
+		ret, _ := ParseDate("route_key", parts[2])
+		spec.Return = &ret
+	}
+	if spec.Origin == spec.Destination {
+		return RouteSpec{}, invalid("route_key", "origen y destino no pueden ser el mismo aeropuerto (%s)", spec.Origin)
+	}
+	if spec.Return != nil && spec.Return.Time().Before(spec.Departure.Time()) {
+		return RouteSpec{}, invalid("route_key", "la vuelta no puede ser anterior a la ida")
+	}
+	return spec, nil
+}
+
+// ---------------------------------------------------------------------------
+// Lo que ve la app (respuestas de la API de vuelos)
+// ---------------------------------------------------------------------------
+
+// Fare es el último precio visto de una ruta.
+type Fare struct {
+	Spec        RouteSpec
+	Price       Money
+	CarrierIATA string
+	DeepLink    string
+	ObservedAt  time.Time
+}
+
+// Deal es un precio de la portada "Cazador de vuelos": el último precio de
+// una ruta comparado con lo que suele costar.
+type Deal struct {
+	Fare
+	// Usual es la mediana del historial (0 si aún no hay bastantes datos).
+	UsualMinor int64
+	// DropBasisPoints: cuánto más barato que lo habitual (2500 = 25 %).
+	DropBasisPoints int32
+}
+
+// Watch es una ruta que vigila el usuario, con su último precio (si lo hay).
+type Watch struct {
+	Spec      RouteSpec
+	Target    *Money
+	CreatedAt time.Time
+	Latest    *Fare
+}
+
+// PricePoint es el precio más bajo visto en un día (para la gráfica).
+type PricePoint struct {
+	Day      Date
+	MinMinor int64
+}
+
+// AlertView es una alerta ya enviada, para la lista de avisos de la app.
+type AlertView struct {
+	ID              string
+	Spec            RouteSpec
+	Type            AlertType
+	Reference       Money
+	Current         Money
+	DropBasisPoints int32
+	DeepLink        string
+	ObservedAt      time.Time
+}

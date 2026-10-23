@@ -19,6 +19,10 @@ func minimal() map[string]string {
 		"PGUSER":        "nomadiq",
 		"PGPASSWORD":    "s3cr3t/+=",
 		"PGDATABASE":    "nomadiq",
+		// La API de vuelos exige mTLS: con los tres certificados vale.
+		"TLS_CERT_FILE":      "/certs/api.crt",
+		"TLS_KEY_FILE":       "/certs/api.key",
+		"TLS_CLIENT_CA_FILE": "/certs/edge-ca.crt",
 	}
 }
 
@@ -101,5 +105,39 @@ func TestSeedSubscriptionsList(t *testing.T) {
 	}
 	if len(cfg.SeedSubscriptions) != 2 || cfg.SeedSubscriptions[1] != "luis|BCN-JFK:2026-12-10:BUSINESS|90000|EUR" {
 		t.Errorf("lista mal leída: %q", cfg.SeedSubscriptions)
+	}
+}
+
+func TestAPIRequiresMTLS(t *testing.T) {
+	base := minimal()
+	delete(base, "TLS_KEY_FILE")
+	if _, err := Load(env(base)); err == nil || !strings.Contains(err.Error(), "van juntas") {
+		t.Errorf("con un certificado de menos esperaba error, se obtuvo %v", err)
+	}
+	delete(base, "TLS_CERT_FILE")
+	delete(base, "TLS_CLIENT_CA_FILE")
+	if _, err := Load(env(base)); err == nil || !strings.Contains(err.Error(), "exige mTLS") {
+		t.Errorf("sin certificados esperaba error, se obtuvo %v", err)
+	}
+	base["HTTP_INSECURE_DEV"] = "true"
+	if _, err := Load(env(base)); err != nil {
+		t.Errorf("en local sin TLS debería arrancar: %v", err)
+	}
+}
+
+func TestIngestorSync(t *testing.T) {
+	base := minimal()
+	base["INGESTOR_GRPC_ADDR"] = "flight-ingestor:50051"
+	if _, err := Load(env(base)); err == nil || !strings.Contains(err.Error(), "INGESTOR_TLS") {
+		t.Errorf("sin certificados para el ingestor esperaba error, se obtuvo %v", err)
+	}
+	base["INGESTOR_INSECURE_DEV"] = "true"
+	base["POPULAR_ROUTES"] = "MAD-JFK, BCN-LIS"
+	cfg, err := Load(env(base))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.PopularRoutes) != 2 || cfg.WatchSyncInterval != time.Minute || !cfg.WatchSyncPrune || cfg.APIAddr != ":8092" {
+		t.Errorf("configuración inesperada: %+v", cfg)
 	}
 }

@@ -70,3 +70,28 @@ func TestMoneyString(t *testing.T) {
 		t.Errorf("String = %s", got)
 	}
 }
+
+func TestParseRouteKey(t *testing.T) {
+	spec, err := ParseRouteKey("MAD-NRT:2026-12-01:2026-12-15:BUSINESS")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if spec.Origin != "MAD" || spec.Destination != "NRT" || spec.Return == nil || spec.Cabin != CabinBusiness {
+		t.Errorf("ruta mal leída: %+v", spec)
+	}
+	// Ida y vuelta: la clave se rehace idéntica.
+	if got := spec.Key(); got != "MAD-NRT:2026-12-01:2026-12-15:BUSINESS" {
+		t.Errorf("Key() = %q", got)
+	}
+	for _, bad := range []string{
+		"MAD-MAD:2026-12-01:ECONOMY",            // mismo aeropuerto
+		"MAD-NRT:2026-12-15:2026-12-01:ECONOMY", // vuelta antes que la ida
+		"mad-nrt:2026-12-01:ECONOMY",            // minúsculas
+		"MAD-NRT:2026-02-30:ECONOMY",            // día inexistente
+		"MAD-NRT:ECONOMY",
+	} {
+		if _, err := ParseRouteKey(bad); err == nil {
+			t.Errorf("%q debería ser inválida", bad)
+		}
+	}
+}
