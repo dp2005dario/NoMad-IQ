@@ -8,6 +8,11 @@ import '../auth/session.dart';
 import '../features/audioguide/audioguide_screen.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/coming_soon/coming_soon_screen.dart';
+import '../features/flights/fare_alerts_screen.dart';
+import '../features/flights/fare_route_screen.dart';
+import '../features/flights/flight_search_screen.dart';
+import '../features/flights/fares_api.dart';
+import '../features/flights/flights_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/map/map_screen.dart';
 import '../features/settings/language_screen.dart';
@@ -32,9 +37,42 @@ abstract final class Routes {
     queryParameters: <String, String>{'name': zoneName},
   ).toString();
 
+  /// Tus alertas de precio de vuelos (también al tocar la notificación).
+  static const String fareAlerts = '/fares/alerts';
+
+  /// El buscador de vuelos. Todo es opcional: rellena el formulario de
+  /// entrada (from/to = aeropuertos, dep/ret = días "2026-12-15").
+  static String fareSearch({
+    String? origin,
+    String? destination,
+    String? departure,
+    String? returnDate,
+  }) {
+    final Map<String, String> q = <String, String>{
+      'from': ?origin,
+      'to': ?destination,
+      'dep': ?departure,
+      'ret': ?returnDate,
+    };
+    return Uri(
+      path: '/fares/search',
+      queryParameters: q.isEmpty ? null : q,
+    ).toString();
+  }
+
+  /// El detalle de una ruta de vuelo ("MAD-NRT:2026-12-15:ECONOMY").
+  static String fareRoute(String routeKey) =>
+      '/fares/route/${Uri.encodeComponent(routeKey)}';
+
   /// Pantalla "Muy pronto" de una función aún sin construir.
   static String soon(Feature feature) => '/soon/${feature.name}';
 }
+
+/// "2026-12-15" → fecha (solo ese formato; cualquier otra cosa, null).
+DateTime? _day(String? raw) =>
+    raw != null && RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(raw)
+    ? DateTime.tryParse(raw)
+    : null;
 
 /// Pantallas que se pueden ver sin haber entrado (ni como invitado).
 const Set<String> _public = <String>{
@@ -74,10 +112,7 @@ GoRouter buildRouter({
           Routes.camera,
           (_) => const ComingSoonScreen(feature: Feature.camera),
         ),
-        _tab(
-          Routes.flights,
-          (_) => const ComingSoonScreen(feature: Feature.flights),
-        ),
+        _tab(Routes.flights, (_) => const FlightsScreen()),
         _tab(
           Routes.group,
           (_) => const ComingSoonScreen(feature: Feature.group),
@@ -99,6 +134,29 @@ GoRouter buildRouter({
       builder: (BuildContext context, GoRouterState state) => AudioguideScreen(
         zoneId: state.pathParameters['zoneId'] ?? '',
         zoneName: state.uri.queryParameters['name'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: Routes.fareAlerts,
+      builder: (BuildContext context, GoRouterState state) =>
+          const FareAlertsScreen(),
+    ),
+    GoRoute(
+      path: '/fares/search',
+      builder: (BuildContext context, GoRouterState state) =>
+          FlightSearchScreen(
+            origin: state.uri.queryParameters['from'],
+            destination: state.uri.queryParameters['to'],
+            departure: _day(state.uri.queryParameters['dep']),
+            returnDate: _day(state.uri.queryParameters['ret']),
+          ),
+    ),
+    GoRoute(
+      path: '/fares/route/:key',
+      builder: (BuildContext context, GoRouterState state) => FareRouteScreen(
+        routeKey: state.pathParameters['key'] ?? '',
+        // "extra" solo existe si se abrió desde la app (no al reabrirla).
+        fare: state.extra is Fare ? state.extra! as Fare : null,
       ),
     ),
     GoRoute(

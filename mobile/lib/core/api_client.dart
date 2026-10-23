@@ -56,13 +56,20 @@ class ApiClient {
   /// Si ya es completa (https://cdn...), se deja tal cual.
   Uri resolve(String pathOrUrl) => _base.resolve(pathOrUrl);
 
-  Future<Object?> getJson(String path, {Map<String, String>? query}) {
+  /// [public]: la ruta también la puede ver un invitado (p. ej. los chollos
+  /// de vuelos). Si hay sesión se manda el pase igualmente; si no, se pide
+  /// sin pase en lugar de rendirse.
+  Future<Object?> getJson(
+    String path, {
+    Map<String, String>? query,
+    bool public = false,
+  }) {
     final Uri uri = _base
         .resolve(path)
         .replace(
           queryParameters: query == null || query.isEmpty ? null : query,
         );
-    return _send('GET', uri, null);
+    return _send('GET', uri, null, public: public);
   }
 
   Future<Object?> postJson(String path, Object body) =>
@@ -83,10 +90,17 @@ class ApiClient {
 
   // ---------------------------------------------------------------------------
 
-  Future<Object?> _send(String method, Uri uri, String? body) async {
-    // Sin cuenta no hay pase: ni lo intentamos (la puerta diría 401).
+  Future<Object?> _send(
+    String method,
+    Uri uri,
+    String? body, {
+    bool public = false,
+  }) async {
     if (_session.status != SessionStatus.signedIn) {
-      throw const ApiException(ApiError.signedOut);
+      // Sin cuenta no hay pase: si la ruta es pública se pide sin él; si no,
+      // ni lo intentamos (la puerta diría 401).
+      if (!public) throw const ApiException(ApiError.signedOut);
+      return _decode(await _once(method, uri, body, null));
     }
     String token = await _token(() => _session.accessToken());
     http.Response response = await _once(method, uri, body, token);
@@ -118,11 +132,11 @@ class ApiClient {
     String method,
     Uri uri,
     String? body,
-    String token,
+    String? token,
   ) async {
     final http.Request request = http.Request(method, uri)
-      ..headers['Accept'] = 'application/json'
-      ..headers['Authorization'] = 'Bearer $token';
+      ..headers['Accept'] = 'application/json';
+    if (token != null) request.headers['Authorization'] = 'Bearer $token';
     if (body != null) {
       request.headers['Content-Type'] = 'application/json';
       request.body = body;

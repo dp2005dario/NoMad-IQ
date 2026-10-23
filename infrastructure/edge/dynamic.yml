@@ -35,6 +35,15 @@ http:
         period: 1s
         burst: 60
 
+    # 3 bis) Límite propio del buscador de vuelos, más estricto: buscar es lo
+    #    único que puede acabar preguntando al proveedor de precios. 2 por
+    #    segundo por IP (ráfagas de 10) sobra para una persona tecleando.
+    search-rate-limit:
+      rateLimit:
+        average: 2
+        period: 1s
+        burst: 10
+
     # 4) Cuerpos de petición pequeños: nadie necesita mandar 100 MB.
     small-body:
       buffering:
@@ -70,7 +79,27 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 
-    # Vuelos: chollos, rutas vigiladas, historial y avisos de precio (price-consumer).
+    # Vuelos SIN cuenta: chollos e historial de precios. Son iguales para todo
+    # el mundo, así que también los ve quien entra como invitado (precios
+    # reales para todos). Solo lectura (GET) y con el mismo límite por IP.
+    # priority alta: se mira antes que la ruta "fares" de abajo.
+    fares-public:
+      entryPoints: [web]
+      rule: Method(`GET`) && (Path(`/v1/fares/deals`) || PathPrefix(`/v1/fares/history/`))
+      priority: 100
+      middlewares: [strip-identity, rate-limit]
+      service: price-consumer
+
+    # Buscador de vuelos (origen, destino, fechas, viajeros): público, como
+    # los chollos, pero con su límite más estricto.
+    fares-search:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/fares/search`)
+      priority: 100
+      middlewares: [strip-identity, search-rate-limit]
+      service: price-consumer
+
+    # Vuelos CON cuenta: rutas vigiladas y avisos de precio (price-consumer).
     fares:
       entryPoints: [web]
       rule: PathPrefix(`/v1/fares/`)

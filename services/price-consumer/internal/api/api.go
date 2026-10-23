@@ -10,11 +10,14 @@
 //
 // Endpoints (todo en JSON):
 //
-//	GET    /v1/fares/deals?origin=MAD          chollos de hoy desde un aeropuerto
+//	GET    /v1/fares/deals?origin=MAD          chollos de hoy desde un aeropuerto (público)
 //	GET    /v1/fares/watches                   las rutas que vigilo, con su último precio
 //	PUT    /v1/fares/watches/{route_key}       vigilar una ruta (opcional: precio objetivo)
 //	DELETE /v1/fares/watches/{route_key}       dejar de vigilarla
-//	GET    /v1/fares/history/{route_key}       precio más bajo de cada día (gráfica)
+//	GET    /v1/fares/history/{route_key}       precio más bajo de cada día (gráfica, público)
+//	GET    /v1/fares/search?origin=MAD&destination=NRT&departure=2026-12-15
+//	       [&return=2026-12-22][&adults=2][&cabin=ECONOMY]
+//	                                            buscador de vuelos (público)
 //	GET    /v1/fares/alerts                    mis últimos avisos de precio
 //
 // route_key tiene el formato ORIGEN-DESTINO:AAAA-MM-DD[:AAAA-MM-DD]:CABINA,
@@ -68,8 +71,16 @@ type Watcher interface {
 	Ensure(ctx context.Context, spec domain.RouteSpec) error
 }
 
+// Searcher es el buscador de vuelos (el flight-ingestor por gRPC).
+type Searcher interface {
+	Search(ctx context.Context, spec domain.RouteSpec, adults int) (domain.SearchResult, error)
+}
+
 // Config son los límites de la API.
 type Config struct {
+	// Searcher del buscador; nil = buscador desactivado (responde 503).
+	Searcher Searcher
+
 	MaxWatchesPerUser int           // rutas que puede vigilar una persona
 	MaxDaysAhead      int           // hasta cuántos días en el futuro se puede vigilar
 	DealsFreshness    time.Duration // un chollo más viejo que esto ya no se enseña
@@ -84,11 +95,15 @@ func New(cfg Config, st Store, watcher Watcher, log *slog.Logger) http.Handler {
 	}
 	h := &handler{cfg: cfg, store: st, watcher: watcher, log: log}
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /v1/fares/deals", h.withUser(h.deals))
+	// Chollos e historial son públicos: también los ve quien entra como
+	// invitado (no dependen de quién pregunta). Vigilar rutas y los avisos sí
+	// necesitan cuenta, porque se guardan a tu nombre.
+	mux.HandleFunc("GET /v1/fares/deals", public(h.deals))
 	mux.HandleFunc("GET /v1/fares/watches", h.withUser(h.watches))
 	mux.HandleFunc("PUT /v1/fares/watches/{route_key}", h.withUser(h.watch))
 	mux.HandleFunc("DELETE /v1/fares/watches/{route_key}", h.withUser(h.unwatch))
-	mux.HandleFunc("GET /v1/fares/history/{route_key}", h.withUser(h.history))
+	mux.HandleFunc("GET /v1/fares/history/{route_key}", public(h.history))
+	mux.HandleFunc("GET /v1/fares/search", public(h.search))
 	mux.HandleFunc("GET /v1/fares/alerts", h.withUser(h.alerts))
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
 		problem(w, http.StatusNotFound, "no encontrado")
@@ -106,6 +121,16 @@ type handler struct {
 // ---------------------------------------------------------------------------
 // Identidad y errores
 // ---------------------------------------------------------------------------
+
+// public sirve una ruta sin pedir identidad. Como la respuesta es la misma
+// para todo el mundo, se deja guardar un minuto en caché (en el móvil o en
+// una CDN): con millones de usuarios, la mayoría de peticiones ni llegan aquí.
+func public(next func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "public, max-age=60")
+		next(w, r, "")
+	}
+}
 
 // withUser comprueba la identidad que puso la puerta de entrada y se la pasa
 // al manejador. Sin ella, 401; sin el rol USER, 403.
@@ -146,8 +171,11 @@ func problem(w http.ResponseWriter, status int, title string) {
 
 func writeJSON(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	// Son datos de cada usuario: ninguna caché intermedia debe guardarlos.
-	w.Header().Set("Cache-Control", "private, no-store")
+	// Normalmente son datos de cada usuario: ninguna caché intermedia debe
+	// guardarlos. Las rutas públicas ya pusieron su propia regla antes.
+	if w.Header().Get("Cache-Control") == "" {
+		w.Header().Set("Cache-Control", "private, no-store")
+	}
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(body)
 }
@@ -207,6 +235,92 @@ func (h *handler) deals(w http.ResponseWriter, r *http.Request, _ string) {
 		out[i] = dealJSON{fareJSON: toFare(d.Fare), UsualMinor: d.UsualMinor, DropBasisPoints: d.DropBasisPoints}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"origin": origin, "deals": out})
+}
+
+// searchTimeout: lo que se espera como mucho al buscador (el flight-ingestor
+// ya corta antes, a los 8 s, si el proveedor no responde).
+const searchTimeout = 10 * time.Second
+
+// search es el BUSCADOR: ofertas para un viaje concreto, de la más barata a
+// la más cara. Es público (también para invitados) y la respuesta se puede
+// guardar en caché un minuto.
+func (h *handler) search(w http.ResponseWriter, r *http.Request, _ string) {
+	q := r.URL.Query()
+	upper := func(name string) string { return strings.ToUpper(strings.TrimSpace(q.Get(name))) }
+	cabin := upper("cabin")
+	if cabin == "" {
+		cabin = string(domain.CabinEconomy)
+	}
+	// Se monta la clave de ruta y se valida con las mismas reglas que al
+	// vigilar: aeropuertos IATA, fechas reales, vuelta no anterior a la ida.
+	parts := []string{upper("origin") + "-" + upper("destination"), strings.TrimSpace(q.Get("departure"))}
+	if ret := strings.TrimSpace(q.Get("return")); ret != "" {
+		parts = append(parts, ret)
+	}
+	parts = append(parts, cabin)
+	spec, err := domain.ParseRouteKey(strings.Join(parts, ":"))
+	if err != nil {
+		problem(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	adults, ok := intParam(w, r, "adults", 1, 1, domain.MaxAdults)
+	if !ok {
+		return
+	}
+	today := dateOf(h.cfg.Now())
+	switch {
+	// Un día de margen: cuando en UTC ya es mañana, en Hawái aún es hoy.
+	case spec.Departure.Time().Before(today.Time().AddDate(0, 0, -1)):
+		problem(w, http.StatusUnprocessableEntity, "ese día ya ha pasado")
+		return
+	case spec.Departure.Time().After(today.Time().AddDate(0, 0, 365)):
+		problem(w, http.StatusUnprocessableEntity, "solo se pueden buscar vuelos del próximo año")
+		return
+	}
+	if h.cfg.Searcher == nil {
+		problem(w, http.StatusServiceUnavailable, "el buscador no está disponible")
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), searchTimeout)
+	defer cancel()
+	res, err := h.cfg.Searcher.Search(ctx, spec, adults)
+	switch {
+	case errors.Is(err, domain.ErrSearchBusy):
+		w.Header().Set("Retry-After", "5")
+		problem(w, http.StatusTooManyRequests, "mucha gente buscando: inténtalo en unos segundos")
+		return
+	case domain.IsValidation(err):
+		problem(w, http.StatusBadRequest, err.Error())
+		return
+	case err != nil:
+		h.unavailable(w, "search", err)
+		return
+	}
+	offers := make([]offerJSON, 0, len(res.Offers))
+	for _, o := range res.Offers {
+		link := safeLink(o.DeepLink)
+		if link == "" || o.PricePerAdult.Validate("price") != nil || o.Total.Validate("total") != nil {
+			continue // mejor no enseñar una oferta que no se puede reservar
+		}
+		offers = append(offers, offerJSON{
+			PricePerAdult:   moneyJSON{AmountMinor: o.PricePerAdult.AmountMinor, Currency: o.PricePerAdult.Currency},
+			Total:           moneyJSON{AmountMinor: o.Total.AmountMinor, Currency: o.Total.Currency},
+			Carrier:         o.CarrierIATA,
+			DepartureAt:     o.DepartureAt,
+			ReturnAt:        o.ReturnAt,
+			Transfers:       o.Transfers,
+			ReturnTransfers: o.ReturnTransfers,
+			DurationMinutes: o.DurationMinutes,
+			BookingURL:      link,
+		})
+	}
+	writeJSON(w, http.StatusOK, searchJSON{
+		Route:      toRoute(spec),
+		Adults:     adults,
+		Provider:   res.Provider,
+		ObservedAt: res.ObservedAt.UTC(),
+		Offers:     offers,
+	})
 }
 
 func (h *handler) watches(w http.ResponseWriter, r *http.Request, userID string) {

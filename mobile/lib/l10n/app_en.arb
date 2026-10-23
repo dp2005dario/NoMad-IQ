@@ -286,5 +286,286 @@
         "type": "String"
       }
     }
+  },
+  "flightsTitle": "Flight hunter",
+  "flightsAlertsTitle": "Price alerts",
+  "flightsFrom": "From {airport}",
+  "@flightsFrom": {
+    "description": "Chip with the departure airport IATA code, e.g. MAD.",
+    "placeholders": {
+      "airport": {
+        "type": "String"
+      }
+    }
+  },
+  "flightsChangeOrigin": "Change departure airport",
+  "planTitle": "PLAN YOUR TRIP",
+  "@planTitle": {
+    "description": "Section title above trip planning shortcuts, uppercase in the mockup."
+  },
+  "flightsSignIn": "To watch flights and get alerts when prices drop, create a free account.",
+  "flightsNoDeals": "No deals from {airport} yet. Flyra checks prices every few minutes.",
+  "@flightsNoDeals": {
+    "description": "Flights screen text with placeholders.",
+    "placeholders": {
+      "airport": {
+        "type": "String"
+      }
+    }
+  },
+  "flightsErrorFareTip": "Error fares are sometimes cancelled: wait 48 h before booking a hotel.",
+  "flightsDeals": "Today's deals",
+  "flightsDrop": "−{percent}%",
+  "@flightsDrop": {
+    "description": "Price drop badge; {percent} is a whole number like 35.",
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "flightsMyAlerts": "My alerts",
+  "flightsNoWatches": "You're not watching any flight yet. Tap a deal and choose “Alert me if it drops”.",
+  "flightsWatchTarget": "if it drops below {price}",
+  "@flightsWatchTarget": {
+    "description": "Flights screen text with placeholders.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "flightsBookFailed": "The booking page couldn't be opened.",
+  "flightsHunted": "FLIGHT HUNTED!",
+  "@flightsHunted": {
+    "description": "Badge of the best deal card (mockup: ¡VUELO CAZADO!)."
+  },
+  "flightsErrorFareBadge": "ERROR FARE",
+  "flightsUsual": "Usually {price}",
+  "@flightsUsual": {
+    "description": "Flights screen text with placeholders.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "flightsBook": "Book now",
+  "flightsNotify": "Alert me if it drops",
+  "flightsNoPriceYet": "Looking for prices…",
+  "flightsOriginTitle": "Where do you fly from?",
+  "flightsOriginHint": "Airport code (e.g. MAD)",
+  "flightsOriginInvalid": "Use the 3-letter airport code: MAD, BCN, LHR…",
+  "flightsOriginSave": "Save",
+  "cabinEconomy": "Economy",
+  "cabinPremium": "Premium economy",
+  "cabinBusiness": "Business",
+  "cabinFirst": "First",
+  "flightsOneWay": "One way",
+  "flightsTargetInvalid": "Write a price, like 300 or 299.99.",
+  "flightsWatchAdded": "Done! Flyra will let you know if it drops.",
+  "flightsWatchLimit": "You're already watching {max} flights, the maximum. Remove one to add another.",
+  "@flightsWatchLimit": {
+    "description": "Flights screen text with placeholders.",
+    "placeholders": {
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "flightsWatchTooLate": "This flight can't be watched: it has already left or is too far ahead.",
+  "flightsTargetTitle": "Alert me if it drops below…",
+  "flightsTargetHint": "Price in {currency} (optional)",
+  "@flightsTargetHint": {
+    "description": "Flights screen text with placeholders.",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "flightsTargetAny": "Leave it empty and Flyra will alert you of any big drop or error fare.",
+  "flightsTargetSave": "Save alert",
+  "flightsStopWatching": "Stop watching",
+  "flightsHistory": "Price over the last days",
+  "flightsHistoryEmpty": "There aren't enough prices yet to draw the chart.",
+  "flightsChartLabel": "Price chart for {days} days. Lowest {lowest}, latest {latest}.",
+  "@flightsChartLabel": {
+    "description": "Screen reader description of the price chart.",
+    "placeholders": {
+      "days": {
+        "type": "String"
+      },
+      "lowest": {
+        "type": "String"
+      },
+      "latest": {
+        "type": "String"
+      }
+    }
+  },
+  "flightsLowest": "Lowest: {price}",
+  "@flightsLowest": {
+    "description": "Flights screen text with placeholders.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "flightsNoAlerts": "No alerts yet. When a flight you watch drops in price, it shows up here.",
+  "flightsPriceChange": "{before} → {after}",
+  "@flightsPriceChange": {
+    "description": "Old price → new price (already formatted with currency).",
+    "placeholders": {
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
+  "planExplore": "Explore",
+  "planCheapSleep": "Sleep cheap",
+  "planStopover": "Free stopover",
+  "planEvents": "What's on",
+  "planCopyTrip": "Copy a trip",
+  "planFlightRoute": "Flight route",
+  "searchOpen": "Search flights",
+  "@searchOpen": {
+    "description": "Flight search screen text."
+  },
+  "searchOpenHint": "From, to, dates and travelers",
+  "@searchOpenHint": {
+    "description": "Flight search screen text."
+  },
+  "searchTitle": "Search flights",
+  "@searchTitle": {
+    "description": "Flight search screen text."
+  },
+  "searchRoundTrip": "Round trip",
+  "@searchRoundTrip": {
+    "description": "Flight search screen text."
+  },
+  "searchFrom": "From",
+  "@searchFrom": {
+    "description": "Flight search screen text."
+  },
+  "searchTo": "To",
+  "@searchTo": {
+    "description": "Flight search screen text."
+  },
+  "searchSwap": "Swap origin and destination",
+  "@searchSwap": {
+    "description": "Flight search screen text."
+  },
+  "searchDeparture": "Outbound",
+  "@searchDeparture": {
+    "description": "Flight search screen text."
+  },
+  "searchReturn": "Return",
+  "@searchReturn": {
+    "description": "Flight search screen text."
+  },
+  "searchPickDate": "pick a date",
+  "@searchPickDate": {
+    "description": "Flight search screen text."
+  },
+  "searchAddTraveler": "Add traveler",
+  "@searchAddTraveler": {
+    "description": "Flight search screen text."
+  },
+  "searchRemoveTraveler": "Remove traveler",
+  "@searchRemoveTraveler": {
+    "description": "Flight search screen text."
+  },
+  "searchGo": "Search",
+  "@searchGo": {
+    "description": "Flight search screen text."
+  },
+  "searchSameAirport": "Origin and destination can’t be the same.",
+  "@searchSameAirport": {
+    "description": "Flight search screen text."
+  },
+  "searchMissingDates": "Choose your travel dates.",
+  "@searchMissingDates": {
+    "description": "Flight search screen text."
+  },
+  "searchNoResults": "No prices for those dates yet. Try a nearby day.",
+  "@searchNoResults": {
+    "description": "Flight search screen text."
+  },
+  "searchBusy": "Lots of people searching right now. Try again in a few seconds.",
+  "@searchBusy": {
+    "description": "Flight search screen text."
+  },
+  "searchPricesNote": "Real prices seen recently; the final price is confirmed when you book.",
+  "@searchPricesNote": {
+    "description": "Flight search screen text."
+  },
+  "searchDirect": "Direct",
+  "@searchDirect": {
+    "description": "Flight search screen text."
+  },
+  "searchAdults": "{count, plural, =1{1 adult} other{{count} adults}}",
+  "@searchAdults": {
+    "description": "Flight search screen text with placeholders.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchResults": "{count, plural, =1{1 flight} other{{count} flights}}",
+  "@searchResults": {
+    "description": "Flight search screen text with placeholders.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchStops": "{count, plural, =1{1 stop} other{{count} stops}}",
+  "@searchStops": {
+    "description": "Flight search screen text with placeholders.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchPerPerson": "{price} per person",
+  "@searchPerPerson": {
+    "description": "Flight search screen text with placeholders.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "searchTotal": "Total for {travelers}: {price}",
+  "@searchTotal": {
+    "description": "Flight search screen text with placeholders.",
+    "placeholders": {
+      "travelers": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "searchDuration": "Duration: {hours} h {minutes} min",
+  "@searchDuration": {
+    "description": "Flight search screen text with placeholders.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
   }
 }

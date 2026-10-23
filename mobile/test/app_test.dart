@@ -51,8 +51,9 @@ void main() {
 
     await tester.tap(find.text('Vuelos'));
     await tester.pumpAndSettle();
-    expect(find.text('Muy pronto'), findsOneWidget);
-    expect(find.textContaining('Vuelos está en camino'), findsOneWidget);
+    // Vuelos ya existe y un invitado también entra (ve los precios reales;
+    // ver flights_test.dart).
+    expect(find.text('Cazador de vuelos'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Cámara'));
     await tester.pumpAndSettle();

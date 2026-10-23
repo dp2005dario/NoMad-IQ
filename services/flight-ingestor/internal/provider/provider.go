@@ -23,3 +23,13 @@ type FareProvider interface {
 	// Quote debe respetar la cancelación de ctx y no bloquear más allá de ella.
 	Quote(ctx context.Context, spec domain.WatchSpec) ([]domain.Quote, error)
 }
+
+// Searcher es el BUSCADOR: dado un viaje concreto (ruta, fechas, viajeros),
+// devuelve varias ofertas ordenadas de más barata a más cara. Lo implementan
+// los mismos adaptadores que FareProvider.
+type Searcher interface {
+	Name() string
+	// Search devuelve como mucho limit ofertas. ErrRateLimited = el
+	// proveedor pide frenar (la app dirá "inténtalo en unos segundos").
+	Search(ctx context.Context, spec domain.SearchSpec, limit int) ([]domain.Offer, error)
+}

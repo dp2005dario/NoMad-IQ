@@ -297,16 +297,20 @@ Desde este PR, el price-consumer también atiende a la **app**: la pestaña
 
 ### Qué puede pedir la app
 
-Todo pasa por la puerta de entrada (`edge`, puerto 8080), que comprueba tu
-pase (token) antes de dejar pasar nada.
+Todo pasa por la puerta de entrada (`edge`, puerto 8080). Los **chollos** y
+el **historial** son públicos: los ve todo el mundo, también quien entra como
+invitado, porque los precios son los mismos para todos (y se guardan 1 minuto
+en caché para aguantar muchos usuarios). Lo **tuyo** (rutas vigiladas y
+avisos) necesita tu pase (token): sin él, la puerta contesta 401.
 
 | Petición | Para qué |
 |---|---|
-| `GET /v1/fares/deals?origin=MAD` | Chollos de hoy desde Madrid, ordenados por cuánto han bajado |
+| `GET /v1/fares/deals?origin=MAD` | Chollos de hoy desde Madrid, ordenados por cuánto han bajado (público) |
+| `GET /v1/fares/search?origin=MAD&destination=NRT&departure=2026-12-15&return=2026-12-22&adults=2` | **Buscador**: ofertas para ese viaje, de la más barata a la más cara, con precio por persona y total (público). Lo responde el flight-ingestor por gRPC (`FareSearchService`), que guarda cada búsqueda 10 min y junta las búsquedas iguales en una sola petición al proveedor. Si el proveedor pide frenar: 429 "inténtalo en unos segundos" |
 | `GET /v1/fares/watches` | Las rutas que vigilas, con su último precio |
 | `PUT /v1/fares/watches/MAD-NRT:2026-12-01:ECONOMY` | Vigilar una ruta (opcional: `{"target":{"amount_minor":45000,"currency":"EUR"}}` = avísame por debajo de 450 €) |
 | `DELETE /v1/fares/watches/…` | Dejar de vigilarla |
-| `GET /v1/fares/history/…` | El precio más bajo de cada día (para la gráfica) |
+| `GET /v1/fares/history/…` | El precio más bajo de cada día (para la gráfica; público) |
 | `GET /v1/fares/alerts` | Tus últimos avisos de precio |
 
 Con analogías:

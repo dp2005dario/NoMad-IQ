@@ -155,9 +155,8 @@ class PushNotice {
     PushKind.zoneAudioguide => Routes.audioguide(zoneId, ''),
     PushKind.airportArrival => Routes.soon(Feature.transport),
     PushKind.zoneSafety => Routes.map,
-    // Las pantallas de Vuelos llegan en el siguiente paso; de momento, su
-    // ficha de "próximamente".
-    PushKind.fareAlert => Routes.soon(Feature.flights),
+    // La lista de tus alertas de precio (con el botón de reservar).
+    PushKind.fareAlert => Routes.fareAlerts,
   };
 
   /// Un aviso antiguo (el móvil estuvo apagado) ya no sirve de nada.

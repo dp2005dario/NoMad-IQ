@@ -207,14 +207,14 @@ void main() {
           ...change,
         };
 
-    test('se entiende y lleva a Vuelos', () {
+    test('se entiende y lleva a tus alertas de precio', () {
       final PushNotice? n = PushNotice.fromJson(fare());
       expect(n?.kind, PushKind.fareAlert);
       expect(n?.fare?.kind, FareAlertKind.errorFare);
       expect(n?.fare?.origin, 'MAD');
       expect(n?.fare?.departure, DateTime(2027, 3, 15));
       expect(n?.fare?.amountMinor, 31500);
-      expect(n?.route, startsWith('/soon/'));
+      expect(n?.route, Routes.fareAlerts);
       // Dos alertas distintas no se pisan en la barra de notificaciones.
       final PushNotice? other = PushNotice.fromJson(
         fare(<String, Object?>{

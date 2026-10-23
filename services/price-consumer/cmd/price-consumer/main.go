@@ -170,6 +170,7 @@ func run() error {
 
 	// --- Sincronización de rutas con el flight-ingestor ---
 	var syncer *watchsync.Syncer
+	var searcher api.Searcher // el buscador también vive en el flight-ingestor
 	if cfg.IngestorAddr != "" {
 		popular, err := watchsync.ParseRoutes(cfg.PopularRoutes)
 		if err != nil {
@@ -186,6 +187,7 @@ func run() error {
 			return err
 		}
 		defer ingestor.Close()
+		searcher = ingestor
 		if syncer, err = watchsync.New(watchsync.Config{
 			Interval: cfg.WatchSyncInterval, Popular: popular, Prune: cfg.WatchSyncPrune,
 		}, db, ingestor, log.With(slog.String("component", "watchsync"))); err != nil {
@@ -203,6 +205,7 @@ func run() error {
 	apiSrv := &http.Server{
 		Addr: cfg.APIAddr,
 		Handler: api.New(api.Config{
+			Searcher:          searcher,
 			MaxWatchesPerUser: cfg.MaxWatchesPerUser,
 			MaxDaysAhead:      cfg.MaxDaysAhead,
 			DealsFreshness:    cfg.DealsFreshness,

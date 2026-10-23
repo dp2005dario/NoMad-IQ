@@ -61,6 +61,27 @@ type alertJSON struct {
 	ObservedAt      time.Time `json:"observed_at"`
 }
 
+// offerJSON es una oferta del buscador.
+type offerJSON struct {
+	PricePerAdult   moneyJSON `json:"price_per_adult"`
+	Total           moneyJSON `json:"total"`
+	Carrier         string    `json:"carrier,omitempty"`
+	DepartureAt     string    `json:"departure_at"`
+	ReturnAt        string    `json:"return_at,omitempty"`
+	Transfers       int       `json:"transfers"`
+	ReturnTransfers int       `json:"return_transfers"`
+	DurationMinutes int       `json:"duration_minutes,omitempty"`
+	BookingURL      string    `json:"booking_url"`
+}
+
+type searchJSON struct {
+	Route      routeJSON   `json:"route"`
+	Adults     int         `json:"adults"`
+	Provider   string      `json:"provider"`
+	ObservedAt time.Time   `json:"observed_at"`
+	Offers     []offerJSON `json:"offers"`
+}
+
 func toRoute(s domain.RouteSpec) routeJSON {
 	r := routeJSON{
 		RouteKey:      s.Key(),

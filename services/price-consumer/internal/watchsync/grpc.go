@@ -12,8 +12,10 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 
 	commonv1 "github.com/dp2005dario/NoMad-IQ/gen/go/nomadiq/common/v1"
 	flightsv1 "github.com/dp2005dario/NoMad-IQ/gen/go/nomadiq/flights/v1"
@@ -155,3 +157,46 @@ func clientTLSConfig(f ClientTLS) (*tls.Config, error) {
 }
 
 func timeMonth(m int32) time.Month { return time.Month(m) }
+
+// Search pregunta al buscador del flight-ingestor (FareSearchService). Usa la
+// misma conexión mTLS que los seguimientos.
+func (g *GRPCIngestor) Search(ctx context.Context, spec domain.RouteSpec, adults int) (domain.SearchResult, error) {
+	req := &flightsv1.SearchFaresRequest{
+		Route:         &flightsv1.Route{OriginIata: spec.Origin, DestinationIata: spec.Destination},
+		DepartureDate: dateToProto(spec.Departure),
+		Cabin:         cabins[spec.Cabin],
+		Adults:        int32(adults),
+	}
+	if spec.Return != nil {
+		req.ReturnDate = dateToProto(*spec.Return)
+	}
+	resp, err := flightsv1.NewFareSearchServiceClient(g.conn).SearchFares(ctx, req)
+	switch status.Code(err) {
+	case codes.OK:
+	case codes.ResourceExhausted, codes.DeadlineExceeded:
+		return domain.SearchResult{}, domain.ErrSearchBusy
+	case codes.InvalidArgument:
+		return domain.SearchResult{}, domain.Invalid("search", "%s", status.Convert(err).Message())
+	default:
+		return domain.SearchResult{}, fmt.Errorf("SearchFares %s: %w", spec.Key(), err)
+	}
+	out := domain.SearchResult{Provider: resp.GetProvider(), ObservedAt: resp.GetObservedAt().AsTime()}
+	for _, o := range resp.GetOffers() {
+		out.Offers = append(out.Offers, domain.Offer{
+			PricePerAdult:   moneyFromProto(o.GetPricePerAdult()),
+			Total:           moneyFromProto(o.GetTotal()),
+			CarrierIATA:     o.GetCarrierIata(),
+			DepartureAt:     o.GetDepartureAt(),
+			ReturnAt:        o.GetReturnAt(),
+			Transfers:       int(o.GetTransfers()),
+			ReturnTransfers: int(o.GetReturnTransfers()),
+			DurationMinutes: int(o.GetDurationMinutes()),
+			DeepLink:        o.GetBookingUrl(),
+		})
+	}
+	return out, nil
+}
+
+func moneyFromProto(m *commonv1.Money) domain.Money {
+	return domain.Money{Currency: m.GetCurrencyCode(), AmountMinor: m.GetAmountMinor()}
+}

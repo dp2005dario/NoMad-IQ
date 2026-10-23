@@ -21,7 +21,14 @@ enum Feature {
   transport(Icons.directions_transit_rounded, NomadColors.flights),
   radar(Icons.radar_rounded, NomadColors.money),
   queues(Icons.timer_rounded, NomadColors.group),
-  assistant(Icons.support_agent_rounded, NomadColors.safety);
+  assistant(Icons.support_agent_rounded, NomadColors.safety),
+  // "Planea tu viaje" en Vuelos.
+  explore(Icons.travel_explore_rounded, NomadColors.flights),
+  cheapSleep(Icons.hotel_rounded, NomadColors.money),
+  stopover(Icons.connecting_airports_rounded, NomadColors.flights),
+  events(Icons.celebration_rounded, NomadColors.group),
+  copyTrip(Icons.content_copy_rounded, NomadColors.mint),
+  flightRoute(Icons.public_rounded, NomadColors.flights);
 
   const Feature(this.icon, this.color);
 
@@ -43,6 +50,12 @@ enum Feature {
     Feature.radar => t.mapRadar,
     Feature.queues => t.mapQueues,
     Feature.assistant => t.mapAssistant,
+    Feature.explore => t.planExplore,
+    Feature.cheapSleep => t.planCheapSleep,
+    Feature.stopover => t.planStopover,
+    Feature.events => t.planEvents,
+    Feature.copyTrip => t.planCopyTrip,
+    Feature.flightRoute => t.planFlightRoute,
   };
 }
 

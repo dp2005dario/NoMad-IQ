@@ -17,6 +17,7 @@ import 'package:nomadiq/core/api_client.dart';
 import 'package:nomadiq/core/router.dart';
 import 'package:nomadiq/core/services.dart';
 import 'package:nomadiq/features/audioguide/guide_player.dart';
+import 'package:nomadiq/features/flights/booking.dart';
 import 'package:nomadiq/features/map/geo.dart';
 import 'package:nomadiq/features/map/geo_api.dart';
 import 'package:nomadiq/features/map/location.dart';
@@ -41,6 +42,10 @@ class FakeGateway {
   /// ruta. Si una ruta no está aquí, 404.
   final Map<String, http.Response Function(http.Request)> services =
       <String, http.Response Function(http.Request)>{};
+
+  /// Rutas que la puerta de entrada deja ver sin pase (como los chollos de
+  /// vuelos): empiezan por alguno de estos prefijos y son GET.
+  final Set<String> publicPrefixes = <String>{};
 
   late final http.Client client = MockClient((http.Request req) async {
     calls.add('${req.method} ${req.url.path}');
@@ -76,9 +81,15 @@ class FakeGateway {
     final http.Response Function(http.Request)? service =
         services[req.url.path];
     if (service != null) {
-      // Como la puerta de entrada de verdad: sin pase válido, 401.
+      // Como la puerta de entrada de verdad: sin pase válido, 401 (salvo en
+      // las rutas públicas, que no miran el pase).
+      final bool public =
+          req.method == 'GET' &&
+          publicPrefixes.any((String p) => req.url.path.startsWith(p));
       final String auth = req.headers['Authorization'] ?? '';
-      if (!auth.startsWith('Bearer a')) return http.Response('', 401);
+      if (!public && !auth.startsWith('Bearer a')) {
+        return http.Response('', 401);
+      }
       return service(req);
     }
     return http.Response('', 404);
@@ -126,6 +137,7 @@ AppServices fakeServices(
   List<FakePlayer>? players,
   NoticeCenter? notices,
   SettingsStore? prefs,
+  OpenBooking? openBooking,
 }) {
   final FakeGateway g = gateway ?? FakeGateway();
   final FakeMap m = map ?? FakeMap();
@@ -146,6 +158,7 @@ AppServices fakeServices(
     glyphsUrl: 'https://tiles.test/fonts/{fontstack}/{range}.pbf',
     notices: notices ?? FakeNotices(),
     prefs: prefs,
+    openBooking: openBooking ?? (Uri _) async => true,
   );
 }
 
