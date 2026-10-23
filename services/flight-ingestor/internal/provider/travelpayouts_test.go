@@ -153,3 +153,87 @@ func TestTravelpayoutsRejectsBadConfig(t *testing.T) {
 		}
 	}
 }
+
+const searchFares = `{"success":true,"currency":"eur","data":[
+ {"price":540,"airline":"QR","departure_at":"2026-12-15T10:05:00+01:00","return_at":"2026-12-22T12:00:00+09:00","transfers":1,"return_transfers":1,"duration":1700,"link":"/search/MAD1512NRT22121?t=b"},
+ {"price":315.5,"airline":"ib","departure_at":"2026-12-15T22:40:00+01:00","return_at":"2026-12-22T09:00:00+09:00","transfers":0,"return_transfers":0,"duration":1500,"link":"/search/MAD1512NRT22121?t=a"},
+ {"price":315.5,"airline":"IB","departure_at":"2026-12-15T22:40:00+01:00","return_at":"2026-12-22T09:00:00+09:00","transfers":0,"return_transfers":0,"duration":1500,"link":"/search/MAD1512NRT22121?t=a"},
+ {"price":99,"airline":"XX","departure_at":"2026-12-16T08:00:00+01:00","return_at":"2026-12-22T09:00:00+09:00","link":"/search/x"},
+ {"price":50,"airline":"YY","departure_at":"2026-12-15T09:00:00+01:00","return_at":"2026-12-22T09:00:00+09:00","link":"https://phishing.example/x"}
+]}`
+
+func TestTravelpayoutsSearchSortsDedupesAndSetsAdults(t *testing.T) {
+	api := &fakeAPI{body: searchFares}
+	tp := newTP(t, api)
+	trip := spec(t, "MAD-NRT:2026-12-15:2026-12-22:ECONOMY")
+	offers, err := tp.Search(context.Background(), domain.SearchSpec{Trip: trip, Adults: 3}, 20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Repetida, de otro día y con enlace ajeno: fuera. Quedan 2, la más barata primero.
+	if len(offers) != 2 {
+		t.Fatalf("ofertas = %d: %+v", len(offers), offers)
+	}
+	first := offers[0]
+	if first.PricePerAdult.AmountMinor != 31550 || first.CarrierIATA != "IB" || first.Transfers != 0 || first.DurationMinutes != 1500 {
+		t.Errorf("primera oferta: %+v", first)
+	}
+	if first.Total(3).AmountMinor != 94650 {
+		t.Errorf("total para 3: %d", first.Total(3).AmountMinor)
+	}
+	// El enlace lleva 3 adultos y nuestro marker.
+	if !strings.HasPrefix(first.DeepLink, "https://www.aviasales.com/search/MAD1512NRT22123?") || !strings.Contains(first.DeepLink, "marker=123456") {
+		t.Errorf("enlace: %s", first.DeepLink)
+	}
+	q := api.last.URL.Query()
+	if q.Get("return_at") != "2026-12-22" || q.Get("one_way") != "false" || q.Has("token") {
+		t.Errorf("consulta: %s", api.last.URL.RawQuery)
+	}
+	if api.last.Header.Get("X-Access-Token") != "tok-secreto" {
+		t.Error("el token debe ir en la cabecera")
+	}
+	// Business: la Data API no tiene esos precios, así que ni se pregunta.
+	before := api.calls.Load()
+	biz := spec(t, "MAD-NRT:2026-12-15:BUSINESS")
+	if got, err := tp.Search(context.Background(), domain.SearchSpec{Trip: biz, Adults: 1}, 20); err != nil || got != nil || api.calls.Load() != before {
+		t.Errorf("business: %v %v", got, err)
+	}
+}
+
+func TestTravelpayoutsSearchRateLimited(t *testing.T) {
+	tp := newTP(t, &fakeAPI{status: http.StatusTooManyRequests})
+	_, err := tp.Search(context.Background(), domain.SearchSpec{Trip: spec(t, "MAD-NRT:2026-12-15:ECONOMY"), Adults: 1}, 20)
+	if !errors.Is(err, ErrRateLimited) {
+		t.Fatalf("se esperaba ErrRateLimited: %v", err)
+	}
+}
+
+func TestWithAdultsOnlyTouchesKnownLinks(t *testing.T) {
+	for in, want := range map[string]string{
+		"https://www.aviasales.com/search/MAD1512NRT1?marker=1":     "https://www.aviasales.com/search/MAD1512NRT2?marker=1",
+		"https://www.aviasales.com/search/MAD1512NRT22121?marker=1": "https://www.aviasales.com/search/MAD1512NRT22122?marker=1",
+		"https://www.aviasales.com/otra/cosa?marker=1":              "https://www.aviasales.com/otra/cosa?marker=1",
+	} {
+		if got := withAdults(in, 2); got != want {
+			t.Errorf("withAdults(%s) = %s", in, got)
+		}
+	}
+}
+
+func TestSimulatedSearchIsStable(t *testing.T) {
+	s := NewSimulated(1, 0, 0)
+	sp := domain.SearchSpec{Trip: spec(t, "MAD-LIS:2026-12-15:2026-12-20:ECONOMY"), Adults: 2}
+	a, err := s.Search(context.Background(), sp, 20)
+	if err != nil || len(a) < 3 {
+		t.Fatalf("%v %v", a, err)
+	}
+	b, _ := s.Search(context.Background(), sp, 20)
+	if a[0] != b[0] || a[0].ReturnAt == "" {
+		t.Errorf("no es estable o falta la vuelta: %+v %+v", a[0], b[0])
+	}
+	for i := 1; i < len(a); i++ {
+		if a[i].PricePerAdult.AmountMinor < a[i-1].PricePerAdult.AmountMinor {
+			t.Errorf("no ordenado: %+v", a)
+		}
+	}
+}

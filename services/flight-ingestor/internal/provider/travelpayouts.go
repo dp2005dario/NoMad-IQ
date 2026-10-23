@@ -31,7 +31,9 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -139,11 +141,14 @@ type tpResponse struct {
 }
 
 type tpFare struct {
-	Price       float64 `json:"price"`
-	Airline     string  `json:"airline"`
-	DepartureAt string  `json:"departure_at"`
-	ReturnAt    string  `json:"return_at"`
-	Link        string  `json:"link"`
+	Price           float64 `json:"price"`
+	Airline         string  `json:"airline"`
+	DepartureAt     string  `json:"departure_at"`
+	ReturnAt        string  `json:"return_at"`
+	Transfers       int     `json:"transfers"`
+	ReturnTransfers int     `json:"return_transfers"`
+	Duration        int     `json:"duration"` // minutos, ida + vuelta
+	Link            string  `json:"link"`
 }
 
 // maxBody: una respuesta normal ocupa unos KB; más de 1 MB es un error.
@@ -170,6 +175,32 @@ func (t *Travelpayouts) Quote(ctx context.Context, spec domain.WatchSpec) ([]dom
 		return nil, fmt.Errorf("%w (cola del limitador: %v)", ErrRateLimited, err)
 	}
 
+	data, err := t.fetch(ctx, spec, 10)
+	if err != nil {
+		return nil, err
+	}
+
+	observed := t.now().UTC()
+	var quotes []domain.Quote
+	for _, f := range data {
+		quote, ok := t.toQuote(spec, f, observed)
+		if ok {
+			quotes = append(quotes, quote)
+		}
+	}
+	t.markDone(key, observed)
+	if len(quotes) == 0 {
+		return nil, nil // nadie ha buscado ese vuelo últimamente
+	}
+	// Solo el más barato: es el precio que importa para avisar de bajadas.
+	sort.Slice(quotes, func(i, j int) bool { return quotes[i].Price.AmountMinor < quotes[j].Price.AmountMinor })
+	return quotes[:1], nil
+}
+
+// fetch hace la petición a /aviasales/v3/prices_for_dates para ese viaje
+// (el turno del limitador ya se ha pedido antes) y devuelve los resultados
+// tal cual. Lo usan Quote (seguimientos) y Search (buscador).
+func (t *Travelpayouts) fetch(ctx context.Context, spec domain.WatchSpec, limit int) ([]tpFare, error) {
 	q := url.Values{}
 	q.Set("origin", string(spec.Route.Origin))
 	q.Set("destination", string(spec.Route.Destination))
@@ -183,7 +214,7 @@ func (t *Travelpayouts) Quote(ctx context.Context, spec domain.WatchSpec) ([]dom
 	q.Set("currency", strings.ToLower(t.cfg.Currency))
 	q.Set("sorting", "price")
 	q.Set("direct", "false")
-	q.Set("limit", "10")
+	q.Set("limit", strconv.Itoa(limit))
 	endpoint := t.base.JoinPath("/aviasales/v3/prices_for_dates")
 	endpoint.RawQuery = q.Encode()
 
@@ -214,22 +245,95 @@ func (t *Travelpayouts) Quote(ctx context.Context, spec domain.WatchSpec) ([]dom
 		// El texto del error viene de fuera: se recorta por si es enorme.
 		return nil, fmt.Errorf("travelpayouts: la API respondió error: %.120q", body.Error)
 	}
+	return body.Data, nil
+}
 
+// Search implementa Searcher: las ofertas más baratas para ese viaje.
+// Los precios de la Data API son por persona; el enlace de reserva se ajusta
+// al número de viajeros para que la web de reserva ya salga bien rellena.
+func (t *Travelpayouts) Search(ctx context.Context, spec domain.SearchSpec, limit int) ([]domain.Offer, error) {
+	if err := spec.Trip.Validate(); err != nil {
+		return nil, fmt.Errorf("travelpayouts: %w", err)
+	}
+	// Solo hay precios de turista (ver Quote): para otras cabinas, nada.
+	if spec.Trip.Cabin != domain.CabinEconomy {
+		return nil, nil
+	}
+	if err := t.limiter.Wait(ctx); err != nil {
+		return nil, fmt.Errorf("%w (cola del limitador: %v)", ErrRateLimited, err)
+	}
+	// Se piden de más: algunas se descartan (otro día, enlace raro...).
+	data, err := t.fetch(ctx, spec.Trip, min(limit*2, 100))
+	if err != nil {
+		return nil, err
+	}
 	observed := t.now().UTC()
-	var quotes []domain.Quote
-	for _, f := range body.Data {
-		quote, ok := t.toQuote(spec, f, observed)
-		if ok {
-			quotes = append(quotes, quote)
+	seen := make(map[string]bool)
+	var offers []domain.Offer
+	for _, f := range data {
+		quote, ok := t.toQuote(spec.Trip, f, observed)
+		if !ok {
+			continue
 		}
+		// La misma salida con la misma aerolínea solo una vez.
+		id := quote.CarrierIATA + "|" + f.DepartureAt + "|" + f.ReturnAt
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
+		offers = append(offers, domain.Offer{
+			PricePerAdult:   quote.Price,
+			CarrierIATA:     quote.CarrierIATA,
+			DepartureAt:     f.DepartureAt,
+			ReturnAt:        f.ReturnAt,
+			Transfers:       clampCount(f.Transfers),
+			ReturnTransfers: clampCount(f.ReturnTransfers),
+			DurationMinutes: clampMinutes(f.Duration),
+			DeepLink:        withAdults(quote.DeepLink, spec.Adults),
+		})
 	}
-	t.markDone(key, observed)
-	if len(quotes) == 0 {
-		return nil, nil // nadie ha buscado ese vuelo últimamente
+	sort.SliceStable(offers, func(i, j int) bool {
+		return offers[i].PricePerAdult.AmountMinor < offers[j].PricePerAdult.AmountMinor
+	})
+	if len(offers) > limit {
+		offers = offers[:limit]
 	}
-	// Solo el más barato: es el precio que importa para avisar de bajadas.
-	sort.Slice(quotes, func(i, j int) bool { return quotes[i].Price.AmountMinor < quotes[j].Price.AmountMinor })
-	return quotes[:1], nil
+	return offers, nil
+}
+
+// clampCount: escalas razonables (un número raro de la API se ignora).
+func clampCount(n int) int {
+	if n < 0 || n > 6 {
+		return 0
+	}
+	return n
+}
+
+// clampMinutes: duración razonable (hasta 4 días ida y vuelta) o 0.
+func clampMinutes(n int) int {
+	if n <= 0 || n > 4*24*60 {
+		return 0
+	}
+	return n
+}
+
+// searchPath es la parte del enlace de Aviasales que codifica el viaje:
+// "/search/MAD1512NRT22121" = MAD, 15/12, NRT, vuelta 22/12 y 1 adulto
+// (la última cifra). Si el enlace tiene otro formato se deja tal cual.
+var searchPath = regexp.MustCompile(`^(/search/[A-Z]{3}\d{4}[A-Z]{3}(?:\d{4})?)\d$`)
+
+// withAdults cambia el número de adultos del enlace de reserva.
+func withAdults(link string, adults int) string {
+	u, err := url.Parse(link)
+	if err != nil || adults < 1 || adults > domain.MaxAdults {
+		return link
+	}
+	m := searchPath.FindStringSubmatch(u.Path)
+	if m == nil {
+		return link
+	}
+	u.Path = m[1] + strconv.Itoa(adults)
+	return u.String()
 }
 
 // toQuote convierte un resultado de la API, descartando lo que no encaja.

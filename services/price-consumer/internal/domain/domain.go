@@ -36,6 +36,10 @@ func invalid(field, format string, args ...any) error {
 	return &ValidationError{Field: field, Reason: fmt.Sprintf(format, args...)}
 }
 
+// Invalid crea un error de validación desde otro paquete (p. ej. cuando el
+// flight-ingestor rechaza una búsqueda por un dato incorrecto).
+func Invalid(field, format string, args ...any) error { return invalid(field, format, args...) }
+
 // IsValidation indica si err (o alguno de los errores que envuelve) es de
 // validación. errors.As "desenvuelve" los errores creados con %w.
 func IsValidation(err error) bool {
@@ -411,4 +415,36 @@ type AlertView struct {
 	DropBasisPoints int32
 	DeepLink        string
 	ObservedAt      time.Time
+}
+
+// ---------------------------------------------------------------------------
+// Buscador de vuelos ("de MAD a NRT, ida el 15, vuelta el 22, 2 adultos")
+// ---------------------------------------------------------------------------
+
+// MaxAdults es el máximo de viajeros por búsqueda.
+const MaxAdults = 9
+
+// ErrSearchBusy: el proveedor de precios pide frenar (mucha gente buscando a
+// la vez). La app dice "inténtalo en unos segundos": la carga se degrada en
+// lugar de costar dinero.
+var ErrSearchBusy = errors.New("buscador: demasiadas búsquedas ahora mismo")
+
+// Offer es una opción concreta de vuelo del buscador.
+type Offer struct {
+	PricePerAdult   Money
+	Total           Money // para todos los viajeros
+	CarrierIATA     string
+	DepartureAt     string // RFC 3339, hora local del aeropuerto
+	ReturnAt        string // "" si es solo ida
+	Transfers       int
+	ReturnTransfers int
+	DurationMinutes int
+	DeepLink        string
+}
+
+// SearchResult es la respuesta del buscador.
+type SearchResult struct {
+	Offers     []Offer
+	ObservedAt time.Time
+	Provider   string
 }

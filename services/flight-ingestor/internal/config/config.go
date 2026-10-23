@@ -49,6 +49,13 @@ type Config struct {
 	TravelpayoutsRate     float64
 	TravelpayoutsRefresh  time.Duration
 
+	// Buscador: cuánto se recuerda una búsqueda (la misma búsqueda de miles
+	// de personas cuesta UNA petición al proveedor), cuántas se recuerdan y
+	// cuánto se espera como mucho al proveedor.
+	SearchCacheTTL     time.Duration
+	SearchCacheEntries int
+	SearchTimeout      time.Duration
+
 	ShutdownTimeout time.Duration
 	LogLevel        slog.Level
 }
@@ -216,6 +223,10 @@ func Load(lookup LookupFunc) (Config, error) {
 		// minutos: de sobra para la Data API, que se actualiza cada pocas horas.
 		TravelpayoutsRate:    r.float("TRAVELPAYOUTS_RATE_PER_SECOND", 2, 0.1, 50),
 		TravelpayoutsRefresh: r.duration("TRAVELPAYOUTS_REFRESH", 30*time.Minute, time.Minute, 24*time.Hour),
+
+		SearchCacheTTL:     r.duration("SEARCH_CACHE_TTL", 10*time.Minute, 0, 6*time.Hour),
+		SearchCacheEntries: r.integer("SEARCH_CACHE_ENTRIES", 20000, 0, 1_000_000),
+		SearchTimeout:      r.duration("SEARCH_TIMEOUT", 8*time.Second, 500*time.Millisecond, time.Minute),
 
 		ShutdownTimeout: r.duration("SHUTDOWN_TIMEOUT", 15*time.Second, time.Second, 2*time.Minute),
 	}

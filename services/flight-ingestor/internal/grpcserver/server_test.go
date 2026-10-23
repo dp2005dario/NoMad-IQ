@@ -30,7 +30,7 @@ func newClient(t *testing.T, maxWatches int) flightsv1.RouteWatchServiceClient {
 	if err != nil {
 		t.Fatal(err)
 	}
-	srv, _ := NewServer(NewService(store), nil, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	srv, _ := NewServer(NewService(store), nil, nil, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	lis := bufconn.Listen(1 << 20)
 	go func() { _ = srv.Serve(lis) }()
 	t.Cleanup(srv.Stop)

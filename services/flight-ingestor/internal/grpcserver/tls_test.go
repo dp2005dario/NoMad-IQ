@@ -119,7 +119,7 @@ func TestMTLSRejectsClientsWithoutCertificate(t *testing.T) {
 		t.Fatal(err)
 	}
 	store, _ := watchlist.New(10)
-	srv, _ := NewServer(NewService(store), tlsCfg, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	srv, _ := NewServer(NewService(store), nil, tlsCfg, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)

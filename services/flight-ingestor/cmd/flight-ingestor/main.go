@@ -108,7 +108,12 @@ func run() error {
 	}()
 
 	// --- Proveedor de precios ---
-	var fares provider.FareProvider
+	// Cada proveedor sirve para las dos cosas: vigilar rutas (FareProvider)
+	// y el buscador (Searcher). Comparten el limitador de ritmo.
+	var fares interface {
+		provider.FareProvider
+		provider.Searcher
+	}
 	switch cfg.Provider {
 	case "travelpayouts":
 		fares, err = provider.NewTravelpayouts(provider.TravelpayoutsConfig{
@@ -149,7 +154,10 @@ func run() error {
 	} else {
 		log.Warn("gRPC SIN TLS (GRPC_INSECURE_DEV=true): úsalo solo en desarrollo local")
 	}
-	grpcSrv, grpcHealth := grpcserver.NewServer(grpcserver.NewService(store), grpcTLS, log.With(slog.String("component", "grpc")))
+	search := grpcserver.NewSearchService(grpcserver.SearchConfig{
+		CacheTTL: cfg.SearchCacheTTL, CacheEntries: cfg.SearchCacheEntries, Timeout: cfg.SearchTimeout,
+	}, fares, log.With(slog.String("component", "search")))
+	grpcSrv, grpcHealth := grpcserver.NewServer(grpcserver.NewService(store), search, grpcTLS, log.With(slog.String("component", "grpc")))
 	grpcLis, err := net.Listen("tcp", cfg.GRPCAddr)
 	if err != nil {
 		return fmt.Errorf("escuchar gRPC en %s: %w", cfg.GRPCAddr, err)

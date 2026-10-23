@@ -293,3 +293,95 @@ func TestHistoryAndAlerts(t *testing.T) {
 		t.Errorf("alerta inesperada: %v", a)
 	}
 }
+
+type fakeSearcher struct {
+	got    domain.RouteSpec
+	adults int
+	calls  int
+	err    error
+}
+
+func (f *fakeSearcher) Search(_ context.Context, spec domain.RouteSpec, adults int) (domain.SearchResult, error) {
+	f.got, f.adults = spec, adults
+	f.calls++
+	if f.err != nil {
+		return domain.SearchResult{}, f.err
+	}
+	eur := func(n int64) domain.Money { return domain.Money{Currency: "EUR", AmountMinor: n} }
+	return domain.SearchResult{
+		Provider:   "travelpayouts",
+		ObservedAt: today,
+		Offers: []domain.Offer{
+			{PricePerAdult: eur(31550), Total: eur(63100), CarrierIATA: "IB", DepartureAt: "2026-12-15T22:40:00+01:00",
+				ReturnAt: "2026-12-22T09:00:00+09:00", DurationMinutes: 1500, DeepLink: "https://www.aviasales.com/search/MAD1512NRT22122?marker=1"},
+			{PricePerAdult: eur(100), Total: eur(200), DeepLink: "javascript:alert(1)"},
+		},
+	}, nil
+}
+
+func newSearchAPI(s Searcher) http.Handler {
+	return New(Config{Searcher: s, MaxWatchesPerUser: 2, MaxDaysAhead: 330, DealsFreshness: time.Hour,
+		HistoryWindow: time.Hour, Now: func() time.Time { return today }}, &fakeStore{}, &fakeWatcher{},
+		slog.New(slog.NewTextHandler(io.Discard, nil)))
+}
+
+func get(h http.Handler, path string) *httptest.ResponseRecorder {
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+	return rec
+}
+
+func TestSearchIsPublicAndReturnsBookableOffers(t *testing.T) {
+	s := &fakeSearcher{}
+	rec := get(newSearchAPI(s), "/v1/fares/search?origin=mad&destination=NRT&departure=2026-12-15&return=2026-12-22&adults=2")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("código %d: %s", rec.Code, rec.Body)
+	}
+	if s.got.Key() != "MAD-NRT:2026-12-15:2026-12-22:ECONOMY" || s.adults != 2 {
+		t.Errorf("búsqueda: %s x%d", s.got.Key(), s.adults)
+	}
+	if rec.Header().Get("Cache-Control") != "public, max-age=60" {
+		t.Errorf("Cache-Control = %q", rec.Header().Get("Cache-Control"))
+	}
+	body := decode(t, rec)
+	offers := body["offers"].([]any)
+	// La del enlace "javascript:" no se enseña.
+	if len(offers) != 1 || body["adults"].(float64) != 2 {
+		t.Fatalf("respuesta: %v", body)
+	}
+	o := offers[0].(map[string]any)
+	if o["total"].(map[string]any)["amount_minor"].(float64) != 63100 || o["carrier"] != "IB" {
+		t.Errorf("oferta: %v", o)
+	}
+}
+
+func TestSearchValidatesAndDegrades(t *testing.T) {
+	s := &fakeSearcher{}
+	h := newSearchAPI(s)
+	for path, want := range map[string]int{
+		"/v1/fares/search?origin=MAD&destination=MAD&departure=2026-12-15":                   400,
+		"/v1/fares/search?origin=MADRID&destination=NRT&departure=2026-12-15":                400,
+		"/v1/fares/search?origin=MAD&destination=NRT&departure=2026-12-15&return=2026-12-01": 400,
+		"/v1/fares/search?origin=MAD&destination=NRT&departure=2026-12-15&adults=10":         400,
+		"/v1/fares/search?origin=MAD&destination=NRT&departure=2026-12-15&cabin=CHEAP":       400,
+		"/v1/fares/search?origin=MAD&destination=NRT&departure=2020-01-01":                   422,
+		"/v1/fares/search?origin=MAD&destination=NRT&departure=2030-01-01":                   422,
+	} {
+		if rec := get(h, path); rec.Code != want {
+			t.Errorf("%s: %d (se esperaba %d)", path, rec.Code, want)
+		}
+	}
+	if s.calls != 0 {
+		t.Errorf("con datos malos no se debe preguntar al proveedor (%d)", s.calls)
+	}
+	busy := get(newSearchAPI(&fakeSearcher{err: domain.ErrSearchBusy}), "/v1/fares/search?origin=MAD&destination=NRT&departure=2026-12-15")
+	if busy.Code != http.StatusTooManyRequests || busy.Header().Get("Retry-After") == "" {
+		t.Errorf("ocupado: %d", busy.Code)
+	}
+	if busy.Header().Get("Cache-Control") != "no-store" {
+		t.Errorf("un error no se guarda en caché: %q", busy.Header().Get("Cache-Control"))
+	}
+	if rec := get(newSearchAPI(nil), "/v1/fares/search?origin=MAD&destination=NRT&departure=2026-12-15"); rec.Code != http.StatusServiceUnavailable {
+		t.Errorf("sin buscador: %d", rec.Code)
+	}
+}

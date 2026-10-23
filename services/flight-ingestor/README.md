@@ -10,7 +10,19 @@ auth-gateway ──────────► RouteWatchService ──► watch
                                               FareProvider ◄───┤ consulta precio
                                                                │
                                      Kafka flights.price-observed.v1 ◄── events + publisher
+
+            gRPC (mTLS)
+price-consumer ────────► FareSearchService ──► caché 10 min + singleflight ──► Searcher (mismo proveedor)
+ (GET /v1/fares/search)
 ```
+
+El **buscador** (`FareSearchService.SearchFares`) responde al momento a "de
+MAD a NRT, ida el 15, vuelta el 22, 2 adultos": hasta 20 ofertas ordenadas
+por precio, con precio por persona, total, escalas, duración y enlace de
+reserva (con el número de viajeros ya puesto). Para no pagar ni saturar al
+proveedor con millones de usuarios, cada búsqueda se recuerda 10 minutos y
+las búsquedas iguales simultáneas comparten una sola petición; si aun así el
+proveedor pide frenar, responde `RESOURCE_EXHAUSTED` y la app pide reintentar.
 
 ## Estructura
 
@@ -24,7 +36,7 @@ auth-gateway ──────────► RouteWatchService ──► watch
 | `internal/ingest` | Ciclos de consulta con concurrencia limitada |
 | `internal/events` | Dominio → mensaje Kafka (protobuf + cabeceras) |
 | `internal/publisher` | Productor Kafka idempotente (franz-go) |
-| `internal/grpcserver` | API gRPC, mTLS, interceptores |
+| `internal/grpcserver` | API gRPC (seguimientos y buscador con caché), mTLS, interceptores |
 | `internal/protomap` | Traducción dominio ↔ protobuf |
 
 ## Configuración
@@ -48,6 +60,8 @@ auth-gateway ──────────► RouteWatchService ──► watch
 | `TRAVELPAYOUTS_MARKER` | obligatoria con travelpayouts | Tu id de afiliado: se añade a cada enlace de reserva |
 | `TRAVELPAYOUTS_CURRENCY` | `EUR` | Divisa de los precios |
 | `TRAVELPAYOUTS_RATE_PER_SECOND` / `TRAVELPAYOUTS_REFRESH` | `2` / `30m` | Ritmo máximo total y refresco mínimo por ruta |
+| `SEARCH_CACHE_TTL` / `SEARCH_CACHE_ENTRIES` | `10m` / `20000` | Buscador: cuánto y cuántas búsquedas se recuerdan (la misma búsqueda de miles de personas = 1 petición al proveedor) |
+| `SEARCH_TIMEOUT` | `8s` | Espera máxima al proveedor en una búsqueda |
 | `TRAVELPAYOUTS_BASE_URL` / `TRAVELPAYOUTS_BOOKING_HOST` | `https://api.travelpayouts.com` / `https://www.aviasales.com` | |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 | `SHUTDOWN_TIMEOUT` | `15s` | |

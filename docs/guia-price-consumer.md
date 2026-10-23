@@ -306,6 +306,7 @@ avisos) necesita tu pase (token): sin él, la puerta contesta 401.
 | Petición | Para qué |
 |---|---|
 | `GET /v1/fares/deals?origin=MAD` | Chollos de hoy desde Madrid, ordenados por cuánto han bajado (público) |
+| `GET /v1/fares/search?origin=MAD&destination=NRT&departure=2026-12-15&return=2026-12-22&adults=2` | **Buscador**: ofertas para ese viaje, de la más barata a la más cara, con precio por persona y total (público). Lo responde el flight-ingestor por gRPC (`FareSearchService`), que guarda cada búsqueda 10 min y junta las búsquedas iguales en una sola petición al proveedor. Si el proveedor pide frenar: 429 "inténtalo en unos segundos" |
 | `GET /v1/fares/watches` | Las rutas que vigilas, con su último precio |
 | `PUT /v1/fares/watches/MAD-NRT:2026-12-01:ECONOMY` | Vigilar una ruta (opcional: `{"target":{"amount_minor":45000,"currency":"EUR"}}` = avísame por debajo de 450 €) |
 | `DELETE /v1/fares/watches/…` | Dejar de vigilarla |

@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package nomadiq.flights.v1;
+
+import "google/protobuf/timestamp.proto";
+import "nomadiq/common/v1/common.proto";
+import "nomadiq/flights/v1/flights.proto";
+
+// FareSearchService es el BUSCADOR de vuelos: "de MAD a NRT, ida el 15 y
+// vuelta el 22, para 2 adultos". A diferencia de RouteWatchService (que
+// vigila rutas en segundo plano), aquí se pregunta al momento.
+//
+// Es interno (gRPC sobre mTLS): lo llama el price-consumer, que lo publica a
+// la app como GET /v1/fares/search a través de la puerta de entrada.
+service FareSearchService {
+  // Devuelve las ofertas más baratas para ese viaje, ordenadas por precio.
+  // RESOURCE_EXHAUSTED = el proveedor pide frenar (demasiadas búsquedas a la
+  // vez): la app dice "inténtalo en unos segundos" en vez de gastar más.
+  rpc SearchFares(SearchFaresRequest) returns (SearchFaresResponse);
+}
+
+message SearchFaresRequest {
+  Route route = 1;
+  nomadiq.common.v1.Date departure_date = 2;
+  // Vacío = solo ida.
+  nomadiq.common.v1.Date return_date = 3;
+  CabinClass cabin = 4;
+  // Viajeros adultos (1 a 9).
+  int32 adults = 5;
+}
+
+// FareOffer es una opción concreta de vuelo con su precio.
+message FareOffer {
+  // Precio por persona.
+  nomadiq.common.v1.Money price_per_adult = 1;
+  // Precio para todos los viajeros (price_per_adult × adults).
+  nomadiq.common.v1.Money total = 2;
+  // Aerolínea (código IATA de 2 letras), vacío si no se sabe.
+  string carrier_iata = 3;
+  // Salida de la ida, hora local del aeropuerto en RFC 3339
+  // ("2026-12-15T10:05:00+01:00").
+  string departure_at = 4;
+  // Salida de la vuelta (vacío si es solo ida).
+  string return_at = 5;
+  // Escalas de la ida (0 = directo).
+  int32 transfers = 6;
+  // Escalas de la vuelta.
+  int32 return_transfers = 7;
+  // Duración total en minutos (0 si no se sabe).
+  int32 duration_minutes = 8;
+  // Enlace https de reserva, con nuestro código de afiliado.
+  string booking_url = 9;
+}
+
+message SearchFaresResponse {
+  repeated FareOffer offers = 1;
+  // Cuándo se obtuvieron estos precios.
+  google.protobuf.Timestamp observed_at = 2;
+  // De dónde salen ("travelpayouts", "simulated").
+  string provider = 3;
+}

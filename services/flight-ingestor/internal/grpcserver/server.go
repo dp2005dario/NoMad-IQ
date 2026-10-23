@@ -127,10 +127,11 @@ func ServerTLSConfig(f TLSFiles) (*tls.Config, error) {
 	}, nil
 }
 
-// NewServer crea el *grpc.Server con el servicio, health checks estándar,
+// NewServer crea el *grpc.Server con los servicios (seguimientos y, si search
+// no es nil, el buscador), health checks estándar,
 // límites de tamaño, keepalive e interceptores de log y recuperación de pánicos.
 // tlsCfg nil solo debe usarse en desarrollo local.
-func NewServer(svc *Service, tlsCfg *tls.Config, log *slog.Logger) (*grpc.Server, *health.Server) {
+func NewServer(svc *Service, search *SearchService, tlsCfg *tls.Config, log *slog.Logger) (*grpc.Server, *health.Server) {
 	opts := []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(recoverInterceptor(log), logInterceptor(log)),
 		grpc.MaxRecvMsgSize(1 << 20), // 1 MiB: las peticiones legítimas son diminutas.
@@ -146,6 +147,10 @@ func NewServer(svc *Service, tlsCfg *tls.Config, log *slog.Logger) (*grpc.Server
 	hs := health.NewServer()
 	healthpb.RegisterHealthServer(srv, hs)
 	hs.SetServingStatus(flightsv1.RouteWatchService_ServiceDesc.ServiceName, healthpb.HealthCheckResponse_SERVING)
+	if search != nil {
+		flightsv1.RegisterFareSearchServiceServer(srv, search)
+		hs.SetServingStatus(flightsv1.FareSearchService_ServiceDesc.ServiceName, healthpb.HealthCheckResponse_SERVING)
+	}
 	return srv, hs
 }
 

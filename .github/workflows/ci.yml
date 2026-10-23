@@ -350,6 +350,13 @@ jobs:
             sleep 3
           done
           [ "$n" -ge 1 ]
+          # Buscador: sin cuenta, ida y vuelta para 2 adultos (proveedor simulado en la CI).
+          dep=$(date -u -d '+30 days' +%F); ret=$(date -u -d '+37 days' +%F)
+          curl -fsS "$edge/v1/fares/search?origin=MAD&destination=NRT&departure=$dep&return=$ret&adults=2" | jq -e \
+            '(.offers | length) >= 1 and .adults == 2 and .route.return_date != null
+             and .offers[0].total.amount_minor == 2 * .offers[0].price_per_adult.amount_minor
+             and (.offers[0].booking_url | startswith("https://"))'
+          test "$(curl -s -o /dev/null -w '%{http_code}' "$edge/v1/fares/search?origin=MAD&destination=MAD&departure=$dep")" = 400
           # El historial también se ve sin cuenta.
           curl -fsS "$edge/v1/fares/history/$key" | jq -e '.points | length >= 1'
           curl -fsS -H "$auth" "$edge/v1/fares/alerts" | jq -e '.alerts | type == "array"'
