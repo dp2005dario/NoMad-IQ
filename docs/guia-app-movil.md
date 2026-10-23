@@ -588,8 +588,21 @@ cd mobile
 flutter test test/flyra_test.dart
 ```
 
+## 9 quinquies. Cámara: reconocer monumentos
+
+El botón verde del centro abre el **modo cámara** (maqueta "Modo cámara").
+Apuntas a un monumento, tocas el botón y sale su ficha: nombre, año,
+distancia, historia de Wikipedia en tu idioma, **Escuchar** (la voz del
+móvil la lee) y **Mi sello** (para el Pasaporte). Si no era ese, "¿No es
+este?" enseña los de alrededor. Todo en `docs/guia-camara.md`.
+
+```bash
+cd mobile
+flutter test test/camera_test.dart
+```
+
 ## 10. Lo siguiente
 
 Cada PR sustituye una pantalla "Muy pronto" por la de verdad, siguiendo las
-maquetas, en este orden: (Vuelos, Ruta del vuelo, Vuelo 3D, Grupo y el chat
-con Flyra ya están) Cámara, Dinero y Bóveda.
+maquetas, en este orden: (Vuelos, Ruta del vuelo, Vuelo 3D, Grupo, el chat
+con Flyra y la Cámara ya están) Dinero y Bóveda.

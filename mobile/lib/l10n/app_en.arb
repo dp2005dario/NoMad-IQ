@@ -1684,5 +1684,122 @@
   "flyraClear": "Clear conversation",
   "@flyraClear": {
     "description": "Button that deletes the chat history from the phone."
+  },
+  "cameraSignIn": "Sign in to use camera mode: every account gets free scans each day.",
+  "@cameraSignIn": {
+    "description": "Camera mode needs an account."
+  },
+  "cameraPermission": "NomadIQ needs the camera to see the monument you're pointing at.",
+  "@cameraPermission": {
+    "description": "Why camera and location permissions are needed."
+  },
+  "cameraAllow": "Allow the camera",
+  "@cameraAllow": {
+    "description": "Button to ask camera permission again."
+  },
+  "cameraNoCamera": "This device has no camera available right now.",
+  "@cameraNoCamera": {
+    "description": "Device has no usable camera."
+  },
+  "cameraSearching": "Looking…",
+  "@cameraSearching": {
+    "description": "Status pill while aiming."
+  },
+  "cameraRecognized": "Landmark recognized",
+  "@cameraRecognized": {
+    "description": "Status pill when the vision model recognized it."
+  },
+  "cameraMaybe": "Probably this one",
+  "@cameraMaybe": {
+    "description": "Status pill when it's a best guess."
+  },
+  "cameraNoneShort": "Nothing famous here",
+  "@cameraNoneShort": {
+    "description": "Status pill when nothing found."
+  },
+  "cameraRescan": "Scan again",
+  "@cameraRescan": {
+    "description": "Button to scan again."
+  },
+  "cameraBadgeRecognized": "RECOGNIZED",
+  "@cameraBadgeRecognized": {
+    "description": "Small uppercase label over the name."
+  },
+  "cameraBadgeGuess": "IS IT THIS ONE?",
+  "@cameraBadgeGuess": {
+    "description": "Small uppercase label when it's a guess."
+  },
+  "cameraHint": "Point at a monument and tap the button",
+  "@cameraHint": {
+    "description": "Hint while aiming."
+  },
+  "cameraShoot": "Recognize",
+  "@cameraShoot": {
+    "description": "Shutter button (screen readers)."
+  },
+  "cameraOutOfScans": "You've used today's free scans. Come back tomorrow.",
+  "@cameraOutOfScans": {
+    "description": "Daily scan quota used up."
+  },
+  "cameraBusy": "Camera mode is very busy. Try again in a moment.",
+  "@cameraBusy": {
+    "description": "Server overloaded."
+  },
+  "cameraNoLocation": "I need your location to know where you are. Turn on GPS and try again.",
+  "@cameraNoLocation": {
+    "description": "GPS not available."
+  },
+  "cameraNothing": "I don't recognize any famous place here. Try again a bit closer.",
+  "@cameraNothing": {
+    "description": "No famous place recognized."
+  },
+  "cameraBuilt": "Built",
+  "@cameraBuilt": {
+    "description": "Fact chip label: year built."
+  },
+  "cameraDistance": "Distance",
+  "@cameraDistance": {
+    "description": "Fact chip label: distance."
+  },
+  "cameraMeters": "{meters} m",
+  "@cameraMeters": {
+    "description": "Distance in metres.",
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "cameraListen": "Listen",
+  "@cameraListen": {
+    "description": "Read the card aloud."
+  },
+  "cameraStopListening": "Stop",
+  "@cameraStopListening": {
+    "description": "Stop reading aloud."
+  },
+  "cameraSaveStamp": "Get my stamp",
+  "@cameraSaveStamp": {
+    "description": "Save a passport stamp for this monument."
+  },
+  "cameraStampSaved": "Stamp saved",
+  "@cameraStampSaved": {
+    "description": "Stamp already saved."
+  },
+  "cameraWikipedia": "Read more on Wikipedia",
+  "@cameraWikipedia": {
+    "description": "Link to the Wikipedia article."
+  },
+  "cameraNotThis": "Not this one?",
+  "@cameraNotThis": {
+    "description": "Header over other nearby places."
+  },
+  "cameraMaybeOneOf": "Is it one of these?",
+  "@cameraMaybeOneOf": {
+    "description": "Header over nearby places when nothing recognized."
+  },
+  "cameraCredits": "Data: Wikipedia, Wikidata and Wikimedia Commons",
+  "@cameraCredits": {
+    "description": "Data credits under the card."
   }
 }

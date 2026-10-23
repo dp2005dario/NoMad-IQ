@@ -27,6 +27,10 @@ abstract interface class SettingsStore {
   /// salvo los últimos mensajes que se mandan al preguntar.
   String? readFlyraChat();
   Future<void> writeFlyraChat(String? json);
+
+  /// Tus sellos de monumentos (texto JSON) para el Pasaporte; null = ninguno.
+  String? readStamps();
+  Future<void> writeStamps(String json);
 }
 
 /// Versión real: guarda en el almacenamiento del móvil (SharedPreferences).
@@ -38,6 +42,7 @@ final class PreferencesSettingsStore implements SettingsStore {
   static const String _originKey = 'flight_origin';
   static const String _groupNameKey = 'group_name';
   static const String _flyraKey = 'flyra_chat';
+  static const String _stampsKey = 'stamps';
   final SharedPreferencesWithCache _prefs;
 
   static Future<PreferencesSettingsStore> open() async {
@@ -51,6 +56,7 @@ final class PreferencesSettingsStore implements SettingsStore {
               _originKey,
               _groupNameKey,
               _flyraKey,
+              _stampsKey,
             },
           ),
         );
@@ -92,6 +98,12 @@ final class PreferencesSettingsStore implements SettingsStore {
   Future<void> writeFlyraChat(String? json) => json == null
       ? _prefs.remove(_flyraKey)
       : _prefs.setString(_flyraKey, json);
+
+  @override
+  String? readStamps() => _prefs.getString(_stampsKey);
+
+  @override
+  Future<void> writeStamps(String json) => _prefs.setString(_stampsKey, json);
 }
 
 /// Versión en memoria para los tests (no toca el disco).
@@ -137,6 +149,14 @@ final class MemorySettingsStore implements SettingsStore {
 
   @override
   Future<void> writeFlyraChat(String? json) async => flyraChat = json;
+
+  String? stamps;
+
+  @override
+  String? readStamps() => stamps;
+
+  @override
+  Future<void> writeStamps(String json) async => stamps = json;
 }
 
 class SettingsController extends ChangeNotifier {

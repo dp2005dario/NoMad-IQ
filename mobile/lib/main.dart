@@ -11,6 +11,8 @@ import 'auth/token_store.dart';
 import 'core/api_client.dart';
 import 'core/config.dart';
 import 'core/services.dart';
+import 'features/camera/camera_device.dart';
+import 'features/camera/speaker.dart';
 import 'core/settings.dart';
 import 'features/audioguide/guide_player.dart';
 import 'features/map/location.dart';
@@ -54,6 +56,8 @@ Future<void> main() async {
     webScene: (String html, void Function(String) onMessage) =>
         WebScene(html: html, onMessage: onMessage),
     newPlayer: JustAudioGuidePlayer.new,
+    newCamera: DeviceCamera.new,
+    speaker: DeviceSpeaker(),
     tilesUrl: AppConfig.tilesUrl,
     glyphsUrl: AppConfig.glyphsUrl,
     notices: notices,

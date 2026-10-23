@@ -57,7 +57,11 @@ void main() {
 
     await tester.tap(find.byTooltip('Cámara'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Cámara está en camino'), findsOneWidget);
+    // El modo cámara necesita cuenta (cada una tiene sus escaneos diarios).
+    expect(
+      find.textContaining('Inicia sesión para usar el modo cámara'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('Inicio'));
     await tester.pumpAndSettle();

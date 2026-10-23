@@ -8,6 +8,9 @@ import 'package:flutter/widgets.dart';
 
 import '../features/audioguide/audioguide_api.dart';
 import '../features/audioguide/guide_player.dart';
+import '../features/camera/camera_device.dart';
+import '../features/camera/landmarks_api.dart';
+import '../features/camera/speaker.dart';
 import '../features/flights/booking.dart';
 import '../features/flights/fares_api.dart';
 import '../features/flyra/flyra_api.dart';
@@ -34,11 +37,14 @@ class AppServices {
     this.notices = const SilentNotices(),
     this.openBooking = openInBrowser,
     this.webScene,
+    this.newCamera,
+    this.speaker = const SilentSpeaker(),
     SettingsStore? prefs,
   }) : geo = GeoApi(api),
        audioguides = AudioguideApi(api),
        fares = FaresApi(api),
        flyra = FlyraApi(api),
+       landmarks = LandmarksApi(api),
        group = GroupApi(api),
        places = PlacesApi(api),
        streetPhotos = StreetPhotosApi(api),
@@ -59,6 +65,15 @@ class AppServices {
 
   /// El chat libre con Flyra (la IA de la app).
   final FlyraApi flyra;
+
+  /// Modo cámara: ¿qué monumento tengo delante?
+  final LandmarksApi landmarks;
+
+  /// Enciende la cámara (null = este aparato no tiene: la pestaña lo dice).
+  final CameraFactory? newCamera;
+
+  /// La voz del móvil para "Escuchar" la ficha de un monumento.
+  final Speaker speaker;
 
   /// Viajes en grupo: invitar, preferencias y la negociación de los agentes.
   final GroupApi group;

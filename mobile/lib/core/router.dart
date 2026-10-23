@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../auth/session.dart';
 import '../features/audioguide/audioguide_screen.dart';
+import '../features/camera/camera_screen.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/coming_soon/coming_soon_screen.dart';
 import '../features/flights/fare_alerts_screen.dart';
@@ -133,10 +134,7 @@ GoRouter buildRouter({
       branches: <StatefulShellBranch>[
         _tab(Routes.home, (_) => const HomeScreen()),
         _tab(Routes.map, (_) => const MapScreen()),
-        _tab(
-          Routes.camera,
-          (_) => const ComingSoonScreen(feature: Feature.camera),
-        ),
+        _tab(Routes.camera, (_) => const CameraScreen()),
         _tab(Routes.flights, (_) => const FlightsScreen()),
         _tab(Routes.group, (_) => const GroupScreen()),
       ],

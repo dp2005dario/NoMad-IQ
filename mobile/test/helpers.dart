@@ -26,6 +26,8 @@ import 'package:nomadiq/features/map/position_reporter.dart';
 import 'package:nomadiq/features/push/notices.dart';
 import 'package:nomadiq/features/map/map_surface.dart';
 import 'package:nomadiq/core/settings.dart';
+import 'package:nomadiq/features/camera/camera_device.dart';
+import 'package:nomadiq/features/camera/speaker.dart';
 
 /// Un auth-gateway falso, en memoria, que se comporta como el de verdad:
 /// una cuenta, pases largos de un solo uso y errores con sus códigos HTTP.
@@ -138,6 +140,8 @@ AppServices fakeServices(
   NoticeCenter? notices,
   SettingsStore? prefs,
   OpenBooking? openBooking,
+  CameraFactory? newCamera,
+  Speaker? speaker,
 }) {
   final FakeGateway g = gateway ?? FakeGateway();
   final FakeMap m = map ?? FakeMap();
@@ -159,6 +163,8 @@ AppServices fakeServices(
     notices: notices ?? FakeNotices(),
     prefs: prefs,
     openBooking: openBooking ?? (Uri _) async => true,
+    newCamera: newCamera,
+    speaker: speaker ?? const SilentSpeaker(),
   );
 }
 
@@ -355,6 +361,9 @@ Future<SettingsController> pumpApp(
   String initialLocation = Routes.welcome,
   SessionController? session,
   AppServices? services,
+  // Pantallas con animaciones sin fin (el escáner de la cámara) nunca "se
+  // calman": con false solo se dibuja un fotograma.
+  bool settle = true,
 }) async {
   final SettingsController settings = SettingsController(
     MemorySettingsStore(locale),
@@ -368,7 +377,11 @@ Future<SettingsController> pumpApp(
       router: buildRouter(session: s, initialLocation: initialLocation),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+  }
   return settings;
 }
 
