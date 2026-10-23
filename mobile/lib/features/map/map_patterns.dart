@@ -38,7 +38,15 @@ Future<Map<String, Uint8List>> _paintAll(MapLook look) async {
     MapIds.treesPattern: await _png((Canvas c) => paintTrees(c, p)),
     MapIds.wavesPattern: await _png((Canvas c) => paintWaves(c, p)),
     MapIds.arrowIcon: await _png((Canvas c) => paintArrow(c, p), size: 32),
+    MapIds.treeIcon: await _png((Canvas c) => paintTree(c, p), size: 32),
+    MapIds.lampIcon: await _png(paintLampGlow, size: 32),
   };
+  for (int i = 0; i < carColors.length; i++) {
+    out[MapIds.carIcon(i)] = await _png(
+      (Canvas c) => paintCar(c, carColors[i], look),
+      size: 32,
+    );
+  }
   for (final Facade f in Facade.values) {
     out[MapIds.facade(f)] = await _png((Canvas c) => paintFacade(c, look, f));
   }
@@ -328,5 +336,85 @@ void paintPoi(Canvas c, PoiKind k) {
     case PoiKind.health: // cruz
       c.drawRect(const Rect.fromLTWH(21, 13, 6, 22), fill);
       c.drawRect(const Rect.fromLTWH(13, 21, 22, 6), fill);
+  }
+}
+
+/// Un árbol de la acera visto desde arriba, con su sombra.
+void paintTree(Canvas c, MapPalette p) {
+  c.drawCircle(
+    const Offset(18, 18),
+    11,
+    Paint()..color = const Color(0x45000000),
+  );
+  c.drawCircle(
+    const Offset(16, 16),
+    11,
+    Paint()..color = _shade(p.park, -0.25),
+  );
+  c.drawCircle(const Offset(13, 13), 6, Paint()..color = _shade(p.park, 0.05));
+  c.drawCircle(
+    const Offset(11, 11),
+    2.5,
+    Paint()..color = _shade(p.park, 0.25),
+  );
+}
+
+/// El halo de luz de una farola (para el atardecer y la noche).
+void paintLampGlow(Canvas c) {
+  c.drawCircle(
+    const Offset(16, 16),
+    16,
+    Paint()
+      ..shader = ui.Gradient.radial(
+        const Offset(16, 16),
+        16,
+        const <Color>[Color(0xCCFFE2A0), Color(0x55FFC060), Color(0x00FFC060)],
+        const <double>[0, 0.35, 1],
+      ),
+  );
+  c.drawCircle(
+    const Offset(16, 16),
+    2.2,
+    Paint()..color = const Color(0xFFFFF4D6),
+  );
+}
+
+/// Colores de los coches (blanco, gris, rojo, azul): como en una calle real.
+const List<Color> carColors = <Color>[
+  Color(0xFFF2F2F2),
+  Color(0xFF59616B),
+  Color(0xFFD0453A),
+  Color(0xFF3F6FB5),
+];
+
+/// Un coche visto desde arriba, mirando a la derecha (MapLibre lo gira con
+/// la calle). De noche lleva los faros encendidos.
+void paintCar(Canvas c, Color body, MapLook look) {
+  c.drawRRect(
+    RRect.fromLTRBR(5, 11, 29, 23, const Radius.circular(4)),
+    Paint()..color = const Color(0x40000000),
+  );
+  c.drawRRect(
+    RRect.fromLTRBR(4, 10, 27, 21, const Radius.circular(4)),
+    Paint()..color = body,
+  );
+  // Parabrisas y luna trasera.
+  final Paint glass = Paint()..color = const Color(0xFF1C2833);
+  c.drawRRect(
+    RRect.fromLTRBR(18, 11.5, 22, 19.5, const Radius.circular(1.5)),
+    glass,
+  );
+  c.drawRRect(RRect.fromLTRBR(7, 12, 9.5, 19, const Radius.circular(1)), glass);
+  if (look != MapLook.day) {
+    final Paint beam = Paint()..color = const Color(0x88FFF1B8);
+    c.drawPath(
+      Path()
+        ..moveTo(27, 11)
+        ..lineTo(32, 8)
+        ..lineTo(32, 23)
+        ..lineTo(27, 20)
+        ..close(),
+      beam,
+    );
   }
 }

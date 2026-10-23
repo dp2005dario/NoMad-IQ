@@ -27,6 +27,9 @@ abstract final class MapIds {
   static const String treesPattern = 'nq-trees';
   static const String wavesPattern = 'nq-waves';
   static const String arrowIcon = 'nq-oneway';
+  static const String treeIcon = 'nq-tree';
+  static const String lampIcon = 'nq-lamp';
+  static String carIcon(int i) => 'nq-car-$i';
   static String facade(Facade f) => 'nq-facade-${f.name}';
   static String poiIcon(PoiKind k) => 'nq-poi-${k.name}';
 }
@@ -277,17 +280,37 @@ Map<String, Object?> buildMapStyle({
       'tunnel',
     ],
   ];
-  // Un número "al azar" pero fijo para cada edificio (sale de su id de
-  // OpenStreetMap): así cada uno tiene siempre la misma fachada y tejado.
-  final List<Object?> pick3 = <Object?>[
+  // Un tamaño que crece con el zoom (para iconos de decoración).
+  List<Object?> zoomed(double z16, double z19) => <Object?>[
+    'interpolate',
+    <Object?>['exponential', 2],
+    <Object?>['zoom'],
+    16,
+    z16,
+    19,
+    z19,
+  ];
+  // Iconos "tumbados" en el suelo, girados con la calle y sin tapar a nadie.
+  const Map<String, Object?> flatOnGround = <String, Object?>{
+    'icon-rotation-alignment': 'map',
+    'icon-pitch-alignment': 'map',
+    'icon-allow-overlap': true,
+    'icon-ignore-placement': true,
+  };
+  // Un número "al azar" pero fijo para cada edificio o calle (sale de su id
+  // de OpenStreetMap): cada uno saca siempre la misma fachada, tejado o
+  // coche (no parpadea), pero los vecinos varían.
+  // to-number con 0 de reserva: algunos elementos no traen número.
+  List<Object?> pickOf(int n) => <Object?>[
     '%',
     <Object?>[
-      'coalesce',
+      'to-number',
       <Object?>['id'],
       0,
     ],
-    3,
+    n,
   ];
+  final List<Object?> pick3 = pickOf(3);
   // Altura de cada edificio (6 m si OpenStreetMap no la sabe) y de dónde
   // empieza (los soportales y pasarelas no tocan el suelo).
   final List<Object?> height = <Object?>[
@@ -770,6 +793,103 @@ Map<String, Object?> buildMapStyle({
           'line-color': hex(p.rail),
           'line-width': width(2, 9),
           'line-dasharray': <double>[0.15, 1.2],
+        },
+      },
+      // Tráfico: coches parados por el carril derecho de las avenidas. Es
+      // decoración (no es tráfico en tiempo real), pero da vida a la calle.
+      <String, Object?>{
+        'id': 'traffic',
+        'type': 'symbol',
+        'source': 'openmaptiles',
+        'source-layer': 'transportation',
+        'minzoom': 16.5,
+        'filter': <Object?>['all', isLine, classIn(majorClasses)],
+        'layout': <String, Object?>{
+          'symbol-placement': 'line',
+          'symbol-spacing': 110,
+          'icon-image': <Object?>[
+            'match',
+            pickOf(carColors.length),
+            for (int i = 1; i < carColors.length; i++) ...<Object?>[
+              i,
+              MapIds.carIcon(i),
+            ],
+            MapIds.carIcon(0),
+          ],
+          'icon-size': zoomed(0.35, 1.2),
+          'icon-offset': <double>[0, 9],
+          ...flatOnGround,
+        },
+      },
+      // Árboles a los dos lados de las calles (muy de cerca).
+      for (final double side in <double>[-1, 1])
+        <String, Object?>{
+          'id': side < 0 ? 'street-trees-left' : 'street-trees-right',
+          'type': 'symbol',
+          'source': 'openmaptiles',
+          'source-layer': 'transportation',
+          'minzoom': 17,
+          'filter': <Object?>['all', isLine, classIn(minorClasses)],
+          'layout': <String, Object?>{
+            'symbol-placement': 'line',
+            'symbol-spacing': 45,
+            'icon-image': MapIds.treeIcon,
+            'icon-size': zoomed(0.35, 1.1),
+            'icon-offset': <double>[0, side * 26],
+            ...flatOnGround,
+          },
+        },
+      // Farolas encendidas al atardecer y de noche.
+      if (look != MapLook.day)
+        <String, Object?>{
+          'id': 'street-lamps',
+          'type': 'symbol',
+          'source': 'openmaptiles',
+          'source-layer': 'transportation',
+          'minzoom': 16,
+          'filter': <Object?>[
+            'all',
+            isLine,
+            classIn(<String>[...majorClasses, ...minorClasses]),
+          ],
+          'layout': <String, Object?>{
+            'symbol-placement': 'line',
+            'symbol-spacing': 70,
+            'icon-image': MapIds.lampIcon,
+            'icon-size': zoomed(0.6, 2),
+            'icon-offset': <double>[0, -14],
+            ...flatOnGround,
+          },
+          'paint': <String, Object?>{
+            'icon-opacity': look == MapLook.night ? 0.95 : 0.6,
+          },
+        },
+      // Sombra de los edificios en el suelo (hacia abajo a la derecha, como
+      // la luz del estilo): les da peso y profundidad.
+      <String, Object?>{
+        'id': 'building-shadow',
+        'type': 'fill',
+        'source': 'openmaptiles',
+        'source-layer': 'building',
+        'minzoom': 15,
+        'paint': <String, Object?>{
+          'fill-color': '#000000',
+          'fill-opacity': look == MapLook.night ? 0.35 : 0.18,
+          'fill-translate': <Object?>[
+            'interpolate',
+            <Object?>['linear'],
+            <Object?>['zoom'],
+            15,
+            <Object?>[
+              'literal',
+              <double>[2, 3],
+            ],
+            19,
+            <Object?>[
+              'literal',
+              <double>[14, 20],
+            ],
+          ],
         },
       },
       // Las "huellas" de los edificios en 2D (se ven antes que el 3D).
