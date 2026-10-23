@@ -171,7 +171,7 @@ class _FlightsScreenState extends State<FlightsScreen> {
               const SizedBox(height: 28),
               Text(t.planTitle, style: text.titleLarge),
               const SizedBox(height: 12),
-              _PlanShortcuts(t: t),
+              _PlanShortcuts(t: t, origin: _origin),
             ],
           ),
         ),
@@ -487,9 +487,10 @@ class _Notice extends StatelessWidget {
 
 /// "Planea tu viaje": las herramientas que llegan en próximas versiones.
 class _PlanShortcuts extends StatelessWidget {
-  const _PlanShortcuts({required this.t});
+  const _PlanShortcuts({required this.t, required this.origin});
 
   final AppLocalizations t;
+  final String origin;
 
   @override
   Widget build(BuildContext context) {
@@ -508,7 +509,12 @@ class _PlanShortcuts extends StatelessWidget {
           ActionChip(
             avatar: Icon(f.icon, size: 18, color: f.color),
             label: Text(f.label(t)),
-            onPressed: () => context.push(Routes.soon(f)),
+            // La Ruta del vuelo ya existe; el resto, "muy pronto".
+            onPressed: () => context.push(
+              f == Feature.flightRoute
+                  ? Routes.flightRoute(from: origin)
+                  : Routes.soon(f),
+            ),
           ),
       ],
     );

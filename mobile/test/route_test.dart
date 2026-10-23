@@ -1,0 +1,187 @@
+// Tests de la Ruta del vuelo: las matemáticas de la esfera, los datos que
+// van dentro de la app (mapa y aeropuertos) y la pantalla completa: mundo →
+// origen → vuelo → llegada.
+import 'dart:typed_data';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:nomadiq/core/router.dart';
+import 'package:nomadiq/core/theme.dart';
+import 'package:nomadiq/features/route/flight_route_screen.dart';
+import 'package:nomadiq/features/route/geo.dart';
+import 'package:nomadiq/features/route/world_data.dart';
+import 'package:nomadiq/l10n/generated/app_localizations.dart';
+
+const LatLon madrid = LatLon(40.472, -3.563);
+const LatLon tokyo = LatLon(35.765, 140.386);
+const LatLon losAngeles = LatLon(33.942, -118.408);
+
+Future<void> pumpRoute(
+  WidgetTester tester, {
+  String from = 'MAD',
+  String? to = 'NRT',
+}) async {
+  tester.view.physicalSize = const Size(1170, 2532);
+  tester.view.devicePixelRatio = 3;
+  addTearDown(tester.view.reset);
+  // Los datos reales de la app (assets/geo), cargados una vez.
+  final WorldData world = (await tester.runAsync(WorldData.load))!;
+  await tester.pumpWidget(
+    MaterialApp(
+      theme: buildNomadTheme(),
+      locale: const Locale('es'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: FlightRouteScreen(from: from, to: to, loadWorld: () async => world),
+    ),
+  );
+  // El "latido" de los puntos no para nunca: se avanza el reloj a mano.
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 1500));
+}
+
+void main() {
+  group('geo', () {
+    test('Madrid → Tokio son unos 10.770 km y ~13 h', () {
+      final double km = distanceKm(madrid, tokyo);
+      expect(km, closeTo(10770, 60));
+      expect(estimatedFlightTime(km).inHours, 13);
+    });
+
+    test('el camino más corto pasa por el norte (Rusia)', () {
+      final LatLon mid = intermediate(madrid, tokyo, 0.5);
+      expect(mid.lat, greaterThan(55));
+      expect(intermediate(madrid, tokyo, 0).lat, closeTo(madrid.lat, 1e-6));
+      expect(intermediate(madrid, tokyo, 1).lon, closeTo(tokyo.lon, 1e-6));
+    });
+
+    test('cruzar el meridiano 180 no hace saltar la línea', () {
+      final List<LatLon> path = greatCircle(tokyo, losAngeles);
+      for (int i = 1; i < path.length; i++) {
+        expect((path[i].lon - path[i - 1].lon).abs(), lessThan(10));
+      }
+      expect(path.last.lon, closeTo(losAngeles.lon + 360, 1e-6));
+    });
+  });
+
+  group('datos', () {
+    test('aeropuertos: formato y líneas raras', () {
+      final Airports a = Airports.parse(
+        'MAD|40.472|-3.563|Madrid|Spain|Europe/Madrid\n'
+        'roto\n'
+        'XXX|no|1|A|B|C\n',
+      );
+      expect(a.length, 1);
+      expect(a['mad']!.timeZone, 'Europe/Madrid');
+    });
+
+    test('mapa binario: firma y contenido', () {
+      final ByteData ok = ByteData(4 + 4 + 4 + 8)
+        ..setUint8(0, 0x4E)
+        ..setUint8(1, 0x51)
+        ..setUint8(2, 0x57)
+        ..setUint8(3, 0x31)
+        ..setUint32(4, 1, Endian.little)
+        ..setUint32(8, 2, Endian.little)
+        ..setInt16(12, -36, Endian.little)
+        ..setInt16(14, 404, Endian.little)
+        ..setInt16(16, 1403, Endian.little)
+        ..setInt16(18, 357, Endian.little);
+      final WorldShapes w = WorldShapes.parse(ok);
+      final List<double> want = <double>[-3.6, 40.4, 140.3, 35.7];
+      for (int i = 0; i < want.length; i++) {
+        expect(w.rings.single[i], closeTo(want[i], 1e-4));
+      }
+      expect(() => WorldShapes.parse(ByteData(8)), throwsFormatException);
+    });
+
+    testWidgets('los datos de la app se cargan', (WidgetTester tester) async {
+      final WorldData world = (await tester.runAsync(WorldData.load))!;
+      expect(world.shapes.rings.length, greaterThan(1000));
+      expect(world.airports.length, greaterThan(5000));
+      expect(world.airports['NRT']!.city, 'Tokyo');
+      expect(world.airports['JFK']!.timeZone, 'America/New_York');
+    });
+  });
+
+  testWidgets('mundo → origen → vuelo → llegada', (WidgetTester tester) async {
+    await pumpRoute(tester);
+    expect(find.text('MAD → NRT'), findsOneWidget);
+    expect(find.text('Madrid → Tokyo'), findsOneWidget);
+    expect(find.textContaining('10.7'), findsOneWidget); // km con punto español
+    expect(find.text('Mundo'), findsOneWidget);
+
+    await tester.tap(find.text('Empezar en Madrid'));
+    await tester.pump(const Duration(milliseconds: 1300));
+    expect(find.text('ORIGEN'), findsOneWidget);
+    expect(find.textContaining('Hora local'), findsOneWidget);
+
+    await tester.tap(find.text('Despegar hacia Tokyo'));
+    // En los tests cada animación arranca un fotograma después: la cámara se
+    // coloca y, en el siguiente, despega el avión.
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(milliseconds: 1300));
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump(const Duration(seconds: 5));
+    expect(find.text('Siguiendo el avión'), findsOneWidget);
+    expect(find.textContaining('Recorrido'), findsOneWidget);
+    expect(find.textContaining('Quedan'), findsOneWidget);
+    // A mitad de camino ya no está en 0 km.
+    expect(find.textContaining('Recorrido: 0 km'), findsNothing);
+
+    // El vuelo simulado dura 14 s: se avanza en varios pasos.
+    for (int i = 0; i < 4; i++) {
+      await tester.pump(const Duration(seconds: 4));
+    }
+    await tester.pump(const Duration(milliseconds: 1300));
+    expect(find.text('¡Has llegado a Tokyo!'), findsOneWidget);
+    // Tokio va 7 u 8 horas por delante de Madrid (según el horario de verano).
+    expect(
+      find.textContaining(RegExp(r'[78] h más que Madrid')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Volver al origen'));
+    await tester.pump(const Duration(milliseconds: 1300));
+    expect(find.text('ORIGEN'), findsOneWidget);
+  });
+
+  testWidgets('aterrizar ya', (WidgetTester tester) async {
+    await pumpRoute(tester, from: 'JFK', to: 'LHR');
+    await tester.tap(find.text('Empezar en New York'));
+    await tester.pump(const Duration(milliseconds: 1300));
+    await tester.tap(find.text('Despegar hacia London'));
+    await tester.pump(const Duration(milliseconds: 1500));
+    await tester.tap(find.text('Aterrizar ya'));
+    await tester.pump(const Duration(milliseconds: 1300));
+    expect(find.text('¡Has llegado a London!'), findsOneWidget);
+    expect(find.textContaining('h más que New York'), findsOneWidget);
+  });
+
+  testWidgets('sin destino: se pregunta y se valida', (
+    WidgetTester tester,
+  ) async {
+    await pumpRoute(tester, to: null);
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(
+      find.text('Código del aeropuerto de destino (p. ej. NRT)'),
+      findsOneWidget,
+    );
+    await tester.enterText(find.byType(TextField), 'zzz');
+    await tester.tap(find.text('Ver ruta'));
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.textContaining('No conocemos ese aeropuerto'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'lis');
+    await tester.tap(find.text('Ver ruta'));
+    await tester.pump(const Duration(milliseconds: 1500));
+    expect(find.text('MAD → LIS'), findsOneWidget);
+  });
+
+  test('dirección de la pantalla', () {
+    expect(
+      Routes.flightRoute(from: 'MAD', to: 'NRT'),
+      '/fares/map?from=MAD&to=NRT',
+    );
+    expect(Routes.flightRoute(from: 'MAD'), '/fares/map?from=MAD');
+  });
+}

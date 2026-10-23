@@ -312,7 +312,20 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
       ),
       const SizedBox(height: 4),
       Text(t.searchPricesNote, style: muted),
-      const SizedBox(height: 12),
+      Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: TextButton.icon(
+          onPressed: () => context.push(
+            Routes.flightRoute(
+              from: result.route.origin,
+              to: result.route.destination,
+            ),
+          ),
+          icon: const Icon(Icons.public_rounded),
+          label: Text(t.routeShow),
+        ),
+      ),
+      const SizedBox(height: 4),
       for (final Offer o in result.offers)
         _OfferCard(
           offer: o,

@@ -11,6 +11,7 @@ import '../features/coming_soon/coming_soon_screen.dart';
 import '../features/flights/fare_alerts_screen.dart';
 import '../features/flights/fare_route_screen.dart';
 import '../features/flights/flight_search_screen.dart';
+import '../features/route/flight_route_screen.dart';
 import '../features/flights/fares_api.dart';
 import '../features/flights/flights_screen.dart';
 import '../features/home/home_screen.dart';
@@ -59,6 +60,12 @@ abstract final class Routes {
       queryParameters: q.isEmpty ? null : q,
     ).toString();
   }
+
+  /// La Ruta del vuelo en el mapamundi (sin destino, se pregunta).
+  static String flightRoute({required String from, String? to}) => Uri(
+    path: '/fares/map',
+    queryParameters: <String, String>{'from': from, 'to': ?to},
+  ).toString();
 
   /// El detalle de una ruta de vuelo ("MAD-NRT:2026-12-15:ECONOMY").
   static String fareRoute(String routeKey) =>
@@ -140,6 +147,16 @@ GoRouter buildRouter({
       path: Routes.fareAlerts,
       builder: (BuildContext context, GoRouterState state) =>
           const FareAlertsScreen(),
+    ),
+    GoRoute(
+      path: '/fares/map',
+      builder: (BuildContext context, GoRouterState state) {
+        final String? to = state.uri.queryParameters['to'];
+        return FlightRouteScreen(
+          from: state.uri.queryParameters['from'] ?? '',
+          to: to == null || to.isEmpty ? null : to,
+        );
+      },
     ),
     GoRoute(
       path: '/fares/search',
