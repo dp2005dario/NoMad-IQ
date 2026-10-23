@@ -271,6 +271,18 @@ impl GeoSnapshot {
         found
     }
 
+    /// Zonas cuya caja toca el rectángulo `[min, max]` (longitud, latitud),
+    /// ordenadas por slug. Es lo que pinta el mapa de la app: todas las zonas
+    /// visibles en pantalla. Basta con la caja (no el polígono exacto): una
+    /// zona que asoma por la esquina también debe dibujarse.
+    pub fn zones_in_box(&self, min: [f64; 2], max: [f64; 2]) -> Vec<&ZoneRecord> {
+        let area = AABB::from_corners(min, max);
+        let mut found: Vec<&ZoneRecord> =
+            self.zone_index.locate_in_envelope_intersecting(&area).filter_map(|entry| self.zones.get(entry.index)).collect();
+        found.sort_by(|a, b| a.slug.cmp(&b.slug));
+        found
+    }
+
     /// Busca una zona por id.
     pub fn zone(&self, id: &Uuid) -> Option<&ZoneRecord> {
         self.zones_by_id.get(id).and_then(|&i| self.zones.get(i))
@@ -389,6 +401,16 @@ pub(crate) mod tests {
         assert!(slugs(ll(41.38, 2.17)).is_empty());
         // El borde cuenta como dentro.
         assert_eq!(slugs(ll(40.411, -3.70)), ["madrid-centro"]);
+    }
+
+    #[test]
+    fn zonas_visibles_en_un_rectangulo() {
+        let snap = sample_snapshot();
+        let slugs = |min, max| snap.zones_in_box(min, max).iter().map(|z| z.slug.clone()).collect::<Vec<_>>();
+        // Un rectángulo sobre el centro de Madrid ve las dos zonas de Madrid.
+        assert_eq!(slugs([-3.72, 40.40], [-3.69, 40.43]), ["madrid-centro", "madrid-sol"]);
+        // En mitad del Atlántico, nada.
+        assert!(slugs([-30.0, 30.0], [-29.0, 31.0]).is_empty());
     }
 
     #[test]

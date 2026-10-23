@@ -34,6 +34,6 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 FROM gcr.io/distroless/cc-debian12:nonroot
 COPY --from=build /out/geo-engine /geo-engine
 USER nonroot:nonroot
-EXPOSE 50052 8087
+EXPOSE 50052 8087 8090
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=3 CMD ["/geo-engine", "--healthcheck"]
 ENTRYPOINT ["/geo-engine"]

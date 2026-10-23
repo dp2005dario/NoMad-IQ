@@ -1,0 +1,63 @@
+# Configuración ESTÁTICA de Traefik, la "puerta de entrada" (proxy de borde)
+# de NomadIQ: la app móvil SOLO habla con esta puerta, nunca con cada
+# microservicio. Las reglas de reparto están en dynamic.yml.
+#
+# Analogía: es la recepción de un hotel. Comprueba tu tarjeta (el token, con
+# el auth-gateway) y te manda a la planta que toca (el microservicio), con una
+# nota de quién eres (X-User-ID) que los de dentro se pueden creer.
+
+entryPoints:
+  web:
+    # En local, HTTP en el puerto 8080. En producción aquí va TLS 1.3 con el
+    # certificado público (Let's Encrypt) y la app exige https://.
+    address: ":8080"
+    transport:
+      respondingTimeouts:
+        # Corta a los clientes lentos (ataques que abren conexiones y no envían nada).
+        readTimeout: 30s
+        writeTimeout: 60s
+        idleTimeout: 90s
+    http:
+      # Cabeceras "disfrazadas" (X_User_ID o X.User.ID en vez de X-User-ID)
+      # se BORRAN: algunos servidores las leen como si fueran la original y
+      # servirían para suplantar la identidad.
+      aliasHeadersStrategy: delete
+      # Ninguna ruta de NomadIQ necesita caracteres codificados raros en la
+      # dirección (%2F, %00, %5C...): se rechazan para evitar trucos que hacen
+      # que el proxy y el servicio "vean" rutas distintas.
+      encodedCharacters:
+        allowEncodedSlash: false
+        allowEncodedBackslash: false
+        allowEncodedNullCharacter: false
+        allowEncodedSemicolon: false
+        allowEncodedPercent: false
+        allowEncodedQuestionMark: false
+        allowEncodedHash: false
+
+providers:
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: false
+
+# Sin panel de administración: menos superficie de ataque.
+api:
+  dashboard: false
+
+# /ping para el healthcheck de Docker.
+ping:
+  entryPoint: web
+
+log:
+  level: INFO
+  format: json
+
+# Registro de peticiones SIN cabeceras: nunca se guardan tokens.
+accessLog:
+  format: json
+  fields:
+    headers:
+      defaultMode: drop
+
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
