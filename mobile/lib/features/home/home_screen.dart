@@ -58,7 +58,6 @@ class HomeScreen extends StatelessWidget {
                   for (final Feature f in const <Feature>[
                     Feature.vault,
                     Feature.expenses,
-                    Feature.audioguides,
                   ])
                     _Shortcut(
                       icon: f.icon,
@@ -66,6 +65,13 @@ class HomeScreen extends StatelessWidget {
                       label: f.label(t),
                       onTap: () => context.push(Routes.soon(f)),
                     ),
+                  // Las audioguías viven en el Mapa: se abren al tocar una zona.
+                  _Shortcut(
+                    icon: Feature.audioguides.icon,
+                    color: Feature.audioguides.color,
+                    label: Feature.audioguides.label(t),
+                    onTap: () => context.go(Routes.map),
+                  ),
                   _Shortcut(
                     icon: Icons.translate_rounded,
                     color: NomadColors.flights,

@@ -15,7 +15,13 @@ enum Feature {
   vault(Icons.lock_rounded, NomadColors.safety),
   expenses(Icons.receipt_long_rounded, NomadColors.money),
   audioguides(Icons.headphones_rounded, NomadColors.mint),
-  flyra(Icons.auto_awesome_rounded, NomadColors.group);
+  flyra(Icons.auto_awesome_rounded, NomadColors.group),
+  // Atajos de la pantalla del Mapa.
+  nearby(Icons.near_me_rounded, NomadColors.mint),
+  transport(Icons.directions_transit_rounded, NomadColors.flights),
+  radar(Icons.radar_rounded, NomadColors.money),
+  queues(Icons.timer_rounded, NomadColors.group),
+  assistant(Icons.support_agent_rounded, NomadColors.safety);
 
   const Feature(this.icon, this.color);
 
@@ -32,6 +38,11 @@ enum Feature {
     Feature.expenses => t.shortcutExpenses,
     Feature.audioguides => t.shortcutAudioguides,
     Feature.flyra => t.talkToFlyra,
+    Feature.nearby => t.mapNearby,
+    Feature.transport => t.mapTransport,
+    Feature.radar => t.mapRadar,
+    Feature.queues => t.mapQueues,
+    Feature.assistant => t.mapAssistant,
   };
 }
 

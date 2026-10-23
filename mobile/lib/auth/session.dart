@@ -100,6 +100,14 @@ class SessionController extends ChangeNotifier {
     return _refreshing ??= _refresh().whenComplete(() => _refreshing = null);
   }
 
+  /// Un servicio rechazó el pase [rejected] (401) aunque no había caducado
+  /// (por ejemplo, se cerró la sesión en otro móvil). Se tira y se pide uno
+  /// nuevo. Si otra pantalla ya lo renovó, se usa ese sin renovar otra vez.
+  Future<String> renewAccessToken(String rejected) {
+    if (_tokens?.accessToken == rejected) _tokens = null;
+    return accessToken();
+  }
+
   // ---------------------------------------------------------------------------
 
   Future<String> _refresh() async {

@@ -93,5 +93,132 @@
   "accountMenu": "Account",
   "signOut": "Sign out",
   "signInFromGuest": "Sign in or create an account",
-  "googleSoon": "Google sign-in is coming soon. Use your email for now."
+  "googleSoon": "Google sign-in is coming soon. Use your email for now.",
+  "mapSearchHint": "Search zone",
+  "mapSearchNoResults": "No zone called “{query}” here. Move the map to load more.",
+  "@mapSearchNoResults": {
+    "description": "Search on the map found nothing. {query} is what the user typed.",
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "mapLookTitle": "Map style",
+  "@mapLookTitle": {
+    "description": "Accessibility label of the Auto/Day/Dusk/Night map style selector."
+  },
+  "mapLookAuto": "Auto",
+  "mapLookDay": "Day",
+  "mapLookDusk": "Dusk",
+  "mapLookNight": "Night",
+  "mapTiltTooltip": "Switch between 2D and 3D view",
+  "mapMyLocation": "My location",
+  "mapEnableLocation": "Turn on location",
+  "mapLocationWhy": "While the map is open, Flyra uses your location to let you know when you enter a zone with an audio guide.",
+  "@mapLocationWhy": {
+    "description": "Shown before asking for location permission. Flyra is the in-app AI (female)."
+  },
+  "mapLocationDenied": "NomadIQ doesn't have access to your location. You can allow it in Settings.",
+  "mapLocationServiceOff": "Your phone's location is turned off.",
+  "mapOpenSettings": "Settings",
+  "mapZonesLoading": "Loading zones…",
+  "mapZonesTooFar": "Zoom in to see the zones",
+  "mapZonesTruncated": "Lots of zones here. Zoom in to see them all.",
+  "mapZonesError": "Couldn't load the zones. Move the map to try again.",
+  "mapZonesGuest": "Create an account to see zones and audio guides.",
+  "mapEnteredTitle": "You've entered {zone}",
+  "@mapEnteredTitle": {
+    "description": "Banner when the user walks into a zone. {zone} is the zone name, e.g. Puerta del Sol.",
+    "placeholders": {
+      "zone": {
+        "type": "String"
+      }
+    }
+  },
+  "mapEnteredBody": "Your audio guide is ready",
+  "mapKickerHere": "You're in this zone",
+  "@mapKickerHere": {
+    "description": "Small caps label above the zone name when the user is inside it."
+  },
+  "mapListen": "Listen to the audio guide",
+  "mapNoAudioguide": "This zone has no audio guide.",
+  "zoneKindCityCenter": "City centre",
+  "zoneKindTouristArea": "Tourist area",
+  "zoneKindAirport": "Airport",
+  "zoneKindRestricted": "Restricted area",
+  "mapNearby": "Near you",
+  "mapTransport": "Getting around",
+  "mapRadar": "Radar",
+  "mapQueues": "No queues",
+  "@mapQueues": {
+    "description": "Map shortcut: places without queues / skip-the-line info."
+  },
+  "mapAssistant": "Assistant",
+  "guidePreparing": "Flyra is preparing this audio guide…",
+  "guidePreparingSlow": "This audio guide isn't ready yet. Try again in a moment.",
+  "guideRetry": "Try again",
+  "guideNowPlaying": "NOW PLAYING",
+  "guidePartOf": "Part {part} of {total}",
+  "@guidePartOf": {
+    "description": "Audio guide progress, e.g. Part 2 of 4.",
+    "placeholders": {
+      "part": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "guidePart": "Part {part}",
+  "@guidePart": {
+    "description": "Accessibility label of a part chip.",
+    "placeholders": {
+      "part": {
+        "type": "int"
+      }
+    }
+  },
+  "guideSeekHint": "Slide the green circle to skip",
+  "@guideSeekHint": {
+    "description": "Hint under the big green play button: drag it sideways to seek."
+  },
+  "guideSeekBy": "{seconds} s",
+  "@guideSeekBy": {
+    "description": "While dragging the green button. {seconds} is already signed, e.g. +12 or −8.",
+    "placeholders": {
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "guidePlay": "Play",
+  "guidePause": "Pause",
+  "guideBack10": "Back 10 seconds",
+  "guideForward10": "Forward 10 seconds",
+  "guidePrev": "Previous part",
+  "guideNext": "Next part",
+  "guideSpeed": "{speed}×",
+  "@guideSpeed": {
+    "description": "Playback speed button. {speed} is a formatted number, e.g. 1,25. Keep the × sign.",
+    "placeholders": {
+      "speed": {
+        "type": "String"
+      }
+    }
+  },
+  "guideRecording": "The audio is still being recorded. Meanwhile, you can read the guide.",
+  "guideOldVersion": "A newer version is being recorded. You're hearing the previous one.",
+  "guideOtherLanguage": "Not available in your language yet. It's in {language}.",
+  "@guideOtherLanguage": {
+    "description": "{language} is the language name in its own language, e.g. English.",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "guideAudioFailed": "The audio couldn't play. Check your connection.",
+  "guideSignIn": "Audio guides are for NomadIQ accounts. Sign in to listen."
 }
