@@ -243,5 +243,15 @@
   "placeUnavailable": "この都市の情報はまだありません。後でもう一度お試しください。",
   "placeInEnglish": "英語のテキストです（あなたの言語版はまだありません）。",
   "placeCredits": "テキスト：ウィキペディア（CC BY-SA）。写真：ウィキメディア・コモンズ（写真をタップすると作者とライセンスを表示）。",
-  "placePhotoLabel": "ウィキメディア・コモンズの写真"
+  "placePhotoLabel": "ウィキメディア・コモンズの写真",
+  "streetViewButton": "本物の通りを見る",
+  "streetViewTitle": "本物の通り",
+  "streetViewNone": "この通りの写真はまだ誰も共有していません。地図を少し動かしてもう一度お試しください。",
+  "streetViewUnavailable": "現在、通りの写真は利用できません。後でもう一度お試しください。",
+  "streetViewCredits": "写真：Mapillary コミュニティ（CC BY-SA 4.0）。写真をタップすると大きく表示します。",
+  "streetViewBy": "撮影：{name}",
+  "streetViewTaken": "{year}年に撮影",
+  "streetViewOpen": "Mapillaryで開く",
+  "streetViewPano": "360°写真：ドラッグして見回せます",
+  "streetViewPhotoLabel": "Mapillaryの通りの写真"
 }

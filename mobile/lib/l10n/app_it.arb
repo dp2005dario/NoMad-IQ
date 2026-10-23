@@ -243,5 +243,15 @@
   "placeUnavailable": "Non ci sono ancora informazioni su questa città. Riprova più tardi.",
   "placeInEnglish": "Testo in inglese: non esiste ancora nella tua lingua.",
   "placeCredits": "Testi: Wikipedia (CC BY-SA). Foto: Wikimedia Commons (tocca una foto per vederne autore e licenza).",
-  "placePhotoLabel": "Foto da Wikimedia Commons"
+  "placePhotoLabel": "Foto da Wikimedia Commons",
+  "streetViewButton": "Vedi la strada vera",
+  "streetViewTitle": "La strada vera",
+  "streetViewNone": "Nessuno ha ancora condiviso foto di questa strada. Sposta un po' la mappa e riprova.",
+  "streetViewUnavailable": "Le foto della strada non sono disponibili ora. Riprova più tardi.",
+  "streetViewCredits": "Foto della comunità di Mapillary (CC BY-SA 4.0). Tocca una foto per vederla in grande.",
+  "streetViewBy": "Foto: {name}",
+  "streetViewTaken": "Scattata nel {year}",
+  "streetViewOpen": "Apri in Mapillary",
+  "streetViewPano": "Foto a 360°: trascina per guardarti intorno",
+  "streetViewPhotoLabel": "Foto della strada da Mapillary"
 }

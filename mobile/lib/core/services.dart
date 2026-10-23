@@ -14,6 +14,7 @@ import '../features/map/geo_api.dart';
 import '../features/map/location.dart';
 import '../features/map/location_tracker.dart';
 import '../features/map/map_surface.dart';
+import '../features/map/street_photos_api.dart';
 import '../features/push/notices.dart';
 import '../features/route/places_api.dart';
 import 'api_client.dart';
@@ -34,6 +35,7 @@ class AppServices {
        audioguides = AudioguideApi(api),
        fares = FaresApi(api),
        places = PlacesApi(api),
+       streetPhotos = StreetPhotosApi(api),
        prefs = prefs ?? MemorySettingsStore() {
     tracker = LocationTracker(
       location: location,
@@ -51,6 +53,9 @@ class AppServices {
 
   /// Fichas de ciudad (Wikipedia) para la Ruta del vuelo.
   final PlacesApi places;
+
+  /// Fotos reales de la calle (Mapillary) para el botón del mapa.
+  final StreetPhotosApi streetPhotos;
 
   /// Ajustes guardados en el móvil (idioma, modo viaje, aeropuerto…).
   final SettingsStore prefs;

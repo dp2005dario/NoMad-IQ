@@ -243,5 +243,15 @@
   "placeUnavailable": "इस शहर की जानकारी अभी उपलब्ध नहीं है। बाद में फिर कोशिश करें।",
   "placeInEnglish": "अंग्रेज़ी में पाठ: आपकी भाषा में अभी उपलब्ध नहीं है।",
   "placeCredits": "पाठ: विकिपीडिया (CC BY-SA)। फ़ोटो: विकिमीडिया कॉमन्स (लेखक और लाइसेंस देखने के लिए फ़ोटो पर टैप करें)।",
-  "placePhotoLabel": "विकिमीडिया कॉमन्स से फ़ोटो"
+  "placePhotoLabel": "विकिमीडिया कॉमन्स से फ़ोटो",
+  "streetViewButton": "असली सड़क देखें",
+  "streetViewTitle": "असली सड़क",
+  "streetViewNone": "इस सड़क की तस्वीरें अभी किसी ने साझा नहीं की हैं। नक्शे को थोड़ा खिसकाकर फिर कोशिश करें।",
+  "streetViewUnavailable": "सड़क की तस्वीरें अभी उपलब्ध नहीं हैं। बाद में फिर कोशिश करें।",
+  "streetViewCredits": "तस्वीरें Mapillary समुदाय की (CC BY-SA 4.0)। बड़ा देखने के लिए किसी तस्वीर पर टैप करें।",
+  "streetViewBy": "फ़ोटो: {name}",
+  "streetViewTaken": "{year} में ली गई",
+  "streetViewOpen": "Mapillary में खोलें",
+  "streetViewPano": "360° फ़ोटो: चारों ओर देखने के लिए खींचें",
+  "streetViewPhotoLabel": "Mapillary से सड़क की फ़ोटो"
 }

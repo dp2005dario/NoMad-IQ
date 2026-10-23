@@ -243,5 +243,15 @@
   "placeUnavailable": "Aún no hay información de esta ciudad. Prueba más tarde.",
   "placeInEnglish": "Texto en inglés: aún no existe en tu idioma.",
   "placeCredits": "Textos: Wikipedia (CC BY-SA). Fotos: Wikimedia Commons (toca una foto para ver su autor y licencia).",
-  "placePhotoLabel": "Foto de Wikimedia Commons"
+  "placePhotoLabel": "Foto de Wikimedia Commons",
+  "streetViewButton": "Ver la calle de verdad",
+  "streetViewTitle": "La calle de verdad",
+  "streetViewNone": "Aún nadie ha compartido fotos de esta calle. Mueve un poco el mapa y vuelve a probar.",
+  "streetViewUnavailable": "Las fotos de la calle no están disponibles ahora. Prueba más tarde.",
+  "streetViewCredits": "Fotos de la comunidad de Mapillary (CC BY-SA 4.0). Toca una foto para verla en grande.",
+  "streetViewBy": "Foto: {name}",
+  "streetViewTaken": "Hecha en {year}",
+  "streetViewOpen": "Abrir en Mapillary",
+  "streetViewPano": "Foto de 360°: arrastra para mirar alrededor",
+  "streetViewPhotoLabel": "Foto de la calle de Mapillary"
 }

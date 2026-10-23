@@ -243,5 +243,15 @@
   "placeUnavailable": "暂无这座城市的信息，请稍后再试。",
   "placeInEnglish": "英文内容：暂无你的语言版本。",
   "placeCredits": "文字：维基百科（CC BY-SA）。照片：维基共享资源（点击照片查看作者和许可）。",
-  "placePhotoLabel": "来自维基共享资源的照片"
+  "placePhotoLabel": "来自维基共享资源的照片",
+  "streetViewButton": "查看真实街景",
+  "streetViewTitle": "真实街景",
+  "streetViewNone": "还没有人分享这条街的照片。稍微移动地图后再试一次。",
+  "streetViewUnavailable": "街景照片暂时无法使用，请稍后再试。",
+  "streetViewCredits": "照片来自 Mapillary 社区（CC BY-SA 4.0）。点击照片可全屏查看。",
+  "streetViewBy": "摄影：{name}",
+  "streetViewTaken": "拍摄于 {year} 年",
+  "streetViewOpen": "在 Mapillary 中打开",
+  "streetViewPano": "360° 照片：拖动即可环顾四周",
+  "streetViewPhotoLabel": "来自 Mapillary 的街景照片"
 }

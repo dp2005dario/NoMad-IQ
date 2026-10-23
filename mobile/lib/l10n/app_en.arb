@@ -815,5 +815,55 @@
   "placePhotoLabel": "Photo from Wikimedia Commons",
   "@placePhotoLabel": {
     "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "streetViewButton": "See the real street",
+  "@streetViewButton": {
+    "description": "Real street photos (Mapillary) opened from the map."
+  },
+  "streetViewTitle": "The real street",
+  "@streetViewTitle": {
+    "description": "Real street photos (Mapillary) opened from the map."
+  },
+  "streetViewNone": "No one has shared photos of this street yet. Move the map a little and try again.",
+  "@streetViewNone": {
+    "description": "Real street photos (Mapillary) opened from the map."
+  },
+  "streetViewUnavailable": "Street photos aren't available right now. Try again later.",
+  "@streetViewUnavailable": {
+    "description": "Real street photos (Mapillary) opened from the map."
+  },
+  "streetViewCredits": "Photos by the Mapillary community (CC BY-SA 4.0). Tap a photo to see it full screen.",
+  "@streetViewCredits": {
+    "description": "Real street photos (Mapillary) opened from the map."
+  },
+  "streetViewBy": "Photo: {name}",
+  "@streetViewBy": {
+    "description": "Real street photos (Mapillary) opened from the map.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "streetViewTaken": "Taken in {year}",
+  "@streetViewTaken": {
+    "description": "Real street photos (Mapillary) opened from the map.",
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "streetViewOpen": "Open in Mapillary",
+  "@streetViewOpen": {
+    "description": "Real street photos (Mapillary) opened from the map."
+  },
+  "streetViewPano": "360° photo: drag to look around",
+  "@streetViewPano": {
+    "description": "Real street photos (Mapillary) opened from the map."
+  },
+  "streetViewPhotoLabel": "Street photo from Mapillary",
+  "@streetViewPhotoLabel": {
+    "description": "Real street photos (Mapillary) opened from the map."
   }
 }

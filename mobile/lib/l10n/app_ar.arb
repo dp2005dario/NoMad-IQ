@@ -243,5 +243,15 @@
   "placeUnavailable": "لا توجد معلومات عن هذه المدينة بعد. حاول لاحقًا.",
   "placeInEnglish": "النص بالإنجليزية: غير متوفر بلغتك بعد.",
   "placeCredits": "النصوص: ويكيبيديا (CC BY-SA). الصور: ويكيميديا كومنز (المس صورة لمعرفة مؤلفها وترخيصها).",
-  "placePhotoLabel": "صورة من ويكيميديا كومنز"
+  "placePhotoLabel": "صورة من ويكيميديا كومنز",
+  "streetViewButton": "شاهد الشارع الحقيقي",
+  "streetViewTitle": "الشارع الحقيقي",
+  "streetViewNone": "لم يشارك أحد صورًا لهذا الشارع بعد. حرّك الخريطة قليلًا وحاول مجددًا.",
+  "streetViewUnavailable": "صور الشارع غير متاحة الآن. حاول لاحقًا.",
+  "streetViewCredits": "صور من مجتمع Mapillary ‏(CC BY-SA 4.0). المس صورة لعرضها بملء الشاشة.",
+  "streetViewBy": "الصورة: {name}",
+  "streetViewTaken": "التُقطت في {year}",
+  "streetViewOpen": "افتح في Mapillary",
+  "streetViewPano": "صورة 360°: اسحب للنظر حولك",
+  "streetViewPhotoLabel": "صورة شارع من Mapillary"
 }

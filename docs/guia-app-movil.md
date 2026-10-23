@@ -307,6 +307,41 @@ tu posición y la audioguía de cada zona.
 - **Solo con cuenta.** Las zonas y las audioguías se piden con tu pase
   (token). Un invitado ve el mapa y una invitación a crear su cuenta.
 
+### "Ver la calle de verdad" (fotos reales de Mapillary)
+
+El mapa 3D es un dibujo hecho con datos de OpenStreetMap. Para ver cómo es
+la calle **de verdad**, el botón **Ver la calle de verdad** (abajo, junto a
+"mi ubicación") abre fotos reales a pie de calle del centro de lo que ves.
+
+- **De dónde salen:** de [Mapillary](https://www.mapillary.com), millones de
+  fotos que hace gente de todo el mundo. Son gratis y con licencia libre
+  (CC BY-SA 4.0): por eso la app dice quién hizo cada foto y deja abrirla en
+  Mapillary. Analogía: es como Street View, pero hecho por la comunidad.
+- **Privacidad:** la app solo manda el centro del mapa **redondeado a unos
+  100 m** (tres decimales). El servidor tampoco lo apunta en sus registros.
+- **0 € con millones de usuarios:** el servidor guarda la respuesta de cada
+  "casilla" de ~100 m durante 6 horas en Redis. Mil personas mirando la
+  Puerta del Sol = **una** petición a Mapillary. Si se pasa del límite de
+  peticiones por segundo, la app dice "prueba más tarde" (nunca hay factura).
+- **Panorámicas de 360°:** se ven arrastrando el dedo a los lados.
+
+**Activarlo (una vez, gratis):**
+
+1. Entra en <https://www.mapillary.com/dashboard/developers> con una cuenta
+   de Mapillary (o de Facebook) y pulsa **Register application**.
+2. Pon un nombre (por ejemplo, `NomadIQ`), una web (la del repositorio) y
+   marca solo el permiso de **lectura** ("Read").
+3. Copia la **Client Token** (empieza por `MLY|`).
+4. En VS Code, abre `infrastructure/.env` (no el `.env.example`) y añade:
+   ```
+   MAPILLARY_TOKEN=MLY|...tu token...
+   ```
+   Es **secreta**: `.env` no se sube a GitHub. Nunca la pegues en el código.
+5. Reinicia el ai-orchestrator:
+   `docker compose --profile apps up -d ai-orchestrator`.
+
+Sin token, el botón sale igual pero dice que las fotos no están disponibles.
+
 ### Probarlo en tu PC
 
 1. Arranca el backend con las apps:
@@ -329,7 +364,7 @@ tu posición y la audioguía de cada zona.
   el servidor tendrá que grabar también otro formato.
 - **Fotos reales de cada zona** (Wikimedia Commons, con sus créditos) y el
   **tiempo** (sol, nubes, lluvia) de la maqueta. Necesitan su propio
-  servicio en el backend.
+  servicio en el backend. (Las fotos de **la calle** ya están: ver arriba.)
 - **Rótulos en hindi.** MapLibre aún no dibuja bien la escritura devanagari:
   si falta el nombre en tu idioma, se usa el alfabeto latino.
 
