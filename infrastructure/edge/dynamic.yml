@@ -70,6 +70,13 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 
+    # Vuelos: chollos, rutas vigiladas, historial y avisos de precio (price-consumer).
+    fares:
+      entryPoints: [web]
+      rule: PathPrefix(`/v1/fares/`)
+      middlewares: [strip-identity, rate-limit, small-body, authenticated]
+      service: price-consumer
+
     # Registro del móvil para las notificaciones push (notifier).
     devices:
       entryPoints: [web]
@@ -87,6 +94,9 @@ http:
     ai-orchestrator:
       loadBalancer:
         servers: [{ url: "http://ai-orchestrator:8085" }]
+    price-consumer:
+      loadBalancer:
+        servers: [{ url: "http://price-consumer:8092" }]
     notifier:
       loadBalancer:
         servers: [{ url: "http://notifier:8089" }]

@@ -30,6 +30,8 @@ Kafka flights.price-observed.v1
 | `internal/events` | Protobuf ⇄ dominio: decodifica precios, codifica alertas y mensajes DLQ |
 | `internal/processor` | Orquesta cada mensaje: validar, transacción, detectar, guardar alertas |
 | `internal/store` | PostgreSQL con pgx, migraciones embebidas y bandeja de salida |
+| `internal/api` | API HTTP de vuelos para la app (chollos, rutas vigiladas, historial, avisos) |
+| `internal/watchsync` | Sincroniza las rutas vigiladas con el flight-ingestor (gRPC) |
 | `internal/outbox` | Publica en Kafka las alertas pendientes (patrón Transactional Outbox) |
 | `internal/kafka` | Consumidor en grupo con commit manual, reintentos con backoff y productor |
 
@@ -64,6 +66,15 @@ Kafka flights.price-observed.v1
 | `SEED_SUBSCRIPTIONS` | — | `usuario\|CLAVE[\|importe_centimos\|DIVISA]`, separadas por comas |
 | `OUTBOX_INTERVAL` / `OUTBOX_BATCH_SIZE` | `5s` / `100` | Red de seguridad del relay de alertas |
 | `HTTP_ADDR` | `:8082` | `/healthz` y `/readyz` |
+| `API_ADDR` | `:8092` | API de vuelos de la app (`/v1/fares/...`, detrás de `edge`) |
+| `TLS_CERT_FILE`, `TLS_KEY_FILE`, `TLS_CLIENT_CA_FILE` | **obligatorias** (las tres) | mTLS de la API: solo la puerta de entrada puede llamarla |
+| `HTTP_INSECURE_DEV` | `false` | Solo local: API sin TLS |
+| `MAX_WATCHES_PER_USER` / `MAX_DAYS_AHEAD` / `DEALS_FRESHNESS` | `50` / `330` / `48h` | Límites de la API |
+| `INGESTOR_GRPC_ADDR` | — | gRPC del flight-ingestor; vacía = no se sincronizan rutas |
+| `INGESTOR_TLS_CERT_FILE`, `INGESTOR_TLS_KEY_FILE`, `INGESTOR_TLS_CA_FILE` | obligatorias con `INGESTOR_GRPC_ADDR` | mTLS hacia el ingestor |
+| `INGESTOR_INSECURE_DEV` | `false` | Solo local: gRPC sin TLS |
+| `WATCH_SYNC_INTERVAL` / `WATCH_SYNC_PRUNE` | `1m` / `true` | Cada cuánto se sincroniza y si se quitan rutas que nadie quiere |
+| `POPULAR_ROUTES` | — | `MAD-JFK,BCN-LIS,...`: rutas de la portada de chollos |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 | `SHUTDOWN_TIMEOUT` | `15s` | |
 

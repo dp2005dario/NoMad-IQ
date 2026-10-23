@@ -10,16 +10,21 @@
 //	                  price-consumer ──► PostgreSQL (historial + alertas)
 //	                        │
 //	                        ▼
-//	              Kafka (flights.fare-alerts.v1) ──► (futuro) notificaciones
+//	              Kafka (flights.fare-alerts.v1) ──► notificaciones
+//
+// Además sirve la API de vuelos de la app (/v1/fares/...) y mantiene al
+// flight-ingestor consultando las rutas que vigilan los usuarios.
 //
 // Este fichero solo "cablea" las piezas (composition root): lee la
 // configuración, crea cada componente y los conecta. La lógica vive en internal/.
 //
-// Arranca tres tareas en paralelo y las apaga ordenadamente con Ctrl+C o
+// Arranca estas tareas en paralelo y las apaga ordenadamente con Ctrl+C o
 // cuando Docker/Kubernetes envía SIGTERM:
 //  1. El consumidor de Kafka (procesa precios).
 //  2. El relay de la bandeja de salida (publica alertas).
 //  3. El servidor HTTP de salud (/healthz y /readyz).
+//  4. La API de vuelos de la app (con mTLS).
+//  5. El sincronizador de rutas con el flight-ingestor (si está configurado).
 package main
 
 import (
@@ -40,6 +45,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/dp2005dario/NoMad-IQ/services/price-consumer/internal/api"
 	"github.com/dp2005dario/NoMad-IQ/services/price-consumer/internal/config"
 	"github.com/dp2005dario/NoMad-IQ/services/price-consumer/internal/detector"
 	"github.com/dp2005dario/NoMad-IQ/services/price-consumer/internal/domain"
@@ -48,6 +54,7 @@ import (
 	"github.com/dp2005dario/NoMad-IQ/services/price-consumer/internal/outbox"
 	"github.com/dp2005dario/NoMad-IQ/services/price-consumer/internal/processor"
 	"github.com/dp2005dario/NoMad-IQ/services/price-consumer/internal/store"
+	"github.com/dp2005dario/NoMad-IQ/services/price-consumer/internal/watchsync"
 )
 
 const serviceName = "price-consumer"
@@ -161,6 +168,57 @@ func run() error {
 		return err
 	}
 
+	// --- Sincronización de rutas con el flight-ingestor ---
+	var syncer *watchsync.Syncer
+	if cfg.IngestorAddr != "" {
+		popular, err := watchsync.ParseRoutes(cfg.PopularRoutes)
+		if err != nil {
+			return fmt.Errorf("POPULAR_ROUTES: %w", err)
+		}
+		var ingestorTLS *watchsync.ClientTLS
+		if cfg.IngestorInsecureDev {
+			log.Warn("gRPC con el flight-ingestor SIN TLS (INGESTOR_INSECURE_DEV=true): úsalo solo en desarrollo local")
+		} else {
+			ingestorTLS = &watchsync.ClientTLS{CertFile: cfg.IngestorCertFile, KeyFile: cfg.IngestorKeyFile, CAFile: cfg.IngestorCAFile}
+		}
+		ingestor, err := watchsync.Dial(cfg.IngestorAddr, ingestorTLS)
+		if err != nil {
+			return err
+		}
+		defer ingestor.Close()
+		if syncer, err = watchsync.New(watchsync.Config{
+			Interval: cfg.WatchSyncInterval, Popular: popular, Prune: cfg.WatchSyncPrune,
+		}, db, ingestor, log.With(slog.String("component", "watchsync"))); err != nil {
+			return err
+		}
+	} else {
+		log.Warn("INGESTOR_GRPC_ADDR vacía: las rutas nuevas no se piden al flight-ingestor")
+	}
+
+	// --- API de vuelos de la app ---
+	var watcher api.Watcher
+	if syncer != nil {
+		watcher = syncer
+	}
+	apiSrv := &http.Server{
+		Addr: cfg.APIAddr,
+		Handler: api.New(api.Config{
+			MaxWatchesPerUser: cfg.MaxWatchesPerUser,
+			MaxDaysAhead:      cfg.MaxDaysAhead,
+			DealsFreshness:    cfg.DealsFreshness,
+			HistoryWindow:     cfg.HistoryWindow,
+		}, db, watcher, log.With(slog.String("component", "api"))),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+	if cfg.HTTPInsecureDev {
+		log.Warn("API SIN TLS (HTTP_INSECURE_DEV=true): úsalo solo en desarrollo local")
+	} else if apiSrv.TLSConfig, err = serverMTLS(cfg.TLSCertFile, cfg.TLSKeyFile, cfg.TLSClientCAFile); err != nil {
+		return err
+	}
+
 	// --- HTTP de salud ---
 	httpSrv := &http.Server{
 		Addr:              cfg.HTTPAddr,
@@ -176,6 +234,22 @@ func run() error {
 		return kc.Consume(gctx, handle, kafka.Backoff{Initial: 500 * time.Millisecond, Max: 30 * time.Second}, relay.Notify)
 	})
 	g.Go(func() error { return relay.Run(gctx) })
+	if syncer != nil {
+		g.Go(func() error { return syncer.Run(gctx) })
+	}
+	g.Go(func() error {
+		log.Info("API de vuelos escuchando", slog.String("addr", cfg.APIAddr))
+		var err error
+		if cfg.HTTPInsecureDev {
+			err = apiSrv.ListenAndServe()
+		} else {
+			err = apiSrv.ListenAndServeTLS("", "") // certificados ya cargados en TLSConfig
+		}
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			return fmt.Errorf("API de vuelos: %w", err)
+		}
+		return nil
+	})
 	g.Go(func() error {
 		log.Info("HTTP de salud escuchando", slog.String("addr", cfg.HTTPAddr))
 		if err := httpSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -190,7 +264,7 @@ func run() error {
 		log.Info("apagando...")
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
 		defer cancel()
-		if err := httpSrv.Shutdown(shutdownCtx); err != nil {
+		if err := errors.Join(apiSrv.Shutdown(shutdownCtx), httpSrv.Shutdown(shutdownCtx)); err != nil {
 			return fmt.Errorf("apagando HTTP: %w", err)
 		}
 		return nil
@@ -247,6 +321,29 @@ func clientTLS(caFile string) (*tls.Config, error) {
 		return nil, errors.New("la CA de Kafka no contiene certificados PEM válidos")
 	}
 	return &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS13}, nil
+}
+
+// serverMTLS: TLS 1.3 y certificado de cliente OBLIGATORIO, firmado por la
+// CA interna. Sin él, la conexión se corta antes de leer una sola cabecera.
+func serverMTLS(certFile, keyFile, clientCAFile string) (*tls.Config, error) {
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return nil, fmt.Errorf("cargar certificado de la API: %w", err)
+	}
+	caPEM, err := os.ReadFile(clientCAFile)
+	if err != nil {
+		return nil, fmt.Errorf("leer TLS_CLIENT_CA_FILE: %w", err)
+	}
+	pool := x509.NewCertPool()
+	if !pool.AppendCertsFromPEM(caPEM) {
+		return nil, errors.New("TLS_CLIENT_CA_FILE no contiene certificados PEM válidos")
+	}
+	return &tls.Config{
+		MinVersion:   tls.VersionTLS13,
+		Certificates: []tls.Certificate{cert},
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+		ClientCAs:    pool,
+	}, nil
 }
 
 // runHealthcheck lo usa Docker (HEALTHCHECK). La imagen final no tiene curl

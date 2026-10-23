@@ -173,7 +173,9 @@ services:
         condition: service_completed_successfully
 
   # Lee los precios de Kafka, guarda el historial en PostgreSQL, detecta
-  # chollos y publica alertas en flights.fare-alerts.v1.
+  # chollos y publica alertas en flights.fare-alerts.v1. Además sirve la API
+  # de vuelos de la app (/v1/fares/..., a través de "edge") y le dice al
+  # flight-ingestor qué rutas consultar.
   price-consumer:
     <<: *hardening
     profiles: ["apps"]
@@ -196,8 +198,15 @@ services:
       LOG_LEVEL: ${LOG_LEVEL:-info}
       # Suscripciones de ejemplo para ver alertas sin app móvil (opcional).
       SEED_SUBSCRIPTIONS: ${SEED_SUBSCRIPTIONS:-}
+      # Solo en local: en producción la API y el gRPC con el ingestor exigen mTLS.
+      HTTP_INSECURE_DEV: "true"
+      INGESTOR_GRPC_ADDR: flight-ingestor:50051
+      INGESTOR_INSECURE_DEV: "true"
+      # Rutas de la portada "Cazador de vuelos" (se vigilan siempre).
+      POPULAR_ROUTES: ${POPULAR_ROUTES:-MAD-JFK,MAD-NRT,MAD-LIS,MAD-CDG,MAD-LHR,MAD-FCO,MAD-CUN,MAD-DPS,BCN-LIS,BCN-AMS}
     ports:
       - "127.0.0.1:8082:8082"     # /healthz y /readyz
+      - "127.0.0.1:8092:8092"     # API de vuelos /v1/fares/... (la app entra por "edge" :8080)
     depends_on:
       kafka-init:
         condition: service_completed_successfully

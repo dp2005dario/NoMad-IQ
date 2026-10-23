@@ -56,6 +56,26 @@ type Config struct {
 	OutboxInterval  time.Duration
 	OutboxBatchSize int
 
+	// API de vuelos para la app (detrás de la puerta de entrada, con mTLS)
+	APIAddr           string
+	TLSCertFile       string
+	TLSKeyFile        string
+	TLSClientCAFile   string
+	HTTPInsecureDev   bool
+	MaxWatchesPerUser int
+	MaxDaysAhead      int
+	DealsFreshness    time.Duration
+
+	// Sincronización de rutas con el flight-ingestor (gRPC)
+	IngestorAddr        string // vacío = no se sincroniza
+	IngestorCertFile    string
+	IngestorKeyFile     string
+	IngestorCAFile      string
+	IngestorInsecureDev bool
+	WatchSyncInterval   time.Duration
+	WatchSyncPrune      bool
+	PopularRoutes       []string
+
 	HTTPAddr        string
 	ShutdownTimeout time.Duration
 	LogLevel        slog.Level
@@ -154,6 +174,25 @@ func (r *reader) boolean(key string, def bool) bool {
 	return b
 }
 
+// allOrNone comprueba un trío de certificados: o los tres, o ninguno con el
+// modo inseguro de desarrollo activado (y nunca las dos cosas a la vez).
+func (r *reader) allOrNone(names, missing, devFlag string, dev bool, files ...string) {
+	set := 0
+	for _, f := range files {
+		if f != "" {
+			set++
+		}
+	}
+	switch {
+	case set > 0 && set < len(files):
+		r.errs = append(r.errs, fmt.Errorf("%s van juntas: falta alguna", names))
+	case set == 0 && !dev:
+		r.errs = append(r.errs, errors.New(missing))
+	case set == len(files) && dev:
+		r.errs = append(r.errs, fmt.Errorf("%s=true contradice los certificados TLS: quita una de las dos", devFlag))
+	}
+}
+
 // Modos de TLS de PostgreSQL considerados seguros. "verify-full" comprueba
 // además que el certificado corresponde al servidor al que nos conectamos
 // (evita que alguien se haga pasar por la base de datos).
@@ -195,6 +234,25 @@ func Load(lookup LookupFunc) (Config, error) {
 		OutboxInterval:  r.duration("OUTBOX_INTERVAL", 5*time.Second, 100*time.Millisecond, 10*time.Minute),
 		OutboxBatchSize: r.integer("OUTBOX_BATCH_SIZE", 100, 1, 5_000),
 
+		APIAddr:           r.str("API_ADDR", ":8092"),
+		TLSCertFile:       r.str("TLS_CERT_FILE", ""),
+		TLSKeyFile:        r.str("TLS_KEY_FILE", ""),
+		TLSClientCAFile:   r.str("TLS_CLIENT_CA_FILE", ""),
+		HTTPInsecureDev:   r.boolean("HTTP_INSECURE_DEV", false),
+		MaxWatchesPerUser: r.integer("MAX_WATCHES_PER_USER", 50, 1, 1_000),
+		MaxDaysAhead:      r.integer("MAX_DAYS_AHEAD", 330, 1, 730),
+		DealsFreshness:    r.duration("DEALS_FRESHNESS", 48*time.Hour, time.Hour, 30*24*time.Hour),
+
+		IngestorAddr:        r.str("INGESTOR_GRPC_ADDR", ""),
+		IngestorCertFile:    r.str("INGESTOR_TLS_CERT_FILE", ""),
+		IngestorKeyFile:     r.str("INGESTOR_TLS_KEY_FILE", ""),
+		IngestorCAFile:      r.str("INGESTOR_TLS_CA_FILE", ""),
+		IngestorInsecureDev: r.boolean("INGESTOR_INSECURE_DEV", false),
+		WatchSyncInterval:   r.duration("WATCH_SYNC_INTERVAL", time.Minute, 5*time.Second, time.Hour),
+		WatchSyncPrune:      r.boolean("WATCH_SYNC_PRUNE", true),
+		// Separadas por comas: MAD-JFK,BCN-LIS... (rutas de la portada de chollos).
+		PopularRoutes: r.list("POPULAR_ROUTES", ","),
+
 		HTTPAddr:        r.str("HTTP_ADDR", ":8082"),
 		ShutdownTimeout: r.duration("SHUTDOWN_TIMEOUT", 15*time.Second, time.Second, 2*time.Minute),
 	}
@@ -215,6 +273,15 @@ func Load(lookup LookupFunc) (Config, error) {
 		r.errs = append(r.errs, fmt.Errorf("PGSSLMODE=%s no cifra de forma garantizada: usa verify-full o, solo en local, DB_INSECURE_DEV=true", cfg.PGSSLMode))
 	case secureSSLModes[cfg.PGSSLMode] && cfg.DBInsecureDev:
 		r.errs = append(r.errs, errors.New("DB_INSECURE_DEV=true contradice PGSSLMODE seguro: quita una de las dos"))
+	}
+
+	// La API de la app exige mTLS (solo la puerta de entrada puede llamarla).
+	r.allOrNone("TLS_CERT_FILE, TLS_KEY_FILE y TLS_CLIENT_CA_FILE", "la API exige mTLS: define TLS_CERT_FILE, TLS_KEY_FILE y TLS_CLIENT_CA_FILE o, solo en local, HTTP_INSECURE_DEV=true",
+		"HTTP_INSECURE_DEV", cfg.HTTPInsecureDev, cfg.TLSCertFile, cfg.TLSKeyFile, cfg.TLSClientCAFile)
+	// Hablar con el flight-ingestor también exige mTLS (si se configura).
+	if cfg.IngestorAddr != "" {
+		r.allOrNone("INGESTOR_TLS_CERT_FILE, INGESTOR_TLS_KEY_FILE e INGESTOR_TLS_CA_FILE", "el gRPC con el flight-ingestor exige mTLS: define INGESTOR_TLS_CERT_FILE, INGESTOR_TLS_KEY_FILE e INGESTOR_TLS_CA_FILE o, solo en local, INGESTOR_INSECURE_DEV=true",
+			"INGESTOR_INSECURE_DEV", cfg.IngestorInsecureDev, cfg.IngestorCertFile, cfg.IngestorKeyFile, cfg.IngestorCAFile)
 	}
 
 	if cfg.ErrorFareBasisPoints <= cfg.DropBasisPoints {

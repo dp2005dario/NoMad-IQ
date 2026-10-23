@@ -11,6 +11,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/twmb/franz-go v1.18.1
 	golang.org/x/sync v0.10.0
+	google.golang.org/grpc v1.68.0
 	google.golang.org/protobuf v1.36.5
 )
 
@@ -26,5 +27,4 @@ require (
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
-	google.golang.org/grpc v1.68.0 // indirect
 )

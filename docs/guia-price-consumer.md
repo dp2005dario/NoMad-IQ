@@ -290,6 +290,70 @@ bajada del 68 %) y publicó las alertas en `flights.fare-alerts.v1`.
 
 ---
 
+## 7 bis. La API de vuelos de la app y el "encargado" de rutas
+
+Desde este PR, el price-consumer también atiende a la **app**: la pestaña
+**Vuelos** le pregunta por los chollos y por las rutas que vigilas.
+
+### Qué puede pedir la app
+
+Todo pasa por la puerta de entrada (`edge`, puerto 8080), que comprueba tu
+pase (token) antes de dejar pasar nada.
+
+| Petición | Para qué |
+|---|---|
+| `GET /v1/fares/deals?origin=MAD` | Chollos de hoy desde Madrid, ordenados por cuánto han bajado |
+| `GET /v1/fares/watches` | Las rutas que vigilas, con su último precio |
+| `PUT /v1/fares/watches/MAD-NRT:2026-12-01:ECONOMY` | Vigilar una ruta (opcional: `{"target":{"amount_minor":45000,"currency":"EUR"}}` = avísame por debajo de 450 €) |
+| `DELETE /v1/fares/watches/…` | Dejar de vigilarla |
+| `GET /v1/fares/history/…` | El precio más bajo de cada día (para la gráfica) |
+| `GET /v1/fares/alerts` | Tus últimos avisos de precio |
+
+Con analogías:
+
+- **"Lo que suele costar"** es la **mediana** de los últimos 30 días: el
+  precio que queda en medio si los ordenas. Un precio raro (muy alto o muy
+  bajo) no la mueve, igual que en el detector.
+- **Límites por persona:** como mucho 50 rutas, y solo vuelos de los próximos
+  330 días. Así nadie puede hacer que consultemos millones de rutas.
+- **Enlaces seguros:** solo se mandan a la app enlaces de compra `https://`.
+  Un enlace raro de un proveedor (`javascript:`…) se borra por el camino.
+
+### El "encargado" de rutas (watchsync)
+
+El flight-ingestor apunta en **memoria** qué rutas consultar: si se
+reinicia, las olvida. La lista buena está en PostgreSQL.
+
+Analogía: el **encargado** de un almacén compara cada minuto la lista de
+pedidos con lo que hay en las estanterías, y corrige lo que no cuadra.
+
+- Pide al ingestor (por gRPC) las rutas que vigila alguien y las rutas
+  populares de la portada (`POPULAR_ROUTES`).
+- Le quita las rutas que ya nadie quiere, para no gastar consultas al
+  proveedor de precios.
+- Borra las suscripciones a vuelos que ya salieron.
+- Si el ingestor no responde, lo vuelve a intentar al minuto siguiente. Los
+  precios se siguen procesando igual.
+
+Las rutas populares se vigilan el **día 15** del mes que viene y del
+siguiente. Así las fechas no cambian cada día y el historial (lo que suele
+costar) se va llenando durante semanas.
+
+### Probarlo en tu PC (PowerShell)
+
+```powershell
+cd infrastructure
+docker compose --profile apps up -d --build
+# Entra con una cuenta (cámbiala por la tuya) y guarda el pase:
+$body = '{"email":"yo@example.com","password":"caballo correcto grapa pila"}'
+curl.exe -s -X POST http://localhost:8080/v1/auth/register -H "Content-Type: application/json" -d $body
+$token = (curl.exe -s -X POST http://localhost:8080/v1/auth/login -H "Content-Type: application/json" -d $body | ConvertFrom-Json).access_token
+# Chollos desde Madrid (espera un par de minutos a que lleguen precios):
+curl.exe -s -H "Authorization: Bearer $token" "http://localhost:8080/v1/fares/deals?origin=MAD"
+```
+
+---
+
 ## 8. Cómo contarlo en una entrevista (30 segundos)
 
 > "El price-consumer es un consumidor de Kafka en Go que cierra el bucle del
@@ -327,9 +391,7 @@ Preguntas que te pueden hacer, y la respuesta corta:
    borrar lo antiguo, para que la tabla no crezca sin límite.
 3. **Usuario de base de datos propio** para el price-consumer con permisos
    solo sobre sus tablas (mínimo privilegio), y TLS con PostgreSQL en local.
-4. **Gestión de suscripciones real:** que el `auth-gateway` (Spring Boot)
-   cree las suscripciones en nombre del usuario autenticado, en vez de las
-   semillas de ejemplo.
+4. ~~Gestión de suscripciones real~~: hecho, con la API de vuelos (7 bis).
 5. **Servicio de notificaciones** que consuma `flights.fare-alerts.v1`,
    descarte repetidos por `alert_id` y envíe el aviso al móvil.
 6. **Herramienta para la DLQ:** ver los mensajes devueltos y reinyectarlos

@@ -274,6 +274,8 @@ jobs:
           docker compose --profile apps up -d --build --wait flight-ingestor price-consumer auth-gateway ai-orchestrator geo-engine notifier fcm-fake edge
           curl -fsS http://127.0.0.1:8081/readyz
           curl -fsS http://127.0.0.1:8082/readyz
+          # La API de vuelos responde (y sin identidad de la puerta de entrada, 401).
+          test "$(curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1:8092/v1/fares/deals?origin=MAD')" = 401
           curl -fsS http://127.0.0.1:8084/readyz
           # Sin Ollama en la CI: el ai-orchestrator debe estar listo igualmente (plan B por reglas).
           curl -fsS http://127.0.0.1:8086/readyz
@@ -320,6 +322,31 @@ jobs:
             sleep 3
           done
           exit 1
+      - name: API de vuelos por la puerta de entrada (chollos, vigilar una ruta y su historial)
+        run: |
+          set -euo pipefail
+          edge=http://127.0.0.1:8080
+          body='{"email":"fares@example.com","password":"caballo correcto grapa pila"}'
+          curl -fsS -X POST "$edge/v1/auth/register" -H 'Content-Type: application/json' -d "$body"
+          token=$(curl -fsS -X POST "$edge/v1/auth/login" -H 'Content-Type: application/json' -d "$body" | jq -er .access_token)
+          auth="Authorization: Bearer $token"
+          test "$(curl -s -o /dev/null -w '%{http_code}' "$edge/v1/fares/deals?origin=MAD")" = 401
+          # Los precios de la ruta semilla (MAD-NRT) ya están guardados: salen como chollo.
+          curl -fsS -H "$auth" "$edge/v1/fares/deals?origin=MAD" | jq -e '(.deals | length) >= 1 and .deals[0].origin == "MAD"'
+          key="MAD-LIS:$(date -u -d '+40 days' +%F):ECONOMY"
+          curl -fsS -X PUT -H "$auth" -H 'Content-Type: application/json' "$edge/v1/fares/watches/$key" \
+            -d '{"target":{"amount_minor":9000,"currency":"EUR"}}' | jq -e --arg k "$key" '.route_key == $k'
+          curl -fsS -H "$auth" "$edge/v1/fares/watches" | jq -e --arg k "$key" '.watches[0].route_key == $k and .watches[0].target.amount_minor == 9000'
+          # El sincronizador se la ha pedido al flight-ingestor: en poco tiempo hay precios.
+          for i in $(seq 1 30); do
+            n=$(curl -fsS -H "$auth" "$edge/v1/fares/history/$key" | jq '.points | length')
+            echo "días con precio: $n"
+            [ "$n" -ge 1 ] && break
+            sleep 3
+          done
+          [ "$n" -ge 1 ]
+          curl -fsS -H "$auth" "$edge/v1/fares/alerts" | jq -e '.alerts | type == "array"'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X DELETE -H "$auth" "$edge/v1/fares/watches/$key")" = 204
       - name: Tests de integración del price-consumer (PostgreSQL + Kafka reales)
         working-directory: services/price-consumer
         env:
