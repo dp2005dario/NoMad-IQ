@@ -68,7 +68,11 @@ from ai_orchestrator.audioguides.versions import ZoneVersionCache
 from ai_orchestrator.audioguides.writer import AudioguideWriter, WriterSettings
 from ai_orchestrator.config import Settings
 from ai_orchestrator.consumer import AlertProcessor, FareAlertConsumer
-from ai_orchestrator.flyra.service import FlyraService, FlyraSettings, RedisQuota
+from ai_orchestrator.flyra.service import KEY_PREFIX as FLYRA_QUOTA_PREFIX
+from ai_orchestrator.flyra.service import FlyraService, FlyraSettings
+from ai_orchestrator.landmarks.service import QUOTA_PREFIX as LANDMARK_QUOTA_PREFIX
+from ai_orchestrator.landmarks.service import LandmarkService, LandmarkSettings, RedisLandmarkCache
+from ai_orchestrator.landmarks.wikidata import LandmarkSource
 from ai_orchestrator.llm.client import LLMClient, OllamaClient
 from ai_orchestrator.logs import setup_logging
 from ai_orchestrator.negotiation.agents import AgentSettings
@@ -81,6 +85,7 @@ from ai_orchestrator.places.airports import Airports
 from ai_orchestrator.places.service import PlaceService, PlaceSettings, RedisPlaceCache
 from ai_orchestrator.places.wikimedia import RateLimiter, WikimediaClient
 from ai_orchestrator.pseudonym import Pseudonymizer
+from ai_orchestrator.quota import RedisQuota
 from ai_orchestrator.recommender import FareRecommender, RecommenderSettings
 from ai_orchestrator.retrieval import KnowledgeBase, NoKnowledge, QdrantKnowledge
 from ai_orchestrator.store import (
@@ -197,8 +202,8 @@ def _redis(settings: Settings, stack: AsyncExitStack) -> Redis:
     return redis
 
 
-def _places(settings: Settings, redis: Redis, stack: AsyncExitStack) -> PlaceService:
-    """Fichas de ciudad: Wikimedia con límite de ritmo + caché en Redis."""
+def _wikimedia(settings: Settings, stack: AsyncExitStack) -> WikimediaClient:
+    """Un cliente de Wikimedia (y un solo límite de ritmo) para fichas y monumentos."""
     http = httpx.AsyncClient(
         headers={"User-Agent": settings.wikimedia_user_agent},
         timeout=httpx.Timeout(settings.wikimedia_timeout_seconds, connect=5.0),
@@ -206,14 +211,53 @@ def _places(settings: Settings, redis: Redis, stack: AsyncExitStack) -> PlaceSer
         follow_redirects=False,
     )
     stack.push_async_callback(http.aclose)
+    return WikimediaClient(
+        http,
+        limiter=RateLimiter(settings.wikimedia_rate_per_second, settings.wikimedia_burst),
+    )
+
+
+def _places(settings: Settings, redis: Redis, wikimedia: WikimediaClient) -> PlaceService:
+    """Fichas de ciudad: Wikimedia con límite de ritmo + caché en Redis."""
     return PlaceService(
         airports=Airports.bundled(),
-        wikimedia=WikimediaClient(
-            http,
-            limiter=RateLimiter(settings.wikimedia_rate_per_second, settings.wikimedia_burst),
-        ),
+        wikimedia=wikimedia,
         cache=RedisPlaceCache(redis),
         settings=PlaceSettings(ttl_seconds=settings.place_ttl_seconds),
+    )
+
+
+def _landmarks(
+    settings: Settings, redis: Redis, wikimedia: WikimediaClient, stack: AsyncExitStack
+) -> LandmarkService:
+    """Modo cámara: Wikidata + caché/cupo en Redis + (si hay) modelo de visión."""
+    vision: OllamaClient | None = None
+    if settings.llm_enabled and settings.landmark_vision_model:
+        vision_http = httpx.AsyncClient(
+            base_url=settings.ollama_url,
+            timeout=httpx.Timeout(settings.landmark_vision_timeout_seconds + 5, connect=5.0),
+            verify=_client_tls(
+                settings.ollama_tls_ca_file, settings.ollama_tls_cert_file, settings.ollama_tls_key_file
+            ),
+        )
+        stack.push_async_callback(vision_http.aclose)
+        # Una foto a la vez: el modelo de visión es el que más máquina gasta.
+        vision = OllamaClient(
+            vision_http,
+            model=settings.landmark_vision_model,
+            embed_model=settings.ollama_embed_model,
+            num_ctx=settings.ollama_num_ctx,
+            max_concurrency=1,
+        )
+    return LandmarkService(
+        source=LandmarkSource(wikimedia),
+        cache=RedisLandmarkCache(redis),
+        quota=RedisQuota(redis, prefix=LANDMARK_QUOTA_PREFIX),
+        settings=LandmarkSettings(
+            daily_limit=settings.landmark_daily_limit,
+            vision_timeout_seconds=settings.landmark_vision_timeout_seconds,
+        ),
+        vision=vision,
     )
 
 
@@ -407,13 +451,22 @@ async def run(settings: Settings) -> int:
         public_redis = (
             _redis(settings, stack)
             if settings.places_enabled
+            or settings.landmarks_enabled
             or settings.mapillary_token is not None
             or (settings.flyra_enabled and llm is not None)
             else None
         )
+        wikimedia = (
+            _wikimedia(settings, stack) if settings.places_enabled or settings.landmarks_enabled else None
+        )
         places: PlaceService | None = None
-        if settings.places_enabled and public_redis is not None:
-            places = _places(settings, public_redis, stack)
+        if settings.places_enabled and public_redis is not None and wikimedia is not None:
+            places = _places(settings, public_redis, wikimedia)
+
+        # --- Modo cámara: reconocer monumentos -------------------------------------------
+        landmarks: LandmarkService | None = None
+        if settings.landmarks_enabled and public_redis is not None and wikimedia is not None:
+            landmarks = _landmarks(settings, public_redis, wikimedia, stack)
 
         # --- Fotos reales de la calle (Mapillary con caché en Redis) ---------------------
         streetview: StreetViewService | None = None
@@ -426,7 +479,7 @@ async def run(settings: Settings) -> int:
         if settings.flyra_enabled and llm is not None and public_redis is not None:
             flyra = FlyraService(
                 llm=llm,
-                quota=RedisQuota(public_redis),
+                quota=RedisQuota(public_redis, prefix=FLYRA_QUOTA_PREFIX),
                 settings=FlyraSettings(
                     daily_limit=settings.flyra_daily_limit, timeout_seconds=settings.flyra_timeout_seconds
                 ),
@@ -462,6 +515,7 @@ async def run(settings: Settings) -> int:
                 places=places,
                 streetview=streetview,
                 flyra=flyra,
+                landmarks=landmarks,
                 expose_docs=settings.expose_api_docs,
             ),
             settings.http_port,

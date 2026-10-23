@@ -54,10 +54,13 @@ from ai_orchestrator.audioguides.domain import AudioguideScript
 from ai_orchestrator.audioguides.service import AudioguideService
 from ai_orchestrator.domain import Recommendation, Verdict
 from ai_orchestrator.flyra.domain import ChatReply, ChatRequest
-from ai_orchestrator.flyra.service import FlyraBusyError, FlyraService, QuotaExceededError
+from ai_orchestrator.flyra.service import FlyraBusyError, FlyraService
 from ai_orchestrator.identity import Principal, current_principal
+from ai_orchestrator.landmarks.domain import Landmark, Recognition, RecognizeRequest
+from ai_orchestrator.landmarks.service import LandmarkBusyError, LandmarkService
 from ai_orchestrator.places.domain import PlaceCard
 from ai_orchestrator.places.service import PlaceBusyError, PlaceService, PlaceUnavailableError
+from ai_orchestrator.quota import QuotaExceededError
 from ai_orchestrator.store import RecommendationStore, StoreError
 from ai_orchestrator.streetview.domain import StreetPhotos
 from ai_orchestrator.streetview.service import StreetBusyError, StreetUnavailableError, StreetViewService
@@ -204,6 +207,7 @@ def create_api(
     places: PlaceService | None = None,
     streetview: StreetViewService | None = None,
     flyra: FlyraService | None = None,
+    landmarks: LandmarkService | None = None,
     expose_docs: bool = False,
 ) -> FastAPI:
     """Crea la API pública (puerto con mTLS)."""
@@ -370,6 +374,45 @@ def create_api(
                 return resp
             # Las respuestas son personales: que ningún proxy las guarde.
             return JSONResponse(reply.model_dump(mode="json"), headers={"Cache-Control": "no-store"})
+
+    if landmarks is not None:
+
+        @app.post("/v1/landmarks/recognize", response_model=Recognition)
+        async def recognize_landmark(
+            principal: Annotated[Principal, Depends(current_principal)],
+            body: RecognizeRequest,
+        ) -> JSONResponse:
+            # Con sesión: cada cuenta tiene sus usos diarios del modo cámara.
+            try:
+                found = await landmarks.recognize(principal.user_id, body)
+            except QuotaExceededError as exc:
+                resp = _problem(429, "Demasiadas peticiones", "ya no quedan usos de la cámara por hoy")
+                resp.headers["Retry-After"] = str(exc.retry_after)
+                return resp
+            except LandmarkBusyError:
+                resp = _problem(503, "Servicio no disponible temporalmente", "monumentos ocupados")
+                resp.headers["Retry-After"] = "30"
+                return resp
+            # Depende de dónde estás: que ningún proxy lo guarde.
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": "no-store"})
+
+        @app.get("/v1/landmarks/{qid}", response_model=Landmark)
+        async def get_landmark(
+            _: Annotated[Principal, Depends(current_principal)],
+            qid: Annotated[str, Path(pattern=r"^Q[1-9][0-9]{0,11}$")],
+            lang: Annotated[str, Query(pattern=r"^([A-Za-z]{2,3})?$")] = "",
+        ) -> JSONResponse:
+            try:
+                card = await landmarks.landmark(qid, lang or "en")
+            except LandmarkBusyError:
+                resp = _problem(503, "Servicio no disponible temporalmente", "monumentos ocupados")
+                resp.headers["Retry-After"] = "30"
+                return resp
+            if card is None:
+                return _problem(404, "No encontrado", "no hay ficha para este lugar")
+            return JSONResponse(
+                card.model_dump(mode="json"), headers={"Cache-Control": "private, max-age=86400"}
+            )
 
     if negotiations is not None:
         # Las rutas /v1/group-negotiations viven en negotiation/api.py.

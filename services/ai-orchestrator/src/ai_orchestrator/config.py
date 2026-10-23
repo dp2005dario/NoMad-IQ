@@ -183,6 +183,17 @@ class Settings(BaseSettings):
     # Si el modelo tarda más que esto, "Flyra está ocupada" y no cuenta.
     flyra_timeout_seconds: float = Field(default=45.0, gt=0, le=300)
 
+    # --- Modo cámara: reconocer monumentos (ver el paquete landmarks/) --------------
+    # Necesita Redis (caché y cupo) y salida a Wikimedia, como las fichas.
+    landmarks_enabled: bool = True
+    # Usos gratis del modo cámara por persona y día.
+    landmark_daily_limit: int = Field(default=100, ge=1, le=2000)
+    # Modelo de Ollama "con ojos" que mira la foto (p. ej. "qwen2.5vl:3b",
+    # hay que descargarlo con "ollama pull"). Vacío = sin visión: se decide
+    # solo por GPS y brújula y la app pregunta "¿Es este?".
+    landmark_vision_model: str | None = Field(default=None, max_length=100)
+    landmark_vision_timeout_seconds: float = Field(default=25.0, gt=0, le=120)
+
     # --- Redis (caché de audioguías y fichas de ciudad) -----------------------------------------------
     redis_host: str | None = None
     redis_port: int = Field(default=6379, ge=1, le=65535)
@@ -311,6 +322,11 @@ class Settings(BaseSettings):
                 "las fotos de calle necesitan Redis: define REDIS_HOST y REDIS_PASSWORD "
                 "(o quita MAPILLARY_TOKEN)"
             )
+        if self.landmarks_enabled and (not self.redis_host or self.redis_password is None):
+            problems.append(
+                "el modo cámara necesita Redis: define REDIS_HOST y REDIS_PASSWORD "
+                "(o LANDMARKS_ENABLED=false)"
+            )
         if self.flyra_enabled and self.llm_enabled and (not self.redis_host or self.redis_password is None):
             problems.append(
                 "el chat con Flyra necesita Redis: define REDIS_HOST y REDIS_PASSWORD (o FLYRA_ENABLED=false)"
@@ -321,7 +337,12 @@ class Settings(BaseSettings):
             # No repetimos el valor en el mensaje: es un secreto.
             problems.append("MAPILLARY_TOKEN no tiene forma de token de Mapillary (MLY|...)")
         if (
-            (self.places_enabled or self.mapillary_token is not None or self.flyra_enabled)
+            (
+                self.places_enabled
+                or self.landmarks_enabled
+                or self.mapillary_token is not None
+                or self.flyra_enabled
+            )
             and not self.audioguides_enabled
             and not self.redis_tls
             and not self.redis_insecure_dev

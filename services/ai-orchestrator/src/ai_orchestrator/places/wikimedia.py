@@ -177,6 +177,10 @@ class WikimediaClient:
         except ValueError as exc:
             raise WikimediaError("respuesta de Wikimedia que no es JSON") from exc
 
+    async def sparql(self, query: str) -> list[dict[str, Any]]:
+        """Una consulta SPARQL ya validada (la usan también los monumentos)."""
+        return await self._sparql(query)
+
     async def _sparql(self, query: str) -> list[dict[str, Any]]:
         data = await self._get(SPARQL_URL, {"query": query}, accept="application/sparql-results+json")
         try:

@@ -64,10 +64,10 @@ http:
       middlewares: [strip-identity, rate-limit, small-body, authenticated]
       service: geo-engine
 
-    # Audioguías, recomendaciones, negociación de grupo y chat con Flyra (ai-orchestrator).
+    # Audioguías, recomendaciones, negociación de grupo, chat con Flyra y modo cámara (ai-orchestrator).
     ai:
       entryPoints: [web]
-      rule: PathPrefix(`/v1/audioguides`) || PathPrefix(`/v1/recommendations`) || PathPrefix(`/v1/group-negotiations`) || Path(`/v1/flyra/chat`)
+      rule: PathPrefix(`/v1/audioguides`) || PathPrefix(`/v1/recommendations`) || PathPrefix(`/v1/group-negotiations`) || Path(`/v1/flyra/chat`) || PathPrefix(`/v1/landmarks`)
       middlewares: [strip-identity, rate-limit, small-body, authenticated]
       service: ai-orchestrator
 

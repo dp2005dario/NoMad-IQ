@@ -103,10 +103,14 @@ def test_audioguides_need_redis_and_a_known_language() -> None:
         settings(**no_redis)
     # Sin audioguías, Redis no hace falta.
     assert not settings(
-        **no_redis, audioguides_enabled=False, places_enabled=False, flyra_enabled=False
+        **no_redis,
+        audioguides_enabled=False,
+        places_enabled=False,
+        flyra_enabled=False,
+        landmarks_enabled=False,
     ).audioguides_enabled
     with pytest.raises(ValidationError, match="PLACES_ENABLED"):
-        settings(**no_redis, audioguides_enabled=False, flyra_enabled=False)
+        settings(**no_redis, audioguides_enabled=False, flyra_enabled=False, landmarks_enabled=False)
     with pytest.raises(ValidationError, match="REDIS_INSECURE_DEV"):
         settings(**{**DEV, "redis_insecure_dev": False})
     with pytest.raises(ValidationError, match="AUDIOGUIDE_DEFAULT_LANGUAGE"):
@@ -117,12 +121,21 @@ def test_audioguides_need_redis_and_a_known_language() -> None:
 
 def test_flyra_needs_redis_only_with_an_llm() -> None:
     no_redis = {k: v for k, v in DEV.items() if not k.startswith("redis_")}
-    off = {"audioguides_enabled": False, "places_enabled": False}
+    off = {"audioguides_enabled": False, "places_enabled": False, "landmarks_enabled": False}
     with pytest.raises(ValidationError, match="FLYRA_ENABLED"):
         settings(**no_redis, **off)
     # Sin modelo no hay chat, así que tampoco hace falta su contador.
     assert settings(**no_redis, **off, llm_enabled=False).flyra_enabled
     assert settings(**DEV).flyra_daily_limit == 50
+
+
+def test_landmarks_need_redis() -> None:
+    no_redis = {k: v for k, v in DEV.items() if not k.startswith("redis_")}
+    off = {"audioguides_enabled": False, "places_enabled": False, "flyra_enabled": False}
+    with pytest.raises(ValidationError, match="LANDMARKS_ENABLED"):
+        settings(**no_redis, **off)
+    # Sin modelo de visión por defecto: se decide por GPS y brújula.
+    assert settings(**DEV).landmark_vision_model is None
 
 
 def test_mapillary_token_is_optional_checked_and_never_echoed() -> None:

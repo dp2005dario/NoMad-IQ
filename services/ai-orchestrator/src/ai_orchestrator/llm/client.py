@@ -38,6 +38,9 @@ class ChatMessage:
 
     role: Literal["system", "user", "assistant"]
     content: str
+    # Fotos en base64 (solo para modelos "con ojos", como los de visión).
+    # Casi siempre vacío.
+    images: tuple[str, ...] = ()
 
 
 class LLMError(Exception):
@@ -92,6 +95,13 @@ class _OllamaEmbedResponse(BaseModel):
     embeddings: list[list[float]]
 
 
+def _message(m: ChatMessage) -> dict[str, Any]:
+    out: dict[str, Any] = {"role": m.role, "content": m.content}
+    if m.images:
+        out["images"] = list(m.images)
+    return out
+
+
 class OllamaClient:
     """Implementación real contra la API HTTP de Ollama (/api/chat, /api/embed)."""
 
@@ -126,7 +136,7 @@ class OllamaClient:
     ) -> str:
         payload: dict[str, Any] = {
             "model": self._model,
-            "messages": [{"role": m.role, "content": m.content} for m in messages],
+            "messages": [_message(m) for m in messages],
             # Sin "streaming": queremos la respuesta completa de una vez para validarla.
             "stream": False,
             "options": {
