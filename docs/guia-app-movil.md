@@ -223,14 +223,14 @@ que llega pronto, porque el servidor aún no sabe comprobar cuentas de Google.
    ```
    O `docker compose up` dentro de `infrastructure/`.
 2. Ejecuta la app en el **emulador** con F5. Por defecto habla con
-   `http://10.0.2.2:8083`, que es "tu PC" visto desde el emulador.
+   `http://10.0.2.2:8080`, que es la puerta de entrada (`edge`) de tu PC vista desde el emulador.
 3. Si usas tu **móvil por USB**, ejecuta antes:
    ```powershell
-   adb reverse tcp:8083 tcp:8083
+   adb reverse tcp:8080 tcp:8080
    ```
    Y arranca la app con:
    ```powershell
-   flutter run --dart-define=NOMADIQ_API_URL=http://localhost:8083
+   flutter run --dart-define=NOMADIQ_API_URL=http://localhost:8080
    ```
 4. Pulsa **Continuar con correo → ¿Eres nuevo? Crea una cuenta**. La
    contraseña necesita **12 caracteres como mínimo**.

@@ -58,7 +58,7 @@ redis = { version = "1.0", default-features = false, features = ["tokio-comp", "
 rdkafka = { version = "0.39", default-features = false, features = ["tokio", "zstd", "libz-static", "ssl"] }
 
 # --- HTTP para /healthz y /readyz.
-axum = { version = "0.8", default-features = false, features = ["http1", "tokio", "json"] }
+axum = { version = "0.8", default-features = false, features = ["http1", "tokio", "json", "query"] }
 
 # --- Utilidades.
 thiserror = "2"

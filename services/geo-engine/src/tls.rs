@@ -34,6 +34,7 @@ use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{Semaphore, mpsc};
 use tokio_rustls::TlsAcceptor;
 use tokio_rustls::server::TlsStream;
+use tokio_stream::StreamExt;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::transport::server::Connected;
 
@@ -291,4 +292,45 @@ pub fn verified_incoming(
         tracing::debug!("bucle de aceptación gRPC terminado");
     });
     ReceiverStream::new(rx)
+}
+
+/// El mismo mTLS, pero para un servidor HTTP de axum (la API pública que llega
+/// desde el proxy de borde). axum acepta cualquier "escuchador" que sepa dar
+/// la siguiente conexión: este se la da ya cifrada y verificada.
+#[derive(Debug)]
+pub struct AxumTlsListener {
+    incoming: ReceiverStream<Result<VerifiedTlsConn, io::Error>>,
+    local_addr: SocketAddr,
+}
+
+impl AxumTlsListener {
+    /// Envuelve un `TcpListener` con TLS 1.3 + certificado de cliente obligatorio.
+    pub fn new(listener: TcpListener, config: Arc<rustls::ServerConfig>, allowlist: ClientAllowlist) -> io::Result<Self> {
+        let local_addr = listener.local_addr()?;
+        Ok(Self { incoming: verified_incoming(listener, config, allowlist), local_addr })
+    }
+}
+
+impl axum::serve::Listener for AxumTlsListener {
+    type Io = VerifiedTlsConn;
+    type Addr = SocketAddr;
+
+    async fn accept(&mut self) -> (Self::Io, Self::Addr) {
+        loop {
+            match self.incoming.next().await {
+                Some(Ok(conn)) => {
+                    let addr = conn.peer.remote_addr.unwrap_or(self.local_addr);
+                    return (conn, addr);
+                }
+                // Un apretón de manos fallido no tumba el servidor: se sigue.
+                Some(Err(e)) => tracing::debug!(error = %e, "conexión TLS rechazada en la API"),
+                // El aceptador terminó (apagado): no hay más conexiones.
+                None => std::future::pending::<()>().await,
+            }
+        }
+    }
+
+    fn local_addr(&self) -> io::Result<Self::Addr> {
+        Ok(self.local_addr)
+    }
 }

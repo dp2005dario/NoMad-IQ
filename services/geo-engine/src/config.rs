@@ -151,6 +151,12 @@ pub struct Config {
     pub grpc_allowed_clients: Vec<String>,
     /// Dirección HTTP de /healthz y /readyz.
     pub http_addr: SocketAddr,
+    /// Dirección de la API HTTP pública (/v1/zones, /v1/positions) que la app
+    /// usa a través del proxy de borde. Usa el MISMO mTLS que el gRPC.
+    pub api_addr: SocketAddr,
+    /// Identidades (certificado) que pueden llamar a la API HTTP: normalmente
+    /// solo el proxy de borde. Vacío = cualquier certificado de la CA de clientes.
+    pub api_allowed_clients: Vec<String>,
     /// PostgreSQL.
     pub postgres: PostgresConfig,
     /// Cada cuánto se comprueba si los datos de PostGIS cambiaron.
@@ -357,6 +363,8 @@ impl Config {
         };
         let grpc_allowed_clients = r.list("GRPC_ALLOWED_CLIENTS");
         let http_addr = r.socket_addr("HTTP_ADDR", "0.0.0.0:8087");
+        let api_addr = r.socket_addr("API_ADDR", "0.0.0.0:8090");
+        let api_allowed_clients = r.list("API_ALLOWED_CLIENTS");
 
         // --- PostgreSQL
         let db_insecure = r.boolean("DB_INSECURE_DEV", false);
@@ -478,6 +486,8 @@ impl Config {
             grpc_tls,
             grpc_allowed_clients,
             http_addr,
+            api_addr,
+            api_allowed_clients,
             postgres: PostgresConfig {
                 host: pg_host,
                 port: pg_port,

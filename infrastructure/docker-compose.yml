@@ -204,6 +204,34 @@ services:
       postgres:
         condition: service_healthy
 
+  # ---------------------------------------------------------------------------
+  # Puerta de entrada (proxy de borde, Traefik): la app móvil SOLO habla con
+  # ella, en http://localhost:8080 (o http://10.0.2.2:8080 desde el emulador).
+  # Comprueba el token con el auth-gateway y reparte cada petición al servicio
+  # que toca. Reglas en infrastructure/edge/dynamic.yml.
+  # ---------------------------------------------------------------------------
+  edge:
+    <<: *hardening
+    profiles: ["apps"]
+    image: mirror.gcr.io/library/traefik:v3.7.16
+    read_only: true
+    cap_drop:
+      - ALL
+    command: ["--configFile=/etc/traefik/traefik.yml"]
+    volumes:
+      - ./edge/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./edge/dynamic.yml:/etc/traefik/dynamic.yml:ro
+    ports:
+      - "127.0.0.1:8080:8080"     # API pública de NomadIQ (todo lo que usa la app)
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--configFile=/etc/traefik/traefik.yml"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      auth-gateway:
+        condition: service_started
+
   # Pasarela de identidad (Java Spring Boot): registro, login y JWT (ES256).
   # Valida tokens sin consultar bases de datos (solo la lista negra en Redis).
   auth-gateway:
@@ -233,6 +261,10 @@ services:
       REDIS_INSECURE_DEV: "true"
       HTTP_INSECURE_DEV: "true"
       JWT_DEV_EPHEMERAL_KEY: "true"
+      # La app entra por la puerta "edge": sin esto, el límite de intentos de
+      # login vería a TODOS los usuarios con la IP de Traefik. "native" lee la
+      # IP real de X-Forwarded-For, que Traefik escribe (y no deja falsificar).
+      FORWARD_HEADERS_STRATEGY: native
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "127.0.0.1:8083:8083"     # API: /v1/auth/*, /v1/me, /.well-known/jwks.json
@@ -391,6 +423,7 @@ services:
     ports:
       - "127.0.0.1:50052:50052"   # gRPC GeoService
       - "127.0.0.1:8087:8087"     # /healthz y /readyz
+      - "127.0.0.1:8091:8090"     # API HTTP: /v1/zones, /v1/positions (la app entra por "edge" :8080)
     depends_on:
       kafka-init:
         condition: service_completed_successfully

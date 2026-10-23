@@ -6,7 +6,7 @@ Guía paso a paso para principiantes: [`docs/guia-app-movil.md`](../docs/guia-ap
 ```bash
 cd mobile
 flutter pub get        # descarga librerías y genera las traducciones
-flutter run            # abre la app (backend en http://10.0.2.2:8083 por defecto)
+flutter run            # abre la app (backend en http://10.0.2.2:8080 = puerta "edge" por defecto)
 flutter run --dart-define=NOMADIQ_API_URL=https://...   # otro backend
 flutter test           # tests
 flutter analyze        # revisión estática (la CI no admite ni un aviso)

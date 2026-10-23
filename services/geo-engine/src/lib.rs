@@ -28,6 +28,7 @@
 //! - [`health`]: endpoints `/healthz` y `/readyz`.
 //! - [`proto`]: código generado desde `proto/`.
 
+pub mod api;
 pub mod cache;
 pub mod config;
 pub mod grpc;

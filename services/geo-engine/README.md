@@ -37,6 +37,22 @@ Errores: `INVALID_ARGUMENT` (datos mal formados), `UNAVAILABLE` (aún sin datos
 cargados), `NOT_FOUND`, `RESOURCE_EXHAUSTED` (demasiadas rutas a la vez).
 Todas las operaciones son deterministas: reintentar es seguro.
 
+## API HTTP para la app (`:8090`, detrás de la puerta de entrada)
+
+La app móvil no habla gRPC: llega por la puerta de entrada `edge` (Traefik,
+ver [`docs/guia-puerta-entrada.md`](../../docs/guia-puerta-entrada.md)), que
+comprueba el token y añade `X-User-ID`/`X-User-Roles`. Este puerto usa el
+mismo mTLS que el gRPC (lista de clientes propia: `API_ALLOWED_CLIENTS`).
+
+| Ruta | Qué hace | Límites |
+|---|---|---|
+| `GET /v1/zones?bbox=minLon,minLat,maxLon,maxLat` | Zonas visibles en el mapa, en GeoJSON (`FeatureCollection` de `MultiPolygon` con `slug`, `name`, `kind`) | ≤ 2° por lado, ≤ 300 zonas (`truncated`), `Cache-Control: private, max-age=60` |
+| `POST /v1/positions` | Lote de posiciones GPS `{language, positions:[{lat, lon, accuracy_m, recorded_at_ms}]}` → una a una, en orden de tiempo, a `geo.user-positions.v1` (clave `user_id`) | ≤ 50 por lote, últimas 24 h, cuerpo ≤ 16 KB, campos desconocidos = 400; `202 {accepted}` |
+
+Errores en `application/problem+json`: 400 (datos), 401 (sin identidad del
+proxy), 403 (sin rol `USER`), 503 (datos aún sin cargar o geofencing apagado).
+Las posiciones nunca se guardan ni se escriben en los logs: solo se reenvían.
+
 ## Riesgos de diseño y cómo se resuelven
 
 | Riesgo | Solución | Dónde |
@@ -74,7 +90,9 @@ Todas las operaciones son deterministas: reintentar es seguro.
 | `GRPC_ADDR` / `HTTP_ADDR` | `0.0.0.0:50052` / `0.0.0.0:8087` | gRPC / salud |
 | `GRPC_TLS_CERT_FILE`, `GRPC_TLS_KEY_FILE`, `GRPC_TLS_CLIENT_CA_FILE` | — | mTLS (las tres juntas, PEM) |
 | `GRPC_ALLOWED_CLIENTS` | — | Nombres (SAN DNS o CN) que pueden llamar; vacío = cualquiera de la CA |
-| `GRPC_INSECURE_DEV` | `false` | Solo local: gRPC sin TLS |
+| `GRPC_INSECURE_DEV` | `false` | Solo local: gRPC (y API HTTP) sin TLS |
+| `API_ADDR` | `0.0.0.0:8090` | API HTTP para la app (`/v1/zones`, `/v1/positions`), con el mTLS del gRPC |
+| `API_ALLOWED_CLIENTS` | — | Certificados que pueden llamar a la API HTTP (normalmente solo el proxy de borde) |
 | `PGHOST`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` | **obligatorias** | PostgreSQL (esquema `geo`) |
 | `PGPORT` / `PGSSLMODE` / `PGSSLROOTCERT` | `5432` / `verify-full` / — | TLS 1.3 verificando el servidor |
 | `DB_INSECURE_DEV` | `false` | Solo local: permite `PGSSLMODE=disable` |

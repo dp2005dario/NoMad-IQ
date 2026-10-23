@@ -1,0 +1,92 @@
+# Configuración DINÁMICA de la puerta de entrada: qué ruta va a qué servicio
+# y qué controles pasa por el camino. Cualquier ruta que no esté aquí: 404.
+
+http:
+  middlewares:
+    # 1) Borra cualquier cabecera de identidad que mande el cliente. Si no, un
+    #    atacante podría escribir "X-User-ID: <otra persona>" y hacerse pasar
+    #    por ella. Solo el paso 2 puede poner estas cabeceras.
+    strip-identity:
+      headers:
+        customRequestHeaders:
+          X-User-ID: ""
+          X-User-Roles: ""
+          X-Token-ID: ""
+
+    # 2) "Forward auth": antes de dejar pasar la petición, Traefik pregunta al
+    #    auth-gateway si el token (cabecera Authorization) es válido. Si dice
+    #    204, copia quién es el usuario en X-User-ID / X-User-Roles. Si dice
+    #    401, la petición se corta aquí y nunca llega al servicio.
+    authenticated:
+      forwardAuth:
+        address: http://auth-gateway:8083/v1/auth/verify
+        authResponseHeaders:
+          - X-User-ID
+          - X-User-Roles
+        # No se fía de las cabeceras X-Forwarded-* que mande el cliente.
+        trustForwardHeader: false
+        # La respuesta del auth-gateway es vacía (204): más de 4 KB es sospechoso.
+        maxResponseBodySize: 4096
+
+    # 3) Límite de ritmo por IP (además del de login del auth-gateway).
+    rate-limit:
+      rateLimit:
+        average: 30
+        period: 1s
+        burst: 60
+
+    # 4) Cuerpos de petición pequeños: nadie necesita mandar 100 MB.
+    small-body:
+      buffering:
+        maxRequestBodyBytes: 1048576
+
+  routers:
+    # Registro, login, renovar y cerrar sesión: el propio auth-gateway valida.
+    auth:
+      entryPoints: [web]
+      rule: PathPrefix(`/v1/auth/`) || Path(`/v1/me`) || Path(`/.well-known/jwks.json`)
+      middlewares: [strip-identity, rate-limit, small-body]
+      service: auth-gateway
+
+    # Mapa: zonas visibles y envío de posiciones (geo-engine).
+    geo:
+      entryPoints: [web]
+      rule: Path(`/v1/zones`) || Path(`/v1/positions`)
+      middlewares: [strip-identity, rate-limit, small-body, authenticated]
+      service: geo-engine
+
+    # Audioguías, recomendaciones y negociación de grupo (ai-orchestrator).
+    ai:
+      entryPoints: [web]
+      rule: PathPrefix(`/v1/audioguides`) || PathPrefix(`/v1/recommendations`) || PathPrefix(`/v1/group-negotiations`)
+      middlewares: [strip-identity, rate-limit, small-body, authenticated]
+      service: ai-orchestrator
+
+    # Archivos de audio .opus: públicos e inmutables (su nombre es su huella),
+    # así la app y una CDN pueden guardarlos en caché sin token.
+    audio-files:
+      entryPoints: [web]
+      rule: PathPrefix(`/v1/audio/`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
+    # Registro del móvil para las notificaciones push (notifier).
+    devices:
+      entryPoints: [web]
+      rule: PathPrefix(`/v1/devices/`)
+      middlewares: [strip-identity, rate-limit, small-body, authenticated]
+      service: notifier
+
+  services:
+    auth-gateway:
+      loadBalancer:
+        servers: [{ url: "http://auth-gateway:8083" }]
+    geo-engine:
+      loadBalancer:
+        servers: [{ url: "http://geo-engine:8090" }]
+    ai-orchestrator:
+      loadBalancer:
+        servers: [{ url: "http://ai-orchestrator:8085" }]
+    notifier:
+      loadBalancer:
+        servers: [{ url: "http://notifier:8089" }]

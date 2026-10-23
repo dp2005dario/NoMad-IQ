@@ -23,6 +23,7 @@ use tokio_util::sync::CancellationToken;
 use tonic::transport::Server;
 use tracing_subscriber::EnvFilter;
 
+use geo_engine::api::{self, ApiState, PositionsTarget};
 use geo_engine::cache::RedisStore;
 use geo_engine::config::Config;
 use geo_engine::grpc::{GeoServiceImpl, RouteSettings};
@@ -30,6 +31,7 @@ use geo_engine::health::{self, HealthState, StreamState, StreamStatus};
 use geo_engine::proto::geo::geo_service_server::GeoServiceServer;
 use geo_engine::snapshot::{self, SnapshotHandle};
 use geo_engine::store::Store;
+use geo_engine::stream::kafka::KafkaSink;
 use geo_engine::{stream, tls};
 
 /// Tamaño máximo de un mensaje gRPC recibido (1 MiB): ninguna petición
@@ -95,10 +97,12 @@ enum StartupError {
     Bind { addr: std::net::SocketAddr, source: std::io::Error },
     #[error("servidor gRPC: {0}")]
     Grpc(#[from] tonic::transport::Error),
+    #[error("Kafka (API de posiciones): {0}")]
+    Kafka(#[from] rdkafka::error::KafkaError),
 }
 
 async fn run(config: Config) -> Result<(), StartupError> {
-    tracing::info!(grpc = %config.grpc_addr, http = %config.http_addr, mtls = config.grpc_tls.is_some(), "arrancando geo-engine");
+    tracing::info!(grpc = %config.grpc_addr, http = %config.http_addr, api = %config.api_addr, mtls = config.grpc_tls.is_some(), "arrancando geo-engine");
     if config.grpc_tls.is_none() {
         tracing::warn!("gRPC SIN mTLS (GRPC_INSECURE_DEV=true): solo para desarrollo local");
     }
@@ -133,6 +137,41 @@ async fn run(config: Config) -> Result<(), StartupError> {
             tracing::error!(error = %e, "servidor de salud detenido");
         }
     });
+
+    // --- API HTTP pública (/v1/zones, /v1/positions), con el mismo mTLS que el gRPC.
+    let api_sink = match &config.stream {
+        Some(stream_config) => Some(Arc::new(KafkaSink::new(stream::kafka::producer(stream_config)?))),
+        None => None,
+    };
+    let api_app = api::router(ApiState {
+        snapshots: snapshots.clone(),
+        positions: match (&api_sink, &config.stream) {
+            (Some(sink), Some(stream_config)) => Some(PositionsTarget { sink: sink.clone(), topic: stream_config.topic_positions.clone() }),
+            _ => None,
+        },
+    });
+    let api_listener = TcpListener::bind(config.api_addr).await.map_err(|source| StartupError::Bind { addr: config.api_addr, source })?;
+    let api_shutdown = shutdown.clone();
+    let api_task = match &config.grpc_tls {
+        Some(files) => {
+            let listener = tls::AxumTlsListener::new(
+                api_listener,
+                tls::server_config(files)?,
+                tls::ClientAllowlist::new(config.api_allowed_clients.clone()),
+            )
+            .map_err(|source| StartupError::Bind { addr: config.api_addr, source })?;
+            tokio::spawn(async move {
+                if let Err(e) = axum::serve(listener, api_app).with_graceful_shutdown(api_shutdown.cancelled_owned()).await {
+                    tracing::error!(error = %e, "API HTTP detenida");
+                }
+            })
+        }
+        None => tokio::spawn(async move {
+            if let Err(e) = axum::serve(api_listener, api_app).with_graceful_shutdown(api_shutdown.cancelled_owned()).await {
+                tracing::error!(error = %e, "API HTTP detenida");
+            }
+        }),
+    };
 
     // --- Geofencing por Kafka.
     let stream_task = match config.stream.clone() {
@@ -194,6 +233,10 @@ async fn run(config: Config) -> Result<(), StartupError> {
     let wait_all = async {
         let _ = refresher.await;
         let _ = health_task.await;
+        let _ = api_task.await;
+        if let Some(sink) = &api_sink {
+            sink.flush(Duration::from_secs(5));
+        }
         if let Some(task) = stream_task {
             let _ = task.await;
         }
