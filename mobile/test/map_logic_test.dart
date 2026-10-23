@@ -300,7 +300,7 @@ void main() {
       );
       final String json = jsonEncode(style);
       expect(json, contains(MapIds.cobblePattern));
-      expect(json, contains(MapIds.facadePattern));
+      expect(json, contains(MapIds.facade(Facade.brick)));
       expect(
         (style['metadata']! as Map<String, Object?>)['nomadiq:look'],
         'day',
@@ -315,7 +315,10 @@ void main() {
       ))!;
       expect(
         night.keys,
-        containsAll(<String>[MapIds.cobblePattern, MapIds.facadePattern]),
+        containsAll(<String>[
+          MapIds.cobblePattern,
+          MapIds.facade(Facade.brick),
+        ]),
       );
       for (final Uint8List png in night.values) {
         // Firma de un PNG: 0x89 'P' 'N' 'G'.
@@ -325,7 +328,10 @@ void main() {
       final Map<String, Uint8List> day = (await tester.runAsync(
         () => mapPatterns(MapLook.day),
       ))!;
-      expect(day[MapIds.facadePattern], isNot(night[MapIds.facadePattern]));
+      expect(
+        day[MapIds.facade(Facade.brick)],
+        isNot(night[MapIds.facade(Facade.brick)]),
+      );
     });
   });
 

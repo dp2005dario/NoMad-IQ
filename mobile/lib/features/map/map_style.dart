@@ -12,6 +12,8 @@
 // "OpenMapTiles": por eso las capas se llaman water, building, transportation...
 import 'package:flutter/painting.dart';
 
+import 'map_patterns.dart';
+
 /// Ids que usa la app para dibujar sus cosas encima del mapa.
 abstract final class MapIds {
   static const String zonesSource = 'nomad-zones';
@@ -20,9 +22,13 @@ abstract final class MapIds {
   static const String zonesLabel = 'nomad-zones-label';
   static const String meSource = 'nomad-me';
 
-  /// Texturas pintadas por la app (ver map_patterns.dart).
+  /// Texturas e iconos pintados por la app (ver map_patterns.dart).
   static const String cobblePattern = 'nq-cobble';
-  static const String facadePattern = 'nq-facade';
+  static const String treesPattern = 'nq-trees';
+  static const String wavesPattern = 'nq-waves';
+  static const String arrowIcon = 'nq-oneway';
+  static String facade(Facade f) => 'nq-facade-${f.name}';
+  static String poiIcon(PoiKind k) => 'nq-poi-${k.name}';
 }
 
 /// Cómo se ve el mapa. "auto" elige según la hora.
@@ -58,6 +64,9 @@ class MapPalette {
     required this.urban,
     required this.waterEdge,
     required this.light,
+    required this.pitch,
+    required this.roofTile,
+    required this.roofSlate,
   });
 
   final Color background;
@@ -89,6 +98,13 @@ class MapPalette {
   /// El color de la "luz del sol" que sombrea los edificios en 3D.
   final Color light;
 
+  /// Césped de los campos de deporte (más vivo que el de los parques).
+  final Color pitch;
+
+  /// Tejados: de teja (rojizo) y de pizarra (oscuro).
+  final Color roofTile;
+  final Color roofSlate;
+
   static const MapPalette day = MapPalette(
     background: Color(0xFFDCE0D6),
     water: Color(0xFF7FC0E6),
@@ -108,6 +124,9 @@ class MapPalette {
     urban: Color(0xFFD5D6CC),
     waterEdge: Color(0xFFA9D6F0),
     light: Color(0xFFFFF4E0),
+    pitch: Color(0xFF7DC27A),
+    roofTile: Color(0xFFC9714F),
+    roofSlate: Color(0xFF6E7681),
   );
 
   static const MapPalette dusk = MapPalette(
@@ -129,6 +148,9 @@ class MapPalette {
     urban: Color(0xFF675E70),
     waterEdge: Color(0xFF8FAED4),
     light: Color(0xFFFFC08A),
+    pitch: Color(0xFF4F7D55),
+    roofTile: Color(0xFF9A5A4C),
+    roofSlate: Color(0xFF4F4A5A),
   );
 
   /// La noche usa el fondo de la app (#0B1217): es el aspecto "de marca".
@@ -152,6 +174,9 @@ class MapPalette {
     urban: Color(0xFF0F171E),
     waterEdge: Color(0xFF2F6E9E),
     light: Color(0xFF9DB4FF),
+    pitch: Color(0xFF1B3B2C),
+    roofTile: Color(0xFF3A2A33),
+    roofSlate: Color(0xFF1E2636),
   );
 
   static MapPalette of(MapLook look) => switch (look) {
@@ -239,9 +264,29 @@ Map<String, Object?> buildMapStyle({
   ];
   const List<String> footClasses = <String>['pedestrian', 'path', 'track'];
   final List<Object?> isLine = <Object?>[
-    '==',
-    <Object?>['geometry-type'],
-    'LineString',
+    'all',
+    <Object?>[
+      '==',
+      <Object?>['geometry-type'],
+      'LineString',
+    ],
+    // Lo que va por un túnel no se pinta como calle (ver 'road-tunnel').
+    <Object?>[
+      '!=',
+      <Object?>['get', 'brunnel'],
+      'tunnel',
+    ],
+  ];
+  // Un número "al azar" pero fijo para cada edificio (sale de su id de
+  // OpenStreetMap): así cada uno tiene siempre la misma fachada y tejado.
+  final List<Object?> pick3 = <Object?>[
+    '%',
+    <Object?>[
+      'coalesce',
+      <Object?>['id'],
+      0,
+    ],
+    3,
   ];
   // Altura de cada edificio (6 m si OpenStreetMap no la sabe) y de dónde
   // empieza (los soportales y pasarelas no tocan el suelo).
@@ -337,6 +382,47 @@ Map<String, Object?> buildMapStyle({
           'fill-opacity': 0.6,
         },
       },
+      // Árboles dibujados encima del verde (solo de cerca).
+      <String, Object?>{
+        'id': 'park-trees',
+        'type': 'fill',
+        'source': 'openmaptiles',
+        'source-layer': 'park',
+        'minzoom': 15,
+        'paint': <String, Object?>{'fill-pattern': MapIds.treesPattern},
+      },
+      <String, Object?>{
+        'id': 'wood-trees',
+        'type': 'fill',
+        'source': 'openmaptiles',
+        'source-layer': 'landcover',
+        'minzoom': 15,
+        'filter': classIn(<String>['wood']),
+        'paint': <String, Object?>{'fill-pattern': MapIds.treesPattern},
+      },
+      // Campos de fútbol, pistas y parques infantiles: césped con línea blanca.
+      <String, Object?>{
+        'id': 'sports',
+        'type': 'fill',
+        'source': 'openmaptiles',
+        'source-layer': 'landuse',
+        'minzoom': 14,
+        'filter': classIn(<String>['pitch', 'stadium', 'playground']),
+        'paint': <String, Object?>{'fill-color': hex(p.pitch)},
+      },
+      <String, Object?>{
+        'id': 'sports-lines',
+        'type': 'line',
+        'source': 'openmaptiles',
+        'source-layer': 'landuse',
+        'minzoom': 16,
+        'filter': classIn(<String>['pitch', 'stadium']),
+        'paint': <String, Object?>{
+          'line-color': '#ffffff',
+          'line-opacity': 0.8,
+          'line-width': 1.5,
+        },
+      },
       <String, Object?>{
         'id': 'water',
         'type': 'fill',
@@ -357,6 +443,14 @@ Map<String, Object?> buildMapStyle({
         },
       },
       <String, Object?>{
+        'id': 'water-waves',
+        'type': 'fill',
+        'source': 'openmaptiles',
+        'source-layer': 'water',
+        'minzoom': 14,
+        'paint': <String, Object?>{'fill-pattern': MapIds.wavesPattern},
+      },
+      <String, Object?>{
         'id': 'waterway',
         'type': 'line',
         'source': 'openmaptiles',
@@ -364,6 +458,129 @@ Map<String, Object?> buildMapStyle({
         'paint': <String, Object?>{
           'line-color': hex(p.water),
           'line-width': width(1, 4),
+        },
+      },
+      // Aeropuertos: plataformas en gris y pistas con su línea central.
+      <String, Object?>{
+        'id': 'aeroway-area',
+        'type': 'fill',
+        'source': 'openmaptiles',
+        'source-layer': 'aeroway',
+        'minzoom': 11,
+        'filter': isArea,
+        'paint': <String, Object?>{
+          'fill-color': hex(p.curb),
+          'fill-opacity': 0.6,
+        },
+      },
+      <String, Object?>{
+        'id': 'runway',
+        'type': 'line',
+        'source': 'openmaptiles',
+        'source-layer': 'aeroway',
+        'minzoom': 11,
+        'filter': <Object?>[
+          'all',
+          <Object?>[
+            '==',
+            <Object?>['geometry-type'],
+            'LineString',
+          ],
+          classIn(<String>['runway', 'taxiway']),
+        ],
+        'paint': <String, Object?>{
+          'line-color': hex(p.asphalt),
+          // Más ancha la pista que las calles de rodaje.
+          'line-width': <Object?>[
+            'interpolate',
+            <Object?>['exponential', 1.6],
+            <Object?>['zoom'],
+            11,
+            <Object?>[
+              'match',
+              <Object?>['get', 'class'],
+              'runway',
+              3,
+              1,
+            ],
+            18,
+            <Object?>[
+              'match',
+              <Object?>['get', 'class'],
+              'runway',
+              120,
+              30,
+            ],
+          ],
+        },
+      },
+      <String, Object?>{
+        'id': 'runway-marks',
+        'type': 'line',
+        'source': 'openmaptiles',
+        'source-layer': 'aeroway',
+        'minzoom': 14,
+        'filter': <Object?>[
+          'all',
+          <Object?>[
+            '==',
+            <Object?>['geometry-type'],
+            'LineString',
+          ],
+          classIn(<String>['runway']),
+        ],
+        'paint': <String, Object?>{
+          'line-color': '#ffffff',
+          'line-width': width(0.3, 3),
+          'line-dasharray': <double>[6, 4],
+        },
+      },
+      // Túneles: la calle se intuye, discontinua y transparente.
+      <String, Object?>{
+        'id': 'road-tunnel',
+        'type': 'line',
+        'source': 'openmaptiles',
+        'source-layer': 'transportation',
+        'minzoom': 14,
+        'filter': <Object?>[
+          'all',
+          <Object?>[
+            '==',
+            <Object?>['get', 'brunnel'],
+            'tunnel',
+          ],
+          classIn(<String>[
+            ...majorClasses,
+            ...minorClasses,
+            'rail',
+            'transit',
+          ]),
+        ],
+        'paint': <String, Object?>{
+          'line-color': hex(p.asphalt),
+          'line-opacity': 0.35,
+          'line-width': width(0.5, 14),
+          'line-dasharray': <double>[1, 1],
+        },
+      },
+      // Sombra de los puentes sobre el suelo: parece que "flotan".
+      <String, Object?>{
+        'id': 'bridge-shadow',
+        'type': 'line',
+        'source': 'openmaptiles',
+        'source-layer': 'transportation',
+        'minzoom': 15,
+        'filter': <Object?>[
+          '==',
+          <Object?>['get', 'brunnel'],
+          'bridge',
+        ],
+        'paint': <String, Object?>{
+          'line-color': '#000000',
+          'line-opacity': 0.35,
+          'line-width': width(1, 34),
+          'line-blur': 6,
+          'line-translate': <double>[5, 7],
         },
       },
       // Plazas y calles peatonales dibujadas como superficie: adoquín.
@@ -471,6 +688,42 @@ Map<String, Object?> buildMapStyle({
           'line-opacity': 0.85,
         },
       },
+      // Flechas de sentido único (muy de cerca).
+      <String, Object?>{
+        'id': 'oneway-arrows',
+        'type': 'symbol',
+        'source': 'openmaptiles',
+        'source-layer': 'transportation',
+        'minzoom': 17,
+        'filter': <Object?>[
+          'all',
+          isLine,
+          <Object?>[
+            'in',
+            <Object?>['get', 'oneway'],
+            <Object?>[
+              'literal',
+              <int>[1, -1],
+            ],
+          ],
+        ],
+        'layout': <String, Object?>{
+          'symbol-placement': 'line',
+          'symbol-spacing': 90,
+          'icon-image': MapIds.arrowIcon,
+          'icon-size': 0.6,
+          'icon-rotate': <Object?>[
+            'match',
+            <Object?>['get', 'oneway'],
+            -1,
+            180,
+            0,
+          ],
+          'icon-rotation-alignment': 'map',
+          'icon-allow-overlap': true,
+        },
+        'paint': <String, Object?>{'icon-opacity': 0.8},
+      },
       // Calles peatonales y caminos: adoquín con un borde punteado.
       <String, Object?>{
         'id': 'footway',
@@ -566,7 +819,22 @@ Map<String, Object?> buildMapStyle({
         'source-layer': 'building',
         'minzoom': 16,
         'paint': <String, Object?>{
-          'fill-extrusion-pattern': MapIds.facadePattern,
+          // Los altos (más de 40 m) son de cristal; el resto, ladrillo,
+          // cristal o piedra según el edificio.
+          'fill-extrusion-pattern': <Object?>[
+            'case',
+            <Object?>['>', height, 40],
+            MapIds.facade(Facade.glass),
+            <Object?>[
+              'match',
+              pick3,
+              0,
+              MapIds.facade(Facade.brick),
+              1,
+              MapIds.facade(Facade.glass),
+              MapIds.facade(Facade.stone),
+            ],
+          ],
           'fill-extrusion-height': height,
           'fill-extrusion-base': base,
           'fill-extrusion-opacity': 1,
@@ -581,7 +849,16 @@ Map<String, Object?> buildMapStyle({
         'source-layer': 'building',
         'minzoom': 16,
         'paint': <String, Object?>{
-          'fill-extrusion-color': hex(p.buildingTop),
+          // Tejados de teja, de zinc gris o de pizarra.
+          'fill-extrusion-color': <Object?>[
+            'match',
+            pick3,
+            0,
+            hex(p.roofTile),
+            1,
+            hex(p.buildingTop),
+            hex(p.roofSlate),
+          ],
           'fill-extrusion-height': <Object?>['+', height, 0.2],
           'fill-extrusion-base': height,
           'fill-extrusion-opacity': 1,
@@ -634,22 +911,56 @@ Map<String, Object?> buildMapStyle({
           'text-halo-width': 1.4,
         },
       },
+      // Números de portal (solo muy de cerca).
       <String, Object?>{
-        'id': 'poi-names',
+        'id': 'housenumbers',
+        'type': 'symbol',
+        'source': 'openmaptiles',
+        'source-layer': 'housenumber',
+        'minzoom': 18,
+        'layout': <String, Object?>{
+          'text-field': <Object?>['get', 'housenumber'],
+          'text-font': regular,
+          'text-size': 10,
+        },
+        'paint': <String, Object?>{
+          'text-color': hex(p.label),
+          'text-halo-color': hex(p.labelHalo),
+          'text-halo-width': 1,
+          'text-opacity': 0.8,
+        },
+      },
+      // Sitios con icono: restaurantes, cafés, museos, metro, hoteles...
+      <String, Object?>{
+        'id': 'poi',
         'type': 'symbol',
         'source': 'openmaptiles',
         'source-layer': 'poi',
-        'minzoom': 16,
+        'minzoom': 15,
+        // Los más importantes primero; de cerca salen todos.
         'filter': <Object?>[
           '<=',
           <Object?>['get', 'rank'],
-          20,
+          <Object?>[
+            'step',
+            <Object?>['zoom'],
+            8,
+            16,
+            20,
+            17,
+            60,
+          ],
         ],
         'layout': <String, Object?>{
+          'icon-image': _poiIcon(),
+          'icon-size': 0.5,
           'text-field': name,
           'text-font': regular,
           'text-size': 11,
           'text-max-width': 8,
+          'text-offset': <double>[0, 1.3],
+          'text-anchor': 'top',
+          'text-optional': true,
         },
         'paint': <String, Object?>{
           'text-color': hex(p.label),
@@ -723,6 +1034,51 @@ Map<String, Object?> buildMapStyle({
       },
     ],
   };
+}
+
+/// Qué icono lleva cada sitio, según su clase en OpenMapTiles. Los que no
+/// encajan en ningún tipo salen solo con el nombre.
+List<Object?> _poiIcon() {
+  const Map<PoiKind, List<String>> classes = <PoiKind, List<String>>{
+    PoiKind.food: <String>['restaurant', 'fast_food', 'food_court'],
+    PoiKind.cafe: <String>['cafe', 'ice_cream', 'bakery'],
+    PoiKind.bar: <String>['bar', 'pub', 'beer', 'nightclub'],
+    PoiKind.culture: <String>[
+      'museum',
+      'art_gallery',
+      'attraction',
+      'monument',
+      'castle',
+      'theatre',
+      'cinema',
+      'place_of_worship',
+    ],
+    PoiKind.shop: <String>[
+      'shop',
+      'grocery',
+      'clothing_store',
+      'shoe_shop',
+      'jewelry',
+      'books',
+      'gift',
+      'mall',
+    ],
+    PoiKind.lodging: <String>['lodging', 'campsite'],
+    PoiKind.transport: <String>[
+      'railway',
+      'bus',
+      'ferry_terminal',
+      'aerialway',
+    ],
+    PoiKind.health: <String>['hospital', 'pharmacy', 'doctors', 'dentist'],
+  };
+  return <Object?>[
+    'match',
+    <Object?>['get', 'class'],
+    for (final MapEntry<PoiKind, List<String>> e
+        in classes.entries) ...<Object?>[e.value, MapIds.poiIcon(e.key)],
+    '',
+  ];
 }
 
 List<Object?> _zoneColor() => <Object?>[
