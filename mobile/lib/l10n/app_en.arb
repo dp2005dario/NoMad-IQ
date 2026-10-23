@@ -15,10 +15,6 @@
   "continueWithGoogle": "Continue with Google",
   "continueWithEmail": "Continue with email",
   "continueAsGuest": "Continue as guest",
-  "signInSoon": "Sign-in arrives in the next version. Continue as a guest for now.",
-  "@signInSoon": {
-    "description": "Shown when tapping Google/email sign-in before it exists."
-  },
   "navHome": "Home",
   "navMap": "Map",
   "navCamera": "Camera",
@@ -62,5 +58,40 @@
         "type": "String"
       }
     }
-  }
+  },
+  "signInTitle": "Sign in",
+  "registerTitle": "Create account",
+  "emailLabel": "Email",
+  "passwordLabel": "Password",
+  "passwordHintRegister": "At least 12 characters",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+  "signInButton": "Sign in",
+  "registerButton": "Create account",
+  "switchToRegister": "New here? Create an account",
+  "switchToSignIn": "Already have an account? Sign in",
+  "errorEmailInvalid": "Enter a valid email",
+  "errorPasswordShort": "Use at least 12 characters",
+  "errorPasswordRequired": "Enter your password",
+  "errorInvalidCredentials": "Wrong email or password",
+  "errorEmailTaken": "There's already an account with this email",
+  "errorInvalidInput": "That password isn't accepted. Try a longer, less common one.",
+  "errorRateLimited": "Too many attempts. Try again in a few minutes.",
+  "errorUnavailable": "NomadIQ is having trouble. Try again shortly.",
+  "errorNetwork": "No connection. Check your internet and try again.",
+  "errorSessionExpired": "Your session has ended. Please sign in again.",
+  "homeGreetingName": "Hi, {name}",
+  "@homeGreetingName": {
+    "description": "Greeting with the user's name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "accountGuest": "Guest",
+  "accountMenu": "Account",
+  "signOut": "Sign out",
+  "signInFromGuest": "Sign in or create an account",
+  "googleSoon": "Google sign-in is coming soon. Use your email for now."
 }

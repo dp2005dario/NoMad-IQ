@@ -1,5 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Hablar con el backend (inicio de sesión, vuelos, mapa...). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- allowBackup="false": la sesión cifrada no debe copiarse a la nube ni a
+         otro móvil (su clave vive en el chip del teléfono y no viajaría). -->
     <application
+        android:allowBackup="false"
         android:label="NomadIQ"
         android:localeConfig="@xml/locales_config"
         android:name="${applicationName}"

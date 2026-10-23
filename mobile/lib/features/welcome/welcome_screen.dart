@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../auth/session.dart';
 import '../../core/router.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -11,13 +12,13 @@ import '../../widgets/flyra_avatar.dart';
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
-  // Aún no hay inicio de sesión real (llega con el auth-gateway en otro PR):
+  // El auth-gateway aún no sabe validar cuentas de Google (llega en otro PR):
   // de momento se explica con un aviso breve en vez de un botón que no hace nada.
-  void _signInSoon(BuildContext context) {
+  void _googleSoon(BuildContext context) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).signInSoon)),
+        SnackBar(content: Text(AppLocalizations.of(context).googleSoon)),
       );
   }
 
@@ -66,19 +67,20 @@ class WelcomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 40),
               FilledButton.icon(
-                onPressed: () => _signInSoon(context),
+                onPressed: () => _googleSoon(context),
                 icon: const Icon(Icons.account_circle_rounded),
                 label: Text(t.continueWithGoogle),
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
-                onPressed: () => _signInSoon(context),
+                onPressed: () => context.push(Routes.signIn),
                 icon: const Icon(Icons.mail_rounded),
                 label: Text(t.continueWithEmail),
               ),
               const SizedBox(height: 12),
               TextButton(
-                onPressed: () => context.go(Routes.home),
+                // El router ve "invitado" y lleva a Inicio.
+                onPressed: () => SessionScope.read(context).continueAsGuest(),
                 child: Text(t.continueAsGuest),
               ),
             ],

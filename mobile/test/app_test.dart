@@ -6,12 +6,16 @@ import 'package:nomadiq/core/settings.dart';
 
 import 'helpers.dart';
 
+/// La Bienvenida solo se ve sin sesión.
+Future<SettingsController> pumpWelcome(WidgetTester tester, {String? locale}) =>
+    pumpApp(tester, locale: locale, session: newSession());
+
 void main() {
   testWidgets('la bienvenida sigue el idioma del móvil', (
     WidgetTester tester,
   ) async {
     setDeviceLocale(tester, 'es');
-    await pumpApp(tester);
+    await pumpWelcome(tester);
     expect(find.text('Entrar como invitado'), findsOneWidget);
     expect(find.textContaining('soy Flyra'), findsOneWidget);
   });
@@ -20,29 +24,27 @@ void main() {
     WidgetTester tester,
   ) async {
     setDeviceLocale(tester, 'tlh'); // klingon :)
-    await pumpApp(tester);
+    await pumpWelcome(tester);
     expect(find.text('Continue as guest'), findsOneWidget);
   });
 
   testWidgets('en árabe la app se dibuja de derecha a izquierda', (
     WidgetTester tester,
   ) async {
-    await pumpApp(tester, locale: 'ar');
+    await pumpWelcome(tester, locale: 'ar');
     final BuildContext context = tester.element(find.byType(Scaffold).first);
     expect(Directionality.of(context), TextDirection.rtl);
   });
 
-  testWidgets('Google y correo avisan de que llegan pronto', (
-    WidgetTester tester,
-  ) async {
-    await pumpApp(tester, locale: 'es');
+  testWidgets('Google avisa de que llega pronto', (WidgetTester tester) async {
+    await pumpWelcome(tester, locale: 'es');
     await tester.tap(find.text('Continuar con Google'));
     await tester.pump();
     expect(find.byType(SnackBar), findsOneWidget);
   });
 
   testWidgets('invitado -> Inicio -> pestañas', (WidgetTester tester) async {
-    await pumpApp(tester, locale: 'es');
+    await pumpWelcome(tester, locale: 'es');
     await tester.tap(find.text('Entrar como invitado'));
     await tester.pumpAndSettle();
     expect(find.text('Hola, viajero'), findsOneWidget);

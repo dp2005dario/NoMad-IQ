@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../auth/session.dart';
 import '../../core/router.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -15,12 +16,26 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
     final TextTheme text = Theme.of(context).textTheme;
+    final SessionController session = SessionScope.of(context);
+    final String? name = displayName(session.user?.email);
     return Scaffold(
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
           children: <Widget>[
-            Text(t.homeGreetingGuest, style: text.headlineMedium),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    name == null
+                        ? t.homeGreetingGuest
+                        : t.homeGreetingName(name),
+                    style: text.headlineMedium,
+                  ),
+                ),
+                _AccountButton(session: session, name: name),
+              ],
+            ),
             const SizedBox(height: 20),
             _AskFlyra(
               hint: t.homeFlyraPrompt,
@@ -70,6 +85,93 @@ class HomeScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// "dario.perez@gmail.com" -> "Dario". Solo para el saludo: la app aún no
+/// pide el nombre (llegará con el perfil). Nunca se envía a ningún sitio.
+String? displayName(String? email) {
+  final String local = (email ?? '')
+      .split('@')
+      .first
+      .split(RegExp(r'[._+-]'))
+      .first;
+  if (local.isEmpty) return null;
+  return local[0].toUpperCase() + local.substring(1);
+}
+
+/// El círculo con tu inicial (maquetas: "tu avatar D en cada pantalla").
+/// Abre la hoja de cuenta: idioma y cerrar sesión (o entrar, si eres invitado).
+class _AccountButton extends StatelessWidget {
+  const _AccountButton({required this.session, required this.name});
+
+  final SessionController session;
+  final String? name;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final String? initial = name?.characters.first;
+    return IconButton(
+      tooltip: t.accountMenu,
+      onPressed: () => showModalBottomSheet<void>(
+        context: context,
+        // Por encima de TODO, también de la barra de pestañas y la cámara
+        // (si no, la hoja se abriría "dentro" de la pestaña, debajo de ellas).
+        useRootNavigator: true,
+        showDragHandle: true,
+        builder: (BuildContext sheet) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.person_rounded),
+                title: Text(session.user?.email ?? t.accountGuest),
+              ),
+              ListTile(
+                leading: const Icon(Icons.translate_rounded),
+                title: Text(t.languageTitle),
+                onTap: () {
+                  Navigator.pop(sheet);
+                  context.push(Routes.language);
+                },
+              ),
+              if (session.status == SessionStatus.signedIn)
+                ListTile(
+                  leading: const Icon(
+                    Icons.logout_rounded,
+                    color: NomadColors.safety,
+                  ),
+                  title: Text(t.signOut),
+                  onTap: () {
+                    Navigator.pop(sheet);
+                    session.signOut();
+                  },
+                )
+              else
+                ListTile(
+                  leading: const Icon(
+                    Icons.login_rounded,
+                    color: NomadColors.mint,
+                  ),
+                  title: Text(t.signInFromGuest),
+                  onTap: () {
+                    Navigator.pop(sheet);
+                    context.push(Routes.signIn);
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+      icon: CircleAvatar(
+        backgroundColor: NomadColors.group,
+        foregroundColor: NomadColors.background,
+        child: initial == null
+            ? const Icon(Icons.person_rounded)
+            : Text(initial),
       ),
     );
   }
