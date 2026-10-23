@@ -231,5 +231,17 @@
   "routeUnknownAirport": "لا نعرف هذا المطار. استخدم رمزه المكوّن من 3 أحرف: NRT وJFK…",
   "routeShowRoute": "اعرض المسار",
   "routeCredits": "الخريطة: Natural Earth · المطارات: OpenFlights (ODbL)",
-  "routeLoadFailed": "تعذّر تحميل الخريطة."
+  "routeLoadFailed": "تعذّر تحميل الخريطة.",
+  "placeAbout": "عن {city}",
+  "placeWhyFamous": "لماذا هي مشهورة",
+  "placeMostVisited": "الأكثر زيارة",
+  "placePopulation": "السكان",
+  "placeCapital": "العاصمة",
+  "placeCurrency": "العملة",
+  "placeLanguages": "اللغات",
+  "placeReadMore": "اقرأ المزيد على ويكيبيديا",
+  "placeUnavailable": "لا توجد معلومات عن هذه المدينة بعد. حاول لاحقًا.",
+  "placeInEnglish": "النص بالإنجليزية: غير متوفر بلغتك بعد.",
+  "placeCredits": "النصوص: ويكيبيديا (CC BY-SA). الصور: ويكيميديا كومنز (المس صورة لمعرفة مؤلفها وترخيصها).",
+  "placePhotoLabel": "صورة من ويكيميديا كومنز"
 }

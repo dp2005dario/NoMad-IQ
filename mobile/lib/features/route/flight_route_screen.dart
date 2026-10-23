@@ -16,8 +16,11 @@ import 'package:timezone/timezone.dart' as tz;
 
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../flights/booking.dart';
 import '../flights/flight_format.dart';
+import 'city_sheet.dart';
 import 'geo.dart';
+import 'places_api.dart';
 import 'route_painter.dart';
 import 'world_data.dart';
 
@@ -29,6 +32,8 @@ class FlightRouteScreen extends StatefulWidget {
     required this.from,
     this.to,
     this.loadWorld,
+    this.places,
+    this.openLink = openInBrowser,
   });
 
   /// Códigos IATA ("MAD", "NRT"). Sin destino, primero se pregunta.
@@ -37,6 +42,13 @@ class FlightRouteScreen extends StatefulWidget {
 
   /// En los tests se puede dar el mapa ya cargado.
   final Future<WorldData> Function()? loadWorld;
+
+  /// De dónde salen las fichas de ciudad. Sin él no se ofrece el botón
+  /// "Sobre Madrid" (por ejemplo, en algunos tests).
+  final PlaceLoader? places;
+
+  /// Abre un enlace fuera de la app (Wikipedia, la página de una foto).
+  final OpenBooking openLink;
 
   /// Cuánto dura la simulación del vuelo.
   static const Duration flightAnimation = Duration(seconds: 14);
@@ -221,6 +233,32 @@ class _FlightRouteScreenState extends State<FlightRouteScreen>
     _moveTo(MapCamera(_route.last, _cityZoom));
   }
 
+  /// Abre la ficha de la ciudad (por qué es famosa, lo más visitado…).
+  void _openCity(Airport airport) {
+    final PlaceLoader? places = widget.places;
+    if (places == null) return;
+    showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext sheet) => CitySheet(
+        iata: airport.iata,
+        load: places,
+        openLink: widget.openLink,
+      ),
+    );
+  }
+
+  Widget _aboutButton(AppLocalizations t, Airport airport) => Align(
+    alignment: AlignmentDirectional.centerStart,
+    child: TextButton.icon(
+      onPressed: () => _openCity(airport),
+      icon: const Icon(Icons.travel_explore_rounded),
+      label: Text(t.placeAbout(airport.city)),
+    ),
+  );
+
   Future<void> _askDestination() async {
     final String? code = await showModalBottomSheet<String>(
       context: context,
@@ -358,6 +396,7 @@ class _FlightRouteScreenState extends State<FlightRouteScreen>
             const SizedBox(height: 6),
             Text('${origin.city} · ${origin.country}', style: _title(context)),
             Text(_localTime(t, origin, null, locale), style: _muted),
+            if (widget.places != null) _aboutButton(t, origin),
             const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: _takeOff,
@@ -404,6 +443,7 @@ class _FlightRouteScreenState extends State<FlightRouteScreen>
               '${dest.country} · ${_localTime(t, dest, origin, locale)}',
               style: _muted,
             ),
+            if (widget.places != null) _aboutButton(t, dest),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,

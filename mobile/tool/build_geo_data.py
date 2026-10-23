@@ -110,4 +110,9 @@ if __name__ == "__main__":
     rings = rings_from_topojson(sys.argv[1])
     write_world(rings, "assets/geo/world.bin")
     n = write_airports(sys.argv[2], "assets/geo/airports.txt")
+    # El ai-orchestrator usa la MISMA lista para las fichas de ciudad (un test
+    # comprueba que las dos copias son idénticas).
+    server_copy = "../services/ai-orchestrator/src/ai_orchestrator/places/airports.txt"
+    with open("assets/geo/airports.txt", "rb") as src, open(server_copy, "wb") as dst:
+        dst.write(src.read())
     print("%d contornos, %d puntos, %d aeropuertos" % (len(rings), sum(len(r) for r in rings), n))

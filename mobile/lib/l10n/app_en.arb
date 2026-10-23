@@ -762,5 +762,58 @@
   "routeLoadFailed": "The map couldn’t be loaded.",
   "@routeLoadFailed": {
     "description": "Flight route map screen."
+  },
+  "placeAbout": "About {city}",
+  "@placeAbout": {
+    "description": "City info card (Wikipedia) in the flight route screen.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "placeWhyFamous": "Why it's famous",
+  "@placeWhyFamous": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placeMostVisited": "Most visited",
+  "@placeMostVisited": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placePopulation": "Population",
+  "@placePopulation": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placeCapital": "Capital",
+  "@placeCapital": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placeCurrency": "Currency",
+  "@placeCurrency": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placeLanguages": "Languages",
+  "@placeLanguages": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placeReadMore": "Read more on Wikipedia",
+  "@placeReadMore": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placeUnavailable": "There's no information about this city yet. Try again later.",
+  "@placeUnavailable": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placeInEnglish": "This text isn't available in your language yet.",
+  "@placeInEnglish": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placeCredits": "Text: Wikipedia (CC BY-SA). Photos: Wikimedia Commons (tap a photo to see its author and license).",
+  "@placeCredits": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placePhotoLabel": "Photo from Wikimedia Commons",
+  "@placePhotoLabel": {
+    "description": "City info card (Wikipedia) in the flight route screen."
   }
 }

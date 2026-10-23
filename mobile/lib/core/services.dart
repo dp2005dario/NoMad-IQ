@@ -15,6 +15,7 @@ import '../features/map/location.dart';
 import '../features/map/location_tracker.dart';
 import '../features/map/map_surface.dart';
 import '../features/push/notices.dart';
+import '../features/route/places_api.dart';
 import 'api_client.dart';
 import 'settings.dart';
 
@@ -32,6 +33,7 @@ class AppServices {
   }) : geo = GeoApi(api),
        audioguides = AudioguideApi(api),
        fares = FaresApi(api),
+       places = PlacesApi(api),
        prefs = prefs ?? MemorySettingsStore() {
     tracker = LocationTracker(
       location: location,
@@ -46,6 +48,9 @@ class AppServices {
   final GeoApi geo;
   final AudioguideApi audioguides;
   final FaresApi fares;
+
+  /// Fichas de ciudad (Wikipedia) para la Ruta del vuelo.
+  final PlacesApi places;
 
   /// Ajustes guardados en el móvil (idioma, modo viaje, aeropuerto…).
   final SettingsStore prefs;

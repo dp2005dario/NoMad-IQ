@@ -5,12 +5,18 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nomadiq/core/api_client.dart';
 import 'package:nomadiq/core/router.dart';
 import 'package:nomadiq/core/theme.dart';
+import 'package:nomadiq/features/route/city_sheet.dart';
 import 'package:nomadiq/features/route/flight_route_screen.dart';
+import 'package:nomadiq/features/flights/booking.dart';
 import 'package:nomadiq/features/route/geo.dart';
+import 'package:nomadiq/features/route/places_api.dart';
 import 'package:nomadiq/features/route/world_data.dart';
 import 'package:nomadiq/l10n/generated/app_localizations.dart';
+
+import 'helpers.dart';
 
 const LatLon madrid = LatLon(40.472, -3.563);
 const LatLon tokyo = LatLon(35.765, 140.386);
@@ -20,6 +26,8 @@ Future<void> pumpRoute(
   WidgetTester tester, {
   String from = 'MAD',
   String? to = 'NRT',
+  PlaceLoader? places,
+  OpenBooking? openLink,
 }) async {
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
@@ -32,7 +40,13 @@ Future<void> pumpRoute(
       locale: const Locale('es'),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: FlightRouteScreen(from: from, to: to, loadWorld: () async => world),
+      home: FlightRouteScreen(
+        from: from,
+        to: to,
+        loadWorld: () async => world,
+        places: places,
+        openLink: openLink ?? (Uri _) async => true,
+      ),
     ),
   );
   // El "latido" de los puntos no para nunca: se avanza el reloj a mano.
@@ -175,6 +189,144 @@ void main() {
     await tester.tap(find.text('Ver ruta'));
     await tester.pump(const Duration(milliseconds: 1500));
     expect(find.text('MAD → LIS'), findsOneWidget);
+  });
+
+  group('fichas de ciudad', () {
+    final Map<String, Object?> madridJson = <String, Object?>{
+      'iata': 'MAD',
+      'language': 'es',
+      'wikidata_id': 'Q2807',
+      'city': 'Madrid',
+      'summary': 'Madrid es la capital de España.',
+      'summary_language': 'es',
+      'article_url': 'https://es.wikipedia.org/wiki/Madrid',
+      'photo': <String, Object?>{
+        'url': 'https://upload.wikimedia.org/x/960px-Madrid.jpg',
+        'page_url': 'https://commons.wikimedia.org/wiki/File:Madrid.jpg',
+      },
+      'population': 3280782,
+      'country': <String, Object?>{
+        'name': 'España',
+        'capital': 'Madrid',
+        'currency': 'euro',
+        'languages': <String>['español'],
+      },
+      'attractions': <Object?>[
+        <String, Object?>{
+          'name': 'Museo del Prado',
+          'description': 'museo de arte',
+          'article_url': 'javascript:alert(1)', // se descarta
+        },
+        <String, Object?>{'name': ''}, // sin nombre: fuera
+      ],
+      'attribution': 'Wikipedia · Wikidata · Wikimedia Commons',
+    };
+
+    test('se lee y se valida lo que manda el servidor', () {
+      final PlaceCard card = PlaceCard.parse(madridJson);
+      expect(card.population, 3280782);
+      expect(card.country!.languages, <String>['español']);
+      expect(card.attractions.map((Attraction a) => a.name), <String>[
+        'Museo del Prado',
+      ]);
+      expect(card.attractions.single.articleUrl, isNull);
+      expect(card.photo!.pageUrl.host, 'commons.wikimedia.org');
+      expect(
+        () => PlaceCard.parse(<String, Object?>{'city': 'X'}),
+        throwsA(isA<ApiException>()),
+      );
+    });
+
+    test('es pública (invitados), se recuerda y 404 = sin ficha', () async {
+      final FakeGateway gateway = FakeGateway()
+        ..publicPrefixes.add('/v1/places/');
+      int calls = 0;
+      gateway.services['/v1/places/MAD'] = (_) {
+        calls++;
+        return FakeGateway.json(madridJson);
+      };
+      final ApiClient api = ApiClient(
+        baseUrl: Uri.parse('http://gateway.test'),
+        session: newSession(gateway)..continueAsGuest(),
+        client: gateway.client,
+      );
+      final PlacesApi places = PlacesApi(api);
+      expect((await places.get('mad', 'es'))!.city, 'Madrid');
+      await places.get('MAD', 'es');
+      expect(calls, 1);
+      expect(await places.get('XXX', 'es'), isNull);
+    });
+
+    testWidgets('"Sobre Madrid" abre la ficha con lo más visitado', (
+      WidgetTester tester,
+    ) async {
+      final List<Uri> opened = <Uri>[];
+      final List<String> asked = <String>[];
+      await pumpRoute(
+        tester,
+        places: (String iata, String lang) async {
+          asked.add('$iata:$lang');
+          return PlaceCard.parse(madridJson);
+        },
+        openLink: (Uri u) async {
+          opened.add(u);
+          return true;
+        },
+      );
+      await tester.tap(find.text('Empezar en Madrid'));
+      await tester.pump(const Duration(milliseconds: 1300));
+      await tester.tap(find.text('Sobre Madrid'));
+      // Un fotograma abre la hoja y pide la ficha; el siguiente la pinta.
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(asked, <String>['MAD:es']);
+      expect(find.text('Por qué es famosa'), findsOneWidget);
+      expect(find.text('Madrid es la capital de España.'), findsOneWidget);
+      expect(find.text('3.280.782'), findsOneWidget);
+      expect(find.text('euro'), findsOneWidget);
+      expect(find.text('Lo más visitado'), findsOneWidget);
+      expect(find.text('Museo del Prado'), findsOneWidget);
+      await tester.tap(find.text('Leer más en Wikipedia'));
+      expect(opened.single.toString(), 'https://es.wikipedia.org/wiki/Madrid');
+      // Abajo del todo, de dónde salen textos y fotos (lo piden sus licencias).
+      await tester.scrollUntilVisible(
+        find.textContaining('Wikimedia Commons'),
+        200,
+        scrollable: find
+            .descendant(
+              of: find.byType(CitySheet),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      expect(find.textContaining('Wikimedia Commons'), findsOneWidget);
+    });
+
+    testWidgets('si no hay ficha, se dice sin romper nada', (
+      WidgetTester tester,
+    ) async {
+      await pumpRoute(
+        tester,
+        places: (String iata, String lang) async =>
+            throw const ApiException(ApiError.unavailable),
+      );
+      await tester.tap(find.text('Empezar en Madrid'));
+      await tester.pump(const Duration(milliseconds: 1300));
+      await tester.tap(find.text('Sobre Madrid'));
+      // Un fotograma abre la hoja y pide la ficha; el siguiente la pinta.
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.textContaining('Aún no hay información'), findsOneWidget);
+    });
+
+    testWidgets('sin fichas configuradas no sale el botón', (
+      WidgetTester tester,
+    ) async {
+      await pumpRoute(tester);
+      await tester.tap(find.text('Empezar en Madrid'));
+      await tester.pump(const Duration(milliseconds: 1300));
+      expect(find.text('Sobre Madrid'), findsNothing);
+    });
   });
 
   test('dirección de la pantalla', () {

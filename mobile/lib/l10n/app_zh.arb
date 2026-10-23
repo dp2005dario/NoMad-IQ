@@ -231,5 +231,17 @@
   "routeUnknownAirport": "找不到该机场。请使用三字代码：NRT、JFK…",
   "routeShowRoute": "查看航线",
   "routeCredits": "地图：Natural Earth · 机场：OpenFlights (ODbL)",
-  "routeLoadFailed": "无法加载地图。"
+  "routeLoadFailed": "无法加载地图。",
+  "placeAbout": "关于{city}",
+  "placeWhyFamous": "为何闻名",
+  "placeMostVisited": "热门景点",
+  "placePopulation": "人口",
+  "placeCapital": "首都",
+  "placeCurrency": "货币",
+  "placeLanguages": "语言",
+  "placeReadMore": "在维基百科上阅读更多",
+  "placeUnavailable": "暂无这座城市的信息，请稍后再试。",
+  "placeInEnglish": "英文内容：暂无你的语言版本。",
+  "placeCredits": "文字：维基百科（CC BY-SA）。照片：维基共享资源（点击照片查看作者和许可）。",
+  "placePhotoLabel": "来自维基共享资源的照片"
 }

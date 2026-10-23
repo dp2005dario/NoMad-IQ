@@ -27,6 +27,7 @@ Kafka flights.fare-alerts.v1 ──► consumer ──► recommender ──┬�
 | `GET /v1/audioguides/{zone_id}?lang=es` | `X-User-ID` + rol `USER` | Guion de la audioguía de una zona (genérico, desde la caché de Redis); 404 si aún no está listo. |
 | `GET /v1/audioguides/{zone_id}/audio?lang=es` | `X-User-ID` + rol `USER` | Manifiesto del audio: URLs de cada párrafo, duración y texto. Si la versión actual aún se graba, devuelve la anterior con `stale: true`; 404 si no hay ninguna (la app puede usar la voz del teléfono). |
 | `GET /v1/audio/<zona>/<idioma>/v<N>/<huella>/parte-<n>.opus` | ninguna (contenido público) | Archivo Ogg Opus **inmutable** (`Cache-Control: immutable`, 1 año). En producción lo sirve la CDN. Si el recolector ya lo borró: **410 Gone** con `current_manifest` y cabecera `Link`; si nunca existió, 404 (ninguno de los dos se cachea). |
+| `GET /v1/places/{IATA}?lang=es` | ninguna (pública, también invitados) | Ficha de la ciudad del aeropuerto: resumen de Wikipedia, población, país (capital, moneda, idiomas) y lo más visitado con fotos de Commons. Caché de 7 días en Redis; 404 si no hay ficha, 503 + `Retry-After` si se llega al límite hacia Wikimedia. Ver `docs/guia-ruta-del-vuelo.md`. |
 | `GET :8086/healthz`, `GET :8086/readyz` | red interna | Salud (readyz: PostgreSQL + consumidores Kafka + Redis; Ollama no cuenta porque hay plan B). |
 
 La identidad llega en `X-User-ID` / `X-User-Roles`, ya verificada por el
@@ -66,6 +67,7 @@ con TLS 1.3**, así que solo el proxy puede enviarlas. Errores en RFC 9457
 | `pseudonym.py` | Seudónimos HMAC compatibles con el geo-engine y el notifier |
 | `store.py` | PostgreSQL: migraciones, historial y recomendaciones |
 | `audioguides/` | Audioguías por zona: eventos, hechos, redactor anclado, caché Redis + *single flight*, servicio y consumidor; y la voz: cola outbox, worker de audio, Piper + Opus, almacén y catálogo |
+| `places/` | Fichas de ciudad: lista de aeropuertos, cliente de Wikidata/Wikipedia con límite de ritmo, caché Redis + *single flight* |
 | `tts/` | Piper fijado con huellas SHA-256 (se instala aparte, en la imagen del worker) |
 | `consumer.py` | Bucle de Kafka: commits manuales, DLQ y reintentos |
 | `api.py` | FastAPI: identidad, RBAC y errores RFC 9457 |

@@ -79,6 +79,14 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 
+    # Fichas de ciudad (Wikipedia/Wikidata): públicas, para el modo invitado
+    # también. Solo GET y con un código de aeropuerto ("/v1/places/MAD").
+    places:
+      entryPoints: [web]
+      rule: Method(`GET`) && PathPrefix(`/v1/places/`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
     # Vuelos SIN cuenta: chollos e historial de precios. Son iguales para todo
     # el mundo, así que también los ve quien entra como invitado (precios
     # reales para todos). Solo lectura (GET) y con el mismo límite por IP.

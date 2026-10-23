@@ -231,5 +231,17 @@
   "routeUnknownAirport": "Aéroport inconnu. Utilise son code à 3 lettres : NRT, JFK…",
   "routeShowRoute": "Voir le trajet",
   "routeCredits": "Carte : Natural Earth · Aéroports : OpenFlights (ODbL)",
-  "routeLoadFailed": "Impossible de charger la carte."
+  "routeLoadFailed": "Impossible de charger la carte.",
+  "placeAbout": "À propos de {city}",
+  "placeWhyFamous": "Pourquoi elle est célèbre",
+  "placeMostVisited": "Les plus visités",
+  "placePopulation": "Population",
+  "placeCapital": "Capitale",
+  "placeCurrency": "Monnaie",
+  "placeLanguages": "Langues",
+  "placeReadMore": "En savoir plus sur Wikipédia",
+  "placeUnavailable": "Pas encore d'informations sur cette ville. Réessayez plus tard.",
+  "placeInEnglish": "Texte en anglais : il n'existe pas encore dans votre langue.",
+  "placeCredits": "Textes : Wikipédia (CC BY-SA). Photos : Wikimedia Commons (touchez une photo pour voir son auteur et sa licence).",
+  "placePhotoLabel": "Photo de Wikimedia Commons"
 }

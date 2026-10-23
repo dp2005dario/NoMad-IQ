@@ -231,5 +231,17 @@
   "routeUnknownAirport": "यह हवाई अड्डा नहीं मिला। 3 अक्षर का कोड लिखें: NRT, JFK…",
   "routeShowRoute": "रास्ता दिखाएँ",
   "routeCredits": "नक्शा: Natural Earth · हवाई अड्डे: OpenFlights (ODbL)",
-  "routeLoadFailed": "नक्शा लोड नहीं हो सका।"
+  "routeLoadFailed": "नक्शा लोड नहीं हो सका।",
+  "placeAbout": "{city} के बारे में",
+  "placeWhyFamous": "यह क्यों प्रसिद्ध है",
+  "placeMostVisited": "सबसे ज़्यादा देखे जाने वाले",
+  "placePopulation": "जनसंख्या",
+  "placeCapital": "राजधानी",
+  "placeCurrency": "मुद्रा",
+  "placeLanguages": "भाषाएँ",
+  "placeReadMore": "विकिपीडिया पर और पढ़ें",
+  "placeUnavailable": "इस शहर की जानकारी अभी उपलब्ध नहीं है। बाद में फिर कोशिश करें।",
+  "placeInEnglish": "अंग्रेज़ी में पाठ: आपकी भाषा में अभी उपलब्ध नहीं है।",
+  "placeCredits": "पाठ: विकिपीडिया (CC BY-SA)। फ़ोटो: विकिमीडिया कॉमन्स (लेखक और लाइसेंस देखने के लिए फ़ोटो पर टैप करें)।",
+  "placePhotoLabel": "विकिमीडिया कॉमन्स से फ़ोटो"
 }

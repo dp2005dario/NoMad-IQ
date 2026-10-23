@@ -481,6 +481,10 @@ jobs:
         run: |
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8085/v1/recommendations)" = 401
           curl -fsS http://127.0.0.1:8085/v1/recommendations -H 'X-User-ID: ci-user' -H 'X-User-Roles: USER' | jq -e '.items | type == "array"'
+          # Las fichas de ciudad son públicas (modo invitado) a través de la puerta
+          # de entrada. "ZZZ" no es un aeropuerto: 404 sin llamar a Wikimedia.
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/v1/places/ZZZ)" = 404
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8080/v1/places/MAD)" != 200
       # Negociación de grupo de punta a punta contra el contenedor: API -> outbox
       # -> Kafka -> agentes (sin Ollama en la CI: plan B por reglas) -> resultado.
       - name: Negociación de grupo de punta a punta (API → Kafka → agentes → resultado)

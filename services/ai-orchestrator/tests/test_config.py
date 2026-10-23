@@ -102,7 +102,9 @@ def test_audioguides_need_redis_and_a_known_language() -> None:
     with pytest.raises(ValidationError, match="REDIS_HOST"):
         settings(**no_redis)
     # Sin audioguías, Redis no hace falta.
-    assert not settings(**no_redis, audioguides_enabled=False).audioguides_enabled
+    assert not settings(**no_redis, audioguides_enabled=False, places_enabled=False).audioguides_enabled
+    with pytest.raises(ValidationError, match="PLACES_ENABLED"):
+        settings(**no_redis, audioguides_enabled=False)
     with pytest.raises(ValidationError, match="REDIS_INSECURE_DEV"):
         settings(**{**DEV, "redis_insecure_dev": False})
     with pytest.raises(ValidationError, match="AUDIOGUIDE_DEFAULT_LANGUAGE"):

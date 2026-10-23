@@ -19,6 +19,7 @@ import '../features/map/map_screen.dart';
 import '../features/settings/language_screen.dart';
 import '../features/shell/app_shell.dart';
 import '../features/welcome/welcome_screen.dart';
+import 'services.dart';
 
 /// Rutas con nombre fijo: si algún día cambia una dirección, se cambia aquí.
 abstract final class Routes {
@@ -152,9 +153,12 @@ GoRouter buildRouter({
       path: '/fares/map',
       builder: (BuildContext context, GoRouterState state) {
         final String? to = state.uri.queryParameters['to'];
+        final AppServices services = ServicesScope.of(context);
         return FlightRouteScreen(
           from: state.uri.queryParameters['from'] ?? '',
           to: to == null || to.isEmpty ? null : to,
+          places: services.places.get,
+          openLink: services.openBooking,
         );
       },
     ),

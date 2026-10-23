@@ -231,5 +231,17 @@
   "routeUnknownAirport": "その空港は見つかりません。3文字のコードを使ってください：NRT、JFK…",
   "routeShowRoute": "ルートを表示",
   "routeCredits": "地図：Natural Earth・空港：OpenFlights (ODbL)",
-  "routeLoadFailed": "地図を読み込めませんでした。"
+  "routeLoadFailed": "地図を読み込めませんでした。",
+  "placeAbout": "{city}について",
+  "placeWhyFamous": "有名な理由",
+  "placeMostVisited": "人気スポット",
+  "placePopulation": "人口",
+  "placeCapital": "首都",
+  "placeCurrency": "通貨",
+  "placeLanguages": "言語",
+  "placeReadMore": "ウィキペディアで続きを読む",
+  "placeUnavailable": "この都市の情報はまだありません。後でもう一度お試しください。",
+  "placeInEnglish": "英語のテキストです（あなたの言語版はまだありません）。",
+  "placeCredits": "テキスト：ウィキペディア（CC BY-SA）。写真：ウィキメディア・コモンズ（写真をタップすると作者とライセンスを表示）。",
+  "placePhotoLabel": "ウィキメディア・コモンズの写真"
 }
