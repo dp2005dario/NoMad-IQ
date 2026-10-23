@@ -266,6 +266,14 @@ tu posición y la audioguía de cada zona.
     "Wikipedia de los mapas". Los sirve **OpenFreeMap** gratis y sin
     rastrear a nadie.
   - Los colores están en `lib/features/map/map_style.dart`.
+  - **De cerca (zoom 16 o más) la ciudad se ve "de verdad"**:
+    - Las calles se pintan en tres pasadas, como capas de pintura: bordillo, acera y asfalto. Lo que asoma por los lados es la acera.
+    - Las avenidas llevan la línea discontinua del centro.
+    - Plazas y calles peatonales tienen textura de adoquín.
+    - Los edificios en 3D llevan fachada con ventanas. De noche, parte de ellas se encienden.
+    - Una "tapa" fina de color encima de cada edificio evita que salgan ventanas en el tejado.
+  - Esas texturas no son fotos: se pintan con código en `map_patterns.dart` (unos cuadraditos de 64 píxeles). No pesan nada y cambian con la hora: de día, al atardecer y de noche.
+  - Todo sigue costando 0 €: son los mismos datos gratuitos; solo cambia cómo se dibujan.
   - Los nombres de calles y ciudades salen en tu idioma si OpenStreetMap
     los tiene traducidos. Si no, en alfabeto latino.
 - **Las zonas se piden por trozos.** La app solo pide las zonas del

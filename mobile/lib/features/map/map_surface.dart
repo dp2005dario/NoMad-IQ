@@ -6,11 +6,13 @@
 // "interfaz": en la app real la cumple MapLibreSurface y en los tests, un
 // mapa falso que solo apunta lo que le piden.
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'geo.dart';
+import 'map_patterns.dart';
 import 'map_style.dart';
 
 /// Lo que la pantalla le puede pedir al mapa.
@@ -95,9 +97,22 @@ class _MapLibreSurfaceState extends State<MapLibreSurface> {
         zoom: spec.initialZoom,
       ),
       onMapCreated: (MapLibreMapController c) => _controller = c,
-      onStyleLoadedCallback: () {
+      onStyleLoadedCallback: () async {
         final MapLibreMapController? c = _controller;
-        if (c != null) spec.onReady(_MapLibreController(c));
+        if (c == null) return;
+        // Primero las texturas (adoquín, fachadas): el estilo las nombra
+        // pero las pinta la app. Si algo falla, el mapa sigue sin ellas.
+        try {
+          final Map<String, Uint8List> images = await mapPatterns(
+            _lookOf(spec.style),
+          );
+          for (final MapEntry<String, Uint8List> e in images.entries) {
+            await c.addImage(e.key, e.value);
+          }
+        } on Exception {
+          // Sin texturas: calles y edificios se ven igual, solo más lisos.
+        }
+        if (mounted) spec.onReady(_MapLibreController(c));
       },
       onCameraIdle: spec.onIdle,
       onMapClick: (_, LatLng at) =>
@@ -110,6 +125,18 @@ class _MapLibreSurfaceState extends State<MapLibreSurface> {
       minMaxZoomPreference: const MinMaxZoomPreference(2, 19),
     );
   }
+}
+
+/// Qué aspecto (día, atardecer, noche) tiene un estilo, según su metadata.
+MapLook _lookOf(Map<String, Object?> style) {
+  final Object? meta = style['metadata'];
+  final Object? name = meta is Map<String, Object?>
+      ? meta['nomadiq:look']
+      : null;
+  return MapLook.values.firstWhere(
+    (MapLook l) => l.name == name,
+    orElse: () => MapLook.night,
+  );
 }
 
 class _MapLibreController implements MapSurfaceController {

@@ -1,6 +1,7 @@
 // Tests de la lógica del mapa (sin pantallas): geometría, histéresis de
 // zonas, el cartero de posiciones, el estilo y las llamadas al servidor.
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,6 +12,7 @@ import 'package:nomadiq/features/map/geo.dart';
 import 'package:nomadiq/features/map/geo_api.dart';
 import 'package:nomadiq/features/map/location.dart';
 import 'package:nomadiq/features/map/map_model.dart';
+import 'package:nomadiq/features/map/map_patterns.dart';
 import 'package:nomadiq/features/map/map_style.dart';
 import 'package:nomadiq/features/map/position_reporter.dart';
 import 'package:nomadiq/features/map/zone_watcher.dart';
@@ -265,6 +267,65 @@ void main() {
         ),
       );
       expect(day, isNot(json));
+    });
+
+    test('calles de verdad de cerca: bordillo, acera, asfalto y adoquín', () {
+      final Map<String, Object?> style = buildMapStyle(
+        look: MapLook.day,
+        language: 'es',
+        tilesUrl: Uri.parse('https://tiles.test/planet'),
+        glyphsUrl: 'https://tiles.test/fonts/{fontstack}/{range}.pbf',
+      );
+      final List<String> ids = <String>[
+        for (final Object? l in style['layers']! as List<Object?>)
+          (l! as Map<String, Object?>)['id']! as String,
+      ];
+      // Las capas van de abajo arriba: bordillo y acera antes que el asfalto,
+      // y la tapa del tejado encima de la fachada.
+      expect(
+        ids.indexOf('road-major-curb'),
+        lessThan(ids.indexOf('road-major-sidewalk')),
+      );
+      expect(
+        ids.indexOf('road-major-sidewalk'),
+        lessThan(ids.indexOf('road-major')),
+      );
+      expect(
+        ids.indexOf('road-major'),
+        lessThan(ids.indexOf('road-lane-marks')),
+      );
+      expect(
+        ids.indexOf('building-facade'),
+        lessThan(ids.indexOf('building-roof')),
+      );
+      final String json = jsonEncode(style);
+      expect(json, contains(MapIds.cobblePattern));
+      expect(json, contains(MapIds.facadePattern));
+      expect(
+        (style['metadata']! as Map<String, Object?>)['nomadiq:look'],
+        'day',
+      );
+    });
+
+    testWidgets('las texturas se pintan como PNG de 64 px', (
+      WidgetTester tester,
+    ) async {
+      final Map<String, Uint8List> night = (await tester.runAsync(
+        () => mapPatterns(MapLook.night),
+      ))!;
+      expect(
+        night.keys,
+        containsAll(<String>[MapIds.cobblePattern, MapIds.facadePattern]),
+      );
+      for (final Uint8List png in night.values) {
+        // Firma de un PNG: 0x89 'P' 'N' 'G'.
+        expect(png.sublist(0, 4), <int>[0x89, 0x50, 0x4E, 0x47]);
+      }
+      // De día y de noche las fachadas son distintas (ventanas encendidas).
+      final Map<String, Uint8List> day = (await tester.runAsync(
+        () => mapPatterns(MapLook.day),
+      ))!;
+      expect(day[MapIds.facadePattern], isNot(night[MapIds.facadePattern]));
     });
   });
 
