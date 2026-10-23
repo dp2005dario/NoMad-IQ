@@ -1,13 +1,20 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Hablar con el backend (inicio de sesión, vuelos, mapa...). -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Ubicación SOLO con la app abierta (mapa y aviso al entrar en una zona).
-         FINE = GPS preciso; COARSE = aproximada (Android 12+ deja al usuario
-         elegir "aproximada", y la app sigue funcionando). La ubicación con la
-         app cerrada (ACCESS_BACKGROUND_LOCATION) llegará en otro PR, con su
-         formulario para Google Play. -->
+    <!-- Ubicación. FINE = GPS preciso; COARSE = aproximada (Android 12+ deja
+         al usuario elegir "aproximada", y la app sigue funcionando). -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- "Modo viaje": la ubicación sigue con la app cerrada gracias a un
+         "servicio en primer plano" con una notificación fija que lo dice.
+         Como el usuario lo enciende con la app abierta, basta el permiso
+         "mientras se usa la app": NO pedimos ACCESS_BACKGROUND_LOCATION
+         (que exige un formulario aparte en Google Play). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <!-- Android 13+: permiso para enseñar notificaciones (avisos push y la
+         notificación fija del modo viaje). Se pide al encender el modo viaje. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- allowBackup="false": la sesión cifrada no debe copiarse a la nube ni a
          otro móvil (su clave vive en el chip del teléfono y no viajaría). -->
     <application

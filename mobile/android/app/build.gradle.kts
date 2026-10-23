@@ -12,6 +12,9 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // "Desugaring": deja usar funciones modernas de Java (fechas...) en
+        // móviles Android antiguos. Lo exige flutter_local_notifications.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -46,4 +49,9 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // La biblioteca que hace posible el "desugaring" de arriba.
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

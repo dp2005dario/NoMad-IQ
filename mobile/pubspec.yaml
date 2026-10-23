@@ -36,6 +36,15 @@ dependencies:
   geolocator: ^14.1.1
   # El reproductor de las audioguías (en Android usa ExoPlayer, que lee .opus).
   just_audio: ^0.10.6
+  # Avisos push: Firebase Cloud Messaging (gratis) despierta al móvil.
+  firebase_core: ^4.15.0
+  firebase_messaging: ^16.7.0
+  # Enseña las notificaciones en la barra, con el texto en tu idioma.
+  flutter_local_notifications: ^22.3.2
+  # X25519, HMAC y AES-GCM para abrir los avisos cifrados (HPKE).
+  cryptography: ^2.9.0
+  # Genera el número al azar con el que el notifier conoce a este móvil.
+  uuid: ^4.6.0
 
 dev_dependencies:
   flutter_test:

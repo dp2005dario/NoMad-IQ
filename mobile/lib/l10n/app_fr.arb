@@ -104,5 +104,22 @@
   "guideOldVersion": "Une nouvelle version est en cours d’enregistrement. Vous écoutez la précédente.",
   "guideOtherLanguage": "Pas encore disponible dans votre langue. Il est en {language}.",
   "guideAudioFailed": "Impossible de lire l’audio. Vérifiez votre connexion.",
-  "guideSignIn": "Les audioguides sont réservés aux comptes NomadIQ. Connectez-vous pour les écouter."
+  "guideSignIn": "Les audioguides sont réservés aux comptes NomadIQ. Connectez-vous pour les écouter.",
+  "pushGuideTitle": "Audioguide à proximité",
+  "pushGuideBody": "Vous venez d'entrer dans une zone avec un audioguide. Touchez pour l'écouter.",
+  "pushAirportTitle": "Bienvenue !",
+  "pushAirportBody": "Vous êtes arrivé à l'aéroport. Flyra vous aide à rejoindre la ville.",
+  "pushSafetyTitle": "Avis de sécurité",
+  "pushSafetyBody": "Vous êtes dans une zone réglementée. Soyez prudent et suivez les consignes locales.",
+  "pushChannelZones": "Zones et audioguides",
+  "pushChannelSafety": "Avis de sécurité",
+  "travelServiceTitle": "NomadIQ · Mode voyage",
+  "travelServiceText": "Flyra surveille les zones que vous visitez. Désactivez-le depuis la carte.",
+  "travelServiceChannel": "Mode voyage",
+  "travelMode": "Mode voyage",
+  "travelExplain": "Alertes d'audioguides et de sécurité même app fermée.",
+  "travelOn": "Mode voyage activé : je vous préviens même si vous fermez l'app.",
+  "travelOff": "Mode voyage désactivé. Position uniquement app ouverte.",
+  "travelNeedsAccount": "Le mode voyage est réservé aux comptes NomadIQ. Connectez-vous pour l'utiliser.",
+  "travelNeedsNotifications": "Sans l'autorisation des notifications, je ne peux pas vous prévenir. Activez-la dans les Réglages."
 }

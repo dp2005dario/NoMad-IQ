@@ -93,6 +93,7 @@ class PositionReporter {
               _stopped = true;
             case ApiError.notFound ||
                 ApiError.gone ||
+                ApiError.conflict ||
                 ApiError.rateLimited ||
                 ApiError.unavailable ||
                 ApiError.network:

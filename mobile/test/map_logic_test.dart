@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:nomadiq/auth/session.dart';
 import 'package:nomadiq/core/api_client.dart';
 import 'package:nomadiq/features/map/geo.dart';
 import 'package:nomadiq/features/map/geo_api.dart';
@@ -355,10 +356,16 @@ void main() {
         requests++;
         return FakeGateway.json(zonesCollection());
       };
+      final SessionController session = await signedInSession(g);
       final MapModel m = MapModel(
-        geo: GeoApi(await apiFor(g)),
-        location: FakeLocation(),
-        language: () => 'es',
+        geo: GeoApi(
+          ApiClient(
+            baseUrl: Uri.parse('http://gateway.test'),
+            session: session,
+            client: g.client,
+          ),
+        ),
+        tracker: fakeTracker(session, gateway: g),
       );
       const GeoBox view = GeoBox(
         minLon: -3.71,
@@ -388,8 +395,7 @@ void main() {
     test('sin cuenta no pide zonas', () async {
       final MapModel m = MapModel(
         geo: null,
-        location: FakeLocation(),
-        language: () => 'es',
+        tracker: fakeTracker(newSession()..continueAsGuest()),
       );
       await m.onViewChanged(
         const GeoBox(
@@ -407,8 +413,7 @@ void main() {
       final FakeLocation loc = FakeLocation();
       final MapModel m = MapModel(
         geo: null,
-        location: loc,
-        language: () => 'es',
+        tracker: fakeTracker(newSession()..continueAsGuest(), location: loc),
       );
       await m.resumeLocation();
       expect(loc.requests, 0);

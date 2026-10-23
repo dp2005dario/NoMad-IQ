@@ -10,8 +10,11 @@ import '../features/audioguide/audioguide_api.dart';
 import '../features/audioguide/guide_player.dart';
 import '../features/map/geo_api.dart';
 import '../features/map/location.dart';
+import '../features/map/location_tracker.dart';
 import '../features/map/map_surface.dart';
+import '../features/push/notices.dart';
 import 'api_client.dart';
+import 'settings.dart';
 
 class AppServices {
   AppServices({
@@ -21,13 +24,29 @@ class AppServices {
     required this.newPlayer,
     required this.tilesUrl,
     required this.glyphsUrl,
+    this.notices = const SilentNotices(),
+    SettingsStore? prefs,
   }) : geo = GeoApi(api),
-       audioguides = AudioguideApi(api);
+       audioguides = AudioguideApi(api) {
+    tracker = LocationTracker(
+      location: location,
+      geo: geo,
+      session: api.session,
+      prefs: prefs ?? MemorySettingsStore(),
+      askNotifications: notices.requestPermission,
+    );
+  }
 
   final ApiClient api;
   final GeoApi geo;
   final AudioguideApi audioguides;
   final LocationSource location;
+
+  /// El único que enciende el GPS (y el "modo viaje"). Vive lo que la app.
+  late final LocationTracker tracker;
+
+  /// Notificaciones en la barra del móvil (permiso y toques).
+  final NoticeCenter notices;
 
   /// Cómo se dibuja el mapa (MapLibre en la app, uno falso en los tests).
   final MapSurfaceBuilder mapSurface;

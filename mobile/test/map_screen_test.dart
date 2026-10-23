@@ -193,6 +193,37 @@ void main() {
     );
   });
 
+  testWidgets('modo viaje desde el mapa; tocar un aviso abre la audioguía', (
+    WidgetTester tester,
+  ) async {
+    final FakeGateway g = backend();
+    final SessionController s = await signedInSession(g);
+    final FakeLocation loc = FakeLocation()..access = LocationAccess.granted;
+    final FakeNotices notices = FakeNotices();
+    await pumpApp(
+      tester,
+      locale: 'es',
+      initialLocation: Routes.map,
+      session: s,
+      services: fakeServices(s, gateway: g, location: loc, notices: notices),
+    );
+    await settleMap(tester);
+
+    await tester.tap(find.text('Modo viaje'));
+    await tester.pumpAndSettle();
+    expect(notices.asked, 1);
+    expect(loc.watches.last, isTrue); // GPS con notificación fija
+    expect(
+      find.text('Modo viaje activado: te aviso aunque cierres la app.'),
+      findsOneWidget,
+    );
+
+    // El usuario toca el aviso "Audioguía cerca" de la barra del móvil.
+    notices.tapsController.add(Routes.audioguide(solId, ''));
+    await tester.pumpAndSettle();
+    expect(find.text('El corazón de Madrid'), findsOneWidget);
+  });
+
   testWidgets('un invitado ve el mapa pero se le invita a crear cuenta', (
     WidgetTester tester,
   ) async {

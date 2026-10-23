@@ -4,6 +4,7 @@
 //   flutter run --dart-define=NOMADIQ_API_URL=https://api.nomadiq.app
 // Si no se pasa nada, se usa la dirección de desarrollo: 10.0.2.2 es "el PC"
 // visto desde el emulador de Android (donde docker compose sirve la puerta de entrada "edge", puerto 8080).
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
 abstract final class AppConfig {
@@ -53,5 +54,40 @@ abstract final class AppConfig {
       throw StateError('NOMADIQ_GLYPHS_URL debe ser https://');
     }
     return _glyphsUrl;
+  }
+
+  // Avisos push (Firebase Cloud Messaging, gratis). Los 4 datos salen de la
+  // consola de Firebase (ver docs/guia-app-movil.md). No son secretos (van
+  // dentro de cualquier app publicada), pero se pasan al compilar para no
+  // atar el código a un proyecto concreto:
+  //   flutter run --dart-define-from-file=firebase.json
+  // Si faltan, la app funciona igual, solo que sin avisos push.
+  static const String _fbApiKey = String.fromEnvironment(
+    'NOMADIQ_FIREBASE_API_KEY',
+  );
+  static const String _fbAppId = String.fromEnvironment(
+    'NOMADIQ_FIREBASE_APP_ID',
+  );
+  static const String _fbSenderId = String.fromEnvironment(
+    'NOMADIQ_FIREBASE_SENDER_ID',
+  );
+  static const String _fbProjectId = String.fromEnvironment(
+    'NOMADIQ_FIREBASE_PROJECT_ID',
+  );
+
+  /// null = avisos push desactivados en esta compilación.
+  static FirebaseOptions? get firebase {
+    if (_fbApiKey.isEmpty ||
+        _fbAppId.isEmpty ||
+        _fbSenderId.isEmpty ||
+        _fbProjectId.isEmpty) {
+      return null;
+    }
+    return const FirebaseOptions(
+      apiKey: _fbApiKey,
+      appId: _fbAppId,
+      messagingSenderId: _fbSenderId,
+      projectId: _fbProjectId,
+    );
   }
 }

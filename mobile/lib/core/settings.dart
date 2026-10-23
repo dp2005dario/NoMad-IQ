@@ -1,4 +1,4 @@
-// Ajustes del usuario que la app recuerda entre aperturas (de momento, el idioma).
+// Ajustes del usuario que la app recuerda entre aperturas (idioma y modo viaje).
 //
 // ChangeNotifier es un "altavoz": cuando el ajuste cambia, avisa a quien esté
 // escuchando (la app entera) y la pantalla se vuelve a dibujar en el idioma nuevo.
@@ -10,6 +10,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 abstract interface class SettingsStore {
   String? readLocale();
   Future<void> writeLocale(String? tag);
+  bool readTravelMode();
+  Future<void> writeTravelMode(bool on);
 }
 
 /// Versión real: guarda en el almacenamiento del móvil (SharedPreferences).
@@ -17,15 +19,15 @@ final class PreferencesSettingsStore implements SettingsStore {
   PreferencesSettingsStore(this._prefs);
 
   static const String _localeKey = 'locale';
+  static const String _travelKey = 'travel_mode';
   final SharedPreferencesWithCache _prefs;
 
   static Future<PreferencesSettingsStore> open() async {
     final SharedPreferencesWithCache prefs =
         await SharedPreferencesWithCache.create(
           cacheOptions: const SharedPreferencesWithCacheOptions(
-            allowList: <String>{
-              _localeKey,
-            }, // solo puede leer/escribir esta clave
+            // Solo puede leer/escribir estas claves.
+            allowList: <String>{_localeKey, _travelKey},
           ),
         );
     return PreferencesSettingsStore(prefs);
@@ -38,6 +40,12 @@ final class PreferencesSettingsStore implements SettingsStore {
   Future<void> writeLocale(String? tag) => tag == null
       ? _prefs.remove(_localeKey)
       : _prefs.setString(_localeKey, tag);
+
+  @override
+  bool readTravelMode() => _prefs.getBool(_travelKey) ?? false;
+
+  @override
+  Future<void> writeTravelMode(bool on) => _prefs.setBool(_travelKey, on);
 }
 
 /// Versión en memoria para los tests (no toca el disco).
@@ -51,6 +59,14 @@ final class MemorySettingsStore implements SettingsStore {
 
   @override
   Future<void> writeLocale(String? tag) async => _locale = tag;
+
+  bool travelMode = false;
+
+  @override
+  bool readTravelMode() => travelMode;
+
+  @override
+  Future<void> writeTravelMode(bool on) async => travelMode = on;
 }
 
 class SettingsController extends ChangeNotifier {

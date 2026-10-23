@@ -21,11 +21,29 @@ abstract interface class LocationSource {
   /// nunca nada más abrir la app: así entiende por qué se le pregunta.
   Future<LocationAccess> request();
 
-  /// Posiciones según te mueves.
-  Stream<PositionFix> watch();
+  /// Posiciones según te mueves. Con [background] siguen llegando aunque
+  /// cierres la app: Android lo permite solo si se ve una notificación fija
+  /// ("servicio en primer plano") con ese texto, para que sepas que la app
+  /// sigue usando tu ubicación.
+  Stream<PositionFix> watch({TrackingNotice? background});
 
   /// Abre los Ajustes del móvil (para quien eligió "no volver a preguntar").
   Future<void> openSettings();
+}
+
+/// El texto de la notificación fija del "modo viaje" (ya traducido).
+class TrackingNotice {
+  const TrackingNotice({
+    required this.title,
+    required this.text,
+    required this.channel,
+  });
+
+  final String title;
+  final String text;
+
+  /// Nombre del "canal" en los ajustes de notificaciones de Android.
+  final String channel;
 }
 
 /// El GPS de verdad, con el paquete geolocator.
@@ -49,8 +67,8 @@ class DeviceLocationSource implements LocationSource {
   }
 
   @override
-  Stream<PositionFix> watch() =>
-      Geolocator.getPositionStream(locationSettings: _settings()).map(
+  Stream<PositionFix> watch({TrackingNotice? background}) =>
+      Geolocator.getPositionStream(locationSettings: _settings(background)).map(
         (Position p) => PositionFix(
           point: GeoPoint(p.latitude, p.longitude),
           accuracyM: p.accuracy,
@@ -60,24 +78,45 @@ class DeviceLocationSource implements LocationSource {
 
   // Solo avisa cuando te has movido 20 m: andando, una posición cada 15 s
   // más o menos. Más a menudo gastaría batería sin aportar nada.
-  static LocationSettings _settings() => switch (defaultTargetPlatform) {
-    TargetPlatform.android => AndroidSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 20,
-      intervalDuration: const Duration(seconds: 10),
-    ),
-    TargetPlatform.iOS => AppleSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 20,
-      // "Andando": iOS ajusta el GPS a ese ritmo y ahorra batería.
-      activityType: ActivityType.fitness,
-      pauseLocationUpdatesAutomatically: true,
-    ),
-    _ => const LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 20,
-    ),
-  };
+  //
+  // En modo viaje (app cerrada) se pide algo menos de precisión y se espera
+  // 50 m: basta para saber en qué barrio estás y la batería dura el día.
+  static LocationSettings _settings(TrackingNotice? background) =>
+      switch (defaultTargetPlatform) {
+        TargetPlatform.android => AndroidSettings(
+          accuracy: background == null
+              ? LocationAccuracy.high
+              : LocationAccuracy.medium,
+          distanceFilter: background == null ? 20 : 50,
+          intervalDuration: Duration(seconds: background == null ? 10 : 30),
+          foregroundNotificationConfig: background == null
+              ? null
+              : ForegroundNotificationConfig(
+                  notificationTitle: background.title,
+                  notificationText: background.text,
+                  notificationChannelName: background.channel,
+                  // La notificación no se puede quitar deslizando: si
+                  // desapareciera, el usuario no sabría que seguimos activos.
+                  setOngoing: true,
+                ),
+        ),
+        TargetPlatform.iOS => AppleSettings(
+          accuracy: background == null
+              ? LocationAccuracy.high
+              : LocationAccuracy.medium,
+          distanceFilter: background == null ? 20 : 50,
+          // "Andando": iOS ajusta el GPS a ese ritmo y ahorra batería.
+          activityType: ActivityType.fitness,
+          pauseLocationUpdatesAutomatically: true,
+          // En segundo plano iOS enseña la "píldora" azul de ubicación.
+          allowBackgroundLocationUpdates: background != null,
+          showBackgroundLocationIndicator: background != null,
+        ),
+        _ => const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 20,
+        ),
+      };
 
   @override
   Future<void> openSettings() async {
