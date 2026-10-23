@@ -19,10 +19,12 @@ import 'features/push/firebase_push.dart';
 import 'features/push/notices.dart';
 import 'features/push/push_registrar.dart';
 import 'features/push/push_state.dart';
+import 'features/route/data_licenses.dart';
 
 Future<void> main() async {
   // Necesario antes de usar plugins (como el almacenamiento) en main().
   WidgetsFlutterBinding.ensureInitialized();
+  registerDataLicenses();
   final SettingsStore store = await PreferencesSettingsStore.open();
   final SessionController session = SessionController(
     api: AuthApi(baseUrl: AppConfig.apiBaseUrl),

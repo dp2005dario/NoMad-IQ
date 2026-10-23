@@ -184,6 +184,20 @@ class _FareRouteScreenState extends State<FareRouteScreen> {
                         style: const TextStyle(color: NomadColors.textMuted),
                       ),
                     const SizedBox(height: 24),
+                    if (_route != null)
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton.icon(
+                          onPressed: () => context.push(
+                            Routes.flightRoute(
+                              from: _route.origin,
+                              to: _route.destination,
+                            ),
+                          ),
+                          icon: const Icon(Icons.public_rounded),
+                          label: Text(t.routeShow),
+                        ),
+                      ),
                     Text(t.flightsHistory, style: text.titleLarge),
                     const SizedBox(height: 12),
                     _chart(context, t),

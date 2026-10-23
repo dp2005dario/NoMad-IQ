@@ -450,7 +450,8 @@ price-consumer:
 | "Buscar vuelos" | El buscador normal: origen, destino, ida y vuelta (o solo ida), fechas y de 1 a 9 viajeros. Da las opciones de la más barata a la más cara, con precio por persona, total, horarios (hora local del aeropuerto), escalas y duración. "Reservar ya" abre la web con el número de viajeros ya puesto |
 | Modo invitado | Ve los mismos chollos y gráficas con precios reales. Solo "Avisar si baja" y "Mis alertas" piden crear una cuenta gratis (los avisos se guardan a tu nombre) |
 | Detalle de una ruta | Gráfica del precio más bajo de cada día, el mínimo, reservar y "Dejar de vigilar" |
-| "Planea tu viaje" | Ruta del vuelo (globo y 3D), Explorar, Dormir barato, Escala gratis, Qué pasa y Copiar viaje: llegan en los siguientes PR |
+| "Ruta del vuelo" | Mapamundi sin conexión: la cámara va a tu ciudad, el avión despega y sigue la ruta curva real hasta el destino, con distancia, duración aproximada y hora local al llegar. "Sobre <ciudad>" abre su ficha: por qué es famosa, datos del país y lo más visitado con fotos libres (ver `docs/guia-ruta-del-vuelo.md`). También desde "Ver la ruta en el mapa" en el buscador y en el detalle de una ruta |
+| "Planea tu viaje" | Vuelo en 3D, Explorar, Dormir barato, Escala gratis, Qué pasa y Copiar viaje: llegan en los siguientes PR |
 
 ### Cómo funciona (con analogías)
 

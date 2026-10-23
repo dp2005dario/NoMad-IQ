@@ -567,5 +567,253 @@
         "type": "int"
       }
     }
+  },
+  "routeTitle": "Flight route",
+  "@routeTitle": {
+    "description": "Flight route map screen."
+  },
+  "routeShow": "See the route on the map",
+  "@routeShow": {
+    "description": "Flight route map screen."
+  },
+  "routeWorld": "World",
+  "@routeWorld": {
+    "description": "Flight route map screen."
+  },
+  "routeFollowing": "Following the plane",
+  "@routeFollowing": {
+    "description": "Flight route map screen."
+  },
+  "routeStartHint": "Tap start: we zoom into {city} and you take off from there along the route.",
+  "@routeStartHint": {
+    "description": "Flight route map screen.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "routeStartAt": "Start in {city}",
+  "@routeStartAt": {
+    "description": "Flight route map screen.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "routeTakeOff": "Take off for {city}",
+  "@routeTakeOff": {
+    "description": "Flight route map screen.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "routeOriginTag": "ORIGIN",
+  "@routeOriginTag": {
+    "description": "Flight route map screen."
+  },
+  "routeDestinationTag": "DESTINATION",
+  "@routeDestinationTag": {
+    "description": "Flight route map screen."
+  },
+  "routeLocalTime": "Local time: {time}",
+  "@routeLocalTime": {
+    "description": "Flight route map screen.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "routeAhead": "{amount} ahead of {city}",
+  "@routeAhead": {
+    "description": "Flight route map screen.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "routeBehind": "{amount} behind {city}",
+  "@routeBehind": {
+    "description": "Flight route map screen.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "routeSameTime": "Same time as {city}",
+  "@routeSameTime": {
+    "description": "Flight route map screen.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "routeHours": "{hours} h",
+  "@routeHours": {
+    "description": "Flight route map screen.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "routeHoursMinutes": "{hours} h {minutes} min",
+  "@routeHoursMinutes": {
+    "description": "Flight route map screen.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "routeDistance": "{km} km",
+  "@routeDistance": {
+    "description": "Flight route map screen.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "routeFlightTime": "≈ {duration} of flight",
+  "@routeFlightTime": {
+    "description": "Flight route map screen.",
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "routeTraveled": "Flown: {km} km",
+  "@routeTraveled": {
+    "description": "Flight route map screen.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "routeRemaining": "{duration} to go",
+  "@routeRemaining": {
+    "description": "Flight route map screen.",
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "routeLand": "Land now",
+  "@routeLand": {
+    "description": "Flight route map screen."
+  },
+  "routeArrived": "You’ve arrived in {city}!",
+  "@routeArrived": {
+    "description": "Flight route map screen.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "routeReplay": "Fly again",
+  "@routeReplay": {
+    "description": "Flight route map screen."
+  },
+  "routeBackToOrigin": "Back to origin",
+  "@routeBackToOrigin": {
+    "description": "Flight route map screen."
+  },
+  "routePickDestination": "Where are you flying to?",
+  "@routePickDestination": {
+    "description": "Flight route map screen."
+  },
+  "routeDestinationHint": "Destination airport code (e.g. NRT)",
+  "@routeDestinationHint": {
+    "description": "Flight route map screen."
+  },
+  "routeUnknownAirport": "We don’t know that airport. Use its 3-letter code: NRT, JFK…",
+  "@routeUnknownAirport": {
+    "description": "Flight route map screen."
+  },
+  "routeShowRoute": "Show route",
+  "@routeShowRoute": {
+    "description": "Flight route map screen."
+  },
+  "routeCredits": "Map: Natural Earth · Airports: OpenFlights (ODbL)",
+  "@routeCredits": {
+    "description": "Flight route map screen."
+  },
+  "routeLoadFailed": "The map couldn’t be loaded.",
+  "@routeLoadFailed": {
+    "description": "Flight route map screen."
+  },
+  "placeAbout": "About {city}",
+  "@placeAbout": {
+    "description": "City info card (Wikipedia) in the flight route screen.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "placeWhyFamous": "Why it's famous",
+  "@placeWhyFamous": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placeMostVisited": "Most visited",
+  "@placeMostVisited": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placePopulation": "Population",
+  "@placePopulation": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placeCapital": "Capital",
+  "@placeCapital": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placeCurrency": "Currency",
+  "@placeCurrency": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placeLanguages": "Languages",
+  "@placeLanguages": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placeReadMore": "Read more on Wikipedia",
+  "@placeReadMore": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placeUnavailable": "There's no information about this city yet. Try again later.",
+  "@placeUnavailable": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placeInEnglish": "This text isn't available in your language yet.",
+  "@placeInEnglish": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placeCredits": "Text: Wikipedia (CC BY-SA). Photos: Wikimedia Commons (tap a photo to see its author and license).",
+  "@placeCredits": {
+    "description": "City info card (Wikipedia) in the flight route screen."
+  },
+  "placePhotoLabel": "Photo from Wikimedia Commons",
+  "@placePhotoLabel": {
+    "description": "City info card (Wikipedia) in the flight route screen."
   }
 }

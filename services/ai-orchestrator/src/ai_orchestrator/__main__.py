@@ -76,6 +76,9 @@ from ai_orchestrator.negotiation.consumer import NegotiationRequestConsumer
 from ai_orchestrator.negotiation.service import NegotiationService, NegotiationSettings
 from ai_orchestrator.negotiation.store import PostgresNegotiations, SweepReport
 from ai_orchestrator.outbox import OutboxRelay
+from ai_orchestrator.places.airports import Airports
+from ai_orchestrator.places.service import PlaceService, PlaceSettings, RedisPlaceCache
+from ai_orchestrator.places.wikimedia import RateLimiter, WikimediaClient
 from ai_orchestrator.pseudonym import Pseudonymizer
 from ai_orchestrator.recommender import FareRecommender, RecommenderSettings
 from ai_orchestrator.retrieval import KnowledgeBase, NoKnowledge, QdrantKnowledge
@@ -168,10 +171,8 @@ def _ollama(settings: Settings, stack: AsyncExitStack) -> OllamaClient:
     )
 
 
-def _audioguides(
-    settings: Settings, pool: Pool, llm: LLMClient | None, stack: AsyncExitStack
-) -> tuple[AudioguideService, RedisScriptCache, ZoneVersionCache]:
-    """Monta la caché de Redis y el servicio de audioguías."""
+def _redis(settings: Settings, stack: AsyncExitStack) -> Redis:
+    """Una conexión a Redis (la usan las audioguías y las fichas de ciudad)."""
     assert settings.redis_host and settings.redis_password  # noqa: S101 (config.py lo garantiza)
     tls: dict[str, object] = {}
     if settings.redis_tls:
@@ -190,6 +191,34 @@ def _audioguides(
         **tls,  # type: ignore[arg-type]
     )
     stack.push_async_callback(redis.aclose)
+    return redis
+
+
+def _places(settings: Settings, redis: Redis, stack: AsyncExitStack) -> PlaceService:
+    """Fichas de ciudad: Wikimedia con límite de ritmo + caché en Redis."""
+    http = httpx.AsyncClient(
+        headers={"User-Agent": settings.wikimedia_user_agent},
+        timeout=httpx.Timeout(settings.wikimedia_timeout_seconds, connect=5.0),
+        # Sin seguir redirecciones a otros sitios ni cookies: solo la API.
+        follow_redirects=False,
+    )
+    stack.push_async_callback(http.aclose)
+    return PlaceService(
+        airports=Airports.bundled(),
+        wikimedia=WikimediaClient(
+            http,
+            limiter=RateLimiter(settings.wikimedia_rate_per_second, settings.wikimedia_burst),
+        ),
+        cache=RedisPlaceCache(redis),
+        settings=PlaceSettings(ttl_seconds=settings.place_ttl_seconds),
+    )
+
+
+def _audioguides(
+    settings: Settings, pool: Pool, llm: LLMClient | None, stack: AsyncExitStack
+) -> tuple[AudioguideService, RedisScriptCache, ZoneVersionCache]:
+    """Monta la caché de Redis y el servicio de audioguías."""
+    redis = _redis(settings, stack)
     cache = RedisScriptCache(redis)
     facts = PostgresZoneFacts(pool)
     versions = ZoneVersionCache(facts, ttl_seconds=settings.audioguide_version_cache_seconds)
@@ -346,6 +375,11 @@ async def run(settings: Settings) -> int:
                 transient_errors=(StoreError, CacheError, KafkaError),
             )
 
+        # --- Fichas de ciudad (Wikipedia/Wikidata con caché en Redis) -------------------
+        places: PlaceService | None = None
+        if settings.places_enabled:
+            places = _places(settings, _redis(settings, stack), stack)
+
         # --- Negociación de grupo (tercer consumidor + relé del outbox) -----------------
         negotiations: APIRouter | None = None
         negotiation_consumer: NegotiationRequestConsumer | None = None
@@ -373,6 +407,7 @@ async def run(settings: Settings) -> int:
                 audioguides=audioguides,
                 audio=audio,
                 negotiations=negotiations,
+                places=places,
                 expose_docs=settings.expose_api_docs,
             ),
             settings.http_port,

@@ -47,6 +47,8 @@ dependencies:
   uuid: ^4.6.0
   # Abre la web de reserva de un vuelo en el navegador del móvil.
   url_launcher: ^6.3.2
+  # Zonas horarias del mundo (base de datos IANA): "en Tokio son 8 h más".
+  timezone: ^0.11.2
 
 dev_dependencies:
   flutter_test:
@@ -58,6 +60,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Mapa del mundo y aeropuertos para la Ruta del vuelo (ver assets/geo/LEEME.md).
+  assets:
+    - assets/geo/world.bin
+    - assets/geo/airports.txt
   # Genera el código de traducciones a partir de lib/l10n/*.arb (ver l10n.yaml).
   generate: true
   # Las fuentes van DENTRO de la app (no se descargan de Internet al abrirla):

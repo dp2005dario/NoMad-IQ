@@ -26,6 +26,9 @@ Además:
       que se sirven sin identidad para que una CDN pueda guardarlos y
       repartirlos. Lo que exige identidad es el manifiesto que dice qué
       archivos tocan en cada zona.
+    - Las fichas de ciudad (/v1/places) también son públicas: son datos de
+      Wikipedia iguales para todos, y así el modo invitado las ve. Solo se
+      aceptan códigos de aeropuerto reales, nunca texto libre.
 """
 
 from __future__ import annotations
@@ -48,6 +51,8 @@ from ai_orchestrator.audioguides.domain import AudioguideScript
 from ai_orchestrator.audioguides.service import AudioguideService
 from ai_orchestrator.domain import Recommendation, Verdict
 from ai_orchestrator.identity import Principal, current_principal
+from ai_orchestrator.places.domain import PlaceCard
+from ai_orchestrator.places.service import PlaceBusyError, PlaceService, PlaceUnavailableError
 from ai_orchestrator.store import RecommendationStore, StoreError
 
 log = logging.getLogger(__name__)
@@ -175,6 +180,11 @@ async def _missing_audio(audio: AudioCatalog, key: str) -> JSONResponse:
 # guardar un año entero en la CDN y en el móvil sin volver a preguntar.
 IMMUTABLE_CACHE = "public, max-age=31536000, immutable"
 
+# Una ficha de ciudad cambia poco: el móvil y la CDN pueden guardarla un día.
+PLACE_CACHE = "public, max-age=86400"
+# "Esta ciudad no tiene ficha" se recuerda menos (por si aparece).
+PLACE_MISSING_CACHE = "public, max-age=3600"
+
 
 def create_api(
     store: RecommendationStore,
@@ -182,6 +192,7 @@ def create_api(
     audioguides: AudioguideService | None = None,
     audio: AudioCatalog | None = None,
     negotiations: APIRouter | None = None,
+    places: PlaceService | None = None,
     expose_docs: bool = False,
 ) -> FastAPI:
     """Crea la API pública (puerto con mTLS)."""
@@ -290,6 +301,26 @@ def create_api(
                 media_type="audio/ogg",
                 headers={"Cache-Control": IMMUTABLE_CACHE, "X-Content-Type-Options": "nosniff"},
             )
+
+    if places is not None:
+
+        @app.get("/v1/places/{iata}", response_model=PlaceCard)
+        async def get_place(
+            iata: Annotated[str, Path(pattern=r"^[A-Za-z]{3}$")],
+            lang: Annotated[str, Query(pattern=r"^([A-Za-z]{2,3})?$")] = "",
+        ) -> JSONResponse:
+            try:
+                card = await places.get(iata.upper(), lang)
+            except (PlaceBusyError, PlaceUnavailableError):
+                # La app simplemente no enseña la ficha y lo intenta otro día.
+                resp = _problem(503, "Servicio no disponible temporalmente", "fichas de ciudad ocupadas")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            if card is None:
+                resp = _problem(404, "No encontrado", "no hay ficha para esta ciudad")
+                resp.headers["Cache-Control"] = PLACE_MISSING_CACHE
+                return resp
+            return JSONResponse(card.model_dump(mode="json"), headers={"Cache-Control": PLACE_CACHE})
 
     if negotiations is not None:
         # Las rutas /v1/group-negotiations viven en negotiation/api.py.

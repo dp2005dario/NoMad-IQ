@@ -151,7 +151,21 @@ class Settings(BaseSettings):
     # anuncia sin destinatarios. En producción, desde un gestor de secretos.
     notify_pseudonym_key: SecretStr | None = None
 
-    # --- Redis (caché de audioguías) -----------------------------------------------
+    # --- Fichas de ciudad (ver el paquete places/) ------------------------------------
+    # Necesita Redis (la caché de fichas) y salida a internet hacia Wikimedia.
+    places_enabled: bool = True
+    # Wikimedia exige un User-Agent que diga quién llama y cómo contactar.
+    wikimedia_user_agent: str = Field(
+        default="NomadIQ/0.1 (https://github.com/dp2005dario/NoMad-IQ)", min_length=10, max_length=200
+    )
+    # Peticiones por segundo a Wikimedia (por copia del servicio). Cada ficha
+    # nueva son 5; con la caché de 7 días casi nunca se llega al límite.
+    wikimedia_rate_per_second: float = Field(default=5.0, gt=0, le=50)
+    wikimedia_burst: int = Field(default=10, ge=1, le=100)
+    wikimedia_timeout_seconds: float = Field(default=15.0, gt=0, le=60)
+    place_ttl_seconds: int = Field(default=7 * 24 * 3600, ge=3600, le=90 * 24 * 3600)
+
+    # --- Redis (caché de audioguías y fichas de ciudad) -----------------------------------------------
     redis_host: str | None = None
     redis_port: int = Field(default=6379, ge=1, le=65535)
     redis_password: SecretStr | None = None
@@ -267,6 +281,19 @@ class Settings(BaseSettings):
                 problems.append(
                     f"AUDIOGUIDE_DEFAULT_LANGUAGE debe ser uno de: {', '.join(SUPPORTED_LANGUAGES)}"
                 )
+
+        if self.places_enabled and (not self.redis_host or self.redis_password is None):
+            problems.append(
+                "las fichas de ciudad necesitan Redis: define REDIS_HOST y REDIS_PASSWORD "
+                "(o PLACES_ENABLED=false)"
+            )
+        if (
+            self.places_enabled
+            and not self.audioguides_enabled
+            and not self.redis_tls
+            and not self.redis_insecure_dev
+        ):
+            problems.append("REDIS_TLS=false solo se permite con REDIS_INSECURE_DEV=true (solo en local)")
 
         if not (
             self.audio_public_base_url.startswith("https://")
