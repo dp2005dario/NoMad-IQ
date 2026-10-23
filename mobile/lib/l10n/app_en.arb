@@ -3367,5 +3367,218 @@
   "sosDelete": "Remove",
   "@sosDelete": {
     "description": "Delete contact tooltip."
+  },
+  "papersTitle": "Papers and rights",
+  "@papersTitle": {
+    "description": "Screen title."
+  },
+  "papersSubtitle": "We check them before every trip",
+  "@papersSubtitle": {
+    "description": "Subtitle."
+  },
+  "papersBeforeTitle": "BEFORE YOU GO",
+  "@papersBeforeTitle": {
+    "description": "Section (uppercase)."
+  },
+  "papersDestination": "Destination airport (e.g. NRT)",
+  "@papersDestination": {
+    "description": "Field."
+  },
+  "papersReturn": "Back on {date}",
+  "@papersReturn": {
+    "description": "Return day.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "papersPickReturn": "Choose return day",
+  "@papersPickReturn": {
+    "description": "Button."
+  },
+  "papersCheck": "Check with the Vault",
+  "@papersCheck": {
+    "description": "Button."
+  },
+  "papersUnknownAirport": "We don't know that airport",
+  "@papersUnknownAirport": {
+    "description": "Error."
+  },
+  "papersPassportOk": "Passport valid until {date}",
+  "@papersPassportOk": {
+    "description": "Check OK.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "papersPassportShort": "Your passport expires on {date}: many countries ask for 6 months to spare",
+  "@papersPassportShort": {
+    "description": "Check warning.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "papersPassportNoDate": "Add your passport's expiry date in the Vault",
+  "@papersPassportNoDate": {
+    "description": "Check warning."
+  },
+  "papersPassportMissing": "There's no passport in the Vault",
+  "@papersPassportMissing": {
+    "description": "Check missing."
+  },
+  "papersInsuranceOk": "Travel insurance in the Vault",
+  "@papersInsuranceOk": {
+    "description": "Check OK."
+  },
+  "papersInsuranceExpired": "Your insurance ends before you're back",
+  "@papersInsuranceExpired": {
+    "description": "Check warning."
+  },
+  "papersInsuranceMissing": "There's no travel insurance in the Vault",
+  "@papersInsuranceMissing": {
+    "description": "Check missing."
+  },
+  "papersPermit": "If your passport needs it: {name}",
+  "@papersPermit": {
+    "description": "Entry permit hint.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "papersOfficialSite": "Official website",
+  "@papersOfficialSite": {
+    "description": "Link."
+  },
+  "papersAllGood": "All set",
+  "@papersAllGood": {
+    "description": "All checks OK."
+  },
+  "papersIssues": "{count, plural, =1{1 warning} other{{count} warnings}}",
+  "@papersIssues": {
+    "description": "Number of warnings.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "papersRightsTitle": "YOUR RIGHTS AS A PASSENGER",
+  "@papersRightsTitle": {
+    "description": "Section (uppercase)."
+  },
+  "papersRightsIntro": "Was your flight late, cancelled, or were you not allowed to board? On flights from the EU (or to the EU with a European airline) you may be owed money.",
+  "@papersRightsIntro": {
+    "description": "Intro."
+  },
+  "papersFrom": "From (airport)",
+  "@papersFrom": {
+    "description": "Field."
+  },
+  "papersTo": "To (airport)",
+  "@papersTo": {
+    "description": "Field."
+  },
+  "papersEuAirline": "European airline",
+  "@papersEuAirline": {
+    "description": "Switch."
+  },
+  "papersDelay": "Delay",
+  "@papersDelay": {
+    "description": "Option."
+  },
+  "papersCancelled": "Cancelled",
+  "@papersCancelled": {
+    "description": "Option."
+  },
+  "papersDenied": "Denied boarding",
+  "@papersDenied": {
+    "description": "Option."
+  },
+  "papersDelayHours": "{hours} h late on arrival",
+  "@papersDelayHours": {
+    "description": "Slider label.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "papersYouMayGet": "You may be owed {amount}",
+  "@papersYouMayGet": {
+    "description": "Result.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "papersDistance": "Flight of {km} km",
+  "@papersDistance": {
+    "description": "Flight distance.",
+    "placeholders": {
+      "km": {
+        "type": "int"
+      }
+    }
+  },
+  "papersNotEu": "This flight isn't covered by the European rules.",
+  "@papersNotEu": {
+    "description": "Not covered."
+  },
+  "papersShortDelay": "Under 3 hours late there's no compensation (but they must give you food and drink while you wait).",
+  "@papersShortDelay": {
+    "description": "Short delay."
+  },
+  "papersExtraordinary": "If it was due to extraordinary circumstances (storm, air traffic control strike) the airline doesn't pay, but it has to prove it.",
+  "@papersExtraordinary": {
+    "description": "Caveat."
+  },
+  "papersClaim": "Prepare the claim",
+  "@papersClaim": {
+    "description": "Button."
+  },
+  "papersName": "Full name",
+  "@papersName": {
+    "description": "Field."
+  },
+  "papersBooking": "Booking code",
+  "@papersBooking": {
+    "description": "Field."
+  },
+  "papersFlight": "Flight number (e.g. IB6800)",
+  "@papersFlight": {
+    "description": "Field."
+  },
+  "papersFlightDay": "Flight on {date}",
+  "@papersFlightDay": {
+    "description": "Flight date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "papersSendEmail": "Open email with the letter",
+  "@papersSendEmail": {
+    "description": "Button."
+  },
+  "papersClaimNote": "No commission: all the money goes to you. The letter is in English, which every airline understands.",
+  "@papersClaimNote": {
+    "description": "Note."
+  },
+  "papersNoEmailApp": "There's no email app on this phone.",
+  "@papersNoEmailApp": {
+    "description": "Error."
+  },
+  "papersFillAll": "Fill in every field",
+  "@papersFillAll": {
+    "description": "Validation."
   }
 }

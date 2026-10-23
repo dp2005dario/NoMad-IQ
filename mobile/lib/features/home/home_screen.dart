@@ -68,6 +68,12 @@ class HomeScreen extends StatelessWidget {
                     label: Feature.vault.label(t),
                     onTap: () => context.push(Routes.vault),
                   ),
+                  _Shortcut(
+                    icon: Icons.assignment_turned_in_rounded,
+                    color: NomadColors.flights,
+                    label: t.papersTitle,
+                    onTap: () => context.push(Routes.papers),
+                  ),
                   // Gastos: los botes compartidos (Dinero → Tu dinero).
                   _Shortcut(
                     icon: Feature.expenses.icon,
