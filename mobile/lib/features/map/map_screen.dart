@@ -23,6 +23,7 @@ import 'location_tracker.dart';
 import 'map_model.dart';
 import 'map_style.dart';
 import 'map_surface.dart';
+import 'street_sheet.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key, this.clock = DateTime.now});
@@ -177,6 +178,29 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   // --- Acciones --------------------------------------------------------------
+
+  /// "Ver la calle de verdad": fotos reales del centro de lo que se ve.
+  Future<void> _openStreet() async {
+    final GeoBox? box = await _map?.visibleBox();
+    if (!mounted) return;
+    final GeoPoint center = box == null
+        ? (_m.me ?? MapScreen.defaultCenter)
+        : GeoPoint(
+            (box.minLat + box.maxLat) / 2,
+            (box.minLon + box.maxLon) / 2,
+          );
+    await showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (BuildContext sheet) => StreetSheet(
+        point: center,
+        load: _services.streetPhotos.near,
+        openLink: _services.openBooking,
+      ),
+    );
+  }
 
   Future<void> _myLocation() async {
     final GeoPoint? me = _m.me;
@@ -340,6 +364,20 @@ class _MapScreenState extends State<MapScreen> {
                           onChanged: (bool on) => unawaited(_setTravel(on)),
                         ),
                       const Spacer(),
+                      FloatingActionButton.extended(
+                        heroTag: 'map-street',
+                        elevation: 1,
+                        backgroundColor: NomadColors.surfaceHigh,
+                        foregroundColor: NomadColors.text,
+                        extendedPadding: const EdgeInsetsDirectional.only(
+                          start: 12,
+                          end: 16,
+                        ),
+                        onPressed: () => unawaited(_openStreet()),
+                        icon: const Icon(Icons.streetview_rounded),
+                        label: Text(t.streetViewButton),
+                      ),
+                      const SizedBox(width: 8),
                       FloatingActionButton.small(
                         heroTag: 'map-me',
                         tooltip: t.mapMyLocation,

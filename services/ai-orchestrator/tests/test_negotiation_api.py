@@ -65,8 +65,8 @@ async def test_full_flow_and_privacy(store: InMemoryNegotiations) -> None:
         assert view["my_alias"] == "Viajero 1"
         assert view["deadline"].startswith((FIXED_NOW + timedelta(hours=72)).date().isoformat())
         assert view["members"] == [
-            {"alias": "Viajero 1", "submitted": False, "me": True},
-            {"alias": "Viajero 2", "submitted": False, "me": False},
+            {"alias": "Viajero 1", "name": None, "submitted": False, "me": True},
+            {"alias": "Viajero 2", "name": None, "submitted": False, "me": False},
         ]
 
         first = await c.put(
@@ -82,7 +82,8 @@ async def test_full_flow_and_privacy(store: InMemoryNegotiations) -> None:
         assert seen.status_code == 200
         assert seen.json()["my_preferences"] is None
         assert "secreto" not in seen.text and ORGANIZER not in seen.text
-        assert seen.json()["members"][0] == {"alias": "Viajero 1", "submitted": True, "me": False}
+        first_member = {"alias": "Viajero 1", "name": None, "submitted": True, "me": False}
+        assert seen.json()["members"][0] == first_member
 
         last = await c.put(
             f"/v1/group-negotiations/{negotiation_id}/preferences", json=PREFS, headers=headers(FRIEND)
@@ -131,7 +132,6 @@ async def test_late_preferences_are_rejected(store: InMemoryNegotiations) -> Non
 @pytest.mark.parametrize(
     "bad",
     [
-        {"members": []},
         {"members": [FRIEND, FRIEND]},
         {"members": [f"u{i}" for i in range(8)]},
         {"members": ["no vale<script>"]},
@@ -142,6 +142,8 @@ async def test_late_preferences_are_rejected(store: InMemoryNegotiations) -> Non
         {"currency": "euro"},
         {"max_rounds": 11},
         {"sorpresa": True},
+        {"my_name": "   "},
+        {"my_name": "x" * 41},
     ],
 )
 async def test_invalid_creation_is_400(store: InMemoryNegotiations, bad: dict[str, Any]) -> None:
@@ -158,3 +160,96 @@ async def test_identity_is_required(store: InMemoryNegotiations) -> None:
             await c.get("/v1/group-negotiations", headers={"X-User-ID": ORGANIZER, "X-User-Roles": "GUEST"})
         ).status_code == 403
         assert (await c.get("/v1/group-negotiations/no-uuid", headers=headers(ORGANIZER))).status_code == 400
+
+
+INVITE_PREFS = {"budget_max_minor": 50000, "interests": ["playa"]}
+
+
+async def test_invite_flow(store: InMemoryNegotiations) -> None:
+    """Lo que hace la app: crear sin miembros, compartir el código, entrar, Empezar."""
+    kicks: list[int] = []
+    async with client(store, kicks) as c:
+        created = await c.post(
+            "/v1/group-negotiations", json=body(members=[], my_name="Darío"), headers=headers(ORGANIZER)
+        )
+        assert created.status_code == 201
+        view = created.json()
+        negotiation_id = view["negotiation_id"]
+        code = view["invite_code"]
+        assert len(code) == 8 and view["i_organize"] is True
+        assert view["members"] == [{"alias": "Viajero 1", "name": "Darío", "submitted": False, "me": True}]
+
+        # El amigo lo escribe a su manera: minúsculas, guion y una "o" en vez de un cero.
+        typed = (code[:4] + "-" + code[4:]).lower().replace("0", "o")
+        joined = await c.post(
+            "/v1/group-negotiations/join", json={"code": typed, "my_name": "Noelia"}, headers=headers(FRIEND)
+        )
+        assert joined.status_code == 200
+        assert joined.json()["negotiation_id"] == negotiation_id
+        assert joined.json()["my_alias"] == "Viajero 2" and joined.json()["i_organize"] is False
+        assert [m["name"] for m in joined.json()["members"]] == ["Darío", "Noelia"]
+        # Entrar dos veces no duplica el asiento.
+        again = await c.post("/v1/group-negotiations/join", json={"code": code}, headers=headers(FRIEND))
+        assert len(again.json()["members"]) == 2
+
+        # Todos han enviado, pero el grupo sigue abierto: NO arranca sola.
+        for who in (ORGANIZER, FRIEND):
+            put = await c.put(
+                f"/v1/group-negotiations/{negotiation_id}/preferences",
+                json=INVITE_PREFS,
+                headers=headers(who),
+            )
+            assert put.json()["status"] == "collecting"
+        assert kicks == [] and store.outbox == []
+
+        # Solo el organizador puede empezar.
+        forbidden = await c.post(f"/v1/group-negotiations/{negotiation_id}/start", headers=headers(FRIEND))
+        assert forbidden.status_code == 403
+        started = await c.post(f"/v1/group-negotiations/{negotiation_id}/start", headers=headers(ORGANIZER))
+        assert started.status_code == 200
+        assert started.json()["status"] == "queued"
+        assert started.json()["invite_code"] is None
+        assert kicks == [1] and len(store.outbox) == 1
+
+        # El código ya no vale: el grupo está cerrado.
+        late = await c.post("/v1/group-negotiations/join", json={"code": code}, headers=headers(STRANGER))
+        assert late.status_code == 404
+        twice = await c.post(f"/v1/group-negotiations/{negotiation_id}/start", headers=headers(ORGANIZER))
+        assert twice.status_code == 409
+
+
+async def test_start_needs_two_ready(store: InMemoryNegotiations) -> None:
+    async with client(store) as c:
+        created = await c.post("/v1/group-negotiations", json=body(members=[]), headers=headers(ORGANIZER))
+        negotiation_id = created.json()["negotiation_id"]
+        await c.put(
+            f"/v1/group-negotiations/{negotiation_id}/preferences",
+            json=INVITE_PREFS,
+            headers=headers(ORGANIZER),
+        )
+        alone = await c.post(f"/v1/group-negotiations/{negotiation_id}/start", headers=headers(ORGANIZER))
+        assert alone.status_code == 409
+        stranger = await c.post(f"/v1/group-negotiations/{negotiation_id}/start", headers=headers(STRANGER))
+        assert stranger.status_code == 404
+
+
+async def test_join_rejects_bad_codes_and_full_groups(store: InMemoryNegotiations) -> None:
+    async with client(store) as c:
+        for bad in ("", "1234", "ZZZZZZZZ", "ÑÑÑÑÑÑÑÑ", "U" * 8):
+            resp = await c.post("/v1/group-negotiations/join", json={"code": bad}, headers=headers(FRIEND))
+            assert resp.status_code in (400, 404), bad
+
+        created = await c.post("/v1/group-negotiations", json=body(members=[]), headers=headers(ORGANIZER))
+        code = created.json()["invite_code"]
+        for i in range(7):
+            who = headers(f"user-{i}")
+            ok = await c.post("/v1/group-negotiations/join", json={"code": code}, headers=who)
+            assert ok.status_code == 200
+        full = await c.post("/v1/group-negotiations/join", json={"code": code}, headers=headers(STRANGER))
+        assert full.status_code == 409
+
+        store.now = FIXED_NOW + timedelta(days=4)
+        other = await c.post("/v1/group-negotiations", json=body(members=[]), headers=headers(FRIEND))
+        other_code = {"code": other.json()["invite_code"]}
+        late = await c.post("/v1/group-negotiations/join", json=other_code, headers=headers(STRANGER))
+        assert late.status_code == 409

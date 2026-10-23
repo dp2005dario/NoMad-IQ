@@ -10,11 +10,14 @@ import '../features/audioguide/audioguide_api.dart';
 import '../features/audioguide/guide_player.dart';
 import '../features/flights/booking.dart';
 import '../features/flights/fares_api.dart';
+import '../features/group/group_api.dart';
 import '../features/map/geo_api.dart';
 import '../features/map/location.dart';
 import '../features/map/location_tracker.dart';
 import '../features/map/map_surface.dart';
+import '../features/map/street_photos_api.dart';
 import '../features/push/notices.dart';
+import '../features/route/flight3d.dart';
 import '../features/route/places_api.dart';
 import 'api_client.dart';
 import 'settings.dart';
@@ -29,11 +32,14 @@ class AppServices {
     required this.glyphsUrl,
     this.notices = const SilentNotices(),
     this.openBooking = openInBrowser,
+    this.webScene,
     SettingsStore? prefs,
   }) : geo = GeoApi(api),
        audioguides = AudioguideApi(api),
        fares = FaresApi(api),
+       group = GroupApi(api),
        places = PlacesApi(api),
+       streetPhotos = StreetPhotosApi(api),
        prefs = prefs ?? MemorySettingsStore() {
     tracker = LocationTracker(
       location: location,
@@ -49,8 +55,14 @@ class AppServices {
   final AudioguideApi audioguides;
   final FaresApi fares;
 
+  /// Viajes en grupo: invitar, preferencias y la negociación de los agentes.
+  final GroupApi group;
+
   /// Fichas de ciudad (Wikipedia) para la Ruta del vuelo.
   final PlacesApi places;
+
+  /// Fotos reales de la calle (Mapillary) para el botón del mapa.
+  final StreetPhotosApi streetPhotos;
 
   /// Ajustes guardados en el móvil (idioma, modo viaje, aeropuerto…).
   final SettingsStore prefs;
@@ -64,6 +76,10 @@ class AppServices {
 
   /// Notificaciones en la barra del móvil (permiso y toques).
   final NoticeCenter notices;
+
+  /// Dónde se ve el Vuelo 3D (un WebView en la app). Sin él (tests), el
+  /// botón "Despegar" hace la animación del mapa plano de siempre.
+  final WebSceneBuilder? webScene;
 
   /// Cómo se dibuja el mapa (MapLibre en la app, uno falso en los tests).
   final MapSurfaceBuilder mapSurface;

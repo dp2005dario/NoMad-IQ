@@ -331,6 +331,9 @@ services:
       # seudónimos de los miembros (misma clave que el notifier; la crea
       # "make keys"). Vacía = se anuncia sin destinatarios.
       NOTIFY_PSEUDONYM_KEY: ${NOTIFY_PSEUDONYM_KEY:-}
+      # Fotos reales de la calle (Mapillary, gratis). Vacía = el botón "Ver
+      # la calle de verdad" no aparece. Ver docs/guia-app-movil.md.
+      MAPILLARY_TOKEN: ${MAPILLARY_TOKEN:-}
       EXPOSE_API_DOCS: "true"
       LOG_LEVEL: ${LOG_LEVEL:-info}
     volumes:

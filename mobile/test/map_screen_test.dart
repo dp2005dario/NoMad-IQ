@@ -9,6 +9,7 @@ import 'package:nomadiq/auth/session.dart';
 import 'package:nomadiq/core/router.dart';
 import 'package:nomadiq/features/map/geo.dart';
 import 'package:nomadiq/features/map/location.dart';
+import 'package:nomadiq/features/map/street_photos_api.dart';
 
 import 'helpers.dart';
 import 'zones_fixture.dart';
@@ -304,5 +305,82 @@ void main() {
     await tester.tap(find.text('Inicia sesión o crea una cuenta'));
     await tester.pumpAndSettle();
     expect(find.text('Iniciar sesión'), findsWidgets);
+  });
+
+  testWidgets('"Ver la calle de verdad" enseña fotos reales del centro', (
+    WidgetTester tester,
+  ) async {
+    final FakeGateway g = backend();
+    final List<Uri> asked = <Uri>[];
+    g.services['/v1/streetview'] = (http.Request r) {
+      asked.add(r.url);
+      const String cdn = 'https://scontent.xx.fbcdn.net/a.jpg';
+      return FakeGateway.json(<String, Object?>{
+        'lat': 40.415,
+        'lon': -3.705,
+        'attribution': 'Mapillary (CC BY-SA 4.0)',
+        'license_url': 'https://creativecommons.org/licenses/by-sa/4.0/',
+        'photos': <Object?>[
+          <String, Object?>{
+            'id': '1',
+            'lat': 40.4151,
+            'lon': -3.7049,
+            'captured_at': '2023-07-22T04:26:40Z',
+            'compass_angle': 90.0,
+            'is_pano': false,
+            'thumb_url': cdn,
+            'image_url': cdn,
+            'creator': 'ana',
+            'page_url': 'https://www.mapillary.com/app/?pKey=1&focus=photo',
+          },
+          // Una con enlace inseguro: se descarta, no rompe nada.
+          <String, Object?>{
+            'id': '2',
+            'lat': 40.4152,
+            'lon': -3.7048,
+            'thumb_url': 'http://x.test/a.jpg',
+            'image_url': cdn,
+            'page_url': 'https://www.mapillary.com/app/?pKey=2',
+          },
+        ],
+      });
+    };
+    final SessionController s = await signedInSession(g);
+    await pumpApp(
+      tester,
+      locale: 'es',
+      initialLocation: Routes.map,
+      session: s,
+      services: fakeServices(s, gateway: g, map: FakeMap()),
+    );
+    await settleMap(tester);
+
+    await tester.tap(find.text('Ver la calle de verdad'));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('La calle de verdad'), findsOneWidget);
+    expect(find.text('Foto: ana · Hecha en 2023'), findsOneWidget);
+    expect(find.text('Abrir en Mapillary'), findsOneWidget);
+    // Solo sale del móvil el centro redondeado a ~100 m.
+    expect(asked.single.queryParameters, <String, String>{
+      'lat': '40.415',
+      'lon': '-3.705',
+    });
+  });
+
+  test('las fotos de calle solo se aceptan con enlaces https', () {
+    expect(
+      StreetPhoto.parse(<String, Object?>{
+        'id': '1',
+        'lat': 1,
+        'lon': 2,
+        'thumb_url': 'javascript:alert(1)',
+        'image_url': 'https://a.test/x.jpg',
+        'page_url': 'https://a.test',
+      }),
+      isNull,
+    );
+    final GeoPoint cell = streetCell(const GeoPoint(40.41694, -3.70361));
+    expect((cell.lat, cell.lon), (40.417, -3.704));
   });
 }

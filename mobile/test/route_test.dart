@@ -1,6 +1,8 @@
 // Tests de la Ruta del vuelo: las matemáticas de la esfera, los datos que
 // van dentro de la app (mapa y aeropuertos) y la pantalla completa: mundo →
 // origen → vuelo → llegada.
+import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -9,6 +11,7 @@ import 'package:nomadiq/core/api_client.dart';
 import 'package:nomadiq/core/router.dart';
 import 'package:nomadiq/core/theme.dart';
 import 'package:nomadiq/features/route/city_sheet.dart';
+import 'package:nomadiq/features/route/flight3d.dart';
 import 'package:nomadiq/features/route/flight_route_screen.dart';
 import 'package:nomadiq/features/flights/booking.dart';
 import 'package:nomadiq/features/route/geo.dart';
@@ -28,6 +31,7 @@ Future<void> pumpRoute(
   String? to = 'NRT',
   PlaceLoader? places,
   OpenBooking? openLink,
+  WebSceneBuilder? scene3d,
 }) async {
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
@@ -46,6 +50,7 @@ Future<void> pumpRoute(
         loadWorld: () async => world,
         places: places,
         openLink: openLink ?? (Uri _) async => true,
+        scene3d: scene3d,
       ),
     ),
   );
@@ -335,5 +340,104 @@ void main() {
       '/fares/map?from=MAD&to=NRT',
     );
     expect(Routes.flightRoute(from: 'MAD'), '/fares/map?from=MAD');
+  });
+
+  group('vuelo 3D', () {
+    test('salen los monumentos cerca de la ruta, en orden', () {
+      final List<String> mt = monumentsAlong(madrid, tokyo);
+      expect(mt.first, 'alcala');
+      expect(<String>['fuji', 'tokio'], contains(mt.last));
+      expect(mt, containsAll(<String>['eiffel', 'brandeburgo'])); // por Europa
+      expect(mt, isNot(contains('taj'))); // la India queda muy al sur
+      expect(mt.length, lessThanOrEqualTo(8));
+      // Madrid → Nueva York: solo la Puerta de Alcalá.
+      expect(monumentsAlong(madrid, const LatLon(40.64, -73.78)), <String>[
+        'alcala',
+      ]);
+      // Sídney → Santiago de Chile: ninguno (y la escena vuela igual).
+      expect(
+        monumentsAlong(
+          const LatLon(-33.95, 151.18),
+          const LatLon(-33.39, -70.79),
+        ),
+        isEmpty,
+      );
+    });
+
+    test('los datos van dentro de la página sin poder romperla', () {
+      final String html = flight3dHtml(
+        '<script>/*NQ_CONFIG*/</script>',
+        <String, Object?>{'x': '</script><b>'},
+      );
+      expect(html, contains('window.NQ_FLIGHT = {"x":"<\\/script><b>"};'));
+      expect('</script>'.allMatches(html), hasLength(1));
+    });
+
+    test('la página empaquetada lleva three.js y el hueco de los datos', () {
+      final String html = File('assets/flight3d/vuelo.html').readAsStringSync();
+      expect(html, contains('/*NQ_CONFIG*/'));
+      expect(html, isNot(contains('/*NQ_BUNDLE*/')));
+      expect(html, isNot(contains('cdn.jsdelivr')));
+      expect(html, isNot(contains('fonts.googleapis')));
+    });
+
+    testWidgets('"Despegar" abre el vuelo 3D y al terminar se ve la llegada', (
+      WidgetTester tester,
+    ) async {
+      final CountryCodes countries = (await tester.runAsync(
+        CountryCodes.load,
+      ))!;
+      expect(countries['Spain'], 'ES');
+      expect(countries['Japan'], 'JP');
+      Map<String, Object?>? config;
+      void Function(String)? send;
+      await pumpRoute(
+        tester,
+        scene3d: (String html, void Function(String) onMessage) {
+          final String json = RegExp(r'window\.NQ_FLIGHT = (.*);')
+              .firstMatch(html)!
+              .group(1)!;
+          config = jsonDecode(json) as Map<String, Object?>;
+          send = onMessage;
+          return const ColoredBox(color: Color(0xFF000000));
+        },
+      );
+      await tester.tap(find.text('Empezar en Madrid'));
+      await tester.pump(const Duration(milliseconds: 1300));
+      await tester.tap(find.text('Despegar hacia Tokyo'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      // La plantilla y los países se leen de los assets (de verdad).
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 200)),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.byType(Flight3dScreen), findsOneWidget);
+      expect(config!['lang'], 'es');
+      expect(config!['from'], <String, Object?>{
+        'code': 'MAD',
+        'city': 'Madrid',
+        'cc': 'ES',
+      });
+      expect((config!['to']! as Map<String, Object?>)['cc'], 'JP');
+      final Map<String, Object?> t = config!['t']! as Map<String, Object?>;
+      expect(t['overflying'], 'Sobrevolando');
+      expect(t['kmOf'], '{km} de {total} km');
+      final Map<String, Object?> texts =
+          config!['texts']! as Map<String, Object?>;
+      expect(
+        (texts['alcala']! as Map<String, Object?>)['name'],
+        'Puerta de Alcalá',
+      );
+
+      // La página avisa de que el pasajero pulsó "Continuar".
+      send!('done');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pump(const Duration(milliseconds: 1300));
+      expect(find.byType(Flight3dScreen), findsNothing);
+      expect(find.text('¡Has llegado a Tokyo!'), findsOneWidget);
+    });
   });
 }

@@ -165,6 +165,16 @@ class Settings(BaseSettings):
     wikimedia_timeout_seconds: float = Field(default=15.0, gt=0, le=60)
     place_ttl_seconds: int = Field(default=7 * 24 * 3600, ge=3600, le=90 * 24 * 3600)
 
+    # --- Fotos reales de la calle (ver el paquete streetview/) ------------------------
+    # La "client token" gratuita de Mapillary. Sin ella, el botón "Ver la calle
+    # de verdad" simplemente no aparece (la ruta no existe). Es un secreto:
+    # en producción, desde un gestor de secretos, nunca en git.
+    mapillary_token: SecretStr | None = None
+    mapillary_rate_per_second: float = Field(default=5.0, gt=0, le=50)
+    mapillary_burst: int = Field(default=10, ge=1, le=100)
+    mapillary_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
+    street_ttl_seconds: int = Field(default=6 * 3600, ge=600, le=48 * 3600)
+
     # --- Redis (caché de audioguías y fichas de ciudad) -----------------------------------------------
     redis_host: str | None = None
     redis_port: int = Field(default=6379, ge=1, le=65535)
@@ -226,11 +236,12 @@ class Settings(BaseSettings):
     # --- Registros (logs) ---------------------------------------------------------
     log_level: Literal["debug", "info", "warning", "error"] = "info"
 
-    @field_validator("notify_pseudonym_key", mode="before")
+    @field_validator("notify_pseudonym_key", "mapillary_token", mode="before")
     @classmethod
     def _empty_is_none(cls, value: object) -> object:
-        # docker compose pasa "NOTIFY_PSEUDONYM_KEY=" (vacía) si no está en el
-        # .env: para nosotros eso es "no configurada", no una clave inválida.
+        # docker compose pasa "NOTIFY_PSEUDONYM_KEY=" o "MAPILLARY_TOKEN="
+        # (vacías) si no están en el .env: para nosotros eso es "no
+        # configurada", no una clave inválida.
         return None if value == "" else value
 
     # ------------------------------------------------------------------------------
@@ -287,8 +298,18 @@ class Settings(BaseSettings):
                 "las fichas de ciudad necesitan Redis: define REDIS_HOST y REDIS_PASSWORD "
                 "(o PLACES_ENABLED=false)"
             )
+        if self.mapillary_token is not None and (not self.redis_host or self.redis_password is None):
+            problems.append(
+                "las fotos de calle necesitan Redis: define REDIS_HOST y REDIS_PASSWORD "
+                "(o quita MAPILLARY_TOKEN)"
+            )
+        if self.mapillary_token is not None and not re.fullmatch(
+            r"MLY\|[0-9]+\|[0-9a-f]+", self.mapillary_token.get_secret_value()
+        ):
+            # No repetimos el valor en el mensaje: es un secreto.
+            problems.append("MAPILLARY_TOKEN no tiene forma de token de Mapillary (MLY|...)")
         if (
-            self.places_enabled
+            (self.places_enabled or self.mapillary_token is not None)
             and not self.audioguides_enabled
             and not self.redis_tls
             and not self.redis_insecure_dev

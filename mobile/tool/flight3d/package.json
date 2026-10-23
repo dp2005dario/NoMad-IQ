@@ -1,0 +1,15 @@
+{
+  "name": "nomadiq-flight3d",
+  "private": true,
+  "type": "module",
+  "description": "Construye mobile/assets/flight3d/vuelo.html (three.js empaquetado, sin CDN).",
+  "scripts": {
+    "build": "node build.mjs",
+    "countries": "node build_country_codes.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.0",
+    "i18n-iso-countries": "7.12.0",
+    "three": "0.160.0"
+  }
+}

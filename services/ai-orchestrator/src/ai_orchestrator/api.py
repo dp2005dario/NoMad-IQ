@@ -29,6 +29,9 @@ Además:
     - Las fichas de ciudad (/v1/places) también son públicas: son datos de
       Wikipedia iguales para todos, y así el modo invitado las ve. Solo se
       aceptan códigos de aeropuerto reales, nunca texto libre.
+    - Las fotos de calle (/v1/streetview) son públicas por lo mismo. La app
+      manda el punto ya redondeado a ~100 m y aquí se vuelve a redondear: el
+      servidor nunca guarda ni registra dónde está nadie.
 """
 
 from __future__ import annotations
@@ -54,6 +57,8 @@ from ai_orchestrator.identity import Principal, current_principal
 from ai_orchestrator.places.domain import PlaceCard
 from ai_orchestrator.places.service import PlaceBusyError, PlaceService, PlaceUnavailableError
 from ai_orchestrator.store import RecommendationStore, StoreError
+from ai_orchestrator.streetview.domain import StreetPhotos
+from ai_orchestrator.streetview.service import StreetBusyError, StreetUnavailableError, StreetViewService
 
 log = logging.getLogger(__name__)
 
@@ -182,6 +187,8 @@ IMMUTABLE_CACHE = "public, max-age=31536000, immutable"
 
 # Una ficha de ciudad cambia poco: el móvil y la CDN pueden guardarla un día.
 PLACE_CACHE = "public, max-age=86400"
+# Las fotos de calle: una hora (sus direcciones caducan a los pocos días).
+STREET_CACHE = "public, max-age=3600"
 # "Esta ciudad no tiene ficha" se recuerda menos (por si aparece).
 PLACE_MISSING_CACHE = "public, max-age=3600"
 
@@ -193,6 +200,7 @@ def create_api(
     audio: AudioCatalog | None = None,
     negotiations: APIRouter | None = None,
     places: PlaceService | None = None,
+    streetview: StreetViewService | None = None,
     expose_docs: bool = False,
 ) -> FastAPI:
     """Crea la API pública (puerto con mTLS)."""
@@ -321,6 +329,22 @@ def create_api(
                 resp.headers["Cache-Control"] = PLACE_MISSING_CACHE
                 return resp
             return JSONResponse(card.model_dump(mode="json"), headers={"Cache-Control": PLACE_CACHE})
+
+    if streetview is not None:
+
+        @app.get("/v1/streetview", response_model=StreetPhotos)
+        async def get_streetview(
+            lat: Annotated[float, Query(ge=-85, le=85)],
+            lon: Annotated[float, Query(ge=-180, le=180)],
+        ) -> JSONResponse:
+            try:
+                photos = await streetview.near(lat, lon)
+            except (StreetBusyError, StreetUnavailableError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "fotos de calle ocupadas")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            # Sin fotos también es 200 (lista vacía): la app lo explica.
+            return JSONResponse(photos.model_dump(mode="json"), headers={"Cache-Control": STREET_CACHE})
 
     if negotiations is not None:
         # Las rutas /v1/group-negotiations viven en negotiation/api.py.

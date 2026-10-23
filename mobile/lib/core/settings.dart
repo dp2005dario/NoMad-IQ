@@ -1,5 +1,5 @@
-// Ajustes del usuario que la app recuerda entre aperturas (idioma, modo viaje
-// y el aeropuerto desde el que buscas vuelos).
+// Ajustes del usuario que la app recuerda entre aperturas (idioma, modo viaje,
+// el aeropuerto desde el que buscas vuelos y tu nombre en los viajes en grupo).
 //
 // ChangeNotifier es un "altavoz": cuando el ajuste cambia, avisa a quien esté
 // escuchando (la app entera) y la pantalla se vuelve a dibujar en el idioma nuevo.
@@ -17,6 +17,10 @@ abstract interface class SettingsStore {
   /// Aeropuerto de salida de los chollos (código IATA, "MAD"); null = no elegido.
   String? readFlightOrigin();
   Future<void> writeFlightOrigin(String iata);
+
+  /// Cómo te llamas para tus grupos ("Noelia"); null = aún no lo dijiste.
+  String? readGroupName();
+  Future<void> writeGroupName(String name);
 }
 
 /// Versión real: guarda en el almacenamiento del móvil (SharedPreferences).
@@ -26,6 +30,7 @@ final class PreferencesSettingsStore implements SettingsStore {
   static const String _localeKey = 'locale';
   static const String _travelKey = 'travel_mode';
   static const String _originKey = 'flight_origin';
+  static const String _groupNameKey = 'group_name';
   final SharedPreferencesWithCache _prefs;
 
   static Future<PreferencesSettingsStore> open() async {
@@ -33,7 +38,12 @@ final class PreferencesSettingsStore implements SettingsStore {
         await SharedPreferencesWithCache.create(
           cacheOptions: const SharedPreferencesWithCacheOptions(
             // Solo puede leer/escribir estas claves.
-            allowList: <String>{_localeKey, _travelKey, _originKey},
+            allowList: <String>{
+              _localeKey,
+              _travelKey,
+              _originKey,
+              _groupNameKey,
+            },
           ),
         );
     return PreferencesSettingsStore(prefs);
@@ -59,6 +69,13 @@ final class PreferencesSettingsStore implements SettingsStore {
   @override
   Future<void> writeFlightOrigin(String iata) =>
       _prefs.setString(_originKey, iata);
+
+  @override
+  String? readGroupName() => _prefs.getString(_groupNameKey);
+
+  @override
+  Future<void> writeGroupName(String name) =>
+      _prefs.setString(_groupNameKey, name);
 }
 
 /// Versión en memoria para los tests (no toca el disco).
@@ -88,6 +105,14 @@ final class MemorySettingsStore implements SettingsStore {
 
   @override
   Future<void> writeFlightOrigin(String iata) async => flightOrigin = iata;
+
+  String? groupName;
+
+  @override
+  String? readGroupName() => groupName;
+
+  @override
+  Future<void> writeGroupName(String name) async => groupName = name;
 }
 
 class SettingsController extends ChangeNotifier {

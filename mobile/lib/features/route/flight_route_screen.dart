@@ -19,6 +19,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../flights/booking.dart';
 import '../flights/flight_format.dart';
 import 'city_sheet.dart';
+import 'flight3d.dart';
 import 'geo.dart';
 import 'places_api.dart';
 import 'route_painter.dart';
@@ -34,6 +35,7 @@ class FlightRouteScreen extends StatefulWidget {
     this.loadWorld,
     this.places,
     this.openLink = openInBrowser,
+    this.scene3d,
   });
 
   /// Códigos IATA ("MAD", "NRT"). Sin destino, primero se pregunta.
@@ -49,6 +51,10 @@ class FlightRouteScreen extends StatefulWidget {
 
   /// Abre un enlace fuera de la app (Wikipedia, la página de una foto).
   final OpenBooking openLink;
+
+  /// Dónde se ve el Vuelo 3D. Con él, "Despegar" abre el vuelo en 3D; sin
+  /// él, el avión cruza este mapa plano.
+  final WebSceneBuilder? scene3d;
 
   /// Cuánto dura la simulación del vuelo.
   static const Duration flightAnimation = Duration(seconds: 14);
@@ -213,11 +219,31 @@ class _FlightRouteScreenState extends State<FlightRouteScreen>
 
   void _takeOff() {
     if (_route.isEmpty) return;
+    final WebSceneBuilder? scene = widget.scene3d;
+    final Airport? from = _origin, to = _dest;
+    if (scene != null && from != null && to != null) {
+      unawaited(_fly3d(scene, from, to));
+      return;
+    }
     setState(() => _stage = RouteStage.flight);
     _moveTo(
       MapCamera(_route.first, _followZoom),
       then: () => _flight.forward(from: 0),
     );
+  }
+
+  /// El vuelo en 3D a pantalla completa. Al volver tras aterrizar, este
+  /// mapa ya enseña el destino (con su hora local).
+  Future<void> _fly3d(WebSceneBuilder scene, Airport from, Airport to) async {
+    final bool? landed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        fullscreenDialog: true,
+        builder: (BuildContext context) =>
+            Flight3dScreen(from: from, to: to, scene: scene),
+      ),
+    );
+    if (!mounted || landed != true) return;
+    _arrive();
   }
 
   void _land() {

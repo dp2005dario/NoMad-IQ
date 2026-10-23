@@ -111,3 +111,17 @@ def test_audioguides_need_redis_and_a_known_language() -> None:
         settings(**{**DEV, "audioguide_default_language": "xx"})
     # El cerrojo dura más que la peor generación posible (3 intentos de 60 s).
     assert settings(**DEV).audioguide_lock_ttl_seconds > 180
+
+
+def test_mapillary_token_is_optional_checked_and_never_echoed() -> None:
+    # Sin token, el botón "Ver la calle de verdad" no existe y nada falla.
+    assert settings(**DEV).mapillary_token is None
+    assert settings(**DEV, mapillary_token="").mapillary_token is None
+    assert settings(**DEV, mapillary_token="MLY|123|abc0").mapillary_token is not None
+    with pytest.raises(ValidationError) as err:
+        settings(**DEV, mapillary_token="secreto-raro")
+    assert "MAPILLARY_TOKEN" in str(err.value)
+    assert "secreto-raro" not in str(err.value)
+    no_redis = {k: v for k, v in DEV.items() if k not in ("redis_host", "redis_password")}
+    with pytest.raises(ValidationError, match="fotos de calle necesitan Redis"):
+        settings(**no_redis, audioguides_enabled=False, places_enabled=False, mapillary_token="MLY|1|a")

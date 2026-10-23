@@ -50,7 +50,7 @@ import uvicorn
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 from aiokafka.errors import KafkaError
 from fastapi import APIRouter
-from pydantic import ValidationError
+from pydantic import SecretStr, ValidationError
 from redis.asyncio import Redis
 
 from ai_orchestrator.api import create_api, create_management_api
@@ -90,6 +90,8 @@ from ai_orchestrator.store import (
     create_pool,
     migrate,
 )
+from ai_orchestrator.streetview.mapillary import MapillaryBusyError, MapillaryClient
+from ai_orchestrator.streetview.service import RedisStreetCache, StreetSettings, StreetViewService
 
 log = logging.getLogger("ai_orchestrator")
 
@@ -211,6 +213,30 @@ def _places(settings: Settings, redis: Redis, stack: AsyncExitStack) -> PlaceSer
         ),
         cache=RedisPlaceCache(redis),
         settings=PlaceSettings(ttl_seconds=settings.place_ttl_seconds),
+    )
+
+
+def _streetview(
+    settings: Settings, token: SecretStr, redis: Redis, stack: AsyncExitStack
+) -> StreetViewService:
+    """Fotos de calle: Mapillary con límite de ritmo + caché en Redis."""
+    http = httpx.AsyncClient(
+        timeout=httpx.Timeout(settings.mapillary_timeout_seconds, connect=5.0),
+        follow_redirects=False,
+    )
+    stack.push_async_callback(http.aclose)
+    return StreetViewService(
+        mapillary=MapillaryClient(
+            http,
+            token=token,
+            limiter=RateLimiter(
+                settings.mapillary_rate_per_second,
+                settings.mapillary_burst,
+                busy=lambda: MapillaryBusyError("límite de peticiones a Mapillary"),
+            ),
+        ),
+        cache=RedisStreetCache(redis),
+        settings=StreetSettings(ttl_seconds=settings.street_ttl_seconds),
     )
 
 
@@ -376,9 +402,20 @@ async def run(settings: Settings) -> int:
             )
 
         # --- Fichas de ciudad (Wikipedia/Wikidata con caché en Redis) -------------------
+        # Fichas y fotos de calle comparten una conexión a Redis.
+        public_redis = (
+            _redis(settings, stack)
+            if settings.places_enabled or settings.mapillary_token is not None
+            else None
+        )
         places: PlaceService | None = None
-        if settings.places_enabled:
-            places = _places(settings, _redis(settings, stack), stack)
+        if settings.places_enabled and public_redis is not None:
+            places = _places(settings, public_redis, stack)
+
+        # --- Fotos reales de la calle (Mapillary con caché en Redis) ---------------------
+        streetview: StreetViewService | None = None
+        if settings.mapillary_token is not None and public_redis is not None:
+            streetview = _streetview(settings, settings.mapillary_token, public_redis, stack)
 
         # --- Negociación de grupo (tercer consumidor + relé del outbox) -----------------
         negotiations: APIRouter | None = None
@@ -408,6 +445,7 @@ async def run(settings: Settings) -> int:
                 audio=audio,
                 negotiations=negotiations,
                 places=places,
+                streetview=streetview,
                 expose_docs=settings.expose_api_docs,
             ),
             settings.http_port,

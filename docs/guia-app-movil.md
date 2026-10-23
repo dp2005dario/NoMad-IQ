@@ -266,6 +266,14 @@ tu posición y la audioguía de cada zona.
     "Wikipedia de los mapas". Los sirve **OpenFreeMap** gratis y sin
     rastrear a nadie.
   - Los colores están en `lib/features/map/map_style.dart`.
+  - **De cerca (zoom 16 o más) la ciudad se ve "de verdad"**:
+    - Las calles se pintan en tres pasadas, como capas de pintura: bordillo, acera y asfalto. Lo que asoma por los lados es la acera.
+    - Las avenidas llevan la línea discontinua del centro.
+    - Plazas y calles peatonales tienen textura de adoquín.
+    - Los edificios en 3D llevan fachada con ventanas. De noche, parte de ellas se encienden.
+    - Una "tapa" fina de color encima de cada edificio evita que salgan ventanas en el tejado.
+  - Esas texturas no son fotos: se pintan con código en `map_patterns.dart` (unos cuadraditos de 64 píxeles). No pesan nada y cambian con la hora: de día, al atardecer y de noche.
+  - Todo sigue costando 0 €: son los mismos datos gratuitos; solo cambia cómo se dibujan.
   - Los nombres de calles y ciudades salen en tu idioma si OpenStreetMap
     los tiene traducidos. Si no, en alfabeto latino.
 - **Las zonas se piden por trozos.** La app solo pide las zonas del
@@ -299,6 +307,41 @@ tu posición y la audioguía de cada zona.
 - **Solo con cuenta.** Las zonas y las audioguías se piden con tu pase
   (token). Un invitado ve el mapa y una invitación a crear su cuenta.
 
+### "Ver la calle de verdad" (fotos reales de Mapillary)
+
+El mapa 3D es un dibujo hecho con datos de OpenStreetMap. Para ver cómo es
+la calle **de verdad**, el botón **Ver la calle de verdad** (abajo, junto a
+"mi ubicación") abre fotos reales a pie de calle del centro de lo que ves.
+
+- **De dónde salen:** de [Mapillary](https://www.mapillary.com), millones de
+  fotos que hace gente de todo el mundo. Son gratis y con licencia libre
+  (CC BY-SA 4.0): por eso la app dice quién hizo cada foto y deja abrirla en
+  Mapillary. Analogía: es como Street View, pero hecho por la comunidad.
+- **Privacidad:** la app solo manda el centro del mapa **redondeado a unos
+  100 m** (tres decimales). El servidor tampoco lo apunta en sus registros.
+- **0 € con millones de usuarios:** el servidor guarda la respuesta de cada
+  "casilla" de ~100 m durante 6 horas en Redis. Mil personas mirando la
+  Puerta del Sol = **una** petición a Mapillary. Si se pasa del límite de
+  peticiones por segundo, la app dice "prueba más tarde" (nunca hay factura).
+- **Panorámicas de 360°:** se ven arrastrando el dedo a los lados.
+
+**Activarlo (una vez, gratis):**
+
+1. Entra en <https://www.mapillary.com/dashboard/developers> con una cuenta
+   de Mapillary (o de Facebook) y pulsa **Register application**.
+2. Pon un nombre (por ejemplo, `NomadIQ`), una web (la del repositorio) y
+   marca solo el permiso de **lectura** ("Read").
+3. Copia la **Client Token** (empieza por `MLY|`).
+4. En VS Code, abre `infrastructure/.env` (no el `.env.example`) y añade:
+   ```
+   MAPILLARY_TOKEN=MLY|...tu token...
+   ```
+   Es **secreta**: `.env` no se sube a GitHub. Nunca la pegues en el código.
+5. Reinicia el ai-orchestrator:
+   `docker compose --profile apps up -d ai-orchestrator`.
+
+Sin token, el botón sale igual pero dice que las fotos no están disponibles.
+
 ### Probarlo en tu PC
 
 1. Arranca el backend con las apps:
@@ -321,7 +364,7 @@ tu posición y la audioguía de cada zona.
   el servidor tendrá que grabar también otro formato.
 - **Fotos reales de cada zona** (Wikimedia Commons, con sus créditos) y el
   **tiempo** (sol, nubes, lluvia) de la maqueta. Necesitan su propio
-  servicio en el backend.
+  servicio en el backend. (Las fotos de **la calle** ya están: ver arriba.)
 - **Rótulos en hindi.** MapLibre aún no dibuja bien la escritura devanagari:
   si falta el nombre en tu idioma, se usa el alfabeto latino.
 
@@ -474,8 +517,45 @@ cd mobile
 flutter test test/flights_test.dart
 ```
 
+## 9 ter. Grupo: viajes en grupo con Flyra
+
+La pestaña **Grupo** (maqueta "Grupo") conecta con la negociación de agentes
+del ai-orchestrator (ver `docs/guia-negociacion-grupo.md`).
+
+| En pantalla | Qué hace |
+|---|---|
+| "Nuevo viaje en grupo" | Nombre del viaje, tu nombre para el grupo, la divisa y de 2 a 10 opciones (una ciudad, un piso, un hotel…) con precio por persona y lo que ofrece cada una ("Playa", "Historia"…). Al crearlo recibes un **código de invitación** |
+| El código ("7K2M-9QXD") | Cópialo y mándalo por WhatsApp. Quien lo escriba en "Unirme con un código" entra en el viaje (hasta 8 personas) |
+| "Tus preferencias" | Lo máximo que pagarías por persona (una línea roja que ningún agente cruza), lo que te gusta, lo que prefieres evitar y una nota. **Solo lo ve tu agente**; el servidor lo borra al terminar |
+| "Empezar la negociación" | Solo quien organiza, con al menos dos personas listas. Si nadie lo pulsa, empieza sola al acabar el plazo |
+| "Los agentes están negociando" | Tarda unos minutos. La pantalla pregunta cada 4 segundos cómo va (cada 20 mientras se espera a la gente) y deja de preguntar sola a los 30 minutos para no gastar batería |
+| El resultado | La opción elegida y por qué (acuerdo, árbitro o "ninguna cabe en el presupuesto de todos"), cuántas opciones se cayeron por presupuesto (sin decir de quién) y lo que dijo el agente de cada uno |
+| Modo invitado | Grupo pide crear una cuenta gratis: tus amigos tienen que poder encontrarte |
+
+### Cómo funciona (con analogías)
+
+- **`lib/features/group/group_api.dart`** es el "traductor": revisa cada campo
+  que llega del servidor (estado, divisa, opciones, resultado). Si algo llega
+  raro, error claro en vez de pantalla rota.
+- **Los gustos son palabras fijas** (`beach`, `museums`…) y cada idioma tiene
+  su traducción en los `.arb`. Así nadie puede colar instrucciones para la IA
+  dentro de una etiqueta.
+- **Los precios se escriben en números enteros** (70, no 70,50) y se pasan a
+  céntimos según la divisa (`wholeToMinor` en `lib/core/money.dart`: el yen
+  no tiene céntimos).
+- **La explicación del resultado la escribe la app** con sus textos
+  traducidos, a partir de los datos (acuerdo, rondas, descartes). La frase de
+  cada agente sí llega del servidor, en el idioma de la negociación.
+
+### Probarlo en tu PC
+
+```bash
+cd mobile
+flutter test test/group_test.dart
+```
+
 ## 10. Lo siguiente
 
 Cada PR sustituye una pantalla "Muy pronto" por la de verdad, siguiendo las
-maquetas, en este orden: (Vuelos ya está) Ruta del vuelo en globo y 3D, Grupo con la
-negociación de Flyra, Cámara, Dinero y Bóveda.
+maquetas, en este orden: (Vuelos, Ruta del vuelo, Vuelo 3D y Grupo ya están)
+Cámara, Dinero y Bóveda.
