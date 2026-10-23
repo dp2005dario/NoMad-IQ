@@ -16,6 +16,7 @@ import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'expenses_api.dart';
 import 'fx_view.dart';
+import 'kitty_view.dart';
 import 'rooms_view.dart';
 import 'money_widgets.dart';
 
@@ -87,6 +88,7 @@ class _MoneyScreenState extends State<MoneyScreen> {
               MoneyTab.expenses => const ExpenseGroupsView(),
               MoneyTab.fx => const FxView(),
               MoneyTab.rooms => const RoomsView(),
+              MoneyTab.kitty => const KittyView(),
               _ => _Soon(text: t.moneySoon),
             },
           ),

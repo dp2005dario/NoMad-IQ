@@ -146,7 +146,7 @@ class _ExpenseGroupScreenState extends State<ExpenseGroupScreen> {
     final int? minor = await showDialog<int>(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        title: Text(t.moneySettleTitle(group.nameOf(debt.toSeat))),
+        title: Text(t.moneySettleTitle(personName(t, group, debt.toSeat))),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -302,7 +302,7 @@ class _ExpenseGroupScreenState extends State<ExpenseGroupScreen> {
                       child: ListTile(
                         leading: SeatAvatar(
                           seat: e.payerSeat,
-                          name: group.nameOf(e.payerSeat),
+                          name: personName(t, group, e.payerSeat),
                         ),
                         title: Text(e.title),
                         subtitle: Text(

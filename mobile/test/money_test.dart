@@ -141,6 +141,14 @@ class MoneyBackend {
       payments.add(jsonDecode(r.body) as Map<String, Object?>);
       return FakeGateway.json(<String, Object?>{}, 201);
     };
+    g.services['$base/$groupId/kitty'] = (http.Request r) {
+      kittyAsks.add(jsonDecode(r.body) as Map<String, Object?>);
+      return http.Response('', 204);
+    };
+    g.services['$base/$groupId/weights'] = (http.Request r) {
+      weights.add(jsonDecode(r.body) as Map<String, Object?>);
+      return http.Response('', 204);
+    };
     g.services['$base/$groupId/expenses/$expenseId/items/0/claim'] =
         (http.Request r) {
           claims.add(jsonDecode(r.body) as Map<String, Object?>);
@@ -154,7 +162,22 @@ class MoneyBackend {
   final List<Map<String, Object?>> expenses = <Map<String, Object?>>[];
   final List<Map<String, Object?>> payments = <Map<String, Object?>>[];
   final List<Map<String, Object?>> claims = <Map<String, Object?>>[];
+  final List<Map<String, Object?>> kittyAsks = <Map<String, Object?>>[];
+  final List<Map<String, Object?>> weights = <Map<String, Object?>>[];
 }
+
+/// Un bote con hucha común: cada uno puso 30 € y se gastaron 10 €.
+Map<String, Object?> kittyGroupJson() =>
+    groupJson(withExpense: false)
+      ..['kitty'] = <String, Object?>{
+        'left_minor': 5000,
+        'spent_minor': 1000,
+        'ask_minor': 3000,
+        'contributed': <Object?>[
+          <String, Object?>{'seat': 1, 'amount_minor': 3000},
+          <String, Object?>{'seat': 2, 'amount_minor': 3000},
+        ],
+      };
 
 /// Un escáner de tickets falso que "lee" las filas que le digamos.
 class FakeScanner implements ReceiptScanner {
@@ -498,6 +521,73 @@ void main() {
         hasLength(2),
       );
       expect(find.text('Apuntado en el bote Madrid'), findsOneWidget);
+    });
+  });
+
+  group('bote común y modo pareja', () {
+    testWidgets('poner dinero y pedir más a todos', (
+      WidgetTester tester,
+    ) async {
+      final MoneyBackend b = MoneyBackend()..current = kittyGroupJson();
+      await pumpMoney(
+        tester,
+        backend: b,
+        initialLocation: Routes.money(tab: MoneyTab.kitty),
+      );
+      expect(find.text('Hecho'), findsNWidgets(2));
+      await tester.tap(find.text('Poner dinero'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, '20');
+      await tester.tap(find.widgetWithText(FilledButton, 'ACEPTAR'));
+      await tester.pumpAndSettle();
+      expect(b.payments.single, <String, Object?>{
+        'to_seat': 0,
+        'amount_minor': 2000,
+      });
+      await tester.tap(find.textContaining('Cada uno:'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).last, '40');
+      await tester.tap(find.widgetWithText(FilledButton, 'ACEPTAR'));
+      await tester.pumpAndSettle();
+      expect(b.kittyAsks.single, <String, Object?>{'ask_minor': 4000});
+    });
+
+    testWidgets('pareja: repartir según ingresos guarda 60/40', (
+      WidgetTester tester,
+    ) async {
+      final MoneyBackend b = MoneyBackend()..current = groupJson();
+      await pumpMoney(
+        tester,
+        backend: b,
+        initialLocation: Routes.money(tab: MoneyTab.kitty),
+      );
+      expect(find.text('A medias'), findsOneWidget);
+      await tester.tap(find.text('Según ingresos'));
+      await tester.pumpAndSettle();
+      expect(find.text('Tú 60 % · 40 %'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'ACEPTAR'));
+      await tester.pumpAndSettle();
+      expect(b.weights.single, <String, Object?>{
+        'weights': <Object?>[
+          <String, Object?>{'seat': 1, 'weight': 60},
+          <String, Object?>{'seat': 2, 'weight': 40},
+        ],
+      });
+      expect(find.text('Reparto guardado'), findsOneWidget);
+    });
+
+    test('un gasto por porcentaje manda los pesos', () {
+      final NewExpense e = NewExpense(
+        title: 'Súper',
+        amountMinor: 10000,
+        payerSeat: 1,
+        split: SplitMode.weights,
+        participants: <int>[1, 2],
+        weights: <int>[60, 40],
+        spentOn: DateTime(2026, 10, 23),
+      );
+      expect(e.toJson()['weights'], <int>[60, 40]);
+      expect(e.toJson()['split'], 'weights');
     });
   });
 }

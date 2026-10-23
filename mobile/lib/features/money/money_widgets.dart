@@ -44,11 +44,18 @@ const List<Color> seatColors = <Color>[
   Color(0xFFE6D86B),
 ];
 
-Color seatColor(int seat) => seatColors[(seat - 1) % seatColors.length];
+Color seatColor(int seat) => seat == kittySeat
+    ? const Color(0xFFFFD9A8)
+    : seatColors[(seat - 1) % seatColors.length];
 
-/// "Tú" para ti; el nombre que eligió para los demás.
+/// "Tú" para ti, "El bote común" para la hucha y el nombre que eligió para
+/// los demás.
 String personName(AppLocalizations t, ExpenseGroup group, int seat) =>
-    seat == group.mySeat ? t.groupYou : group.nameOf(seat);
+    seat == kittySeat
+    ? t.kittyName
+    : seat == group.mySeat
+    ? t.groupYou
+    : group.nameOf(seat);
 
 /// El dinero escrito en el idioma de la persona.
 String money(BuildContext context, int minor, String currency) => formatMoney(

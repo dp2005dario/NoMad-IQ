@@ -2307,5 +2307,173 @@
   "roomsSave": "Save in the pot",
   "@roomsSave": {
     "description": "Button: save in expenses."
+  },
+  "kittyName": "The shared kitty",
+  "@kittyName": {
+    "description": "Name of the shared kitty (seat 0) in lists."
+  },
+  "moneySplitWeights": "By percentage",
+  "@moneySplitWeights": {
+    "description": "Split mode: by percentages/weights."
+  },
+  "moneyWeightsInvalid": "Each person needs a share between 1 and 100",
+  "@moneyWeightsInvalid": {
+    "description": "Error: weights must be 1-100 for each person."
+  },
+  "kittyPut": "Put money in",
+  "@kittyPut": {
+    "description": "Button/dialog: put money into the kitty."
+  },
+  "kittyPutDone": "You put {amount} in the kitty",
+  "@kittyPutDone": {
+    "description": "Snack: you put money in.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kittyAskTitle": "How much should each person put?",
+  "@kittyAskTitle": {
+    "description": "Dialog: how much each person should put."
+  },
+  "kittyAskDone": "Asked everyone for {amount}",
+  "@kittyAskDone": {
+    "description": "Snack: asked everyone for an amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kittyRatioSaved": "Split saved",
+  "@kittyRatioSaved": {
+    "description": "Snack: couple split ratio saved."
+  },
+  "kittyGroup": "Group",
+  "@kittyGroup": {
+    "description": "Segment: group kitty."
+  },
+  "kittyCouple": "Couple",
+  "@kittyCouple": {
+    "description": "Segment: couple mode."
+  },
+  "kittyHeader": "{title} · {count} people",
+  "@kittyHeader": {
+    "description": "Kitty header: pot title and people count.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kittyMeta": "Put in {put} · spent {spent}",
+  "@kittyMeta": {
+    "description": "Kitty: total put and spent.",
+    "placeholders": {
+      "put": {
+        "type": "String"
+      },
+      "spent": {
+        "type": "String"
+      }
+    }
+  },
+  "kittySpends": "Paid with the kitty",
+  "@kittySpends": {
+    "description": "Section: what was paid with the kitty."
+  },
+  "kittyNoSpends": "Nothing paid with the kitty yet",
+  "@kittyNoSpends": {
+    "description": "Empty: nothing paid with the kitty yet."
+  },
+  "kittySpend": "Pay with kitty",
+  "@kittySpend": {
+    "description": "Button: pay something with the kitty."
+  },
+  "kittyAsk": "Ask everyone",
+  "@kittyAsk": {
+    "description": "Button: ask everyone to put money."
+  },
+  "kittyAskAgain": "Each one: {amount}",
+  "@kittyAskAgain": {
+    "description": "Button: current ask amount, tap to change.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kittyRefund": "Take back {amount}",
+  "@kittyRefund": {
+    "description": "Button: the kitty gives you back what is left for you.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kittyDone": "Done",
+  "@kittyDone": {
+    "description": "Person chip: already put their share."
+  },
+  "kittyPending": "Pending",
+  "@kittyPending": {
+    "description": "Person chip: still has to put money."
+  },
+  "kittyCoupleOnlyTwo": "Couple mode is for pots with exactly 2 people",
+  "@kittyCoupleOnlyTwo": {
+    "description": "Couple mode needs exactly 2 people in the pot."
+  },
+  "kittyHowSplit": "How do we split?",
+  "@kittyHowSplit": {
+    "description": "Couple: how do we split."
+  },
+  "kittyHalf": "Half each",
+  "@kittyHalf": {
+    "description": "Couple: split half and half."
+  },
+  "kittyByIncome": "By income",
+  "@kittyByIncome": {
+    "description": "Couple: split by income ratio."
+  },
+  "kittyTogether": "Spent together",
+  "@kittyTogether": {
+    "description": "Couple stat: spent together."
+  },
+  "kittyAccounts": "Accounts",
+  "@kittyAccounts": {
+    "description": "Couple stat: accounts."
+  },
+  "kittyOwes": "{name}: owes {amount}",
+  "@kittyOwes": {
+    "description": "Couple: who owes how much.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kittyCoupleHelp": "Each expense is split with your percentage. No calculator, no awkward talks.",
+  "@kittyCoupleHelp": {
+    "description": "Couple mode explanation."
+  },
+  "kittyRatioLine": "You {mine}% · {other}%",
+  "@kittyRatioLine": {
+    "description": "Couple ratio line: mine vs other in percent.",
+    "placeholders": {
+      "mine": {
+        "type": "int"
+      },
+      "other": {
+        "type": "int"
+      }
+    }
   }
 }

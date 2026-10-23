@@ -139,3 +139,28 @@ La pestaña **Habitaciones** reparte un alojamiento entre la gente de un bote:
 
 El reparto usa el mismo método que el servidor (resto mayor): nunca se
 pierde ni sobra un céntimo.
+
+## 9. Bote común y modo pareja
+
+La pestaña **Bote común** tiene dos modos:
+
+**Grupo (la hucha).** Es como el sobre con billetes que lleva uno en la
+mochila: todos ponen al principio y se paga desde ahí.
+
+- Para el servidor, la hucha es el **asiento 0**. Poner dinero = un pago al
+  asiento 0; pagar con la hucha = un gasto cuyo pagador es el asiento 0; que
+  la hucha te devuelva lo que sobra = un pago con `from_kitty: true`.
+- **Pedir a todos** guarda cuánto debe poner cada uno
+  (`PUT /v1/expense-groups/{id}/kitty`). Cada persona sale con "Hecho" o
+  "Pendiente".
+- Así no hacen falta tablas nuevas: las mismas cuentas de siempre (saldos y
+  mínimo de pagos) ya saben repartir la hucha.
+
+**Pareja.** Para botes de 2 personas: **A medias** o **Según ingresos**
+(por ejemplo 60/40). El porcentaje se guarda en el bote
+(`PUT /v1/expense-groups/{id}/weights`) y cada gasto nuevo se reparte con
+él (reparto `weights`). En el formulario de gasto también puedes elegir
+**Por porcentaje** para un gasto suelto.
+
+Ficheros: `migrations/0009_kitty_weights.sql`, `expenses/domain.py`
+(`KITTY`, `kitty()`), `mobile/lib/features/money/kitty_view.dart`.

@@ -151,15 +151,19 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
               ),
             ],
             const SizedBox(height: 20),
-            Text(
-              byItems ? t.moneySplitItems : t.moneySplitEqual,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text(switch (e.split) {
+              SplitMode.items => t.moneySplitItems,
+              SplitMode.weights => t.moneySplitWeights,
+              SplitMode.equal => t.moneySplitEqual,
+            }, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             for (final MapEntry<int, int> s in e.shares.entries)
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: SeatAvatar(seat: s.key, name: _group.nameOf(s.key)),
+                leading: SeatAvatar(
+                  seat: s.key,
+                  name: personName(t, _group, s.key),
+                ),
                 title: Text(personName(t, _group, s.key)),
                 trailing: Text(
                   money(context, s.value, _group.currency),

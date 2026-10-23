@@ -29,19 +29,27 @@ const int maxGroupTitle = 60;
 const int maxPersonName = 40;
 const int maxItemName = 60;
 
+/// El bote común ("la hucha") es el asiento 0: poner dinero en él es un pago
+/// al 0 y pagar con él es un gasto cuyo pagador es el 0.
+const int kittySeat = 0;
+
 /// Cómo se reparte un gasto.
 enum SplitMode {
   /// A partes iguales entre los que participan.
   equal,
 
   /// Cada uno paga lo que tomó (las líneas del ticket).
-  items;
+  items,
+
+  /// Con porcentajes (modo pareja "según sueldo": 60 y 40).
+  weights;
 
   String get wire => name;
 
   static SplitMode parse(Object? raw) => switch (raw) {
     'equal' => SplitMode.equal,
     'items' => SplitMode.items,
+    'weights' => SplitMode.weights,
     _ => _bad(),
   };
 }
@@ -125,6 +133,7 @@ class Expense {
     required this.createdBy,
     this.originalMinor,
     this.originalCurrency,
+    this.weights = const <int>[],
   });
 
   final String id;
@@ -143,6 +152,12 @@ class Expense {
   /// Lo que marcaba el ticket si era en otra moneda (solo para enseñarlo).
   final int? originalMinor;
   final String? originalCurrency;
+
+  /// Con [SplitMode.weights]: un peso por participante, en el mismo orden.
+  final List<int> weights;
+
+  /// ¿Se pagó con el bote común?
+  bool get fromKitty => payerSeat == kittySeat;
 
   static Expense parse(Object? json) {
     final Map<String, Object?> m = _map(json);
@@ -165,7 +180,7 @@ class Expense {
       id: _str(m['expense_id']),
       title: _str(m['title']),
       amountMinor: amount,
-      payerSeat: _seat(m['payer_seat']),
+      payerSeat: _seatOrKitty(m['payer_seat']),
       split: SplitMode.parse(m['split']),
       participants: _seats(m['participants']),
       items: items.map(TicketItem.parse).toList(),
@@ -177,6 +192,7 @@ class Expense {
       createdBy: _seat(m['created_by']),
       originalMinor: original as int?,
       originalCurrency: originalCurrency as String?,
+      weights: m['weights'] == null ? const <int>[] : _ints(m['weights']),
     );
   }
 }
@@ -196,9 +212,47 @@ class Payment {
   static Payment parse(Object? json) {
     final Map<String, Object?> m = _map(json);
     return Payment(
-      fromSeat: _seat(m['from_seat']),
-      toSeat: _seat(m['to_seat']),
+      fromSeat: _seatOrKitty(m['from_seat']),
+      toSeat: _seatOrKitty(m['to_seat']),
       amountMinor: _int(m['amount_minor']),
+    );
+  }
+}
+
+/// El bote común de un bote ("la hucha").
+class Kitty {
+  const Kitty({
+    required this.leftMinor,
+    required this.spentMinor,
+    required this.contributed,
+    this.askMinor,
+  });
+
+  /// Lo que queda dentro (negativo si se gastó de más).
+  final int leftMinor;
+  final int spentMinor;
+
+  /// Cuánto se pide a cada uno (null = no se ha pedido nada).
+  final int? askMinor;
+
+  /// Lo que ha puesto cada asiento (ya descontado lo que le devolvió).
+  final Map<int, int> contributed;
+
+  int get putMinor => contributed.values.fold(0, (int a, int b) => a + b);
+
+  static Kitty parse(Object? json) {
+    final Map<String, Object?> m = _map(json);
+    final Object? ask = m['ask_minor'];
+    final Object? put = m['contributed'];
+    if ((ask != null && ask is! int) || put is! List<Object?>) _bad();
+    return Kitty(
+      leftMinor: _int(m['left_minor']),
+      spentMinor: _int(m['spent_minor']),
+      askMinor: ask as int?,
+      contributed: <int, int>{
+        for (final Object? c in put)
+          _seat(_map(c)['seat']): _int(_map(c)['amount_minor']),
+      },
     );
   }
 }
@@ -217,6 +271,8 @@ class ExpenseGroup {
     required this.balances,
     required this.transfers,
     required this.totalMinor,
+    this.kitty,
+    this.defaultWeights = const <int, int>{},
   });
 
   final String id;
@@ -234,6 +290,12 @@ class ExpenseGroup {
   /// Los pagos que dejan a todos en paz (los menos posibles).
   final List<Payment> transfers;
   final int totalMinor;
+
+  /// El bote común (null = aún no se ha usado).
+  final Kitty? kitty;
+
+  /// El reparto habitual (modo pareja): asiento → peso. Vacío = a partes iguales.
+  final Map<int, int> defaultWeights;
 
   int get myBalance => balances[mySeat] ?? 0;
 
@@ -261,6 +323,9 @@ class ExpenseGroup {
     final Object? payments = m['payments'];
     final Object? balances = m['balances'];
     final Object? transfers = m['transfers'];
+    final Object? kitty = m['kitty'];
+    final Object weights = m['default_weights'] ?? const <Object?>[];
+    if (weights is! List<Object?>) _bad();
     if (!RegExp(r'^[A-Z]{3}$').hasMatch(currency) ||
         members is! List<Object?> ||
         expenses is! List<Object?> ||
@@ -284,6 +349,11 @@ class ExpenseGroup {
       },
       transfers: transfers.map(Payment.parse).toList(),
       totalMinor: _int(m['total_minor']),
+      kitty: kitty == null ? null : Kitty.parse(kitty),
+      defaultWeights: <int, int>{
+        for (final Object? w in weights)
+          _seat(_map(w)['seat']): _int(_map(w)['weight']),
+      },
     );
   }
 }
@@ -329,6 +399,7 @@ class NewExpense {
     required this.spentOn,
     this.split = SplitMode.equal,
     this.items = const <TicketItem>[],
+    this.weights = const <int>[],
   });
 
   final String title;
@@ -338,6 +409,7 @@ class NewExpense {
   final DateTime spentOn;
   final SplitMode split;
   final List<TicketItem> items;
+  final List<int> weights;
 
   Map<String, Object?> toJson() => <String, Object?>{
     'title': title,
@@ -347,6 +419,7 @@ class NewExpense {
     'participants': participants,
     'items': items.map((TicketItem i) => i.toJson()).toList(),
     'spent_on': _day(spentOn),
+    if (split == SplitMode.weights) 'weights': weights,
   };
 }
 
@@ -422,6 +495,29 @@ class ExpensesApi {
     'to_seat': toSeat,
     'amount_minor': amountMinor,
   });
+
+  /// El bote común te devuelve [amountMinor] (lo que te sobra de lo que
+  /// pusiste). El servidor sabe quién eres: no hace falta decir tu asiento.
+  Future<void> refundFromKitty(String groupId, int amountMinor) =>
+      _api.postJson('$_base/${_id(groupId)}/payments', <String, Object?>{
+        'amount_minor': amountMinor,
+        'from_kitty': true,
+      });
+
+  /// Cuánto se pide a cada uno para el bote común (null = no pedir nada).
+  Future<void> askKitty(String groupId, int? askMinor) => _api.putJson(
+    '$_base/${_id(groupId)}/kitty',
+    <String, Object?>{'ask_minor': askMinor},
+  );
+
+  /// El reparto habitual del bote (asiento → peso). Vacío = a partes iguales.
+  Future<void> setWeights(String groupId, Map<int, int> weights) =>
+      _api.putJson('$_base/${_id(groupId)}/weights', <String, Object?>{
+        'weights': <Map<String, int>>[
+          for (final MapEntry<int, int> e in weights.entries)
+            <String, int>{'seat': e.key, 'weight': e.value},
+        ],
+      });
 }
 
 String _id(String id) => Uri.encodeComponent(id);
@@ -436,6 +532,14 @@ int _int(Object? value) => value is int ? value : _bad();
 
 int _seat(Object? value) =>
     value is int && value >= 1 && value <= maxGroupMembers ? value : _bad();
+
+int _seatOrKitty(Object? value) =>
+    value == kittySeat ? kittySeat : _seat(value);
+
+List<int> _ints(Object? value) {
+  if (value is! List<Object?>) _bad();
+  return <int>[for (final Object? v in value) _int(v)];
+}
 
 List<int> _seats(Object? value) {
   if (value is! List<Object?>) _bad();

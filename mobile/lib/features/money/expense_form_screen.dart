@@ -22,12 +22,24 @@ import 'money_widgets.dart';
 import 'receipt_parser.dart';
 
 class ExpenseFormScreen extends StatefulWidget {
-  const ExpenseFormScreen({super.key, required this.group, this.receipt});
+  const ExpenseFormScreen({
+    super.key,
+    required this.group,
+    this.receipt,
+    this.payerSeat,
+    this.split,
+  });
 
   final ExpenseGroup group;
 
   /// Lo leído del ticket (null = a mano).
   final ParsedReceipt? receipt;
+
+  /// Quién paga al abrir (null = tú; [kittySeat] = el bote común).
+  final int? payerSeat;
+
+  /// Cómo se reparte al abrir (null = según haya ticket o no).
+  final SplitMode? split;
 
   @override
   State<ExpenseFormScreen> createState() => _ExpenseFormScreenState();
@@ -73,11 +85,19 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
     for (final TicketItem i in widget.receipt?.items ?? const <TicketItem>[])
       _Line(i, _digits),
   ];
-  late int _payer = widget.group.mySeat;
+  late int _payer = widget.payerSeat ?? widget.group.mySeat;
   late final Set<int> _participants = <int>{
     for (final ExpenseMember m in widget.group.members) m.seat,
   };
-  late SplitMode _split = _lines.isEmpty ? SplitMode.equal : SplitMode.items;
+  late SplitMode _split =
+      widget.split ?? (_lines.isEmpty ? SplitMode.equal : SplitMode.items);
+
+  /// Los porcentajes de cada uno (modo "con pesos"): el reparto habitual del
+  /// bote, o 50 para todos.
+  late final Map<int, int> _weights = <int, int>{
+    for (final ExpenseMember m in widget.group.members)
+      m.seat: widget.group.defaultWeights[m.seat] ?? 50,
+  };
   DateTime _day = DateTime.now();
   String? _titleProblem;
   String? _amountProblem;
@@ -150,6 +170,9 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
       _amountProblem = amount == null ? t.moneyAmountInvalid : null;
       _problem = _participants.isEmpty
           ? t.moneyNobody
+          : _split == SplitMode.weights &&
+                _participants.any((int s) => (_weights[s] ?? 0) < 1)
+          ? t.moneyWeightsInvalid
           : _split == SplitMode.items && items.isEmpty
           ? t.moneyNoLines
           : null;
@@ -168,7 +191,11 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
           participants: _participants.toList()..sort(),
           spentOn: _day,
           split: _split,
-          items: items,
+          items: _split == SplitMode.items ? items : const <TicketItem>[],
+          weights: <int>[
+            for (final int s in _participants.toList()..sort())
+              _weights[s] ?? 50,
+          ],
         ),
       );
       if (mounted) Navigator.of(context).pop(saved);
@@ -260,6 +287,12 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
                   value: m.seat,
                   child: Text(personName(t, group, m.seat)),
                 ),
+              // Pagar con la hucha, si el bote la usa.
+              if (group.kitty != null || _payer == kittySeat)
+                DropdownMenuItem<int>(
+                  value: kittySeat,
+                  child: Text(t.kittyName),
+                ),
             ],
             onChanged: (int? s) => setState(() => _payer = s ?? _payer),
           ),
@@ -294,11 +327,46 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
                 value: SplitMode.items,
                 label: Text(t.moneySplitItems),
               ),
+              ButtonSegment<SplitMode>(
+                value: SplitMode.weights,
+                label: Text(t.moneySplitWeights),
+              ),
             ],
             selected: <SplitMode>{_split},
             onSelectionChanged: (Set<SplitMode> s) =>
                 setState(() => _split = s.first),
           ),
+          if (_split == SplitMode.weights) ...<Widget>[
+            const SizedBox(height: 8),
+            for (final ExpenseMember m in group.members)
+              if (_participants.contains(m.seat))
+                Row(
+                  children: <Widget>[
+                    SeatAvatar(seat: m.seat, name: m.name, size: 28),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(personName(t, group, m.seat))),
+                    SizedBox(
+                      width: 160,
+                      child: Slider(
+                        value: (_weights[m.seat] ?? 50).toDouble(),
+                        min: 1,
+                        max: 100,
+                        divisions: 99,
+                        label: '${_weights[m.seat] ?? 50}',
+                        onChanged: (double v) =>
+                            setState(() => _weights[m.seat] = v.round()),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 40,
+                      child: Text(
+                        '${_weights[m.seat] ?? 50}',
+                        textAlign: TextAlign.end,
+                      ),
+                    ),
+                  ],
+                ),
+          ],
           if (_split == SplitMode.items) ...<Widget>[
             const SizedBox(height: 8),
             Text(
