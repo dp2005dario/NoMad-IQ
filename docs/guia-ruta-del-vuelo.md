@@ -93,6 +93,57 @@ Para probarlo en local con todo arrancado (Docker):
 curl "http://127.0.0.1:8080/v1/places/MAD?lang=es"
 ```
 
+## Vuelo 3D ("Despegar")
+
+Al pulsar **Despegar hacia…** se abre el vuelo en 3D a pantalla completa. El
+avión cruza el planeta, pasa junto a los monumentos que quedan cerca de tu
+ruta, se hace de noche, amanece, aterriza y bajan los pasajeros. Al pulsar
+**Continuar**, vuelves al mapa ya en el destino, con su hora local.
+
+- **Cámaras:** frente, lateral, detrás, arriba y "cine", que va cambiando sola.
+- **Controles:** velocidad (x1, x2, x0,5), pausa y "Aterrizar" para saltar al final.
+- **Temas de fiesta:** Halloween (del 15 de octubre al 2 de noviembre) y
+  Navidad (diciembre hasta Reyes) se ponen solos según la fecha.
+
+### Qué monumentos salen
+
+Hay 11 modelos 3D: Puerta de Alcalá, Torre Eiffel, Big Ben, Coliseo, Puerta de
+Brandeburgo, Pirámides, San Basilio, Taj Mahal, Gran Muralla, Monte Fuji y
+Torre de Tokio. Solo salen los que quedan a **menos de 600 km** del camino del
+avión (como mucho 8), en el orden en que se pasa junto a ellos. Analogía:
+pintas la ruta sobre el globo con un rotulador de 600 km de grosor, y lo que
+queda debajo sale por la ventanilla. Si no pillas ninguno (por ejemplo,
+Sídney → Santiago de Chile), el vuelo sale igual, con campos, pueblos y nubes.
+
+### Cómo está hecho (y por qué cuesta 0 €)
+
+- La escena es una página web con **three.js** (una librería gratuita de 3D,
+  licencia MIT) que va **dentro de la app**: `mobile/assets/flight3d/vuelo.html`.
+  No descarga nada, así que funciona en modo avión.
+- Se ve en un **WebView**, que es como un navegador metido en una pantalla.
+  Por seguridad, ese navegador no puede ir a ninguna web: solo puede avisar
+  a la app de dos cosas, "ha aterrizado" y "pulsó Continuar".
+- **Textos:** la página no trae textos propios. La app le pasa todos los
+  textos en tu idioma (desde los `.arb`, en 10 idiomas). El nombre del país
+  lo traduce el propio móvil (`Intl.DisplayNames`), y las banderas son emojis.
+- **Código fuente:** está en `mobile/tool/flight3d/`. `vuelo.js` es la escena,
+  `vuelo.html` la plantilla y `build.mjs` junta las dos con three.js.
+
+**Rehacer la página tras tocar `vuelo.js`** (en la terminal de VS Code):
+
+```bash
+cd mobile/tool/flight3d
+npm install
+npm run build        # escribe mobile/assets/flight3d/vuelo.html
+```
+
+`npm run countries` rehace `assets/geo/countries.txt`, la lista de nombres de
+país con su código ISO, por si cambias `airports.txt`.
+
+**Probar la escena en el navegador del PC:** abre
+`mobile/assets/flight3d/vuelo.html` con doble clic. Sin datos de la app, sale
+la ruta de la maqueta (Madrid → Tokio, en español).
+
 ## Datos
 
 Están en `mobile/assets/geo/` (licencias en `LEEME.md` de esa carpeta y en
@@ -126,9 +177,10 @@ Para regenerarlos (casi nunca hace falta):
    flutter test test/route_test.dart
    ```
 
-   Son 15 pruebas: cálculos (Madrid-Tokio ≈ 10.770 km, cruzar el Pacífico),
-   lectura de los datos reales, la pantalla completa de origen a llegada y las
-   fichas de ciudad. Las del servidor: en la carpeta `services/ai-orchestrator`,
+   Son 19 pruebas: cálculos (Madrid-Tokio ≈ 10.770 km, cruzar el Pacífico),
+   lectura de los datos reales, la pantalla completa de origen a llegada, las
+   fichas de ciudad y el Vuelo 3D (qué monumentos salen en cada ruta y que
+   "Despegar" lo abre). Las del servidor: en la carpeta `services/ai-orchestrator`,
    `uv run pytest tests/test_places.py`.
 4. Para verlo en el móvil: `flutter run`, entra como invitado y ve a
    **Vuelos → Ruta del vuelo**.
@@ -140,4 +192,6 @@ Para regenerarlos (casi nunca hace falta):
 - **Proyección equirrectangular**: mapa donde la longitud es la X y la latitud la Y.
 - **Wikidata**: la "base de datos" de Wikipedia: cada cosa tiene un número (Madrid es Q2807) y datos ordenados.
 - **SPARQL**: el idioma para hacer preguntas a Wikidata ("lugares de Madrid con foto, de más a menos famosos").
+- **three.js**: librería gratuita para dibujar 3D en una página web (usa la tarjeta gráfica con WebGL).
+- **WebView**: un navegador dentro de una pantalla de la app.
 - **Zona horaria IANA**: nombre estándar como `Europe/Madrid` que identifica las reglas de hora de un lugar.

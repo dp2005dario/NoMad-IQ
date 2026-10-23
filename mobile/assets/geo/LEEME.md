@@ -17,3 +17,8 @@ por cada anillo:  n uint32, y n parejas (lon×10, lat×10) en int16
 ```
 
 Cómo se regeneran: `tool/build_geo_data.py` (instrucciones en `docs/guia-ruta-del-vuelo.md`, sección "Datos").
+
+`countries.txt`: nombre del país tal como sale en `airports.txt` y su código
+ISO de dos letras (`Spain|ES`). Lo genera `tool/flight3d/build_country_codes.mjs`
+con [i18n-iso-countries](https://github.com/michaelwittig/node-i18n-iso-countries)
+(licencia MIT). El Vuelo 3D lo usa para la bandera y el nombre del país.

@@ -16,6 +16,7 @@ import '../features/map/location_tracker.dart';
 import '../features/map/map_surface.dart';
 import '../features/map/street_photos_api.dart';
 import '../features/push/notices.dart';
+import '../features/route/flight3d.dart';
 import '../features/route/places_api.dart';
 import 'api_client.dart';
 import 'settings.dart';
@@ -30,6 +31,7 @@ class AppServices {
     required this.glyphsUrl,
     this.notices = const SilentNotices(),
     this.openBooking = openInBrowser,
+    this.webScene,
     SettingsStore? prefs,
   }) : geo = GeoApi(api),
        audioguides = AudioguideApi(api),
@@ -69,6 +71,10 @@ class AppServices {
 
   /// Notificaciones en la barra del móvil (permiso y toques).
   final NoticeCenter notices;
+
+  /// Dónde se ve el Vuelo 3D (un WebView en la app). Sin él (tests), el
+  /// botón "Despegar" hace la animación del mapa plano de siempre.
+  final WebSceneBuilder? webScene;
 
   /// Cómo se dibuja el mapa (MapLibre en la app, uno falso en los tests).
   final MapSurfaceBuilder mapSurface;

@@ -49,6 +49,8 @@ dependencies:
   url_launcher: ^6.3.2
   # Zonas horarias del mundo (base de datos IANA): "en Tokio son 8 h más".
   timezone: ^0.11.2
+  # Un "navegador" dentro de una pantalla: ahí se ve el Vuelo 3D (three.js).
+  webview_flutter: ^4.14.1
 
 dev_dependencies:
   flutter_test:
@@ -64,6 +66,9 @@ flutter:
   assets:
     - assets/geo/world.bin
     - assets/geo/airports.txt
+    - assets/geo/countries.txt
+    # El Vuelo 3D: una página con three.js ya empaquetado (ver tool/flight3d/).
+    - assets/flight3d/vuelo.html
   # Genera el código de traducciones a partir de lib/l10n/*.arb (ver l10n.yaml).
   generate: true
   # Las fuentes van DENTRO de la app (no se descargan de Internet al abrirla):

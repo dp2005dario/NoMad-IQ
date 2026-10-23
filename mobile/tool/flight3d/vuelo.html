@@ -1,0 +1,161 @@
+<!doctype html>
+<!--
+  VUELO 3D de NomadIQ (pantalla "En vuelo"). Este archivo es la PLANTILLA:
+  build.mjs mete dentro three.js y vuelo.js ya empaquetados y escribe
+  mobile/assets/flight3d/vuelo.html, que es lo que abre la app (sin Internet,
+  sin CDN). La app rellena window.NQ_FLIGHT con la ruta y los textos en tu
+  idioma (ver flight3d_config.dart).
+-->
+<html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NomadIQ</title>
+<style>
+/* Layout: a full-bleed real-time 3D sky; the HUD floats on top like cockpit instruments (route on top, monument card + camera controls below). Deliberately dark-only: it is a night/day sky scene. */
+:root {
+  --ink: #F2F5F3;
+  --muted: #B4C4CC;
+  --glass: rgba(9, 16, 24, 0.66);
+  --glass-strong: rgba(9, 16, 24, 0.82);
+  --line: rgba(255, 255, 255, 0.14);
+  --mint: #3DDC97;
+  --sky: #6CA8FF;
+  --coral: #FF8A65;
+  --font-display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --font-body: 'Manrope', system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: #050A14; color: var(--ink); font-family: var(--font-body); overflow: hidden; }
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+.hud {
+  position: fixed; inset: 0; pointer-events: none; z-index: 2;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; justify-content: space-between; gap: 12px;
+}
+.panel { background: var(--glass); border: 1px solid var(--line); border-radius: 20px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.top { display: flex; justify-content: center; padding-left: 40px; } /* hueco para el botón de cerrar de la app */
+.route { width: min(560px, 100%); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.route-row { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 14px; letter-spacing: 0.04em; }
+.city { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+.flag { font-size: 18px; line-height: 1; flex-shrink: 0; } /* banderas: emoji del sistema */
+.track { position: relative; flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.16); min-width: 0; }
+.fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 3px; background: linear-gradient(90deg, var(--sky), var(--mint)); }
+.dot { position: absolute; top: 50%; left: 0; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 11px; background: #FFFFFF; box-shadow: 0 0 12px rgba(255,255,255,0.7); display: grid; place-items: center; }
+.dot svg { width: 14px; height: 14px; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--muted); font-weight: 700; }
+.meta b { color: var(--ink); font-weight: 800; }
+.meta span { display: inline-flex; align-items: center; gap: 6px; }
+.bottom { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.bottom-row { width: 100%; display: flex; justify-content: flex-start; }
+.card { width: min(400px, 100%); padding: 10px 12px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; align-items: center; transition: opacity 0.4s ease, transform 0.4s ease; }
+#cardFlag { grid-row: span 2; display: flex; }
+.card[data-off="1"] { opacity: 0; transform: translateY(10px); }
+.card .flag { font-size: 28px; }
+.card h2 { margin: 0; font-family: var(--font-display); font-weight: 800; font-size: 18px; letter-spacing: -0.01em; line-height: 1.1; text-wrap: balance; }
+.card .place { font-size: 11px; font-weight: 700; color: var(--mint); text-transform: uppercase; letter-spacing: 0.07em; }
+.card .fact { grid-column: 1 / -1; margin: 4px 0 0 0; font-size: 13px; line-height: 1.4; color: var(--muted); max-width: 62ch; }
+.controls { pointer-events: auto; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 6px; border-radius: 18px; max-width: 100%; }
+.controls button {
+  font: 800 13px/1 var(--font-body); color: var(--ink); background: transparent; border: 1px solid transparent;
+  border-radius: 12px; min-height: 40px; padding: 0 12px; cursor: pointer;
+}
+.controls button[aria-pressed="true"] { background: var(--ink); color: #0B1217; }
+.controls button:hover { border-color: var(--line); }
+.controls button:focus-visible { outline: 2px solid var(--mint); outline-offset: 2px; }
+.controls .sep { width: 1px; align-self: stretch; background: var(--line); margin: 6px 2px; }
+#labels { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+.tag {
+  position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 6px; white-space: nowrap;
+  padding: 5px 9px 5px 6px; border-radius: 999px; background: var(--glass-strong); border: 1px solid var(--line);
+  font-size: 12px; font-weight: 800; transform: translate(-50%, -100%); will-change: transform;
+}
+.tag .flag { font-size: 14px; }
+.tag::after { content: ""; position: absolute; left: 50%; top: 100%; width: 1px; height: 14px; background: rgba(255,255,255,0.5); }
+/* the ending is a slim banner at the bottom so the happy passenger stays visible above it */
+.overlay {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; display: flex; justify-content: center; pointer-events: none;
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+.overlay .box { pointer-events: auto; width: min(640px, 100%); display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 14px 16px; animation: rise 0.6s ease both; }
+@keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.end-flag .flag { font-size: 34px; }
+.end-text { flex: 1 1 240px; min-width: 0; }
+.overlay h1 { margin: 0; font-family: var(--font-display); font-size: 24px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; text-wrap: balance; }
+.overlay p { margin: 4px 0 0 0; color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+.overlay button#again { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+.overlay button { font: 800 15px/1 var(--font-body); min-height: 46px; padding: 0 20px; border-radius: 14px; border: none; background: var(--mint); color: #0B1217; cursor: pointer; }
+.overlay button:focus-visible { outline: 2px solid #FFFFFF; outline-offset: 2px; }
+body.ending .controls, body.ending .bottom-row { display: none; }
+[hidden] { display: none !important; }
+#loading { position: fixed; inset: 0; z-index: 4; display: grid; place-items: center; background: #050A14; font-weight: 800; color: var(--muted); letter-spacing: 0.06em; font-size: 13px; text-transform: uppercase; transition: opacity 0.6s ease; }
+@media (max-width: 480px) {
+  .card h2 { font-size: 16px; }
+  .card .fact { font-size: 12px; }
+  .controls button { padding: 0 9px; font-size: 12px; }
+  .overlay h1 { font-size: 20px; }
+  .overlay button { width: 100%; }
+}
+</style>
+
+</head><body>
+<canvas id="scene"></canvas>
+<div id="labels" aria-hidden="true"></div>
+<div class="hud">
+  <header class="top">
+    <div class="route panel">
+      <div class="route-row">
+        <span class="city"><span id="fromFlag"></span><span id="fromCode"></span></span>
+        <div class="track" aria-hidden="true">
+          <div class="fill" id="fill"></div>
+          <div class="dot" id="dot"><svg viewBox="0 0 24 24" fill="#0B1217"><path d="M2 16l20-6-2-3-7 2-5-5-2 1 3 5-5 1.5-2-1.5-1.5.5z"/></svg></div>
+        </div>
+        <span class="city"><span id="toCode"></span><span id="toFlag"></span></span>
+      </div>
+      <div class="meta" aria-live="polite">
+        <span><span id="statusLabel"></span> <b id="country"></b></span>
+        <span><b id="tod"></b></span>
+        <span><b id="km"></b></span>
+      </div>
+    </div>
+  </header>
+  <footer class="bottom">
+    <div class="bottom-row"><article class="card panel" id="card" data-off="1" aria-live="polite">
+      <span id="cardFlag"></span>
+      <h2 id="cardName"></h2>
+      <span class="place" id="cardPlace"></span>
+      <p class="fact" id="cardFact"></p>
+    </article></div>
+    <div class="controls panel" role="toolbar" id="controls">
+      <button type="button" id="cam-frente" data-cam="frente" aria-pressed="true"></button>
+      <button type="button" id="cam-lateral" data-cam="lateral" aria-pressed="false"></button>
+      <button type="button" id="cam-detras" data-cam="detras" aria-pressed="false"></button>
+      <button type="button" id="cam-arriba" data-cam="arriba" aria-pressed="false"></button>
+      <button type="button" id="cam-cine" data-cam="cine" aria-pressed="false"></button>
+      <span class="sep" aria-hidden="true"></span>
+      <button type="button" id="speed">x1</button>
+      <button type="button" id="pause"></button>
+      <span class="sep" aria-hidden="true"></span>
+      <button type="button" id="land"></button>
+      <button type="button" id="theme"></button>
+    </div>
+  </footer>
+</div>
+<div class="overlay" id="arrive" hidden>
+  <div class="box panel" role="status">
+    <span class="end-flag" id="endFlag"></span>
+    <div class="end-text">
+      <h1 id="endTitle"></h1>
+      <p id="endText"></p>
+    </div>
+    <button type="button" id="again"></button>
+    <button type="button" id="done"></button>
+  </div>
+</div>
+<div id="loading"></div>
+<script>/*NQ_CONFIG*/</script>
+<script>/*NQ_BUNDLE*/</script>
+</body></html>

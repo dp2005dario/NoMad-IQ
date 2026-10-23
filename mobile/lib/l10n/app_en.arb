@@ -865,5 +865,322 @@
   "streetViewPhotoLabel": "Street photo from Mapillary",
   "@streetViewPhotoLabel": {
     "description": "Real street photos (Mapillary) opened from the map."
+  },
+  "flight3dLoading": "Getting the 3D flight ready…",
+  "@flight3dLoading": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dNoWebgl": "This phone can't show 3D graphics (WebGL).",
+  "@flight3dNoWebgl": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dSceneLabel": "3D animation: a plane flies from {from} to {to}, passes landmarks and lands",
+  "@flight3dSceneLabel": {
+    "description": "3D flight screen (WebView).",
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "flight3dOverflying": "Flying over",
+  "@flight3dOverflying": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dLandingIn": "Landing in",
+  "@flight3dLandingIn": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dArrivedIn": "Now in",
+  "@flight3dArrivedIn": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dKmOf": "{km} of {total} km",
+  "@flight3dKmOf": {
+    "description": "3D flight screen (WebView).",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "flight3dDay": "Daytime",
+  "@flight3dDay": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dDusk": "Sunset",
+  "@flight3dDusk": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dNightfall": "Nightfall",
+  "@flight3dNightfall": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dNight": "Night",
+  "@flight3dNight": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dDawn": "Sunrise",
+  "@flight3dDawn": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dCamFront": "Front",
+  "@flight3dCamFront": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dCamSide": "Side",
+  "@flight3dCamSide": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dCamBehind": "Behind",
+  "@flight3dCamBehind": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dCamTop": "Above",
+  "@flight3dCamTop": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dCamCine": "Cinema",
+  "@flight3dCamCine": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dSpeed": "Speed",
+  "@flight3dSpeed": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dPause": "Pause",
+  "@flight3dPause": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dResume": "Resume",
+  "@flight3dResume": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dLand": "Land",
+  "@flight3dLand": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dTheme": "Theme: {name}",
+  "@flight3dTheme": {
+    "description": "3D flight screen (WebView).",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "flight3dThemeNormal": "Normal",
+  "@flight3dThemeNormal": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dThemeHalloween": "Halloween",
+  "@flight3dThemeHalloween": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dThemeXmas": "Christmas",
+  "@flight3dThemeXmas": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dHappyHalloween": "Happy Halloween!",
+  "@flight3dHappyHalloween": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dMerryXmas": "Merry Christmas!",
+  "@flight3dMerryXmas": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dControls": "Camera and playback",
+  "@flight3dControls": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dWelcome": "Welcome to {city}!",
+  "@flight3dWelcome": {
+    "description": "3D flight screen (WebView).",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "flight3dLanded": "Landed in {to} after {km} km from {from}.",
+  "@flight3dLanded": {
+    "description": "3D flight screen (WebView).",
+    "placeholders": {
+      "to": {
+        "type": "String"
+      },
+      "km": {
+        "type": "String"
+      },
+      "from": {
+        "type": "String"
+      }
+    }
+  },
+  "flight3dAgain": "Fly again",
+  "@flight3dAgain": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dDone": "Continue",
+  "@flight3dDone": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dBoardingPass": "Boarding pass",
+  "@flight3dBoardingPass": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dPassenger": "Passenger",
+  "@flight3dPassenger": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dFlight": "Flight",
+  "@flight3dFlight": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dSeat": "Seat",
+  "@flight3dSeat": {
+    "description": "3D flight screen (WebView)."
+  },
+  "flight3dClose": "Close the 3D flight",
+  "@flight3dClose": {
+    "description": "3D flight screen (WebView)."
+  },
+  "monumentAlcalaName": "Puerta de Alcalá",
+  "@monumentAlcalaName": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentAlcalaCity": "Madrid",
+  "@monumentAlcalaCity": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentAlcalaFact": "Neoclassical gate ordered by King Charles III; it opened in 1778.",
+  "@monumentAlcalaFact": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentEiffelName": "Eiffel Tower",
+  "@monumentEiffelName": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentEiffelCity": "Paris",
+  "@monumentEiffelCity": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentEiffelFact": "330 metres of iron, built for the 1889 World's Fair.",
+  "@monumentEiffelFact": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentBigbenName": "Big Ben",
+  "@monumentBigbenName": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentBigbenCity": "London",
+  "@monumentBigbenCity": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentBigbenFact": "The tower is called Elizabeth Tower; Big Ben is the name of its great bell.",
+  "@monumentBigbenFact": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentColiseoName": "Colosseum",
+  "@monumentColiseoName": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentColiseoCity": "Rome",
+  "@monumentColiseoCity": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentColiseoFact": "Amphitheatre opened in AD 80 that held about 50,000 spectators.",
+  "@monumentColiseoFact": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentBrandeburgoName": "Brandenburg Gate",
+  "@monumentBrandeburgoName": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentBrandeburgoCity": "Berlin",
+  "@monumentBrandeburgoCity": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentBrandeburgoFact": "Finished in 1791, it is now the great symbol of German reunification.",
+  "@monumentBrandeburgoFact": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentPiramidesName": "Pyramids of Giza",
+  "@monumentPiramidesName": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentPiramidesCity": "Giza",
+  "@monumentPiramidesCity": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentPiramidesFact": "The Great Pyramid is about 4,500 years old and once stood 146 metres tall.",
+  "@monumentPiramidesFact": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentBasilioName": "Saint Basil's Cathedral",
+  "@monumentBasilioName": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentBasilioCity": "Moscow",
+  "@monumentBasilioCity": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentBasilioFact": "Built between 1555 and 1561 on Red Square, with its colourful domes.",
+  "@monumentBasilioFact": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentTajName": "Taj Mahal",
+  "@monumentTajName": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentTajCity": "Agra",
+  "@monumentTajCity": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentTajFact": "White marble mausoleum that Emperor Shah Jahan built for his wife in the 17th century.",
+  "@monumentTajFact": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentMurallaName": "Great Wall",
+  "@monumentMurallaName": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentMurallaCity": "Beijing",
+  "@monumentMurallaCity": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentMurallaFact": "Thousands of kilometres of wall built over more than 2,000 years.",
+  "@monumentMurallaFact": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentFujiName": "Mount Fuji",
+  "@monumentFujiName": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentFujiCity": "Honshu",
+  "@monumentFujiCity": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentFujiFact": "A 3,776-metre volcano, the highest mountain in Japan.",
+  "@monumentFujiFact": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentTokioName": "Tokyo Tower",
+  "@monumentTokioName": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentTokioCity": "Tokyo",
+  "@monumentTokioCity": {
+    "description": "Landmark shown in the 3D flight."
+  },
+  "monumentTokioFact": "333 metres tall, opened in 1958 and painted white and orange for air safety.",
+  "@monumentTokioFact": {
+    "description": "Landmark shown in the 3D flight."
   }
 }

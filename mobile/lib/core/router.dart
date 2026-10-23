@@ -159,6 +159,7 @@ GoRouter buildRouter({
           to: to == null || to.isEmpty ? null : to,
           places: services.places.get,
           openLink: services.openBooking,
+          scene3d: services.webScene,
         );
       },
     ),
