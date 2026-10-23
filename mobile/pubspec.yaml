@@ -45,6 +45,8 @@ dependencies:
   cryptography: ^2.9.0
   # Genera el número al azar con el que el notifier conoce a este móvil.
   uuid: ^4.6.0
+  # Abre la web de reserva de un vuelo en el navegador del móvil.
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

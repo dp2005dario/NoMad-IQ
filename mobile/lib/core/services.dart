@@ -8,6 +8,8 @@ import 'package:flutter/widgets.dart';
 
 import '../features/audioguide/audioguide_api.dart';
 import '../features/audioguide/guide_player.dart';
+import '../features/flights/booking.dart';
+import '../features/flights/fares_api.dart';
 import '../features/map/geo_api.dart';
 import '../features/map/location.dart';
 import '../features/map/location_tracker.dart';
@@ -25,14 +27,17 @@ class AppServices {
     required this.tilesUrl,
     required this.glyphsUrl,
     this.notices = const SilentNotices(),
+    this.openBooking = openInBrowser,
     SettingsStore? prefs,
   }) : geo = GeoApi(api),
-       audioguides = AudioguideApi(api) {
+       audioguides = AudioguideApi(api),
+       fares = FaresApi(api),
+       prefs = prefs ?? MemorySettingsStore() {
     tracker = LocationTracker(
       location: location,
       geo: geo,
       session: api.session,
-      prefs: prefs ?? MemorySettingsStore(),
+      prefs: this.prefs,
       askNotifications: notices.requestPermission,
     );
   }
@@ -40,6 +45,13 @@ class AppServices {
   final ApiClient api;
   final GeoApi geo;
   final AudioguideApi audioguides;
+  final FaresApi fares;
+
+  /// Ajustes guardados en el móvil (idioma, modo viaje, aeropuerto…).
+  final SettingsStore prefs;
+
+  /// Abre la web de reserva de un vuelo (el navegador; en los tests, nada).
+  final OpenBooking openBooking;
   final LocationSource location;
 
   /// El único que enciende el GPS (y el "modo viaje"). Vive lo que la app.

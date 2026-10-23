@@ -1,4 +1,5 @@
-// Ajustes del usuario que la app recuerda entre aperturas (idioma y modo viaje).
+// Ajustes del usuario que la app recuerda entre aperturas (idioma, modo viaje
+// y el aeropuerto desde el que buscas vuelos).
 //
 // ChangeNotifier es un "altavoz": cuando el ajuste cambia, avisa a quien esté
 // escuchando (la app entera) y la pantalla se vuelve a dibujar en el idioma nuevo.
@@ -12,6 +13,10 @@ abstract interface class SettingsStore {
   Future<void> writeLocale(String? tag);
   bool readTravelMode();
   Future<void> writeTravelMode(bool on);
+
+  /// Aeropuerto de salida de los chollos (código IATA, "MAD"); null = no elegido.
+  String? readFlightOrigin();
+  Future<void> writeFlightOrigin(String iata);
 }
 
 /// Versión real: guarda en el almacenamiento del móvil (SharedPreferences).
@@ -20,6 +25,7 @@ final class PreferencesSettingsStore implements SettingsStore {
 
   static const String _localeKey = 'locale';
   static const String _travelKey = 'travel_mode';
+  static const String _originKey = 'flight_origin';
   final SharedPreferencesWithCache _prefs;
 
   static Future<PreferencesSettingsStore> open() async {
@@ -27,7 +33,7 @@ final class PreferencesSettingsStore implements SettingsStore {
         await SharedPreferencesWithCache.create(
           cacheOptions: const SharedPreferencesWithCacheOptions(
             // Solo puede leer/escribir estas claves.
-            allowList: <String>{_localeKey, _travelKey},
+            allowList: <String>{_localeKey, _travelKey, _originKey},
           ),
         );
     return PreferencesSettingsStore(prefs);
@@ -46,6 +52,13 @@ final class PreferencesSettingsStore implements SettingsStore {
 
   @override
   Future<void> writeTravelMode(bool on) => _prefs.setBool(_travelKey, on);
+
+  @override
+  String? readFlightOrigin() => _prefs.getString(_originKey);
+
+  @override
+  Future<void> writeFlightOrigin(String iata) =>
+      _prefs.setString(_originKey, iata);
 }
 
 /// Versión en memoria para los tests (no toca el disco).
@@ -67,6 +80,14 @@ final class MemorySettingsStore implements SettingsStore {
 
   @override
   Future<void> writeTravelMode(bool on) async => travelMode = on;
+
+  String? flightOrigin;
+
+  @override
+  String? readFlightOrigin() => flightOrigin;
+
+  @override
+  Future<void> writeFlightOrigin(String iata) async => flightOrigin = iata;
 }
 
 class SettingsController extends ChangeNotifier {

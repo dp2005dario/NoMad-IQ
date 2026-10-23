@@ -434,8 +434,46 @@ Sin estos datos la app funciona igual, pero sin avisos push.
 - **Icono propio de notificación** (una silueta blanca): de momento se usa
   el de la app.
 
+## 9 bis. Vuelos: el cazador de chollos
+
+La pestaña **Vuelos** (maqueta "Cazador de vuelos") ya funciona con el
+price-consumer:
+
+| En pantalla | Qué hace |
+|---|---|
+| "Desde MAD" | El aeropuerto de salida. Tócalo para escribir otro código (BCN, LHR…). Se recuerda |
+| Tarjeta "¡VUELO CAZADO!" | El chollo que más ha bajado frente a lo habitual. Si baja más de un 50 %, pone "ERROR DE TARIFA" y avisa de esperar 48 h antes de reservar hotel |
+| "Reservar ya" | Abre la web de reserva en el navegador, con tu enlace de afiliado (ver `docs/guia-travelpayouts.md`) |
+| "Avisar si baja" | Vigila esa ruta. Puedes poner un precio objetivo ("avísame si baja de 300 €") o dejarlo vacío |
+| "Chollos de hoy" y "Mis alertas" | El resto de chollos y las rutas que vigilas, con su último precio |
+| Campana (arriba) | Tus últimos avisos de precio. Tocar la notificación del móvil también abre esta lista |
+| Modo invitado | Ve los mismos chollos y gráficas con precios reales. Solo "Avisar si baja" y "Mis alertas" piden crear una cuenta gratis (los avisos se guardan a tu nombre) |
+| Detalle de una ruta | Gráfica del precio más bajo de cada día, el mínimo, reservar y "Dejar de vigilar" |
+| "Planea tu viaje" | Ruta del vuelo (globo y 3D), Explorar, Dormir barato, Escala gratis, Qué pasa y Copiar viaje: llegan en los siguientes PR |
+
+### Cómo funciona (con analogías)
+
+- **`lib/features/flights/fares_api.dart`** es el "traductor": pide los datos
+  al servidor y comprueba cada campo (códigos de aeropuerto, fechas,
+  importes). Si algo llega raro, la pantalla enseña un error en vez de romperse.
+- **El dinero viaja en céntimos** (31500 = 315,00 €) y se escribe en el formato
+  de cada idioma con `lib/core/money.dart`: "315 €" en España, "€315" en inglés,
+  "¥31,500" para yenes, que no tienen céntimos.
+- **La gráfica** (`price_chart.dart`) se dibuja "a mano" con un `CustomPainter`:
+  unas pocas líneas de código en vez de una librería entera. Para TalkBack lleva
+  una descripción: "Gráfica de precios de 3 días. Mínimo…".
+- **Solo se abren enlaces https**, y además fuera de la app (en el navegador):
+  NomadIQ nunca ve tus datos de pago.
+
+### Probarlo en tu PC
+
+```bash
+cd mobile
+flutter test test/flights_test.dart
+```
+
 ## 10. Lo siguiente
 
 Cada PR sustituye una pantalla "Muy pronto" por la de verdad, siguiendo las
-maquetas, en este orden: Vuelos con alertas de precio, Grupo con la
+maquetas, en este orden: (Vuelos ya está) Ruta del vuelo en globo y 3D, Grupo con la
 negociación de Flyra, Cámara, Dinero y Bóveda.

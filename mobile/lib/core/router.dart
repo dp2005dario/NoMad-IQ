@@ -8,6 +8,10 @@ import '../auth/session.dart';
 import '../features/audioguide/audioguide_screen.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/coming_soon/coming_soon_screen.dart';
+import '../features/flights/fare_alerts_screen.dart';
+import '../features/flights/fare_route_screen.dart';
+import '../features/flights/fares_api.dart';
+import '../features/flights/flights_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/map/map_screen.dart';
 import '../features/settings/language_screen.dart';
@@ -31,6 +35,13 @@ abstract final class Routes {
     path: '/audioguide/${Uri.encodeComponent(zoneId)}',
     queryParameters: <String, String>{'name': zoneName},
   ).toString();
+
+  /// Tus alertas de precio de vuelos (también al tocar la notificación).
+  static const String fareAlerts = '/fares/alerts';
+
+  /// El detalle de una ruta de vuelo ("MAD-NRT:2026-12-15:ECONOMY").
+  static String fareRoute(String routeKey) =>
+      '/fares/route/${Uri.encodeComponent(routeKey)}';
 
   /// Pantalla "Muy pronto" de una función aún sin construir.
   static String soon(Feature feature) => '/soon/${feature.name}';
@@ -74,10 +85,7 @@ GoRouter buildRouter({
           Routes.camera,
           (_) => const ComingSoonScreen(feature: Feature.camera),
         ),
-        _tab(
-          Routes.flights,
-          (_) => const ComingSoonScreen(feature: Feature.flights),
-        ),
+        _tab(Routes.flights, (_) => const FlightsScreen()),
         _tab(
           Routes.group,
           (_) => const ComingSoonScreen(feature: Feature.group),
@@ -99,6 +107,19 @@ GoRouter buildRouter({
       builder: (BuildContext context, GoRouterState state) => AudioguideScreen(
         zoneId: state.pathParameters['zoneId'] ?? '',
         zoneName: state.uri.queryParameters['name'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: Routes.fareAlerts,
+      builder: (BuildContext context, GoRouterState state) =>
+          const FareAlertsScreen(),
+    ),
+    GoRoute(
+      path: '/fares/route/:key',
+      builder: (BuildContext context, GoRouterState state) => FareRouteScreen(
+        routeKey: state.pathParameters['key'] ?? '',
+        // "extra" solo existe si se abrió desde la app (no al reabrirla).
+        fare: state.extra is Fare ? state.extra! as Fare : null,
       ),
     ),
     GoRoute(
