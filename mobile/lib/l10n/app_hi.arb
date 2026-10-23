@@ -417,5 +417,20 @@
   "groupTagEarlyStarts": "जल्दी उठना",
   "groupTagLongWalks": "लंबी पैदल यात्रा",
   "groupTagCrowds": "भीड़",
-  "groupYourAgent": "आपका एजेंट"
+  "groupYourAgent": "आपका एजेंट",
+  "flyraSubtitle": "आपकी यात्रा सहायक",
+  "flyraWelcome": "नमस्ते! मैं Flyra हूँ। जो चाहें पूछें: क्या देखें, क्या खाएँ, कैसे घूमें, बैग में क्या रखें… या कुछ भी जो आप जानना चाहें।",
+  "flyraSuggestion1": "लिस्बन में 2 दिनों में क्या देख सकता हूँ?",
+  "flyraSuggestion2": "जापान में एक हफ़्ते के लिए क्या पैक करूँ?",
+  "flyraSuggestion3": "एयरपोर्ट से शहर के केंद्र तक कैसे जाऊँ?",
+  "flyraSuggestion4": "मुझे इतालवी के 5 काम के वाक्य सिखाओ",
+  "flyraInputHint": "अपना सवाल लिखें",
+  "flyraSend": "भेजें",
+  "flyraThinking": "Flyra सोच रही है…",
+  "flyraBusy": "Flyra अभी बहुत व्यस्त है। थोड़ी देर में फिर कोशिश करें।",
+  "flyraOutOfQuestions": "आज के मुफ़्त सवाल ख़त्म हो गए। Flyra कल फिर आपका इंतज़ार करेगी।",
+  "flyraRemaining": "{count, plural, =1{आज 1 सवाल बाक़ी है} other{आज {count} सवाल बाक़ी हैं}}",
+  "flyraDisclaimer": "Flyra ग़लती कर सकती है: दाम उड़ानें में और नियम आधिकारिक साइटों पर देखें।",
+  "flyraSignIn": "Flyra से बात करने के लिए साइन इन करें: हर खाते को रोज़ मुफ़्त सवाल मिलते हैं।",
+  "flyraClear": "बातचीत मिटाएँ"
 }

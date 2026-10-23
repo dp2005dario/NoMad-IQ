@@ -175,6 +175,14 @@ class Settings(BaseSettings):
     mapillary_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
     street_ttl_seconds: int = Field(default=6 * 3600, ge=600, le=48 * 3600)
 
+    # --- Chat libre con Flyra (ver el paquete flyra/) --------------------------------
+    # Necesita Ollama (LLM_ENABLED) y Redis (el contador de preguntas diarias).
+    flyra_enabled: bool = True
+    # Preguntas gratis por persona y día: el tope que evita sorpresas de coste.
+    flyra_daily_limit: int = Field(default=50, ge=1, le=1000)
+    # Si el modelo tarda más que esto, "Flyra está ocupada" y no cuenta.
+    flyra_timeout_seconds: float = Field(default=45.0, gt=0, le=300)
+
     # --- Redis (caché de audioguías y fichas de ciudad) -----------------------------------------------
     redis_host: str | None = None
     redis_port: int = Field(default=6379, ge=1, le=65535)
@@ -303,13 +311,17 @@ class Settings(BaseSettings):
                 "las fotos de calle necesitan Redis: define REDIS_HOST y REDIS_PASSWORD "
                 "(o quita MAPILLARY_TOKEN)"
             )
+        if self.flyra_enabled and self.llm_enabled and (not self.redis_host or self.redis_password is None):
+            problems.append(
+                "el chat con Flyra necesita Redis: define REDIS_HOST y REDIS_PASSWORD (o FLYRA_ENABLED=false)"
+            )
         if self.mapillary_token is not None and not re.fullmatch(
             r"MLY\|[0-9]+\|[0-9a-f]+", self.mapillary_token.get_secret_value()
         ):
             # No repetimos el valor en el mensaje: es un secreto.
             problems.append("MAPILLARY_TOKEN no tiene forma de token de Mapillary (MLY|...)")
         if (
-            (self.places_enabled or self.mapillary_token is not None)
+            (self.places_enabled or self.mapillary_token is not None or self.flyra_enabled)
             and not self.audioguides_enabled
             and not self.redis_tls
             and not self.redis_insecure_dev

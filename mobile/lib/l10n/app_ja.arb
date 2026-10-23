@@ -417,5 +417,20 @@
   "groupTagEarlyStarts": "早起き",
   "groupTagLongWalks": "長い散歩",
   "groupTagCrowds": "人混み",
-  "groupYourAgent": "あなたのエージェント"
+  "groupYourAgent": "あなたのエージェント",
+  "flyraSubtitle": "あなたの旅のアシスタント",
+  "flyraWelcome": "こんにちは！Flyra です。見どころ、グルメ、移動手段、持ち物… 気になることは何でも聞いてね。",
+  "flyraSuggestion1": "リスボンで2日間に何を見られる？",
+  "flyraSuggestion2": "日本に1週間行くなら何を持っていく？",
+  "flyraSuggestion3": "空港から市内中心部へはどう行く？",
+  "flyraSuggestion4": "イタリア語の便利なフレーズを5つ教えて",
+  "flyraInputHint": "質問を入力",
+  "flyraSend": "送信",
+  "flyraThinking": "Flyra が考え中…",
+  "flyraBusy": "Flyra はいま混み合っています。少ししてからもう一度試してね。",
+  "flyraOutOfQuestions": "今日の無料の質問は使い切りました。Flyra はまた明日待っています。",
+  "flyraRemaining": "{count, plural, other{今日はあと {count} 回質問できます}}",
+  "flyraDisclaimer": "Flyra も間違えることがあります。料金は「フライト」で、規則は公式サイトで確認してね。",
+  "flyraSignIn": "Flyra と話すにはログインしてね。アカウントごとに毎日無料で質問できます。",
+  "flyraClear": "会話を消去"
 }

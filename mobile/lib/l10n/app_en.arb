@@ -1619,5 +1619,70 @@
   "groupYourAgent": "Your agent",
   "@groupYourAgent": {
     "description": "Title of the current user's own agent."
+  },
+  "flyraSubtitle": "Your travel assistant",
+  "@flyraSubtitle": {
+    "description": "Subtitle under Flyra's name in the chat header."
+  },
+  "flyraWelcome": "Hi! I'm Flyra. Ask me anything: what to see, what to eat, how to get around, what to pack… or whatever you're curious about.",
+  "@flyraWelcome": {
+    "description": "First chat bubble from Flyra. Flyra is a name, never translate."
+  },
+  "flyraSuggestion1": "What can I see in 2 days in Lisbon?",
+  "@flyraSuggestion1": {
+    "description": "Example question chip."
+  },
+  "flyraSuggestion2": "What should I pack for a week in Japan?",
+  "@flyraSuggestion2": {
+    "description": "Example question chip."
+  },
+  "flyraSuggestion3": "How do I get from the airport to the city centre?",
+  "@flyraSuggestion3": {
+    "description": "Example question chip."
+  },
+  "flyraSuggestion4": "Teach me 5 useful phrases in Italian",
+  "@flyraSuggestion4": {
+    "description": "Example question chip."
+  },
+  "flyraInputHint": "Write your question",
+  "@flyraInputHint": {
+    "description": "Placeholder of the chat text box."
+  },
+  "flyraSend": "Send",
+  "@flyraSend": {
+    "description": "Send button (screen readers)."
+  },
+  "flyraThinking": "Flyra is thinking…",
+  "@flyraThinking": {
+    "description": "Shown while waiting for the AI answer. Flyra is a name."
+  },
+  "flyraBusy": "Flyra is very busy right now. Try again in a moment.",
+  "@flyraBusy": {
+    "description": "The AI server is overloaded or down."
+  },
+  "flyraOutOfQuestions": "You've used today's free questions. Flyra will be back for you tomorrow.",
+  "@flyraOutOfQuestions": {
+    "description": "Daily free quota used up."
+  },
+  "flyraRemaining": "{count, plural, =1{1 question left today} other{{count} questions left today}}",
+  "@flyraRemaining": {
+    "description": "How many free questions remain today.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "flyraDisclaimer": "Flyra can make mistakes: check prices in Flights and rules on official sites.",
+  "@flyraDisclaimer": {
+    "description": "Small print under the chat."
+  },
+  "flyraSignIn": "Sign in to chat with Flyra: every account gets free questions each day.",
+  "@flyraSignIn": {
+    "description": "Guests must sign in to chat."
+  },
+  "flyraClear": "Clear conversation",
+  "@flyraClear": {
+    "description": "Button that deletes the chat history from the phone."
   }
 }

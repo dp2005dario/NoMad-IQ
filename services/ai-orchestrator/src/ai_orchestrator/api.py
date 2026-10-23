@@ -53,6 +53,8 @@ from ai_orchestrator.audioguides.cache import CacheError
 from ai_orchestrator.audioguides.domain import AudioguideScript
 from ai_orchestrator.audioguides.service import AudioguideService
 from ai_orchestrator.domain import Recommendation, Verdict
+from ai_orchestrator.flyra.domain import ChatReply, ChatRequest
+from ai_orchestrator.flyra.service import FlyraBusyError, FlyraService, QuotaExceededError
 from ai_orchestrator.identity import Principal, current_principal
 from ai_orchestrator.places.domain import PlaceCard
 from ai_orchestrator.places.service import PlaceBusyError, PlaceService, PlaceUnavailableError
@@ -201,6 +203,7 @@ def create_api(
     negotiations: APIRouter | None = None,
     places: PlaceService | None = None,
     streetview: StreetViewService | None = None,
+    flyra: FlyraService | None = None,
     expose_docs: bool = False,
 ) -> FastAPI:
     """Crea la API pública (puerto con mTLS)."""
@@ -345,6 +348,28 @@ def create_api(
                 return resp
             # Sin fotos también es 200 (lista vacía): la app lo explica.
             return JSONResponse(photos.model_dump(mode="json"), headers={"Cache-Control": STREET_CACHE})
+
+    if flyra is not None:
+
+        @app.post("/v1/flyra/chat", response_model=ChatReply)
+        async def flyra_chat(
+            principal: Annotated[Principal, Depends(current_principal)],
+            body: ChatRequest,
+        ) -> JSONResponse:
+            # Solo con sesión iniciada: así cada persona tiene su cupo diario y
+            # nadie puede gastar la máquina del modelo de forma anónima.
+            try:
+                reply = await flyra.answer(principal.user_id, body)
+            except QuotaExceededError as exc:
+                resp = _problem(429, "Demasiadas peticiones", "ya no quedan preguntas a Flyra por hoy")
+                resp.headers["Retry-After"] = str(exc.retry_after)
+                return resp
+            except FlyraBusyError:
+                resp = _problem(503, "Servicio no disponible temporalmente", "Flyra está ocupada")
+                resp.headers["Retry-After"] = "30"
+                return resp
+            # Las respuestas son personales: que ningún proxy las guarde.
+            return JSONResponse(reply.model_dump(mode="json"), headers={"Cache-Control": "no-store"})
 
     if negotiations is not None:
         # Las rutas /v1/group-negotiations viven en negotiation/api.py.

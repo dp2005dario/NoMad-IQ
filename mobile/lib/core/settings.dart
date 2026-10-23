@@ -1,5 +1,6 @@
 // Ajustes del usuario que la app recuerda entre aperturas (idioma, modo viaje,
-// el aeropuerto desde el que buscas vuelos y tu nombre en los viajes en grupo).
+// el aeropuerto desde el que buscas vuelos, tu nombre en los viajes en grupo
+// y tu conversación con Flyra, que solo vive en este móvil).
 //
 // ChangeNotifier es un "altavoz": cuando el ajuste cambia, avisa a quien esté
 // escuchando (la app entera) y la pantalla se vuelve a dibujar en el idioma nuevo.
@@ -21,6 +22,11 @@ abstract interface class SettingsStore {
   /// Cómo te llamas para tus grupos ("Noelia"); null = aún no lo dijiste.
   String? readGroupName();
   Future<void> writeGroupName(String name);
+
+  /// Tu chat con Flyra (texto JSON); null = vacío. Nunca sale del móvil
+  /// salvo los últimos mensajes que se mandan al preguntar.
+  String? readFlyraChat();
+  Future<void> writeFlyraChat(String? json);
 }
 
 /// Versión real: guarda en el almacenamiento del móvil (SharedPreferences).
@@ -31,6 +37,7 @@ final class PreferencesSettingsStore implements SettingsStore {
   static const String _travelKey = 'travel_mode';
   static const String _originKey = 'flight_origin';
   static const String _groupNameKey = 'group_name';
+  static const String _flyraKey = 'flyra_chat';
   final SharedPreferencesWithCache _prefs;
 
   static Future<PreferencesSettingsStore> open() async {
@@ -43,6 +50,7 @@ final class PreferencesSettingsStore implements SettingsStore {
               _travelKey,
               _originKey,
               _groupNameKey,
+              _flyraKey,
             },
           ),
         );
@@ -76,6 +84,14 @@ final class PreferencesSettingsStore implements SettingsStore {
   @override
   Future<void> writeGroupName(String name) =>
       _prefs.setString(_groupNameKey, name);
+
+  @override
+  String? readFlyraChat() => _prefs.getString(_flyraKey);
+
+  @override
+  Future<void> writeFlyraChat(String? json) => json == null
+      ? _prefs.remove(_flyraKey)
+      : _prefs.setString(_flyraKey, json);
 }
 
 /// Versión en memoria para los tests (no toca el disco).
@@ -113,6 +129,14 @@ final class MemorySettingsStore implements SettingsStore {
 
   @override
   Future<void> writeGroupName(String name) async => groupName = name;
+
+  String? flyraChat;
+
+  @override
+  String? readFlyraChat() => flyraChat;
+
+  @override
+  Future<void> writeFlyraChat(String? json) async => flyraChat = json;
 }
 
 class SettingsController extends ChangeNotifier {

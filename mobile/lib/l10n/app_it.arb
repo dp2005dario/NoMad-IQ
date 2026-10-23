@@ -417,5 +417,20 @@
   "groupTagEarlyStarts": "Sveglie all'alba",
   "groupTagLongWalks": "Lunghe camminate",
   "groupTagCrowds": "Folla",
-  "groupYourAgent": "Il tuo agente"
+  "groupYourAgent": "Il tuo agente",
+  "flyraSubtitle": "La tua assistente di viaggio",
+  "flyraWelcome": "Ciao! Sono Flyra. Chiedimi quello che vuoi: cosa vedere, cosa mangiare, come muoverti, cosa mettere in valigia… o qualsiasi curiosità.",
+  "flyraSuggestion1": "Cosa posso vedere a Lisbona in 2 giorni?",
+  "flyraSuggestion2": "Cosa metto in valigia per una settimana in Giappone?",
+  "flyraSuggestion3": "Come arrivo dall'aeroporto al centro?",
+  "flyraSuggestion4": "Insegnami 5 frasi utili in tedesco",
+  "flyraInputHint": "Scrivi la tua domanda",
+  "flyraSend": "Invia",
+  "flyraThinking": "Flyra sta pensando…",
+  "flyraBusy": "Flyra è molto impegnata in questo momento. Riprova tra poco.",
+  "flyraOutOfQuestions": "Hai usato le domande gratuite di oggi. Flyra ti aspetta domani.",
+  "flyraRemaining": "{count, plural, =1{Ti resta 1 domanda oggi} other{Ti restano {count} domande oggi}}",
+  "flyraDisclaimer": "Flyra può sbagliare: controlla i prezzi in Voli e le regole sui siti ufficiali.",
+  "flyraSignIn": "Accedi per parlare con Flyra: ogni account ha domande gratuite ogni giorno.",
+  "flyraClear": "Cancella conversazione"
 }

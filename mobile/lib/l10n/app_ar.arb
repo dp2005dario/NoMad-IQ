@@ -417,5 +417,20 @@
   "groupTagEarlyStarts": "الاستيقاظ مبكرًا",
   "groupTagLongWalks": "المشي الطويل",
   "groupTagCrowds": "الزحام",
-  "groupYourAgent": "وكيلك"
+  "groupYourAgent": "وكيلك",
+  "flyraSubtitle": "مساعدتك في السفر",
+  "flyraWelcome": "مرحبًا! أنا Flyra. اسألني ما تشاء: ماذا تزور، ماذا تأكل، كيف تتنقل، ماذا تحزم في حقيبتك… أو أي شيء يثير فضولك.",
+  "flyraSuggestion1": "ماذا يمكنني أن أرى في لشبونة خلال يومين؟",
+  "flyraSuggestion2": "ماذا أحزم لأسبوع في اليابان؟",
+  "flyraSuggestion3": "كيف أصل من المطار إلى وسط المدينة؟",
+  "flyraSuggestion4": "علّمني 5 عبارات مفيدة بالإيطالية",
+  "flyraInputHint": "اكتب سؤالك",
+  "flyraSend": "إرسال",
+  "flyraThinking": "Flyra تفكر…",
+  "flyraBusy": "Flyra مشغولة جدًا الآن. حاول مرة أخرى بعد قليل.",
+  "flyraOutOfQuestions": "لقد استخدمت أسئلة اليوم المجانية. ستكون Flyra بانتظارك غدًا.",
+  "flyraRemaining": "{count, plural, =1{بقي لك سؤال واحد اليوم} other{بقي لك {count} أسئلة اليوم}}",
+  "flyraDisclaimer": "قد تخطئ Flyra: تحقق من الأسعار في الرحلات ومن القواعد في المواقع الرسمية.",
+  "flyraSignIn": "سجّل الدخول للتحدث مع Flyra: لكل حساب أسئلة مجانية كل يوم.",
+  "flyraClear": "مسح المحادثة"
 }

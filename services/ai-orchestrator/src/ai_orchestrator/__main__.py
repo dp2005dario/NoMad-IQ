@@ -68,6 +68,7 @@ from ai_orchestrator.audioguides.versions import ZoneVersionCache
 from ai_orchestrator.audioguides.writer import AudioguideWriter, WriterSettings
 from ai_orchestrator.config import Settings
 from ai_orchestrator.consumer import AlertProcessor, FareAlertConsumer
+from ai_orchestrator.flyra.service import FlyraService, FlyraSettings, RedisQuota
 from ai_orchestrator.llm.client import LLMClient, OllamaClient
 from ai_orchestrator.logs import setup_logging
 from ai_orchestrator.negotiation.agents import AgentSettings
@@ -402,10 +403,12 @@ async def run(settings: Settings) -> int:
             )
 
         # --- Fichas de ciudad (Wikipedia/Wikidata con caché en Redis) -------------------
-        # Fichas y fotos de calle comparten una conexión a Redis.
+        # Fichas, fotos de calle y el cupo de Flyra comparten una conexión a Redis.
         public_redis = (
             _redis(settings, stack)
-            if settings.places_enabled or settings.mapillary_token is not None
+            if settings.places_enabled
+            or settings.mapillary_token is not None
+            or (settings.flyra_enabled and llm is not None)
             else None
         )
         places: PlaceService | None = None
@@ -416,6 +419,18 @@ async def run(settings: Settings) -> int:
         streetview: StreetViewService | None = None
         if settings.mapillary_token is not None and public_redis is not None:
             streetview = _streetview(settings, settings.mapillary_token, public_redis, stack)
+
+        # --- Chat libre con Flyra (Ollama + cupo diario en Redis) ------------------------
+        # Sin LLM no hay chat: la ruta no existe y la app lo explica.
+        flyra: FlyraService | None = None
+        if settings.flyra_enabled and llm is not None and public_redis is not None:
+            flyra = FlyraService(
+                llm=llm,
+                quota=RedisQuota(public_redis),
+                settings=FlyraSettings(
+                    daily_limit=settings.flyra_daily_limit, timeout_seconds=settings.flyra_timeout_seconds
+                ),
+            )
 
         # --- Negociación de grupo (tercer consumidor + relé del outbox) -----------------
         negotiations: APIRouter | None = None
@@ -446,6 +461,7 @@ async def run(settings: Settings) -> int:
                 negotiations=negotiations,
                 places=places,
                 streetview=streetview,
+                flyra=flyra,
                 expose_docs=settings.expose_api_docs,
             ),
             settings.http_port,

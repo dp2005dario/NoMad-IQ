@@ -40,7 +40,7 @@ class HomeScreen extends StatelessWidget {
             _AskFlyra(
               hint: t.homeFlyraPrompt,
               label: t.talkToFlyra,
-              onTap: () => context.push(Routes.soon(Feature.flyra)),
+              onTap: () => context.push(Routes.flyra()),
             ),
             const SizedBox(height: 28),
             Text(t.shortcutsTitle, style: text.titleLarge),

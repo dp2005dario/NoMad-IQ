@@ -417,5 +417,20 @@
   "groupTagEarlyStarts": "早起",
   "groupTagLongWalks": "长途步行",
   "groupTagCrowds": "人多拥挤",
-  "groupYourAgent": "你的代理"
+  "groupYourAgent": "你的代理",
+  "flyraSubtitle": "你的旅行助手",
+  "flyraWelcome": "你好！我是 Flyra。想问什么都可以：去哪儿玩、吃什么、怎么出行、行李带什么……或者任何你好奇的事。",
+  "flyraSuggestion1": "两天在里斯本能看些什么？",
+  "flyraSuggestion2": "去日本一周该带些什么？",
+  "flyraSuggestion3": "从机场怎么去市中心？",
+  "flyraSuggestion4": "教我5句实用的意大利语",
+  "flyraInputHint": "输入你的问题",
+  "flyraSend": "发送",
+  "flyraThinking": "Flyra 正在思考…",
+  "flyraBusy": "Flyra 现在很忙，请稍后再试。",
+  "flyraOutOfQuestions": "今天的免费提问次数已用完，Flyra 明天再陪你。",
+  "flyraRemaining": "{count, plural, other{今天还剩 {count} 次提问}}",
+  "flyraDisclaimer": "Flyra 也可能出错：价格请看「航班」，规定请查官方网站。",
+  "flyraSignIn": "登录后即可和 Flyra 聊天：每个账户每天都有免费提问次数。",
+  "flyraClear": "清除对话"
 }

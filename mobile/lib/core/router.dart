@@ -14,6 +14,7 @@ import '../features/flights/flight_search_screen.dart';
 import '../features/route/flight_route_screen.dart';
 import '../features/flights/fares_api.dart';
 import '../features/flights/flights_screen.dart';
+import '../features/flyra/flyra_chat_screen.dart';
 import '../features/group/group_screen.dart';
 import '../features/group/trip_create_screen.dart';
 import '../features/group/trip_screen.dart';
@@ -81,6 +82,12 @@ abstract final class Routes {
   /// Un viaje en grupo por dentro (también al tocar el aviso del resultado).
   static String groupTrip(String id) =>
       '/group/trip/${Uri.encodeComponent(id)}';
+
+  /// El chat con Flyra. Con `question`, la escribe ya en la caja.
+  static String flyra({String? question}) => Uri(
+    path: '/flyra',
+    queryParameters: question == null ? null : <String, String>{'q': question},
+  ).toString();
 
   /// Pantalla "Muy pronto" de una función aún sin construir.
   static String soon(Feature feature) => '/soon/${feature.name}';
@@ -187,6 +194,11 @@ GoRouter buildRouter({
         // "extra" solo existe si se abrió desde la app (no al reabrirla).
         fare: state.extra is Fare ? state.extra! as Fare : null,
       ),
+    ),
+    GoRoute(
+      path: '/flyra',
+      builder: (BuildContext context, GoRouterState state) =>
+          FlyraChatScreen(draft: state.uri.queryParameters['q']),
     ),
     GoRoute(
       path: Routes.groupNew,

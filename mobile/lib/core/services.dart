@@ -10,6 +10,7 @@ import '../features/audioguide/audioguide_api.dart';
 import '../features/audioguide/guide_player.dart';
 import '../features/flights/booking.dart';
 import '../features/flights/fares_api.dart';
+import '../features/flyra/flyra_api.dart';
 import '../features/group/group_api.dart';
 import '../features/map/geo_api.dart';
 import '../features/map/location.dart';
@@ -37,6 +38,7 @@ class AppServices {
   }) : geo = GeoApi(api),
        audioguides = AudioguideApi(api),
        fares = FaresApi(api),
+       flyra = FlyraApi(api),
        group = GroupApi(api),
        places = PlacesApi(api),
        streetPhotos = StreetPhotosApi(api),
@@ -54,6 +56,9 @@ class AppServices {
   final GeoApi geo;
   final AudioguideApi audioguides;
   final FaresApi fares;
+
+  /// El chat libre con Flyra (la IA de la app).
+  final FlyraApi flyra;
 
   /// Viajes en grupo: invitar, preferencias y la negociación de los agentes.
   final GroupApi group;
