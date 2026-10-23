@@ -27,6 +27,7 @@ import '../features/money/money_screen.dart';
 import '../features/settings/language_screen.dart';
 import '../features/settings/privacy_screen.dart';
 import '../features/settings/settings_screen.dart';
+import '../features/sos/sos_screen.dart';
 import '../features/shell/app_shell.dart';
 import '../features/welcome/welcome_screen.dart';
 import 'services.dart';
@@ -43,6 +44,7 @@ abstract final class Routes {
   static const String signIn = '/signin';
   static const String vault = '/vault';
   static const String settings = '/settings';
+  static const String sos = '/sos';
   static const String privacy = '/settings/privacy';
 
   /// La audioguía de una zona. El nombre va en la dirección para poder
@@ -248,6 +250,10 @@ GoRouter buildRouter({
       path: Routes.privacy,
       builder: (BuildContext context, GoRouterState state) =>
           const PrivacyScreen(),
+    ),
+    GoRoute(
+      path: Routes.sos,
+      builder: (BuildContext context, GoRouterState state) => const SosScreen(),
     ),
     GoRoute(
       path: Routes.vault,

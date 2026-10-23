@@ -32,6 +32,7 @@ import '../features/vault/doc_source.dart';
 import '../features/vault/vault.dart';
 import '../features/vault/vault_store.dart';
 import 'api_client.dart';
+import 'launch.dart';
 import 'settings.dart';
 
 class AppServices {
@@ -44,6 +45,7 @@ class AppServices {
     required this.glyphsUrl,
     this.notices = const SilentNotices(),
     this.openBooking = openInBrowser,
+    this.openLink = openExternal,
     this.webScene,
     this.newCamera,
     this.speaker = const SilentSpeaker(),
@@ -131,6 +133,9 @@ class AppServices {
 
   /// Abre la web de reserva de un vuelo (el navegador; en los tests, nada).
   final OpenBooking openBooking;
+
+  /// Abre una web, el marcador (tel:) o un SMS ya escrito (sms:).
+  final OpenExternal openLink;
   final LocationSource location;
 
   /// El único que enciende el GPS (y el "modo viaje"). Vive lo que la app.

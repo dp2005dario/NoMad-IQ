@@ -3196,5 +3196,176 @@
   "privacyTurnBackOn": "Turn notifications back on",
   "@privacyTurnBackOn": {
     "description": "Button: re-enable push."
+  },
+  "sosTitle": "SOS",
+  "@sosTitle": {
+    "description": "SOS screen title."
+  },
+  "sosNear": "Near {city}",
+  "@sosNear": {
+    "description": "Where you are.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "sosAccuracy": "GPS ±{meters} m",
+  "@sosAccuracy": {
+    "description": "GPS accuracy.",
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "sosLocating": "Finding where you are…",
+  "@sosLocating": {
+    "description": "Looking for location."
+  },
+  "sosNoLocation": "No location: turn on GPS so we can send it.",
+  "@sosNoLocation": {
+    "description": "No location."
+  },
+  "sosQuestion": "Need help?",
+  "@sosQuestion": {
+    "description": "Big question."
+  },
+  "sosHoldHint": "Hold for 3 seconds. We'll prepare a text with your location for your contacts and show the local emergency number.",
+  "@sosHoldHint": {
+    "description": "Explains the hold button."
+  },
+  "sosButtonLabel": "Ask for help: hold for 3 seconds",
+  "@sosButtonLabel": {
+    "description": "Accessibility label of the big button."
+  },
+  "sosActive": "Get help now",
+  "@sosActive": {
+    "description": "Title after triggering."
+  },
+  "sosCall": "Call {number}",
+  "@sosCall": {
+    "description": "Call button.",
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "sosTextContacts": "Send my location to my contacts",
+  "@sosTextContacts": {
+    "description": "SMS button."
+  },
+  "sosNoContacts": "Add at least one contact so you can alert them.",
+  "@sosNoContacts": {
+    "description": "No contacts."
+  },
+  "sosImOk": "I'm OK",
+  "@sosImOk": {
+    "description": "Cancel / reset."
+  },
+  "sosMessage": "I need help! I'm here:",
+  "@sosMessage": {
+    "description": "SMS text before the map link."
+  },
+  "sosNumbersTitle": "NUMBERS HERE",
+  "@sosNumbersTitle": {
+    "description": "Section (uppercase)."
+  },
+  "sosGeneral": "Emergencies",
+  "@sosGeneral": {
+    "description": "Emergency number label."
+  },
+  "sosPolice": "Police",
+  "@sosPolice": {
+    "description": "Police label."
+  },
+  "sosAmbulance": "Ambulance",
+  "@sosAmbulance": {
+    "description": "Ambulance label."
+  },
+  "sosFire": "Fire",
+  "@sosFire": {
+    "description": "Fire brigade label."
+  },
+  "sosContactsTitle": "YOUR CONTACTS",
+  "@sosContactsTitle": {
+    "description": "Section (uppercase)."
+  },
+  "sosAddContact": "Add contact",
+  "@sosAddContact": {
+    "description": "Button."
+  },
+  "sosContactName": "Name",
+  "@sosContactName": {
+    "description": "Field."
+  },
+  "sosContactPhone": "Phone (with country code)",
+  "@sosContactPhone": {
+    "description": "Field."
+  },
+  "sosContactInvalid": "Write a valid phone number",
+  "@sosContactInvalid": {
+    "description": "Validation."
+  },
+  "sosSayThis": "SAY THIS",
+  "@sosSayThis": {
+    "description": "Section (uppercase)."
+  },
+  "sosMeansHelp": "It means “Help!”",
+  "@sosMeansHelp": {
+    "description": "Meaning of the phrase."
+  },
+  "sosMedicalTitle": "MEDICAL CARD",
+  "@sosMedicalTitle": {
+    "description": "Section (uppercase)."
+  },
+  "sosMedicalEmpty": "Add your blood type and allergies: it helps whoever treats you.",
+  "@sosMedicalEmpty": {
+    "description": "Empty medical card."
+  },
+  "sosMedicalEdit": "Edit card",
+  "@sosMedicalEdit": {
+    "description": "Button."
+  },
+  "sosBlood": "Blood type",
+  "@sosBlood": {
+    "description": "Field."
+  },
+  "sosBloodUnknown": "I don't know",
+  "@sosBloodUnknown": {
+    "description": "Option."
+  },
+  "sosAllergies": "Allergies",
+  "@sosAllergies": {
+    "description": "Field."
+  },
+  "sosConditions": "Conditions",
+  "@sosConditions": {
+    "description": "Field."
+  },
+  "sosMedication": "Medication",
+  "@sosMedication": {
+    "description": "Field."
+  },
+  "sosMedicalPrivacy": "Saved only on this phone.",
+  "@sosMedicalPrivacy": {
+    "description": "Privacy note."
+  },
+  "sosEmbassies": "Embassies and consulates nearby",
+  "@sosEmbassies": {
+    "description": "Button."
+  },
+  "sosEmbassiesSub": "If you lose your passport",
+  "@sosEmbassiesSub": {
+    "description": "Subtitle."
+  },
+  "sosSave": "Save",
+  "@sosSave": {
+    "description": "Save button."
+  },
+  "sosDelete": "Remove",
+  "@sosDelete": {
+    "description": "Delete contact tooltip."
   }
 }

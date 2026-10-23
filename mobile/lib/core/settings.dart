@@ -24,6 +24,12 @@ enum LocalData {
 
   /// "1" = has pedido "Olvidar este teléfono": no se registra para avisos.
   pushOff,
+
+  /// Tus contactos de emergencia (nombre y teléfono) para el SOS.
+  sosContacts,
+
+  /// Tu ficha médica (grupo sanguíneo, alergias...). Solo en este móvil.
+  medicalCard,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real

@@ -55,6 +55,13 @@ class HomeScreen extends StatelessWidget {
                 final double width =
                     (box.maxWidth - gap * (columns - 1)) / columns;
                 final List<Widget> tiles = <Widget>[
+                  // SOS el primero: en un apuro no hay que buscarlo.
+                  _Shortcut(
+                    icon: Icons.sos_rounded,
+                    color: const Color(0xFFE53935),
+                    label: t.sosTitle,
+                    onTap: () => context.push(Routes.sos),
+                  ),
                   _Shortcut(
                     icon: Feature.vault.icon,
                     color: Feature.vault.color,
