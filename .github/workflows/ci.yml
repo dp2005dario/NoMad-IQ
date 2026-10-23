@@ -183,6 +183,38 @@ jobs:
       - name: Tests
         run: cargo test --locked
 
+  mobile:
+    name: app móvil (Flutter)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      # Java 17 para compilar la parte Android (Gradle).
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      # Misma versión de Flutter que se usa en local (ver docs/guia-app-movil.md).
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.7"
+          channel: stable
+          cache: true
+      # pub get también genera el código de las traducciones (lib/l10n/generated).
+      - name: Dependencias (falla si pubspec.lock no está al día)
+        run: flutter pub get --enforce-lockfile
+      - name: Formato
+        run: dart format --output=none --set-exit-if-changed lib test
+      - name: Análisis estático (avisos como errores)
+        run: flutter analyze --fatal-infos --fatal-warnings
+      - name: Tests
+        run: flutter test
+      # Comprueba que la app compila de verdad para Android (APK de pruebas).
+      - name: Compilar APK (debug)
+        run: flutter build apk --debug
+
   integration:
     name: Integración (docker compose + Kafka real)
     runs-on: ubuntu-latest

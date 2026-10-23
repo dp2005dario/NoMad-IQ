@@ -1,0 +1,47 @@
+# pubspec.yaml es el "carné de identidad" de la app Flutter: nombre, versión,
+# librerías que usa (dependencias) y archivos que lleva dentro (fuentes, imágenes).
+# Tras cambiarlo, VS Code ejecuta solo "flutter pub get" para descargar lo nuevo.
+name: nomadiq
+description: "NomadIQ: asistente de viaje con Flyra"
+# No se publica en pub.dev (el almacén de librerías): es una app, no una librería.
+publish_to: 'none'
+
+# versión visible (1.0.0) + número de compilación (+1). Google Play exige que
+# el número tras el "+" suba en cada subida.
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Traducciones de Flutter (botones del sistema, fechas...) en todos los idiomas.
+  flutter_localizations:
+    sdk: flutter
+  # Formatos por idioma (números, monedas, plurales). La versión la fija flutter_localizations.
+  intl: any
+  # Navegación entre pantallas con direcciones tipo web (/inicio, /mapa...).
+  go_router: ^18.1.1
+  # Guarda ajustes pequeños en el móvil (por ejemplo, el idioma elegido).
+  shared_preferences: ^2.5.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  # Reglas de estilo recomendadas por el equipo de Flutter.
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  # Genera el código de traducciones a partir de lib/l10n/*.arb (ver l10n.yaml).
+  generate: true
+  # Las fuentes van DENTRO de la app (no se descargan de Internet al abrirla):
+  # funciona sin conexión y no avisa a terceros de quién usa la app.
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope.ttf
+    - family: BricolageGrotesque
+      fonts:
+        - asset: assets/fonts/BricolageGrotesque.ttf
