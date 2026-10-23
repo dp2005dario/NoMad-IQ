@@ -230,9 +230,11 @@ Todas exigen las cabeceras de identidad (en producción las pone el auth-gateway
 
 | Método y ruta | Qué hace |
 |---|---|
-| `POST /v1/group-negotiations` | Crea una negociación: título, divisa, idioma, opciones (2 a 10, con precio por persona en céntimos y etiquetas) y los **demás** miembros (1 a 7). El organizador entra solo como "Viajero 1". |
+| `POST /v1/group-negotiations` | Crea una negociación: título, divisa, idioma, opciones (2 a 10, con precio por persona en céntimos y etiquetas), `my_name` opcional y los **demás** miembros (0 a 7). El organizador entra solo como "Viajero 1". Si `members` va vacío, el grupo queda **abierto a invitaciones** y la respuesta trae `invite_code`. |
+| `POST /v1/group-negotiations/join` | Entra con un código (`{"code": "7k2m-9qxd", "my_name": "Noelia"}`). Perdona minúsculas, guiones y O/0, I/1. 404 si el código no existe o ya no vale; 409 si el plazo pasó o el grupo está lleno (8). Entrar dos veces no duplica el asiento. |
+| `POST /v1/group-negotiations/{id}/start` | Solo el organizador: cierra el grupo y lo pone en cola. Hace falta que al menos dos personas hayan enviado sus preferencias (si no, 409). 403 para los demás miembros. |
 | `PUT /v1/group-negotiations/{id}/preferences` | Envía (o corrige) mis preferencias: `budget_max_minor`, `interests`, `avoid`, `notes`. 409 si ya está en marcha o fuera de plazo. |
-| `GET /v1/group-negotiations/{id}` | Estado, opciones, quién ha enviado ya, mis preferencias y, al final, el resultado con la explicación. |
+| `GET /v1/group-negotiations/{id}` | Estado, opciones, quién ha enviado ya (con el nombre que cada uno eligió), si yo organizo (`i_organize`), el código mientras el grupo está abierto, mis preferencias y, al final, el resultado con la explicación. |
 | `GET /v1/group-negotiations` | Mis negociaciones. |
 
 El resultado incluye: `outcome` (`consensus`, `arbitration` o
@@ -240,6 +242,27 @@ El resultado incluye: `outcome` (`consensus`, `arbitration` o
 por código** (nunca contradice a las reglas), las opciones descartadas por
 presupuesto y, por cada miembro, su ranking, sus aceptables, su argumento, si
 lo decidió el LLM o las reglas y en qué puesto quedó la elegida en su lista.
+
+### Invitaciones con código (migración 0007)
+
+Analogía: es el código de una mesa de restaurante reservada. El organizador
+reserva la mesa (crea el viaje) y le dan un código; quien lo dice en la puerta
+se sienta. Cuando la cena empieza (la negociación), el código deja de valer.
+
+- **El código**: 8 símbolos al azar con el alfabeto de Crockford (sin O, I, L
+  ni U para que nadie dude al dictarlo). Son unos 1,1 billones de
+  combinaciones: adivinar uno a ciegas antes de que caduque es imposible en la
+  práctica. Se genera con `secrets` (el azar del sistema operativo, no el de
+  los juegos). Si por casualidad choca con el de otro grupo vivo, se repite.
+- **Con el grupo abierto no arranca sola**: aunque todos los que han entrado
+  ya hayan enviado sus preferencias, podría faltar alguien por llegar. La
+  arranca el organizador con "Empezar" o, como siempre, el plazo.
+- **Al cerrarse el grupo se borra el código** (`invite_code = NULL`): un
+  código viejo no sirve para nada y deja libre el hueco.
+- **El nombre de cada uno** (`display_name`, 1-40 letras) solo lo ve su
+  grupo. A los agentes y al LLM les sigue llegando "Viajero 2".
+- **Dos personas entrando a la vez** van en fila (`FOR UPDATE`): nunca se
+  repite asiento ni se pasa de 8.
 
 ---
 
@@ -346,8 +369,8 @@ lo decidió el LLM o las reglas y en qué puesto quedó la elegida en su lista.
 - **Opciones con precio real**: que las opciones salgan de los precios de
   vuelos guardados (price-consumer) y alojamiento afiliado, en vez de los que
   envía la app.
-- **Invitaciones**: hoy el organizador escribe los `user_id` de los demás; falta
-  un sistema de grupos o invitaciones con aceptación.
+- **Invitaciones**: hechas con código (ver la sección 6). Falta compartir el
+  código con un enlace que abra la app directamente.
 - **Límites por usuario** (cuántas negociaciones abiertas a la vez) contra abusos.
 - **Evaluación del LLM**: medir con casos guardados si el agente LLM representa
   mejor a su viajero que el de reglas.

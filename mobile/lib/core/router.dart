@@ -14,6 +14,9 @@ import '../features/flights/flight_search_screen.dart';
 import '../features/route/flight_route_screen.dart';
 import '../features/flights/fares_api.dart';
 import '../features/flights/flights_screen.dart';
+import '../features/group/group_screen.dart';
+import '../features/group/trip_create_screen.dart';
+import '../features/group/trip_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/map/map_screen.dart';
 import '../features/settings/language_screen.dart';
@@ -72,6 +75,13 @@ abstract final class Routes {
   static String fareRoute(String routeKey) =>
       '/fares/route/${Uri.encodeComponent(routeKey)}';
 
+  /// Crear un viaje en grupo (al terminar devuelve el id del viaje).
+  static const String groupNew = '/group/new';
+
+  /// Un viaje en grupo por dentro (también al tocar el aviso del resultado).
+  static String groupTrip(String id) =>
+      '/group/trip/${Uri.encodeComponent(id)}';
+
   /// Pantalla "Muy pronto" de una función aún sin construir.
   static String soon(Feature feature) => '/soon/${feature.name}';
 }
@@ -121,10 +131,7 @@ GoRouter buildRouter({
           (_) => const ComingSoonScreen(feature: Feature.camera),
         ),
         _tab(Routes.flights, (_) => const FlightsScreen()),
-        _tab(
-          Routes.group,
-          (_) => const ComingSoonScreen(feature: Feature.group),
-        ),
+        _tab(Routes.group, (_) => const GroupScreen()),
       ],
     ),
     GoRoute(
@@ -180,6 +187,16 @@ GoRouter buildRouter({
         // "extra" solo existe si se abrió desde la app (no al reabrirla).
         fare: state.extra is Fare ? state.extra! as Fare : null,
       ),
+    ),
+    GoRoute(
+      path: Routes.groupNew,
+      builder: (BuildContext context, GoRouterState state) =>
+          const TripCreateScreen(),
+    ),
+    GoRoute(
+      path: '/group/trip/:id',
+      builder: (BuildContext context, GoRouterState state) =>
+          TripScreen(tripId: state.pathParameters['id'] ?? ''),
     ),
     GoRoute(
       path: '/soon/:feature',

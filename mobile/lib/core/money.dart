@@ -39,3 +39,16 @@ int _pow10(int n) {
   }
   return out;
 }
+
+/// Cuántos decimales tiene una divisa: EUR 2 (céntimos), JPY 0, KWD 3.
+int currencyDigits(String currency) =>
+    NumberFormat.simpleCurrency(name: currency).decimalDigits ?? 2;
+
+/// Un importe "entero" que escribe la persona (70 €) en unidades mínimas
+/// (7000) que entiende el servidor.
+int wholeToMinor(int whole, String currency) =>
+    whole * _pow10(currencyDigits(currency));
+
+/// Al revés: unidades mínimas → importe entero (redondeando hacia abajo).
+int minorToWhole(int minor, String currency) =>
+    minor ~/ _pow10(currencyDigits(currency));

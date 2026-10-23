@@ -10,6 +10,7 @@ import '../features/audioguide/audioguide_api.dart';
 import '../features/audioguide/guide_player.dart';
 import '../features/flights/booking.dart';
 import '../features/flights/fares_api.dart';
+import '../features/group/group_api.dart';
 import '../features/map/geo_api.dart';
 import '../features/map/location.dart';
 import '../features/map/location_tracker.dart';
@@ -36,6 +37,7 @@ class AppServices {
   }) : geo = GeoApi(api),
        audioguides = AudioguideApi(api),
        fares = FaresApi(api),
+       group = GroupApi(api),
        places = PlacesApi(api),
        streetPhotos = StreetPhotosApi(api),
        prefs = prefs ?? MemorySettingsStore() {
@@ -52,6 +54,9 @@ class AppServices {
   final GeoApi geo;
   final AudioguideApi audioguides;
   final FaresApi fares;
+
+  /// Viajes en grupo: invitar, preferencias y la negociación de los agentes.
+  final GroupApi group;
 
   /// Fichas de ciudad (Wikipedia) para la Ruta del vuelo.
   final PlacesApi places;

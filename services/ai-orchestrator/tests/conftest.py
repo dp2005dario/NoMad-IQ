@@ -27,15 +27,19 @@ from ai_orchestrator.domain import (
     Recommendation,
 )
 from ai_orchestrator.llm.client import ChatMessage, LLMUnavailableError
-from ai_orchestrator.negotiation.domain import MemberPreferences, NegotiationResult, Status
+from ai_orchestrator.negotiation.domain import MAX_MEMBERS, MemberPreferences, NegotiationResult, Status
 from ai_orchestrator.negotiation.events import request_message
 from ai_orchestrator.negotiation.store import (
     MemberRecord,
     NegotiationClosedError,
+    NegotiationFullError,
     NegotiationNotFoundError,
     NegotiationRecord,
     NewNegotiation,
+    NotEnoughReadyError,
+    NotOrganizerError,
     alias_for,
+    new_invite_code,
 )
 from ai_orchestrator.outbox import OutboxMessage
 from ai_orchestrator.recommender import RecommenderSettings
@@ -290,11 +294,61 @@ class InMemoryNegotiations:
             concluded_at=None,
             result=None,
             members=tuple(
-                MemberRecord(user_id=u, seat=i, alias=alias_for(i), preferences=None, submitted_at=None)
+                MemberRecord(
+                    user_id=u,
+                    seat=i,
+                    alias=alias_for(i),
+                    preferences=None,
+                    submitted_at=None,
+                    display_name=draft.organizer_name if i == 1 else None,
+                )
                 for i, u in enumerate(draft.member_ids, start=1)
             ),
+            invites_open=draft.invites_open,
+            invite_code=new_invite_code() if draft.invites_open else None,
         )
         self.records[negotiation_id] = record
+        return record
+
+    async def join(self, code: str, user_id: str, display_name: str | None) -> NegotiationRecord:
+        record = next((r for r in self.records.values() if r.invites_open and r.invite_code == code), None)
+        if record is None:
+            raise NegotiationNotFoundError(code)
+        if any(m.user_id == user_id for m in record.members):
+            return record
+        if record.status is not Status.COLLECTING or record.deadline < self.now:
+            raise NegotiationClosedError(record.negotiation_id)
+        if len(record.members) >= MAX_MEMBERS:
+            raise NegotiationFullError(record.negotiation_id)
+        seat = max(m.seat for m in record.members) + 1
+        member = MemberRecord(
+            user_id=user_id,
+            seat=seat,
+            alias=alias_for(seat),
+            preferences=None,
+            submitted_at=None,
+            display_name=display_name,
+        )
+        record = replace(record, members=(*record.members, member))
+        self.records[record.negotiation_id] = record
+        return record
+
+    async def start(self, negotiation_id: str, user_id: str) -> NegotiationRecord:
+        record = await self.get_for_member(negotiation_id, user_id)
+        if record is None:
+            raise NegotiationNotFoundError(negotiation_id)
+        if record.organizer_id != user_id:
+            raise NotOrganizerError(negotiation_id)
+        if record.status is not Status.COLLECTING or record.deadline < self.now:
+            raise NegotiationClosedError(negotiation_id)
+        if sum(1 for m in record.members if m.submitted_at) < 2:
+            raise NotEnoughReadyError(negotiation_id)
+        return self._queue(record)
+
+    def _queue(self, record: NegotiationRecord) -> NegotiationRecord:
+        self.outbox.append(request_message("requests", record.negotiation_id, self.now))
+        record = replace(record, status=Status.QUEUED, invites_open=False, invite_code=None)
+        self.records[record.negotiation_id] = record
         return record
 
     async def get_for_member(self, negotiation_id: str, user_id: str) -> NegotiationRecord | None:
@@ -317,11 +371,10 @@ class InMemoryNegotiations:
             replace(m, preferences=preferences, submitted_at=self.now) if m.user_id == user_id else m
             for m in record.members
         )
-        status = Status.QUEUED if all(m.submitted_at for m in members) else Status.COLLECTING
-        if status is Status.QUEUED:
-            self.outbox.append(request_message("requests", negotiation_id, self.now))
-        record = replace(record, members=members, status=status)
+        record = replace(record, members=members)
         self.records[negotiation_id] = record
+        if all(m.submitted_at for m in members) and not record.invites_open:
+            return self._queue(record)
         return record
 
     async def claim(self, negotiation_id: str, *, lease_seconds: int) -> NegotiationRecord | None:

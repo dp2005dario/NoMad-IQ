@@ -12,6 +12,7 @@ guarda en ai.outbox en la MISMA transacción (ver outbox.py).
 
 from __future__ import annotations
 
+import secrets
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -22,6 +23,8 @@ import asyncpg
 from pydantic import TypeAdapter
 
 from ai_orchestrator.negotiation.domain import (
+    MAX_MEMBERS,
+    MIN_MEMBERS,
     GroupOption,
     MemberPreferences,
     NegotiationResult,
@@ -44,6 +47,48 @@ class NegotiationClosedError(Exception):
     """Ya no admite preferencias: está en marcha, terminada o fuera de plazo."""
 
 
+class NegotiationFullError(Exception):
+    """El grupo ya tiene el máximo de miembros (MAX_MEMBERS)."""
+
+
+class NotOrganizerError(Exception):
+    """Solo el organizador puede hacer esto (por ejemplo, "Empezar")."""
+
+
+class NotEnoughReadyError(Exception):
+    """Para negociar hacen falta al menos dos personas con sus preferencias enviadas."""
+
+
+# Alfabeto de Crockford: 32 símbolos sin O, I, L ni U. Al dictar un código
+# por teléfono nadie duda entre "0" y "O" o entre "1" e "I".
+INVITE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+INVITE_LENGTH = 8
+
+
+def new_invite_code() -> str:
+    """8 símbolos al azar = 32^8 ≈ 1 billón de combinaciones (40 bits).
+
+    ``secrets`` usa el generador del sistema operativo (impredecible), no
+    ``random`` (que sirve para juegos, no para secretos). Con un billón de
+    combinaciones y un código que caduca en horas, adivinar uno a ciegas
+    llevaría siglos aunque se probaran mil por segundo.
+    """
+    return "".join(secrets.choice(INVITE_ALPHABET) for _ in range(INVITE_LENGTH))
+
+
+def normalize_invite_code(raw: str) -> str | None:
+    """Lo que escribe la persona -> el código guardado, o None si no puede serlo.
+
+    Perdona lo típico: minúsculas, espacios y guiones ("7k2m-9qxd"), y las
+    letras que se confunden con números (O -> 0, I y L -> 1).
+    """
+    text = "".join(c for c in raw.upper() if c not in " -")
+    text = text.translate(str.maketrans("OIL", "011"))
+    if len(text) != INVITE_LENGTH or any(c not in INVITE_ALPHABET for c in text):
+        return None
+    return text
+
+
 @dataclass(frozen=True, slots=True)
 class NewNegotiation:
     organizer_id: str
@@ -55,6 +100,10 @@ class NewNegotiation:
     member_ids: tuple[str, ...]
     max_rounds: int
     deadline: datetime
+    # Abierta a invitaciones con código: entonces no arranca sola (ver 0007).
+    invites_open: bool = False
+    # Nombre del organizador para su grupo (None = solo su alias).
+    organizer_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,6 +113,7 @@ class MemberRecord:
     alias: str
     preferences: MemberPreferences | None
     submitted_at: datetime | None
+    display_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -81,6 +131,8 @@ class NegotiationRecord:
     concluded_at: datetime | None
     result: NegotiationResult | None
     members: tuple[MemberRecord, ...]
+    invites_open: bool = False
+    invite_code: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,6 +156,10 @@ class NegotiationStore(Protocol):
         self, negotiation_id: str, user_id: str, preferences: MemberPreferences
     ) -> NegotiationRecord: ...
 
+    async def join(self, code: str, user_id: str, display_name: str | None) -> NegotiationRecord: ...
+
+    async def start(self, negotiation_id: str, user_id: str) -> NegotiationRecord: ...
+
     async def claim(self, negotiation_id: str, *, lease_seconds: int) -> NegotiationRecord | None: ...
 
     async def conclude(
@@ -119,8 +175,11 @@ def alias_for(seat: int) -> str:
 
 _NEGOTIATION_COLUMNS = (
     "negotiation_id, organizer_id, title, currency, language, options, max_rounds, status, "
-    "deadline, created_at, concluded_at, result"
+    "deadline, created_at, concluded_at, result, invites_open, invite_code"
 )
+
+# Si el código al azar ya lo tiene otro grupo vivo (rarísimo), se prueba otro.
+_INVITE_ATTEMPTS = 5
 
 
 class PostgresNegotiations:
@@ -130,37 +189,135 @@ class PostgresNegotiations:
         self._retention_days = retention_days
 
     async def create(self, draft: NewNegotiation) -> NegotiationRecord:
+        for attempt in range(1, _INVITE_ATTEMPTS + 1):
+            try:
+                return await self._insert(draft, new_invite_code() if draft.invites_open else None)
+            except asyncpg.UniqueViolationError as exc:
+                # Solo puede chocar el código de invitación (el id es un UUID nuevo).
+                if attempt == _INVITE_ATTEMPTS:
+                    raise StoreError(f"crear negociación: código de invitación repetido: {exc}") from exc
+            except _DB_ERRORS as exc:
+                raise StoreError(f"crear negociación: {exc}") from exc
+        raise AssertionError("inalcanzable")  # pragma: no cover
+
+    async def _insert(self, draft: NewNegotiation, invite_code: str | None) -> NegotiationRecord:
         negotiation_id = str(uuid.uuid4())
+        async with self._pool.acquire() as conn, conn.transaction():
+            await conn.execute(
+                """
+                INSERT INTO ai.group_negotiations
+                    (negotiation_id, organizer_id, title, currency, language, options, max_rounds,
+                     status, deadline, invites_open, invite_code)
+                VALUES ($1::uuid, $2, $3, $4, $5, $6::jsonb, $7, 'collecting', $8, $9, $10)
+                """,
+                negotiation_id,
+                draft.organizer_id,
+                draft.title,
+                draft.currency,
+                draft.language,
+                _OPTIONS.dump_json(draft.options).decode(),
+                draft.max_rounds,
+                draft.deadline,
+                draft.invites_open,
+                invite_code,
+            )
+            await conn.executemany(
+                "INSERT INTO ai.group_negotiation_members "
+                "(negotiation_id, user_id, seat, alias, display_name) VALUES ($1::uuid, $2, $3, $4, $5)",
+                [
+                    # Solo el organizador (asiento 1) trae nombre al crear.
+                    (negotiation_id, uid, seat, alias_for(seat), draft.organizer_name if seat == 1 else None)
+                    for seat, uid in enumerate(draft.member_ids, start=1)
+                ],
+            )
+            record = await self._load(conn, negotiation_id)
+        assert record is not None  # noqa: S101 (la acabamos de crear en esta transacción)
+        return record
+
+    async def join(self, code: str, user_id: str, display_name: str | None) -> NegotiationRecord:
+        """Entra en un grupo con su código de invitación.
+
+        Si ya era miembro, no pasa nada (puede haber pulsado dos veces):
+        devuelve el grupo tal cual. Así reintentar es inofensivo.
+        """
         try:
             async with self._pool.acquire() as conn, conn.transaction():
-                await conn.execute(
+                # FOR UPDATE: dos personas entrando a la vez van en fila y no
+                # se quedan con el mismo asiento ni pasan del máximo.
+                row = await conn.fetchrow(
                     """
-                    INSERT INTO ai.group_negotiations
-                        (negotiation_id, organizer_id, title, currency, language, options, max_rounds,
-                         status, deadline)
-                    VALUES ($1::uuid, $2, $3, $4, $5, $6::jsonb, $7, 'collecting', $8)
+                    SELECT negotiation_id, status, deadline < now() AS late
+                      FROM ai.group_negotiations
+                     WHERE invite_code = $1 AND invites_open
+                       FOR UPDATE
                     """,
+                    code,
+                )
+                if row is None:
+                    raise NegotiationNotFoundError(code)
+                negotiation_id = str(row["negotiation_id"])
+                seats = await conn.fetch(
+                    "SELECT user_id, seat FROM ai.group_negotiation_members WHERE negotiation_id = $1::uuid",
                     negotiation_id,
-                    draft.organizer_id,
-                    draft.title,
-                    draft.currency,
-                    draft.language,
-                    _OPTIONS.dump_json(draft.options).decode(),
-                    draft.max_rounds,
-                    draft.deadline,
                 )
-                await conn.executemany(
-                    "INSERT INTO ai.group_negotiation_members (negotiation_id, user_id, seat, alias) "
-                    "VALUES ($1::uuid, $2, $3, $4)",
-                    [
-                        (negotiation_id, user_id, seat, alias_for(seat))
-                        for seat, user_id in enumerate(draft.member_ids, start=1)
-                    ],
-                )
+                if all(s["user_id"] != user_id for s in seats):
+                    if row["status"] != Status.COLLECTING or row["late"]:
+                        raise NegotiationClosedError(negotiation_id)
+                    if len(seats) >= MAX_MEMBERS:
+                        raise NegotiationFullError(negotiation_id)
+                    seat = max(s["seat"] for s in seats) + 1
+                    await conn.execute(
+                        "INSERT INTO ai.group_negotiation_members "
+                        "(negotiation_id, user_id, seat, alias, display_name) "
+                        "VALUES ($1::uuid, $2, $3, $4, $5)",
+                        negotiation_id,
+                        user_id,
+                        seat,
+                        alias_for(seat),
+                        display_name,
+                    )
                 record = await self._load(conn, negotiation_id)
         except _DB_ERRORS as exc:
-            raise StoreError(f"crear negociación: {exc}") from exc
-        assert record is not None  # noqa: S101 (la acabamos de crear en esta transacción)
+            raise StoreError(f"entrar en el grupo: {exc}") from exc
+        assert record is not None  # noqa: S101
+        return record
+
+    async def start(self, negotiation_id: str, user_id: str) -> NegotiationRecord:
+        """El organizador pulsa "Empezar": se cierra el grupo y se pone en cola.
+
+        Negocian quienes ya enviaron sus preferencias (mínimo dos). Quien no
+        las envió se queda sin agente, igual que si venciera el plazo.
+        """
+        try:
+            async with self._pool.acquire() as conn, conn.transaction():
+                row = await conn.fetchrow(
+                    """
+                    SELECT n.organizer_id, n.status, n.deadline < now() AS late,
+                           (SELECT count(*) FROM ai.group_negotiation_members m
+                             WHERE m.negotiation_id = n.negotiation_id
+                               AND m.submitted_at IS NOT NULL) AS ready
+                      FROM ai.group_negotiations n
+                     WHERE n.negotiation_id = $1::uuid
+                       AND EXISTS (SELECT 1 FROM ai.group_negotiation_members m
+                                    WHERE m.negotiation_id = n.negotiation_id AND m.user_id = $2)
+                       FOR UPDATE OF n
+                    """,
+                    negotiation_id,
+                    user_id,
+                )
+                if row is None:
+                    raise NegotiationNotFoundError(negotiation_id)
+                if row["organizer_id"] != user_id:
+                    raise NotOrganizerError(negotiation_id)
+                if row["status"] != Status.COLLECTING or row["late"]:
+                    raise NegotiationClosedError(negotiation_id)
+                if row["ready"] < MIN_MEMBERS:
+                    raise NotEnoughReadyError(negotiation_id)
+                await self._queue(conn, negotiation_id)
+                record = await self._load(conn, negotiation_id)
+        except _DB_ERRORS as exc:
+            raise StoreError(f"empezar negociación: {exc}") from exc
+        assert record is not None  # noqa: S101
         return record
 
     async def get_for_member(self, negotiation_id: str, user_id: str) -> NegotiationRecord | None:
@@ -208,7 +365,7 @@ class PostgresNegotiations:
                 # negociación en cola (una sola orden de trabajo, nunca dos).
                 row = await conn.fetchrow(
                     """
-                    SELECT n.status, n.deadline < now() AS late
+                    SELECT n.status, n.deadline < now() AS late, n.invites_open
                       FROM ai.group_negotiations n
                      WHERE n.negotiation_id = $1::uuid
                        AND EXISTS (SELECT 1 FROM ai.group_negotiation_members m
@@ -234,7 +391,9 @@ class PostgresNegotiations:
                     "WHERE negotiation_id = $1::uuid AND submitted_at IS NULL",
                     negotiation_id,
                 )
-                if pending == 0:
+                # Con el grupo abierto a invitaciones podría faltar alguien por
+                # llegar: entonces no arranca sola (la arranca "Empezar" o el plazo).
+                if pending == 0 and not row["invites_open"]:
                     await self._queue(conn, negotiation_id)
                 record = await self._load(conn, negotiation_id)
         except _DB_ERRORS as exc:
@@ -353,7 +512,7 @@ class PostgresNegotiations:
                            FOR UPDATE SKIP LOCKED)
                     UPDATE ai.group_negotiations n
                        SET status = CASE WHEN due.ready >= 2 THEN 'queued' ELSE 'expired' END,
-                           updated_at = now()
+                           invites_open = false, invite_code = NULL, updated_at = now()
                       FROM due
                      WHERE n.negotiation_id = due.negotiation_id
                     RETURNING n.negotiation_id, n.status
@@ -387,9 +546,10 @@ class PostgresNegotiations:
     # --- Ayudantes ------------------------------------------------------------------
 
     async def _queue(self, conn: Conn, negotiation_id: str) -> None:
+        # Al ponerse en cola el grupo se cierra: el código deja de valer.
         await conn.execute(
-            "UPDATE ai.group_negotiations SET status = 'queued', updated_at = now() "
-            "WHERE negotiation_id = $1::uuid",
+            "UPDATE ai.group_negotiations SET status = 'queued', invites_open = false, invite_code = NULL, "
+            "updated_at = now() WHERE negotiation_id = $1::uuid",
             negotiation_id,
         )
         await enqueue(conn, request_message(self._requests_topic, negotiation_id, _now()))
@@ -410,7 +570,7 @@ class PostgresNegotiations:
         if not negotiation_ids:
             return {}
         rows = await conn.fetch(
-            "SELECT negotiation_id, user_id, seat, alias, preferences, submitted_at "
+            "SELECT negotiation_id, user_id, seat, alias, preferences, submitted_at, display_name "
             "FROM ai.group_negotiation_members WHERE negotiation_id = ANY($1::uuid[]) "
             "ORDER BY negotiation_id, seat",
             list(negotiation_ids),
@@ -426,6 +586,7 @@ class PostgresNegotiations:
                         MemberPreferences.model_validate_json(r["preferences"]) if r["preferences"] else None
                     ),
                     submitted_at=r["submitted_at"],
+                    display_name=r["display_name"],
                 )
             )
         return {k: tuple(v) for k, v in out.items()}
@@ -452,6 +613,8 @@ def _record(row: asyncpg.Record, members: tuple[MemberRecord, ...]) -> Negotiati
         concluded_at=data["concluded_at"],
         result=NegotiationResult.model_validate_json(data["result"]) if data["result"] else None,
         members=members,
+        invites_open=data["invites_open"],
+        invite_code=data["invite_code"],
     )
 
 

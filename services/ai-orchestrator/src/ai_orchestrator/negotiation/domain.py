@@ -56,7 +56,7 @@ def _normalize_tags(values: tuple[str, ...]) -> tuple[str, ...]:
 Tags = Annotated[tuple[str, ...], Field(max_length=MAX_TAGS), AfterValidator(_normalize_tags)]
 
 
-def _clean_notes(value: str) -> str:
+def clean_text(value: str) -> str:
     # Fuera caracteres de control (saltos de línea raros, "borrar", códigos de
     # terminal...): en un prompt pueden servir para disfrazar instrucciones.
     # Los espacios seguidos se juntan en uno.
@@ -64,7 +64,7 @@ def _clean_notes(value: str) -> str:
     return " ".join(kept.split())
 
 
-Notes = Annotated[str, Field(max_length=MAX_NOTES_CHARS), AfterValidator(_clean_notes)]
+Notes = Annotated[str, Field(max_length=MAX_NOTES_CHARS), AfterValidator(clean_text)]
 
 
 class GroupOption(BaseModel):

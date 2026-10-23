@@ -1182,5 +1182,442 @@
   "monumentTokioFact": "333 metres tall, opened in 1958 and painted white and orange for air safety.",
   "@monumentTokioFact": {
     "description": "Landmark shown in the 3D flight."
+  },
+  "groupTitle": "Group trips",
+  "@groupTitle": {
+    "description": "Group tab title."
+  },
+  "groupIntro": "Each person tells their own agent what they like and how much they can spend. The agents negotiate and Flyra brings you a plan everyone accepts.",
+  "@groupIntro": {
+    "description": "Explains group negotiation. Flyra is the AI agent's name, never translate."
+  },
+  "groupSignIn": "Group trips need an account so your friends can find you.",
+  "@groupSignIn": {
+    "description": "Group trips require an account."
+  },
+  "groupEmpty": "No group trips yet. Create one or join with a friend's code.",
+  "@groupEmpty": {
+    "description": "No group trips yet."
+  },
+  "groupNew": "New group trip",
+  "@groupNew": {
+    "description": "Button: create a group trip."
+  },
+  "groupJoin": "Join with a code",
+  "@groupJoin": {
+    "description": "Button: join a group with an invite code."
+  },
+  "groupJoinTitle": "Join a group",
+  "@groupJoinTitle": {
+    "description": "Join sheet title."
+  },
+  "groupJoinCodeLabel": "Invite code",
+  "@groupJoinCodeLabel": {
+    "description": "Invite code field label."
+  },
+  "groupJoinHint": "e.g. 7K2M-9QXD",
+  "@groupJoinHint": {
+    "description": "Example invite code; keep the code as is."
+  },
+  "groupJoinAction": "Join",
+  "@groupJoinAction": {
+    "description": "Button: join."
+  },
+  "groupJoinNotFound": "That code doesn't exist or has expired.",
+  "@groupJoinNotFound": {
+    "description": "Invite code unknown or expired."
+  },
+  "groupJoinClosed": "That group is already negotiating or full.",
+  "@groupJoinClosed": {
+    "description": "Group no longer accepts members."
+  },
+  "groupYourName": "Your name for the group",
+  "@groupYourName": {
+    "description": "Field: your display name in the group."
+  },
+  "groupYourNameHelp": "Only your group sees it. The AI only sees \"Traveller 2\".",
+  "@groupYourNameHelp": {
+    "description": "Explains the AI only sees an alias."
+  },
+  "groupMemberReady": "{name}, ready",
+  "@groupMemberReady": {
+    "description": "Screen reader: member has sent preferences.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groupStatusCollecting": "Waiting ({ready}/{total})",
+  "@groupStatusCollecting": {
+    "description": "Status chip while waiting.",
+    "placeholders": {
+      "ready": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groupStatusWorking": "Negotiating…",
+  "@groupStatusWorking": {
+    "description": "Status chip: agents negotiating."
+  },
+  "groupStatusConcluded": "Plan ready",
+  "@groupStatusConcluded": {
+    "description": "Status chip: result ready."
+  },
+  "groupStatusExpired": "Expired",
+  "@groupStatusExpired": {
+    "description": "Status chip: expired."
+  },
+  "groupCreateTitle": "New group trip",
+  "@groupCreateTitle": {
+    "description": "Create screen title."
+  },
+  "groupTripName": "Trip name",
+  "@groupTripName": {
+    "description": "Field: trip name."
+  },
+  "groupTripNameHint": "e.g. Long weekend in May",
+  "@groupTripNameHint": {
+    "description": "Example trip name."
+  },
+  "groupCurrency": "Currency",
+  "@groupCurrency": {
+    "description": "Field: currency."
+  },
+  "groupOptionsTitle": "Options to choose from",
+  "@groupOptionsTitle": {
+    "description": "Section: options."
+  },
+  "groupOptionsHelp": "Add 2 to 10 options (a city, a flat, a hotel…) with the price per person.",
+  "@groupOptionsHelp": {
+    "description": "Help for options."
+  },
+  "groupOptionN": "Option {n}",
+  "@groupOptionN": {
+    "description": "Option card title; {n} is its number.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "groupOptionName": "Name",
+  "@groupOptionName": {
+    "description": "Field: option name."
+  },
+  "groupOptionNameHint": "e.g. Flat in Alfama",
+  "@groupOptionNameHint": {
+    "description": "Example option."
+  },
+  "groupOptionPrice": "Price per person",
+  "@groupOptionPrice": {
+    "description": "Field: price per person."
+  },
+  "groupOptionTags": "What it offers",
+  "@groupOptionTags": {
+    "description": "Label above tags of an option."
+  },
+  "groupOptionAdd": "Add option",
+  "@groupOptionAdd": {
+    "description": "Button: add option."
+  },
+  "groupOptionRemove": "Remove option",
+  "@groupOptionRemove": {
+    "description": "Tooltip: remove option."
+  },
+  "groupCreateAction": "Create and get the code",
+  "@groupCreateAction": {
+    "description": "Button: create trip."
+  },
+  "groupRequired": "Required",
+  "@groupRequired": {
+    "description": "Validation: required."
+  },
+  "groupPriceInvalid": "Enter an amount greater than 0",
+  "@groupPriceInvalid": {
+    "description": "Validation: amount > 0."
+  },
+  "groupInviteTitle": "Invite your group",
+  "@groupInviteTitle": {
+    "description": "Invite card title."
+  },
+  "groupInviteText": "Share this code. Whoever types it in NomadIQ joins the trip (up to 8 people).",
+  "@groupInviteText": {
+    "description": "Invite explanation."
+  },
+  "groupInviteCopy": "Copy code",
+  "@groupInviteCopy": {
+    "description": "Copy code tooltip."
+  },
+  "groupInviteCopied": "Code copied",
+  "@groupInviteCopied": {
+    "description": "Snackbar after copying."
+  },
+  "groupDeadline": "Preferences until {date}",
+  "@groupDeadline": {
+    "description": "Deadline for preferences; {date} like 'Oct 26, 18:00'.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "groupMembersReady": "{ready} of {total} ready",
+  "@groupMembersReady": {
+    "description": "How many members are ready.",
+    "placeholders": {
+      "ready": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groupYou": "You",
+  "@groupYou": {
+    "description": "Refers to the current user in a list."
+  },
+  "groupNotFound": "This trip doesn't exist or you're not in it.",
+  "@groupNotFound": {
+    "description": "Trip not found."
+  },
+  "groupClosedNow": "Too late: the negotiation has already started.",
+  "@groupClosedNow": {
+    "description": "Preferences can no longer be changed."
+  },
+  "groupPrefsTitle": "Your preferences",
+  "@groupPrefsTitle": {
+    "description": "Section: your preferences."
+  },
+  "groupPrefsPrivate": "Only your agent sees this. Nobody in the group does, and it's deleted when the negotiation ends.",
+  "@groupPrefsPrivate": {
+    "description": "Privacy explanation."
+  },
+  "groupBudget": "Maximum per person",
+  "@groupBudget": {
+    "description": "Field: max budget per person."
+  },
+  "groupBudgetHelp": "A red line: your agent will never accept anything more expensive.",
+  "@groupBudgetHelp": {
+    "description": "Budget is a hard limit."
+  },
+  "groupLikes": "I like",
+  "@groupLikes": {
+    "description": "Tags you like."
+  },
+  "groupAvoid": "I'd rather avoid",
+  "@groupAvoid": {
+    "description": "Tags to avoid."
+  },
+  "groupNotes": "A note for your agent",
+  "@groupNotes": {
+    "description": "Free note for your agent."
+  },
+  "groupNotesHint": "e.g. I'm travelling with my dog",
+  "@groupNotesHint": {
+    "description": "Example note."
+  },
+  "groupSend": "Send to my agent",
+  "@groupSend": {
+    "description": "Button: send preferences."
+  },
+  "groupUpdate": "Update my preferences",
+  "@groupUpdate": {
+    "description": "Button: update preferences."
+  },
+  "groupSent": "Sent. Your agent is ready.",
+  "@groupSent": {
+    "description": "Snackbar after sending."
+  },
+  "groupStart": "Start the negotiation",
+  "@groupStart": {
+    "description": "Button: start negotiation."
+  },
+  "groupStartHelp": "The agents of everyone who has sent their preferences will negotiate. It also starts on its own when the deadline passes.",
+  "@groupStartHelp": {
+    "description": "Explains start."
+  },
+  "groupStartNeedsTwo": "At least two people need to send their preferences.",
+  "@groupStartNeedsTwo": {
+    "description": "Need 2 ready members."
+  },
+  "groupWaitingOrganizer": "When everyone's ready, the organiser presses Start (or it starts on its own at the deadline).",
+  "@groupWaitingOrganizer": {
+    "description": "Non-organisers wait."
+  },
+  "groupWorkingTitle": "The agents are negotiating",
+  "@groupWorkingTitle": {
+    "description": "Agents negotiating."
+  },
+  "groupWorkingText": "Each agent defends its traveller. It takes a few minutes; you can close the app.",
+  "@groupWorkingText": {
+    "description": "Explains waiting."
+  },
+  "groupResultConsensus": "Flyra found an agreement",
+  "@groupResultConsensus": {
+    "description": "Result: agreement. Flyra = AI name."
+  },
+  "groupResultArbitration": "No agreement: the arbiter decided",
+  "@groupResultArbitration": {
+    "description": "Result: no agreement, arbiter decided."
+  },
+  "groupResultNone": "No option fits everyone's budget",
+  "@groupResultNone": {
+    "description": "Result: nothing fits budgets."
+  },
+  "groupResultOnlyOne": "It's the only option that fits everyone's budget, so there was no need to negotiate.",
+  "@groupResultOnlyOne": {
+    "description": "Only one option fits."
+  },
+  "groupResultRound": "Everyone accepted it in round {round}.",
+  "@groupResultRound": {
+    "description": "Agreement in round N.",
+    "placeholders": {
+      "round": {
+        "type": "int"
+      }
+    }
+  },
+  "groupResultArbiter": "After {rounds} rounds without agreement, the arbiter chose the option that leaves the least happy person best off.",
+  "@groupResultArbiter": {
+    "description": "Arbiter explanation.",
+    "placeholders": {
+      "rounds": {
+        "type": "int"
+      }
+    }
+  },
+  "groupResultNoneTip": "Try cheaper options or review your budgets.",
+  "@groupResultNoneTip": {
+    "description": "Tip when nothing fits."
+  },
+  "groupResultExcluded": "{count, plural, =1{1 option was dropped for exceeding someone's budget.} other{{count} options were dropped for exceeding someone's budget.}}",
+  "@groupResultExcluded": {
+    "description": "How many options exceeded someone's budget.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "groupResultAgents": "What each agent said",
+  "@groupResultAgents": {
+    "description": "Section: what each agent said."
+  },
+  "groupAgentOf": "Agent of {name}",
+  "@groupAgentOf": {
+    "description": "Agent of a person; {name} is a name or 'You'.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groupRankFavourite": "Their favourite",
+  "@groupRankFavourite": {
+    "description": "Chosen option was their favourite."
+  },
+  "groupRankN": "Their choice no. {rank}",
+  "@groupRankN": {
+    "description": "Chosen option's rank in their list.",
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      }
+    }
+  },
+  "groupByRules": "Decided by rules (no AI)",
+  "@groupByRules": {
+    "description": "Agent used rules, not AI."
+  },
+  "groupExpiredText": "The deadline passed without enough preferences. Create the trip again to try once more.",
+  "@groupExpiredText": {
+    "description": "Expired explanation."
+  },
+  "groupOptionsList": "The options",
+  "@groupOptionsList": {
+    "description": "Section: the options."
+  },
+  "groupPerPerson": "{price}/person",
+  "@groupPerPerson": {
+    "description": "Price per person; {price} is formatted money.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "groupTagBeach": "Beach",
+  "@groupTagBeach": {
+    "description": "Trip interest tag shown on a chip."
+  },
+  "groupTagMuseums": "Museums",
+  "@groupTagMuseums": {
+    "description": "Trip interest tag shown on a chip."
+  },
+  "groupTagNightlife": "Nightlife",
+  "@groupTagNightlife": {
+    "description": "Trip interest tag shown on a chip."
+  },
+  "groupTagMountains": "Mountains",
+  "@groupTagMountains": {
+    "description": "Trip interest tag shown on a chip."
+  },
+  "groupTagFood": "Good food",
+  "@groupTagFood": {
+    "description": "Trip interest tag shown on a chip."
+  },
+  "groupTagNature": "Nature",
+  "@groupTagNature": {
+    "description": "Trip interest tag shown on a chip."
+  },
+  "groupTagHistory": "History",
+  "@groupTagHistory": {
+    "description": "Trip interest tag shown on a chip."
+  },
+  "groupTagShopping": "Shopping",
+  "@groupTagShopping": {
+    "description": "Trip interest tag shown on a chip."
+  },
+  "groupTagRelax": "Relaxing",
+  "@groupTagRelax": {
+    "description": "Trip interest tag shown on a chip."
+  },
+  "groupTagAdventure": "Adventure",
+  "@groupTagAdventure": {
+    "description": "Trip interest tag shown on a chip."
+  },
+  "groupTagSport": "Sport",
+  "@groupTagSport": {
+    "description": "Trip interest tag shown on a chip."
+  },
+  "groupTagRomantic": "Romantic",
+  "@groupTagRomantic": {
+    "description": "Trip interest tag shown on a chip."
+  },
+  "groupTagKids": "Kids",
+  "@groupTagKids": {
+    "description": "Trip interest tag shown on a chip."
+  },
+  "groupTagEarlyStarts": "Early starts",
+  "@groupTagEarlyStarts": {
+    "description": "Trip interest tag shown on a chip."
+  },
+  "groupTagLongWalks": "Long walks",
+  "@groupTagLongWalks": {
+    "description": "Trip interest tag shown on a chip."
+  },
+  "groupTagCrowds": "Crowds",
+  "@groupTagCrowds": {
+    "description": "Trip interest tag shown on a chip."
+  },
+  "groupYourAgent": "Your agent",
+  "@groupYourAgent": {
+    "description": "Title of the current user's own agent."
   }
 }

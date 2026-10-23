@@ -15,6 +15,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 from collections.abc import AsyncIterator
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
 import asyncpg
@@ -24,14 +25,17 @@ from test_integration import BROKERS, _settings
 
 from ai_orchestrator.negotiation.agents import AgentSettings
 from ai_orchestrator.negotiation.consumer import NegotiationRequestConsumer
-from ai_orchestrator.negotiation.domain import GroupOption, MemberPreferences, Outcome, Status
+from ai_orchestrator.negotiation.domain import MAX_MEMBERS, GroupOption, MemberPreferences, Outcome, Status
 from ai_orchestrator.negotiation.engine import EngineResult
 from ai_orchestrator.negotiation.events import concluded_message
 from ai_orchestrator.negotiation.service import NegotiationService, NegotiationSettings, build_result
 from ai_orchestrator.negotiation.store import (
     NegotiationClosedError,
+    NegotiationFullError,
     NegotiationNotFoundError,
     NewNegotiation,
+    NotEnoughReadyError,
+    NotOrganizerError,
     PostgresNegotiations,
 )
 from ai_orchestrator.outbox import OutboxRelay
@@ -174,6 +178,47 @@ async def test_sweep_handles_deadlines_and_dead_workers(pool: asyncpg.Pool[async
     assert await pending_requests(pool, c_id) == 1
     expired = await store.get_for_member(b_id, b[0])
     assert expired is not None and all(m.preferences is None for m in expired.members)
+
+
+async def test_invites_join_and_start(pool: asyncpg.Pool[asyncpg.Record]) -> None:
+    store = PostgresNegotiations(pool, requests_topic=REQUESTS)
+    organizer, *friends = people(MAX_MEMBERS + 1)
+    created = await store.create(replace(draft(organizer), invites_open=True, organizer_name="Darío"))
+    nid, code = created.negotiation_id, created.invite_code
+    assert code is not None and created.members[0].display_name == "Darío"
+
+    # Siete amigos entran a la vez: asientos 2..8 sin repetir, y el noveno no cabe.
+    await asyncio.gather(*(store.join(code, f, "Amigo") for f in friends[:-1]))
+    final = await store.get_for_member(nid, organizer)
+    assert final is not None and sorted(m.seat for m in final.members) == list(range(1, MAX_MEMBERS + 1))
+    with pytest.raises(NegotiationFullError):
+        await store.join(code, friends[-1], None)
+    # Repetir la entrada es inofensivo.
+    again = await store.join(code, friends[0], "Otro nombre")
+    assert len(again.members) == MAX_MEMBERS
+
+    # Todos envían, pero con el grupo abierto no arranca sola.
+    for who in (organizer, friends[0]):
+        assert (await store.submit_preferences(nid, who, PREFS)).status is Status.COLLECTING
+    assert await pending_requests(pool, nid) == 0
+    with pytest.raises(NotOrganizerError):
+        await store.start(nid, friends[0])
+    started = await store.start(nid, organizer)
+    assert started.status is Status.QUEUED and started.invite_code is None and not started.invites_open
+    assert await pending_requests(pool, nid) == 1
+    with pytest.raises(NegotiationNotFoundError):
+        await store.join(code, friends[-1], None)
+
+
+async def test_start_needs_two_ready(pool: asyncpg.Pool[asyncpg.Record]) -> None:
+    store = PostgresNegotiations(pool, requests_topic=REQUESTS)
+    organizer, friend = people(2)
+    created = await store.create(replace(draft(organizer), invites_open=True))
+    assert created.invite_code is not None
+    await store.join(created.invite_code, friend, None)
+    await store.submit_preferences(created.negotiation_id, organizer, PREFS)
+    with pytest.raises(NotEnoughReadyError):
+        await store.start(created.negotiation_id, organizer)
 
 
 async def test_end_to_end_through_kafka(pool: asyncpg.Pool[asyncpg.Record]) -> None:

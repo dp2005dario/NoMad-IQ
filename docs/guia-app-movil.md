@@ -517,8 +517,45 @@ cd mobile
 flutter test test/flights_test.dart
 ```
 
+## 9 ter. Grupo: viajes en grupo con Flyra
+
+La pestaña **Grupo** (maqueta "Grupo") conecta con la negociación de agentes
+del ai-orchestrator (ver `docs/guia-negociacion-grupo.md`).
+
+| En pantalla | Qué hace |
+|---|---|
+| "Nuevo viaje en grupo" | Nombre del viaje, tu nombre para el grupo, la divisa y de 2 a 10 opciones (una ciudad, un piso, un hotel…) con precio por persona y lo que ofrece cada una ("Playa", "Historia"…). Al crearlo recibes un **código de invitación** |
+| El código ("7K2M-9QXD") | Cópialo y mándalo por WhatsApp. Quien lo escriba en "Unirme con un código" entra en el viaje (hasta 8 personas) |
+| "Tus preferencias" | Lo máximo que pagarías por persona (una línea roja que ningún agente cruza), lo que te gusta, lo que prefieres evitar y una nota. **Solo lo ve tu agente**; el servidor lo borra al terminar |
+| "Empezar la negociación" | Solo quien organiza, con al menos dos personas listas. Si nadie lo pulsa, empieza sola al acabar el plazo |
+| "Los agentes están negociando" | Tarda unos minutos. La pantalla pregunta cada 4 segundos cómo va (cada 20 mientras se espera a la gente) y deja de preguntar sola a los 30 minutos para no gastar batería |
+| El resultado | La opción elegida y por qué (acuerdo, árbitro o "ninguna cabe en el presupuesto de todos"), cuántas opciones se cayeron por presupuesto (sin decir de quién) y lo que dijo el agente de cada uno |
+| Modo invitado | Grupo pide crear una cuenta gratis: tus amigos tienen que poder encontrarte |
+
+### Cómo funciona (con analogías)
+
+- **`lib/features/group/group_api.dart`** es el "traductor": revisa cada campo
+  que llega del servidor (estado, divisa, opciones, resultado). Si algo llega
+  raro, error claro en vez de pantalla rota.
+- **Los gustos son palabras fijas** (`beach`, `museums`…) y cada idioma tiene
+  su traducción en los `.arb`. Así nadie puede colar instrucciones para la IA
+  dentro de una etiqueta.
+- **Los precios se escriben en números enteros** (70, no 70,50) y se pasan a
+  céntimos según la divisa (`wholeToMinor` en `lib/core/money.dart`: el yen
+  no tiene céntimos).
+- **La explicación del resultado la escribe la app** con sus textos
+  traducidos, a partir de los datos (acuerdo, rondas, descartes). La frase de
+  cada agente sí llega del servidor, en el idioma de la negociación.
+
+### Probarlo en tu PC
+
+```bash
+cd mobile
+flutter test test/group_test.dart
+```
+
 ## 10. Lo siguiente
 
 Cada PR sustituye una pantalla "Muy pronto" por la de verdad, siguiendo las
-maquetas, en este orden: (Vuelos ya está) Ruta del vuelo en globo y 3D, Grupo con la
-negociación de Flyra, Cámara, Dinero y Bóveda.
+maquetas, en este orden: (Vuelos, Ruta del vuelo, Vuelo 3D y Grupo ya están)
+Cámara, Dinero y Bóveda.
