@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -36,6 +37,17 @@ type Config struct {
 	SeedWatches      []string
 	SimulatedLatency time.Duration
 	ErrorFareRate    float64
+
+	// Provider: "simulated" (precios inventados, para local y la CI) o
+	// "travelpayouts" (precios reales y enlaces con comisión de afiliado).
+	Provider              string
+	TravelpayoutsToken    string // SECRETO: nunca se registra en logs
+	TravelpayoutsMarker   string
+	TravelpayoutsCurrency string
+	TravelpayoutsBaseURL  string
+	TravelpayoutsBooking  string
+	TravelpayoutsRate     float64
+	TravelpayoutsRefresh  time.Duration
 
 	ShutdownTimeout time.Duration
 	LogLevel        slog.Level
@@ -134,6 +146,29 @@ func (r *reader) float(key string, def, min, max float64) float64 {
 	return f
 }
 
+// secret lee un secreto de KEY o, mejor en producción, del fichero que diga
+// KEY_FILE (un "secret" de Kubernetes montado como fichero no aparece en
+// "env" ni en los volcados del proceso). El valor nunca va en los errores.
+func (r *reader) secret(key string) string {
+	value, fileKey := r.str(key, ""), key+"_FILE"
+	file := r.str(fileKey, "")
+	switch {
+	case value != "" && file != "":
+		r.errs = append(r.errs, fmt.Errorf("%s y %s son excluyentes: usa solo una", key, fileKey))
+	case file != "":
+		raw, err := os.ReadFile(file)
+		if err != nil {
+			r.errs = append(r.errs, fmt.Errorf("%s: no se pudo leer %s", fileKey, file))
+			return ""
+		}
+		value = strings.TrimSpace(string(raw))
+	}
+	if value == "" {
+		r.errs = append(r.errs, fmt.Errorf("%s (o %s) es obligatoria", key, fileKey))
+	}
+	return value
+}
+
 // boolean lee true/false (también acepta 1/0, t/f).
 func (r *reader) boolean(key string, def bool) bool {
 	raw := r.str(key, "")
@@ -172,7 +207,27 @@ func Load(lookup LookupFunc) (Config, error) {
 		SimulatedLatency: r.duration("SIMULATED_LATENCY", 200*time.Millisecond, 0, 30*time.Second),
 		ErrorFareRate:    r.float("SIMULATED_ERROR_FARE_RATE", 0.01, 0, 1),
 
+		Provider:              strings.ToLower(r.str("FARE_PROVIDER", "simulated")),
+		TravelpayoutsMarker:   r.str("TRAVELPAYOUTS_MARKER", ""),
+		TravelpayoutsCurrency: strings.ToUpper(r.str("TRAVELPAYOUTS_CURRENCY", "EUR")),
+		TravelpayoutsBaseURL:  r.str("TRAVELPAYOUTS_BASE_URL", "https://api.travelpayouts.com"),
+		TravelpayoutsBooking:  r.str("TRAVELPAYOUTS_BOOKING_HOST", "https://www.aviasales.com"),
+		// 2 peticiones por segundo como mucho, y cada ruta como mucho cada 30
+		// minutos: de sobra para la Data API, que se actualiza cada pocas horas.
+		TravelpayoutsRate:    r.float("TRAVELPAYOUTS_RATE_PER_SECOND", 2, 0.1, 50),
+		TravelpayoutsRefresh: r.duration("TRAVELPAYOUTS_REFRESH", 30*time.Minute, time.Minute, 24*time.Hour),
+
 		ShutdownTimeout: r.duration("SHUTDOWN_TIMEOUT", 15*time.Second, time.Second, 2*time.Minute),
+	}
+	switch cfg.Provider {
+	case "simulated":
+	case "travelpayouts":
+		cfg.TravelpayoutsToken = r.secret("TRAVELPAYOUTS_TOKEN")
+		if cfg.TravelpayoutsMarker == "" {
+			r.errs = append(r.errs, errors.New("TRAVELPAYOUTS_MARKER es obligatoria con FARE_PROVIDER=travelpayouts (tu id de afiliado: sin él no cobras comisiones)"))
+		}
+	default:
+		r.errs = append(r.errs, fmt.Errorf("FARE_PROVIDER: %q no existe (usa simulated o travelpayouts)", cfg.Provider))
 	}
 	if len(cfg.KafkaBrokers) == 0 {
 		r.required("KAFKA_BROKERS")

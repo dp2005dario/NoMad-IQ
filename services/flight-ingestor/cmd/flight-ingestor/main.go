@@ -107,11 +107,28 @@ func run() error {
 		}
 	}()
 
+	// --- Proveedor de precios ---
+	var fares provider.FareProvider
+	switch cfg.Provider {
+	case "travelpayouts":
+		fares, err = provider.NewTravelpayouts(provider.TravelpayoutsConfig{
+			BaseURL: cfg.TravelpayoutsBaseURL, Token: cfg.TravelpayoutsToken, Marker: cfg.TravelpayoutsMarker,
+			Currency: cfg.TravelpayoutsCurrency, BookingHost: cfg.TravelpayoutsBooking,
+			RatePerSecond: cfg.TravelpayoutsRate, Refresh: cfg.TravelpayoutsRefresh,
+		})
+		if err != nil {
+			return err
+		}
+	default:
+		fares = provider.NewSimulated(uint64(time.Now().UnixNano()), cfg.SimulatedLatency, cfg.ErrorFareRate)
+	}
+	log.Info("proveedor de precios", slog.String("provider", fares.Name()))
+
 	// --- Ingestor ---
 	ing, err := ingest.New(
 		ingest.Config{Interval: cfg.PollInterval, QueryTimeout: cfg.ProviderTimeout, Concurrency: cfg.Concurrency},
 		store,
-		provider.NewSimulated(uint64(time.Now().UnixNano()), cfg.SimulatedLatency, cfg.ErrorFareRate),
+		fares,
 		events.NewEncoder(cfg.TopicPriceObserved, serviceName),
 		pub,
 		log.With(slog.String("component", "ingest")),

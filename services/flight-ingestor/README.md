@@ -20,7 +20,7 @@ auth-gateway ──────────► RouteWatchService ──► watch
 | `internal/config` | Variables de entorno validadas (falla si algo es inseguro) |
 | `internal/domain` | Tipos y reglas de negocio, sin dependencias externas |
 | `internal/watchlist` | Registro concurrente de rutas vigiladas |
-| `internal/provider` | Interfaz `FareProvider` + proveedor simulado |
+| `internal/provider` | Interfaz `FareProvider`, proveedor simulado y Travelpayouts (precios reales + enlace de afiliado) |
 | `internal/ingest` | Ciclos de consulta con concurrencia limitada |
 | `internal/events` | Dominio → mensaje Kafka (protobuf + cabeceras) |
 | `internal/publisher` | Productor Kafka idempotente (franz-go) |
@@ -43,6 +43,12 @@ auth-gateway ──────────► RouteWatchService ──► watch
 | `MAX_WATCHES` | `10000` | Límite de rutas vigiladas |
 | `SEED_WATCHES` | — | Rutas de ejemplo, p. ej. `MAD-NRT:2026-12-01:ECONOMY` |
 | `SIMULATED_LATENCY`, `SIMULATED_ERROR_FARE_RATE` | `200ms`, `0.01` | Proveedor simulado |
+| `FARE_PROVIDER` | `simulated` | `simulated` o `travelpayouts` |
+| `TRAVELPAYOUTS_TOKEN` (o `_FILE`) | obligatoria con travelpayouts | **Secreto**: va en la cabecera `X-Access-Token`, nunca en URLs ni logs |
+| `TRAVELPAYOUTS_MARKER` | obligatoria con travelpayouts | Tu id de afiliado: se añade a cada enlace de reserva |
+| `TRAVELPAYOUTS_CURRENCY` | `EUR` | Divisa de los precios |
+| `TRAVELPAYOUTS_RATE_PER_SECOND` / `TRAVELPAYOUTS_REFRESH` | `2` / `30m` | Ritmo máximo total y refresco mínimo por ruta |
+| `TRAVELPAYOUTS_BASE_URL` / `TRAVELPAYOUTS_BOOKING_HOST` | `https://api.travelpayouts.com` / `https://www.aviasales.com` | |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
 | `SHUTDOWN_TIMEOUT` | `15s` | |
 

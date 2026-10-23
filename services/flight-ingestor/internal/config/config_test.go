@@ -4,6 +4,7 @@
 package config
 
 import (
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -84,5 +85,51 @@ func TestLoadTLSRules(t *testing.T) {
 				t.Fatalf("error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+// El proveedor real exige token y marker; el token puede venir de un fichero
+// (secret de Kubernetes) y nunca aparece en los errores.
+func TestTravelpayoutsConfig(t *testing.T) {
+	base := func() map[string]string {
+		return map[string]string{"KAFKA_BROKERS": "k:9092", "GRPC_INSECURE_DEV": "true", "FARE_PROVIDER": "travelpayouts"}
+	}
+	m := base()
+	m["TRAVELPAYOUTS_TOKEN"] = "tok-secreto-123"
+	m["TRAVELPAYOUTS_MARKER"] = "123456"
+	cfg, err := Load(env(m))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.TravelpayoutsToken != "tok-secreto-123" || cfg.TravelpayoutsCurrency != "EUR" || cfg.TravelpayoutsRefresh != 30*time.Minute {
+		t.Errorf("valores inesperados: %+v", cfg)
+	}
+
+	file := t.TempDir() + "/token"
+	if err := os.WriteFile(file, []byte("tok-de-fichero\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	m = base()
+	m["TRAVELPAYOUTS_TOKEN_FILE"] = file
+	m["TRAVELPAYOUTS_MARKER"] = "123456"
+	if cfg, err = Load(env(m)); err != nil || cfg.TravelpayoutsToken != "tok-de-fichero" {
+		t.Fatalf("token desde fichero: %v %q", err, cfg.TravelpayoutsToken)
+	}
+
+	_, err = Load(env(base()))
+	if err == nil || !strings.Contains(err.Error(), "TRAVELPAYOUTS_TOKEN") || !strings.Contains(err.Error(), "TRAVELPAYOUTS_MARKER") {
+		t.Fatalf("sin token ni marker debe fallar avisando de los dos: %v", err)
+	}
+	m = base()
+	m["TRAVELPAYOUTS_TOKEN"] = "tok-secreto-123"
+	m["TRAVELPAYOUTS_TOKEN_FILE"] = file
+	m["TRAVELPAYOUTS_MARKER"] = "1"
+	if _, err = Load(env(m)); err == nil || strings.Contains(err.Error(), "tok-secreto-123") {
+		t.Fatalf("token y fichero a la vez: debe fallar sin enseñar el token: %v", err)
+	}
+	m = base()
+	m["FARE_PROVIDER"] = "skyscanner"
+	if _, err = Load(env(m)); err == nil {
+		t.Fatal("un proveedor desconocido debe rechazarse")
 	}
 }

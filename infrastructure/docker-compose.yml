@@ -165,6 +165,12 @@ services:
       SEED_WATCHES: ${SEED_WATCHES:-}
       # Probabilidad de simular una tarifa error (0.01 = 1 %). Súbela para ver alertas antes.
       SIMULATED_ERROR_FARE_RATE: ${SIMULATED_ERROR_FARE_RATE:-0.01}
+      # Precios: "simulated" (inventados, por defecto) o "travelpayouts"
+      # (reales, con tu token y marker en .env: ver docs/guia-travelpayouts.md).
+      FARE_PROVIDER: ${FARE_PROVIDER:-simulated}
+      TRAVELPAYOUTS_TOKEN: ${TRAVELPAYOUTS_TOKEN:-}
+      TRAVELPAYOUTS_MARKER: ${TRAVELPAYOUTS_MARKER:-}
+      TRAVELPAYOUTS_CURRENCY: ${TRAVELPAYOUTS_CURRENCY:-EUR}
     ports:
       - "127.0.0.1:50051:50051"   # gRPC RouteWatchService
       - "127.0.0.1:8081:8081"     # /healthz y /readyz
