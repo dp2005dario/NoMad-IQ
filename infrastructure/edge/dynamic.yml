@@ -87,6 +87,14 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 
+    # Fotos reales de la calle (Mapillary): públicas como las fichas. La app
+    # manda el punto ya redondeado a ~100 m. Solo GET y esa ruta exacta.
+    streetview:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/streetview`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
     # Vuelos SIN cuenta: chollos e historial de precios. Son iguales para todo
     # el mundo, así que también los ve quien entra como invitado (precios
     # reales para todos). Solo lectura (GET) y con el mismo límite por IP.

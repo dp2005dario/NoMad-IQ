@@ -26,6 +26,7 @@ import asyncio
 import hashlib
 import re
 import time
+from collections.abc import Callable
 from typing import Any
 from urllib.parse import quote, unquote
 
@@ -71,7 +72,17 @@ class RateLimiter:
     demasiado larga, mejor decir "vuelve luego" que hacer cola sin fin.
     """
 
-    def __init__(self, rate: float, burst: int, *, clock: Any = time.monotonic) -> None:
+    def __init__(
+        self,
+        rate: float,
+        burst: int,
+        *,
+        clock: Any = time.monotonic,
+        busy: Callable[[], Exception] = lambda: WikimediaBusyError("límite de peticiones a Wikimedia"),
+    ) -> None:
+        # ``busy`` es el error que se lanza si toca esperar demasiado: así el
+        # mismo dispensador sirve para Wikimedia y para Mapillary.
+        self._busy = busy
         self._rate = rate
         self._burst = float(burst)
         self._tokens = float(burst)
@@ -89,7 +100,7 @@ class RateLimiter:
                 return
             wait = (1 - self._tokens) / self._rate
             if wait > max_wait:
-                raise WikimediaBusyError("límite de peticiones a Wikimedia")
+                raise self._busy()
             # Reservamos la ficha ya (puede quedar en negativo) y esperamos.
             self._tokens -= 1
         await asyncio.sleep(wait)
