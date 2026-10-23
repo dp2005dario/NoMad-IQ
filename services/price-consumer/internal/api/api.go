@@ -10,11 +10,11 @@
 //
 // Endpoints (todo en JSON):
 //
-//	GET    /v1/fares/deals?origin=MAD          chollos de hoy desde un aeropuerto
+//	GET    /v1/fares/deals?origin=MAD          chollos de hoy desde un aeropuerto (público)
 //	GET    /v1/fares/watches                   las rutas que vigilo, con su último precio
 //	PUT    /v1/fares/watches/{route_key}       vigilar una ruta (opcional: precio objetivo)
 //	DELETE /v1/fares/watches/{route_key}       dejar de vigilarla
-//	GET    /v1/fares/history/{route_key}       precio más bajo de cada día (gráfica)
+//	GET    /v1/fares/history/{route_key}       precio más bajo de cada día (gráfica, público)
 //	GET    /v1/fares/alerts                    mis últimos avisos de precio
 //
 // route_key tiene el formato ORIGEN-DESTINO:AAAA-MM-DD[:AAAA-MM-DD]:CABINA,
@@ -84,11 +84,14 @@ func New(cfg Config, st Store, watcher Watcher, log *slog.Logger) http.Handler {
 	}
 	h := &handler{cfg: cfg, store: st, watcher: watcher, log: log}
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /v1/fares/deals", h.withUser(h.deals))
+	// Chollos e historial son públicos: también los ve quien entra como
+	// invitado (no dependen de quién pregunta). Vigilar rutas y los avisos sí
+	// necesitan cuenta, porque se guardan a tu nombre.
+	mux.HandleFunc("GET /v1/fares/deals", public(h.deals))
 	mux.HandleFunc("GET /v1/fares/watches", h.withUser(h.watches))
 	mux.HandleFunc("PUT /v1/fares/watches/{route_key}", h.withUser(h.watch))
 	mux.HandleFunc("DELETE /v1/fares/watches/{route_key}", h.withUser(h.unwatch))
-	mux.HandleFunc("GET /v1/fares/history/{route_key}", h.withUser(h.history))
+	mux.HandleFunc("GET /v1/fares/history/{route_key}", public(h.history))
 	mux.HandleFunc("GET /v1/fares/alerts", h.withUser(h.alerts))
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
 		problem(w, http.StatusNotFound, "no encontrado")
@@ -106,6 +109,16 @@ type handler struct {
 // ---------------------------------------------------------------------------
 // Identidad y errores
 // ---------------------------------------------------------------------------
+
+// public sirve una ruta sin pedir identidad. Como la respuesta es la misma
+// para todo el mundo, se deja guardar un minuto en caché (en el móvil o en
+// una CDN): con millones de usuarios, la mayoría de peticiones ni llegan aquí.
+func public(next func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "public, max-age=60")
+		next(w, r, "")
+	}
+}
 
 // withUser comprueba la identidad que puso la puerta de entrada y se la pasa
 // al manejador. Sin ella, 401; sin el rol USER, 403.
@@ -146,8 +159,11 @@ func problem(w http.ResponseWriter, status int, title string) {
 
 func writeJSON(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	// Son datos de cada usuario: ninguna caché intermedia debe guardarlos.
-	w.Header().Set("Cache-Control", "private, no-store")
+	// Normalmente son datos de cada usuario: ninguna caché intermedia debe
+	// guardarlos. Las rutas públicas ya pusieron su propia regla antes.
+	if w.Header().Get("Cache-Control") == "" {
+		w.Header().Set("Cache-Control", "private, no-store")
+	}
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(body)
 }

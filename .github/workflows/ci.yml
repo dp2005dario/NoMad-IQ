@@ -274,8 +274,10 @@ jobs:
           docker compose --profile apps up -d --build --wait flight-ingestor price-consumer auth-gateway ai-orchestrator geo-engine notifier fcm-fake edge
           curl -fsS http://127.0.0.1:8081/readyz
           curl -fsS http://127.0.0.1:8082/readyz
-          # La API de vuelos responde (y sin identidad de la puerta de entrada, 401).
-          test "$(curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1:8092/v1/fares/deals?origin=MAD')" = 401
+          # La API de vuelos responde: los chollos son públicos; lo personal, sin
+          # identidad de la puerta de entrada, da 401.
+          curl -fsS 'http://127.0.0.1:8092/v1/fares/deals?origin=MAD' >/dev/null
+          test "$(curl -s -o /dev/null -w '%{http_code}' 'http://127.0.0.1:8092/v1/fares/watches')" = 401
           curl -fsS http://127.0.0.1:8084/readyz
           # Sin Ollama en la CI: el ai-orchestrator debe estar listo igualmente (plan B por reglas).
           curl -fsS http://127.0.0.1:8086/readyz
@@ -330,8 +332,11 @@ jobs:
           curl -fsS -X POST "$edge/v1/auth/register" -H 'Content-Type: application/json' -d "$body"
           token=$(curl -fsS -X POST "$edge/v1/auth/login" -H 'Content-Type: application/json' -d "$body" | jq -er .access_token)
           auth="Authorization: Bearer $token"
-          test "$(curl -s -o /dev/null -w '%{http_code}' "$edge/v1/fares/deals?origin=MAD")" = 401
-          # Los precios de la ruta semilla (MAD-NRT) ya están guardados: salen como chollo.
+          # Sin cuenta (modo invitado) NO se puede vigilar ni ver avisos...
+          test "$(curl -s -o /dev/null -w '%{http_code}' "$edge/v1/fares/watches")" = 401
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X PUT "$edge/v1/fares/watches/MAD-LIS:2030-01-01:ECONOMY")" = 401
+          # ...pero SÍ se ven los precios: la ruta semilla (MAD-NRT) sale como chollo.
+          curl -fsS "$edge/v1/fares/deals?origin=MAD" | jq -e '(.deals | length) >= 1 and .deals[0].origin == "MAD"'
           curl -fsS -H "$auth" "$edge/v1/fares/deals?origin=MAD" | jq -e '(.deals | length) >= 1 and .deals[0].origin == "MAD"'
           key="MAD-LIS:$(date -u -d '+40 days' +%F):ECONOMY"
           curl -fsS -X PUT -H "$auth" -H 'Content-Type: application/json' "$edge/v1/fares/watches/$key" \
@@ -345,6 +350,8 @@ jobs:
             sleep 3
           done
           [ "$n" -ge 1 ]
+          # El historial también se ve sin cuenta.
+          curl -fsS "$edge/v1/fares/history/$key" | jq -e '.points | length >= 1'
           curl -fsS -H "$auth" "$edge/v1/fares/alerts" | jq -e '.alerts | type == "array"'
           test "$(curl -s -o /dev/null -w '%{http_code}' -X DELETE -H "$auth" "$edge/v1/fares/watches/$key")" = 204
       - name: Tests de integración del price-consumer (PostgreSQL + Kafka reales)

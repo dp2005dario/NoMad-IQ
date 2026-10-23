@@ -70,7 +70,18 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 
-    # Vuelos: chollos, rutas vigiladas, historial y avisos de precio (price-consumer).
+    # Vuelos SIN cuenta: chollos e historial de precios. Son iguales para todo
+    # el mundo, así que también los ve quien entra como invitado (precios
+    # reales para todos). Solo lectura (GET) y con el mismo límite por IP.
+    # priority alta: se mira antes que la ruta "fares" de abajo.
+    fares-public:
+      entryPoints: [web]
+      rule: Method(`GET`) && (Path(`/v1/fares/deals`) || PathPrefix(`/v1/fares/history/`))
+      priority: 100
+      middlewares: [strip-identity, rate-limit]
+      service: price-consumer
+
+    # Vuelos CON cuenta: rutas vigiladas y avisos de precio (price-consumer).
     fares:
       entryPoints: [web]
       rule: PathPrefix(`/v1/fares/`)

@@ -141,6 +141,35 @@ func TestIdentityIsRequired(t *testing.T) {
 	}
 }
 
+// Chollos e historial se ven sin cuenta (modo invitado) y se pueden guardar
+// en caché; lo personal sigue pidiendo identidad y nunca se guarda.
+func TestDealsAndHistoryArePublic(t *testing.T) {
+	st := &fakeStore{deals: []domain.Deal{
+		{Fare: fare("MAD-JFK:2026-11-15:ECONOMY", 40000, "https://book.example/jfk"), UsualMinor: 50000},
+	}}
+	h := newAPI(st, &fakeWatcher{})
+	for _, path := range []string{"/v1/fares/deals?origin=MAD", "/v1/fares/history/MAD-JFK:2026-11-15:ECONOMY"} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusOK {
+			t.Errorf("%s sin cuenta: %d", path, rec.Code)
+		}
+		if got := rec.Header().Get("Cache-Control"); got != "public, max-age=60" {
+			t.Errorf("%s Cache-Control = %q", path, got)
+		}
+	}
+	for _, path := range []string{"/v1/fares/watches", "/v1/fares/alerts"} {
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusUnauthorized {
+			t.Errorf("%s sin cuenta: %d", path, rec.Code)
+		}
+	}
+	if got := call(h, http.MethodGet, "/v1/fares/watches", "").Header().Get("Cache-Control"); got != "private, no-store" {
+		t.Errorf("watches Cache-Control = %q", got)
+	}
+}
+
 func TestDealsAreSortedByDrop(t *testing.T) {
 	st := &fakeStore{deals: []domain.Deal{
 		{Fare: fare("MAD-JFK:2026-11-15:ECONOMY", 40000, "https://book.example/jfk"), UsualMinor: 50000},         // -20 %
