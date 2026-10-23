@@ -1,6 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Hablar con el backend (inicio de sesión, vuelos, mapa...). -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Ubicación SOLO con la app abierta (mapa y aviso al entrar en una zona).
+         FINE = GPS preciso; COARSE = aproximada (Android 12+ deja al usuario
+         elegir "aproximada", y la app sigue funcionando). La ubicación con la
+         app cerrada (ACCESS_BACKGROUND_LOCATION) llegará en otro PR, con su
+         formulario para Google Play. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- allowBackup="false": la sesión cifrada no debe copiarse a la nube ni a
          otro móvil (su clave vive en el chip del teléfono y no viajaría). -->
     <application

@@ -12,7 +12,8 @@ abstract final class AppConfig {
     defaultValue: 'http://10.0.2.2:8080',
   );
 
-  /// Dirección base del backend (el auth-gateway, y más adelante el proxy de borde).
+  /// Dirección base del backend: la puerta de entrada (Traefik), que reparte
+  /// cada petición al servicio que toca.
   static Uri get apiBaseUrl {
     final Uri uri = Uri.parse(_apiUrl);
     // En la versión publicada SOLO se permite HTTPS: las contraseñas y los
@@ -22,5 +23,35 @@ abstract final class AppConfig {
       throw StateError('NOMADIQ_API_URL debe ser https:// en producción');
     }
     return uri;
+  }
+
+  // Mapas: OpenFreeMap sirve gratis los mapas de OpenStreetMap, sin clave ni
+  // registro y sin rastrear a nadie. Con millones de usuarios lo correcto es
+  // montar nuestro propio servidor de teselas (es software libre) y cambiar
+  // solo estas dos direcciones al compilar.
+  static const String _tilesUrl = String.fromEnvironment(
+    'NOMADIQ_TILES_URL',
+    defaultValue: 'https://tiles.openfreemap.org/planet',
+  );
+  static const String _glyphsUrl = String.fromEnvironment(
+    'NOMADIQ_GLYPHS_URL',
+    defaultValue: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+  );
+
+  /// La "TileJSON" con los datos del mapa (calles, agua, edificios...).
+  static Uri get tilesUrl {
+    final Uri uri = Uri.parse(_tilesUrl);
+    if (uri.scheme != 'https') {
+      throw StateError('NOMADIQ_TILES_URL debe ser https://');
+    }
+    return uri;
+  }
+
+  /// Las letras con las que se rotulan los nombres del mapa.
+  static String get glyphsUrl {
+    if (!_glyphsUrl.startsWith('https://')) {
+      throw StateError('NOMADIQ_GLYPHS_URL debe ser https://');
+    }
+    return _glyphsUrl;
   }
 }

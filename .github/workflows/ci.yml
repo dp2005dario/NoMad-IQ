@@ -191,11 +191,12 @@ jobs:
         working-directory: mobile
     steps:
       - uses: actions/checkout@v4
-      # Java 17 para compilar la parte Android (Gradle).
+      # Java 21: la librería del mapa (maplibre_gl) se compila con Java 21.
+      # La app sigue generando código para Java 17, que Java 21 también sabe hacer.
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
       # Misma versión de Flutter que se usa en local (ver docs/guia-app-movil.md).
       - uses: subosito/flutter-action@v2
         with:

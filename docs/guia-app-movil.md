@@ -23,6 +23,7 @@ vez**, en el lenguaje **Dart**, y sale una app para Android y otra para iPhone.
 | Inicio | Saludo, caja "Pregúntale a Flyra" y atajos (Bóveda, Gastos, Audioguías, Idioma) |
 | Barra de abajo | Inicio · Mapa · **Cámara** (botón grande en el centro) · Vuelos · Grupo |
 | Idioma | Lista de idiomas, cada uno escrito en su propio idioma, con buscador |
+| Mapa y Audioguía | La ciudad con sus zonas, tu posición y la audioguía de cada zona (sección 8) |
 | "Muy pronto" | Ocupa el sitio de las pantallas que llegan en los próximos PRs |
 
 Los colores y las letras son los de las maquetas: fondo `#0B1217`, verde menta
@@ -178,6 +179,11 @@ Algunas decisiones y su porqué:
 | Emulador | Un móvil virtual que funciona dentro del PC |
 | Recarga en caliente | Ver los cambios al guardar, sin reiniciar la app |
 | APK | El archivo instalable de una app Android |
+| Tesela | Un "azulejo" de mapa: el mapa del mundo se corta en cuadraditos que se descargan según los necesitas |
+| OpenStreetMap | El mapa libre del mundo, hecho por voluntarios (como la Wikipedia) |
+| MapLibre | La librería que dibuja el mapa en el móvil |
+| Histéresis | Esperar un poco antes de cambiar de estado, para no "parpadear" en el borde |
+| Permiso de ubicación | La pregunta del móvil "¿Permitir que NomadIQ acceda a tu ubicación?" |
 
 ## 7. Iniciar sesión (conectada al auth-gateway)
 
@@ -235,8 +241,94 @@ que llega pronto, porque el servidor aún no sabe comprobar cuentas de Google.
 4. Pulsa **Continuar con correo → ¿Eres nuevo? Crea una cuenta**. La
    contraseña necesita **12 caracteres como mínimo**.
 
-## 8. Lo siguiente
+## 8. El mapa y las audioguías
+
+La pestaña **Mapa** ya es de verdad: enseña la ciudad, las zonas de NomadIQ,
+tu posición y la audioguía de cada zona.
+
+### Qué ves
+
+| En pantalla | Qué hace |
+|---|---|
+| Buscador "Buscar zona" | Busca entre las zonas cargadas y lleva el mapa hasta la elegida |
+| Auto · Día · Tarde · Noche | Cambia los colores del mapa. "Auto" los elige según la hora |
+| Botón 3D / 2D | Inclina el mapa: en 3D los edificios se levantan |
+| Zonas de colores | Menta = tiene audioguía; azul = aeropuerto; naranja = zona restringida |
+| Tarjeta de la zona | Al tocar una zona: su nombre y el botón **Escuchar la audioguía** |
+| "Has entrado en…" | Aviso con vibración suave cuando llevas 15 s dentro de una zona |
+| Atajos de abajo | Cerca de ti, Moverte, Radar, Sin colas y Asistente ("Muy pronto" de momento) |
+
+### Cómo funciona (con analogías)
+
+- **El mapa es MapLibre**, una librería gratis y de código abierto que dibuja
+  con la tarjeta gráfica del móvil.
+  - Los datos (calles, agua, edificios) son de **OpenStreetMap**, la
+    "Wikipedia de los mapas". Los sirve **OpenFreeMap** gratis y sin
+    rastrear a nadie.
+  - Los colores están en `lib/features/map/map_style.dart`.
+  - Los nombres de calles y ciudades salen en tu idioma si OpenStreetMap
+    los tiene traducidos. Si no, en alfabeto latino.
+- **Las zonas se piden por trozos.** La app solo pide las zonas del
+  rectángulo que ves, y un poco más alrededor.
+  - Al mover un poco el mapa no vuelve a preguntar.
+  - Lo descargado vale 5 minutos.
+  - Con millones de usuarios, esto ahorra muchísimas peticiones al servidor.
+- **La ubicación solo se pide cuando pulsas "Activar ubicación".** Nunca nada
+  más abrir la app, y siempre explicando para qué es. Si dices que no,
+  el mapa funciona igual, pero sin tu punto.
+- **El "cartero" de posiciones** (`position_reporter.dart`) junta tus
+  posiciones y las manda de 10 en 10, o cada minuto como mucho.
+  - Encender la radio del móvil gasta mucha batería. Mandar 10 posiciones
+    cuesta casi lo mismo que mandar 1.
+  - Sin cobertura las guarda y reintenta cada vez más espaciado: 15 s,
+    30 s, 1 min… Así, si el servidor se cae, millones de móviles no le
+    golpean todos a la vez cuando vuelve.
+- **El aviso de "Has entrado"** usa la misma idea que el geo-engine,
+  llamada **histéresis**: hay que estar 15 s dentro para entrar y 15 s
+  fuera para salir. Sin ella, el GPS que tiembla en el borde haría saltar
+  el aviso diez veces seguidas.
+- **La audioguía** pide al ai-orchestrator el guion y la lista de audios
+  (`.opus`).
+  - **El guion aún no está:** Flyra lo prepara en cuanto alguien entra en
+    la zona, y la app vuelve a preguntar sola cada 5 s.
+  - **El audio aún no está:** puedes leer el texto mientras tanto.
+  - **Reproducir:** el círculo verde se toca para reproducir o pausar, y se
+    desliza a los lados para avanzar o retroceder.
+  - **Accesibilidad:** con lector de pantalla, se sube o se baja para
+    saltar 10 s.
+- **Solo con cuenta.** Las zonas y las audioguías se piden con tu pase
+  (token). Un invitado ve el mapa y una invitación a crear su cuenta.
+
+### Probarlo en tu PC
+
+1. Arranca el backend con las apps:
+   ```powershell
+   cd infrastructure
+   docker compose --profile apps up -d --build
+   ```
+2. Ejecuta la app en el emulador (F5), entra con tu cuenta y ve a **Mapa**.
+3. **Simular que caminas:** en el emulador, pulsa los tres puntos `⋮` →
+   **Location**. Escribe `40.41694, -3.70361` (la Puerta del Sol) y pulsa
+   **Set location**. A los 15 s verás "Has entrado en Puerta del Sol".
+4. Los mapas necesitan Internet en el emulador (vienen de OpenFreeMap). Si
+   el mapa sale vacío, mira la conexión del emulador.
+
+### Lo que falta y por qué
+
+- **Ubicación con la app cerrada.** Necesita el permiso "todo el tiempo" y
+  un formulario de Google Play que explique para qué. Llega en otro PR,
+  junto a las geovallas nativas que acordamos (ver
+  [geo-engine](guia-geo-engine.md)).
+- **Audioguías en iPhone.** El iPhone no reproduce `.opus` dentro de `.ogg`:
+  el servidor tendrá que grabar también otro formato.
+- **Fotos reales de cada zona** (Wikimedia Commons, con sus créditos) y el
+  **tiempo** (sol, nubes, lluvia) de la maqueta. Necesitan su propio
+  servicio en el backend.
+- **Rótulos en hindi.** MapLibre aún no dibuja bien la escritura devanagari:
+  si falta el nombre en tu idioma, se usa el alfabeto latino.
+
+## 9. Lo siguiente
 
 Cada PR sustituye una pantalla "Muy pronto" por la de verdad, siguiendo las
-maquetas, en este orden: Mapa con geofencing y audioguías, Vuelos con
-alertas de precio y Grupo con la negociación de Flyra.
+maquetas, en este orden: ubicación con la app cerrada y avisos push, Vuelos
+con alertas de precio y Grupo con la negociación de Flyra.

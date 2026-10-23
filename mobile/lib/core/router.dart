@@ -5,9 +5,11 @@ import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../auth/session.dart';
+import '../features/audioguide/audioguide_screen.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/coming_soon/coming_soon_screen.dart';
 import '../features/home/home_screen.dart';
+import '../features/map/map_screen.dart';
 import '../features/settings/language_screen.dart';
 import '../features/shell/app_shell.dart';
 import '../features/welcome/welcome_screen.dart';
@@ -22,6 +24,13 @@ abstract final class Routes {
   static const String group = '/group';
   static const String language = '/settings/language';
   static const String signIn = '/signin';
+
+  /// La audioguía de una zona. El nombre va en la dirección para poder
+  /// enseñarlo en el título mientras se carga el resto.
+  static String audioguide(String zoneId, String zoneName) => Uri(
+    path: '/audioguide/${Uri.encodeComponent(zoneId)}',
+    queryParameters: <String, String>{'name': zoneName},
+  ).toString();
 
   /// Pantalla "Muy pronto" de una función aún sin construir.
   static String soon(Feature feature) => '/soon/${feature.name}';
@@ -60,7 +69,7 @@ GoRouter buildRouter({
       ) => AppShell(shell: shell),
       branches: <StatefulShellBranch>[
         _tab(Routes.home, (_) => const HomeScreen()),
-        _tab(Routes.map, (_) => const ComingSoonScreen(feature: Feature.map)),
+        _tab(Routes.map, (_) => const MapScreen()),
         _tab(
           Routes.camera,
           (_) => const ComingSoonScreen(feature: Feature.camera),
@@ -84,6 +93,13 @@ GoRouter buildRouter({
       path: Routes.language,
       builder: (BuildContext context, GoRouterState state) =>
           const LanguageScreen(),
+    ),
+    GoRoute(
+      path: '/audioguide/:zoneId',
+      builder: (BuildContext context, GoRouterState state) => AudioguideScreen(
+        zoneId: state.pathParameters['zoneId'] ?? '',
+        zoneName: state.uri.queryParameters['name'] ?? '',
+      ),
     ),
     GoRoute(
       path: '/soon/:feature',

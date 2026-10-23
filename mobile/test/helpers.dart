@@ -1,6 +1,9 @@
 // Utilidades compartidas por los tests: montan la app sin tocar el disco
 // ni la red (el "servidor" es un MockClient que responde lo que le digamos).
+import 'dart:async';
 import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,7 +13,13 @@ import 'package:nomadiq/app.dart';
 import 'package:nomadiq/auth/auth_api.dart';
 import 'package:nomadiq/auth/session.dart';
 import 'package:nomadiq/auth/token_store.dart';
+import 'package:nomadiq/core/api_client.dart';
 import 'package:nomadiq/core/router.dart';
+import 'package:nomadiq/core/services.dart';
+import 'package:nomadiq/features/audioguide/guide_player.dart';
+import 'package:nomadiq/features/map/geo.dart';
+import 'package:nomadiq/features/map/location.dart';
+import 'package:nomadiq/features/map/map_surface.dart';
 import 'package:nomadiq/core/settings.dart';
 
 /// Un auth-gateway falso, en memoria, que se comporta como el de verdad:
@@ -23,6 +32,11 @@ class FakeGateway {
 
   /// Si se pone, TODAS las llamadas responden este código (simula averías).
   int? failWith;
+
+  /// Respuestas de los demás servicios (geo-engine, ai-orchestrator...), por
+  /// ruta. Si una ruta no está aquí, 404.
+  final Map<String, http.Response Function(http.Request)> services =
+      <String, http.Response Function(http.Request)>{};
 
   late final http.Client client = MockClient((http.Request req) async {
     calls.add('${req.method} ${req.url.path}');
@@ -55,6 +69,14 @@ class FakeGateway {
           'email': accounts.keys.isEmpty ? 'x@y.z' : accounts.keys.first,
         });
     }
+    final http.Response Function(http.Request)? service =
+        services[req.url.path];
+    if (service != null) {
+      // Como la puerta de entrada de verdad: sin pase válido, 401.
+      final String auth = req.headers['Authorization'] ?? '';
+      if (!auth.startsWith('Bearer a')) return http.Response('', 401);
+      return service(req);
+    }
     return http.Response('', 404);
   });
 
@@ -70,6 +92,14 @@ class FakeGateway {
     });
   }
 
+  static http.Response json(Object body, [int status = 200]) => http.Response(
+    jsonEncode(body),
+    status,
+    headers: <String, String>{
+      'content-type': 'application/json; charset=utf-8',
+    },
+  );
+
   static http.Response _json(Map<String, Object?> body, [int status = 200]) =>
       http.Response(
         jsonEncode(body),
@@ -81,11 +111,170 @@ class FakeGateway {
       AuthApi(baseUrl: Uri.parse('http://gateway.test'), client: client);
 }
 
+/// La caja de herramientas de la app, con piezas falsas: el servidor es el
+/// [gateway], el GPS es [location], el mapa no dibuja nada y el reproductor
+/// no suena.
+AppServices fakeServices(
+  SessionController session, {
+  FakeGateway? gateway,
+  FakeLocation? location,
+  FakeMap? map,
+  List<FakePlayer>? players,
+}) {
+  final FakeGateway g = gateway ?? FakeGateway();
+  final FakeMap m = map ?? FakeMap();
+  return AppServices(
+    api: ApiClient(
+      baseUrl: Uri.parse('http://gateway.test'),
+      session: session,
+      client: g.client,
+    ),
+    location: location ?? FakeLocation(),
+    mapSurface: m.build,
+    newPlayer: () {
+      final FakePlayer p = FakePlayer();
+      players?.add(p);
+      return p;
+    },
+    tilesUrl: Uri.parse('https://tiles.test/planet'),
+    glyphsUrl: 'https://tiles.test/fonts/{fontstack}/{range}.pbf',
+  );
+}
+
+/// Un GPS falso: el test decide la respuesta al permiso y manda posiciones.
+class FakeLocation implements LocationSource {
+  LocationAccess access = LocationAccess.denied;
+
+  /// Lo que se contestará cuando la app pregunte.
+  LocationAccess onRequest = LocationAccess.granted;
+  int requests = 0;
+  final StreamController<PositionFix> fixes =
+      StreamController<PositionFix>.broadcast();
+
+  @override
+  Future<LocationAccess> check() async => access;
+
+  @override
+  Future<LocationAccess> request() async {
+    requests++;
+    access = onRequest;
+    return access;
+  }
+
+  @override
+  Stream<PositionFix> watch() => fixes.stream;
+
+  @override
+  Future<void> openSettings() async {}
+}
+
+/// Un mapa falso: no dibuja, pero apunta lo que la pantalla le pide.
+class FakeMap implements MapSurfaceController {
+  MapSurfaceSpec? spec;
+  Map<String, Object?>? zones;
+  GeoPoint? me;
+  final List<String> calls = <String>[];
+
+  /// Lo que "se ve" en pantalla (por defecto, el centro de Madrid).
+  GeoBox view = const GeoBox(
+    minLon: -3.72,
+    minLat: 40.40,
+    maxLon: -3.69,
+    maxLat: 40.43,
+  );
+  Map<String, Object?>? _readyFor;
+
+  Widget build(MapSurfaceSpec s) {
+    spec = s;
+    // Como MapLibre: al cargar un estilo (nuevo) avisa de que está listo.
+    if (!identical(_readyFor, s.style)) {
+      _readyFor = s.style;
+      WidgetsBinding.instance.addPostFrameCallback((_) => s.onReady(this));
+    }
+    return const ColoredBox(
+      color: Color(0xFF0B1217),
+      child: SizedBox.expand(key: Key('fake-map')),
+    );
+  }
+
+  @override
+  Future<void> showZones(Map<String, Object?> features) async {
+    zones = features;
+    calls.add('zones');
+  }
+
+  @override
+  Future<void> showMe(GeoPoint? point) async => me = point;
+
+  @override
+  Future<void> flyTo(GeoPoint target, {double? zoom}) async =>
+      calls.add('flyTo ${target.lat},${target.lon}');
+
+  @override
+  Future<void> setTilt(double degrees) async => calls.add('tilt $degrees');
+
+  @override
+  Future<GeoBox?> visibleBox() async => view;
+}
+
+/// Un reproductor falso que solo cambia su estado.
+class FakePlayer implements GuidePlayer {
+  final ValueNotifier<Playback> state = ValueNotifier<Playback>(
+    const Playback(),
+  );
+  List<Uri> loaded = <Uri>[];
+  double speed = 1;
+  bool disposed = false;
+
+  @override
+  ValueListenable<Playback> get playback => state;
+
+  @override
+  Future<void> load(List<Uri> parts, {int part = 0, Duration? position}) async {
+    loaded = parts;
+    state.value = Playback(part: part, position: position ?? Duration.zero);
+  }
+
+  @override
+  Future<void> play() async =>
+      state.value = state.value.copyWith(playing: true);
+
+  @override
+  Future<void> pause() async =>
+      state.value = state.value.copyWith(playing: false);
+
+  @override
+  Future<void> seek(Duration position, {int? part}) async => state.value = state
+      .value
+      .copyWith(position: position, part: part ?? state.value.part);
+
+  @override
+  Future<void> setSpeed(double value) async => speed = value;
+
+  @override
+  Future<void> dispose() async => disposed = true;
+}
+
 SessionController newSession([FakeGateway? gateway, TokenStore? store]) =>
     SessionController(
       api: (gateway ?? FakeGateway()).api(),
       store: store ?? MemoryTokenStore(),
     );
+
+/// Una sesión con cuenta, ya dentro (para las pantallas solo de cuentas).
+Future<SessionController> signedInSession(FakeGateway g) async {
+  g.accounts['ana@example.com'] = 'una contraseña larga';
+  final SessionController s = newSession(g);
+  await s.signIn('ana@example.com', 'una contraseña larga');
+  return s;
+}
+
+/// Un cliente de servicios con una cuenta ya dentro.
+Future<ApiClient> apiFor(FakeGateway g) async => ApiClient(
+  baseUrl: Uri.parse('http://gateway.test'),
+  session: await signedInSession(g),
+  client: g.client,
+);
 
 /// Monta la app con un idioma fijo y espera a que termine de dibujarse.
 Future<SettingsController> pumpApp(
@@ -93,6 +282,7 @@ Future<SettingsController> pumpApp(
   String? locale,
   String initialLocation = Routes.welcome,
   SessionController? session,
+  AppServices? services,
 }) async {
   final SettingsController settings = SettingsController(
     MemorySettingsStore(locale),
@@ -102,6 +292,7 @@ Future<SettingsController> pumpApp(
     NomadIqApp(
       settings: settings,
       session: s,
+      services: services ?? fakeServices(s),
       router: buildRouter(session: s, initialLocation: initialLocation),
     ),
   );

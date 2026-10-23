@@ -29,12 +29,21 @@ dependencies:
   http: ^1.6.0
   # Caja fuerte del móvil (Android Keystore / Llavero de iOS) para la sesión.
   flutter_secure_storage: ^11.2.0
+  # El mapa: MapLibre (gratis y de código abierto, dibuja con la tarjeta
+  # gráfica). Elegido en vez de Google Maps: 0 €, colores propios y privacidad.
+  maplibre_gl: ^0.27.1
+  # El GPS: permiso de ubicación y posiciones según te mueves.
+  geolocator: ^14.1.1
+  # El reproductor de las audioguías (en Android usa ExoPlayer, que lee .opus).
+  just_audio: ^0.10.6
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   # Reglas de estilo recomendadas por el equipo de Flutter.
   flutter_lints: ^6.0.0
+  # Un "reloj de mentira" para los tests: adelanta minutos en un instante.
+  fake_async: ^1.3.3
 
 flutter:
   uses-material-design: true
