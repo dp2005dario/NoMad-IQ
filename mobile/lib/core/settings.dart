@@ -33,6 +33,9 @@ enum LocalData {
 
   /// El historial de avisos que te han llegado (los últimos 100).
   noticeLog,
+
+  /// Lo que ya llevas listo de la lista de "Antes de salir".
+  packing,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real

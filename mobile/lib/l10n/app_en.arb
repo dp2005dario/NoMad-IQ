@@ -3850,5 +3850,191 @@
   "menuSignIn": "The menu translator is for NomadIQ accounts. Sign in to use it.",
   "@menuSignIn": {
     "description": "Guests cannot use it."
+  },
+  "beforeTitle": "Before you go",
+  "@beforeTitle": {
+    "description": "Before you go screen title and Home shortcut."
+  },
+  "beforeSubtitle": "{city} · {days, plural, =0{you leave today} =1{you leave tomorrow} other{you leave in {days} days}}",
+  "@beforeSubtitle": {
+    "description": "Subtitle: where and when.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "beforeReady": "{percent}% ready",
+  "@beforeReady": {
+    "description": "Readiness percentage label.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "beforeFillTrip": "Tell us where you are going and when, and we check everything.",
+  "@beforeFillTrip": {
+    "description": "Ask for destination and dates."
+  },
+  "beforeDataTitle": "Mobile data there",
+  "@beforeDataTitle": {
+    "description": "Mobile data section."
+  },
+  "beforeRoamingFree": "Your European plan works the same there, with no extra cost.",
+  "@beforeRoamingFree": {
+    "description": "Roaming is free there."
+  },
+  "beforeRoamingAbroad": "Outside that area your plan may charge a lot. Compare travel eSIMs before you leave: with one, you land with data already working.",
+  "@beforeRoamingAbroad": {
+    "description": "Roaming costs money there."
+  },
+  "beforeCo2Title": "Your flight's footprint",
+  "@beforeCo2Title": {
+    "description": "Carbon section title."
+  },
+  "beforeCo2Estimate": "Rough estimate, return trip, per passenger. Flying direct pollutes less: taking off is what burns most.",
+  "@beforeCo2Estimate": {
+    "description": "Note under the chart."
+  },
+  "beforeCo2Direct": "Your direct flight",
+  "@beforeCo2Direct": {
+    "description": "Chart bar: direct flight."
+  },
+  "beforeCo2Stop": "With one stop",
+  "@beforeCo2Stop": {
+    "description": "Chart bar: one stop."
+  },
+  "beforeCo2Car": "A normal car in a year (12,000 km)",
+  "@beforeCo2Car": {
+    "description": "Chart bar: a car for a year."
+  },
+  "beforeCo2Trees": "{trees, plural, =1{what 1 tree absorbs in a year} other{what {trees} trees absorb in a year}}",
+  "@beforeCo2Trees": {
+    "description": "Comparison in trees.",
+    "placeholders": {
+      "trees": {
+        "type": "int"
+      }
+    }
+  },
+  "beforePackTitle": "For your bag",
+  "@beforePackTitle": {
+    "description": "Packing section."
+  },
+  "beforePackAdapter": "Plug adapter type {detail}",
+  "@beforePackAdapter": {
+    "description": "Plug adapter item.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePackAdapterWhy": "The sockets there are a different shape",
+  "@beforePackAdapterWhy": {
+    "description": "Why the adapter."
+  },
+  "beforePackTransformer": "Check the voltage: {detail} V there",
+  "@beforePackTransformer": {
+    "description": "Voltage item.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePackTransformerWhy": "Chargers usually work with both, but a hairdryer may not",
+  "@beforePackTransformerWhy": {
+    "description": "Why the transformer."
+  },
+  "beforePackUmbrella": "Umbrella or rain jacket",
+  "@beforePackUmbrella": {
+    "description": "Umbrella item.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePackUmbrellaWhy": "That month it usually rains about {detail} days",
+  "@beforePackUmbrellaWhy": {
+    "description": "Why the umbrella.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePackCoat": "A proper coat",
+  "@beforePackCoat": {
+    "description": "Coat item.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePackCoatWhy": "The average is around {detail}°",
+  "@beforePackCoatWhy": {
+    "description": "Why the coat.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePackSunscreen": "Sunscreen and a cap",
+  "@beforePackSunscreen": {
+    "description": "Sunscreen item.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePackSunscreenWhy": "Highs around {detail}°",
+  "@beforePackSunscreenWhy": {
+    "description": "Why the sunscreen.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePackEsim": "Travel data sorted out",
+  "@beforePackEsim": {
+    "description": "eSIM item."
+  },
+  "beforePackEsimWhy": "So you land with maps and messages already working",
+  "@beforePackEsimWhy": {
+    "description": "Why the eSIM."
+  },
+  "beforePackOffline": "The city downloaded for offline use",
+  "@beforePackOffline": {
+    "description": "Offline city item."
+  },
+  "beforePackOfflineWhy": "Map, audio guides and zone alerts with no data",
+  "@beforePackOfflineWhy": {
+    "description": "Why download."
+  },
+  "beforePackPassport": "Check your passport",
+  "@beforePackPassport": {
+    "description": "Passport warning item."
+  },
+  "beforePackPassportWhy": "It expires soon: many countries ask for 6 months to spare",
+  "@beforePackPassportWhy": {
+    "description": "Why check the passport."
+  },
+  "beforePackInsurance": "Travel insurance",
+  "@beforePackInsurance": {
+    "description": "Insurance item."
+  },
+  "beforePackInsuranceWhy": "We did not find a valid policy in your Vault",
+  "@beforePackInsuranceWhy": {
+    "description": "Why insurance."
   }
 }

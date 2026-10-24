@@ -87,6 +87,13 @@ class HomeScreen extends StatelessWidget {
                     label: Feature.expenses.label(t),
                     onTap: () => context.push(Routes.money()),
                   ),
+                  // Todo lo que hay que tener listo antes de un viaje.
+                  _Shortcut(
+                    icon: Icons.luggage_rounded,
+                    color: NomadColors.mint,
+                    label: t.beforeTitle,
+                    onTap: () => context.push(Routes.before),
+                  ),
                   // La carta del restaurante, traducida y explicada.
                   _Shortcut(
                     icon: Icons.restaurant_menu_rounded,
