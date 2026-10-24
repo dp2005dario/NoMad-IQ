@@ -108,6 +108,13 @@ class HomeScreen extends StatelessWidget {
                     label: t.famTitle,
                     onTap: () => context.push(Routes.family),
                   ),
+                  // Copiar el viaje de otra persona (Flyra lo adapta).
+                  _Shortcut(
+                    icon: Icons.content_copy_rounded,
+                    color: NomadColors.mint,
+                    label: t.copyTitle,
+                    onTap: () => context.push(Routes.copyTrip()),
+                  ),
                   // La carta del restaurante, traducida y explicada.
                   _Shortcut(
                     icon: Icons.restaurant_menu_rounded,

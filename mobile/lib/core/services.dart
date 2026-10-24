@@ -27,6 +27,7 @@ import '../features/map/street_photos_api.dart';
 import '../features/money/atms_api.dart';
 import '../features/money/expenses_api.dart';
 import '../features/money/fx_api.dart';
+import '../features/copy_trip/shared_trip_api.dart';
 import '../features/menu/menu_api.dart';
 import '../features/money/receipt_scanner.dart';
 import '../features/offline/city_downloader.dart';
@@ -109,6 +110,9 @@ class AppServices {
 
   /// Traductor de cartas de restaurante (pantalla Menú).
   late final MenuApi menu = MenuApi(api);
+
+  /// "Copia este viaje": compartir con código y que Flyra lo adapte.
+  late final SharedTripApi sharedTrips = SharedTripApi(api);
 
   /// El chat libre con Flyra (la IA de la app).
   final FlyraApi flyra;

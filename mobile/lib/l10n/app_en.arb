@@ -4769,5 +4769,295 @@
         "type": "String"
       }
     }
+  },
+  "copyTitle": "Copy this trip",
+  "@copyTitle": {
+    "description": "Copy a trip screen title."
+  },
+  "copySubtitle": "Flyra adapts it to your money",
+  "@copySubtitle": {
+    "description": "Subtitle."
+  },
+  "copyCodeLabel": "Code someone gave you",
+  "@copyCodeLabel": {
+    "description": "Field: trip code."
+  },
+  "copyOpen": "See the trip",
+  "@copyOpen": {
+    "description": "Button: open trip."
+  },
+  "copyBadCode": "Codes have 8 letters and numbers, like 7K2M-9QXD.",
+  "@copyBadCode": {
+    "description": "Invalid code."
+  },
+  "copyNotFound": "There is no trip with that code (or it is no longer shared).",
+  "@copyNotFound": {
+    "description": "Trip not found."
+  },
+  "copyOffline": "No connection. Try again in a moment.",
+  "@copyOffline": {
+    "description": "No connection."
+  },
+  "copyFailed": "Something went wrong. Try again.",
+  "@copyFailed": {
+    "description": "Generic failure."
+  },
+  "copyMyCopies": "Trips you copied",
+  "@copyMyCopies": {
+    "description": "Section: trips I copied."
+  },
+  "copyNoCopies": "None yet. They stay only on this phone.",
+  "@copyNoCopies": {
+    "description": "Empty copies."
+  },
+  "copyTripLine": "{destination} · {days, plural, =1{1 day} other{{days} days}} · {total}",
+  "@copyTripLine": {
+    "description": "Destination, days and total.",
+    "placeholders": {
+      "destination": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "copyRemove": "Remove",
+  "@copyRemove": {
+    "description": "Remove."
+  },
+  "copySharedByMe": "Trips you shared",
+  "@copySharedByMe": {
+    "description": "Section: trips I shared."
+  },
+  "copyNoShared": "You haven't shared any trip yet.",
+  "@copyNoShared": {
+    "description": "None shared."
+  },
+  "copyCopies": "{count, plural, =0{not copied yet} =1{copied once} other{copied {count} times}}",
+  "@copyCopies": {
+    "description": "How many people copied it.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyShareMine": "Share my trip",
+  "@copyShareMine": {
+    "description": "Button: share my trip."
+  },
+  "copyBy": "@{author} · {total} · {copies, plural, =0{not copied yet} =1{copied once} other{copied {copies} times}}",
+  "@copyBy": {
+    "description": "Author, total and copies.",
+    "placeholders": {
+      "author": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "copies": {
+        "type": "int"
+      }
+    }
+  },
+  "copyYourBudget": "Your budget",
+  "@copyYourBudget": {
+    "description": "Label: your budget."
+  },
+  "copyFlyraAdapts": "Flyra swaps the expensive things for cheaper options. Same trip, less money.",
+  "@copyFlyraAdapts": {
+    "description": "Hint under budget."
+  },
+  "copyWas": "{author}: {title}",
+  "@copyWas": {
+    "description": "What the original had.",
+    "placeholders": {
+      "author": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "copySame": "Same as the original",
+  "@copySame": {
+    "description": "Unchanged line."
+  },
+  "copyAsIs": "Just as {author} did it",
+  "@copyAsIs": {
+    "description": "No changes.",
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  },
+  "copyChanges": "{count, plural, =1{1 change} other{{count} changes}} to fit in {budget}",
+  "@copyChanges": {
+    "description": "N changes to fit budget.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "budget": {
+        "type": "String"
+      }
+    }
+  },
+  "copyDoesNotFit": "Even with the changes it is over your budget: Flyra won't make up prices to pretend it fits.",
+  "@copyDoesNotFit": {
+    "description": "Still over budget."
+  },
+  "copySave": "Copy to my trips",
+  "@copySave": {
+    "description": "Button: copy to my trips."
+  },
+  "copySaved": "Copied to your trips",
+  "@copySaved": {
+    "description": "Copied."
+  },
+  "copyPricesNote": "Prices are what the person who shared it paid, and Flyra's are estimates. Check the real price before booking.",
+  "@copyPricesNote": {
+    "description": "Prices disclaimer."
+  },
+  "copyUnshare": "Stop sharing",
+  "@copyUnshare": {
+    "description": "Stop sharing."
+  },
+  "copyCopyCode": "Copy code",
+  "@copyCopyCode": {
+    "description": "Copy the code."
+  },
+  "copyQuotaGone": "No more adaptations today. Tomorrow you get more.",
+  "@copyQuotaGone": {
+    "description": "Daily quota spent."
+  },
+  "copyFlyraBusy": "Flyra is busy right now. Try again in a minute.",
+  "@copyFlyraBusy": {
+    "description": "Flyra busy."
+  },
+  "copyNoGroups": "You don't have any expense group yet.",
+  "@copyNoGroups": {
+    "description": "No expense groups."
+  },
+  "copyPickGroup": "Which trip do you want to share?",
+  "@copyPickGroup": {
+    "description": "Pick an expense group."
+  },
+  "copyFillAll": "Fill in the title, your name, the destination, the days (1-60), the currency and at least one line.",
+  "@copyFillAll": {
+    "description": "Missing fields."
+  },
+  "copySharedTitle": "Trip shared",
+  "@copySharedTitle": {
+    "description": "Dialog: shared."
+  },
+  "copySharedBody": "Give this code to whoever you want. They open it in Copy this trip.",
+  "@copySharedBody": {
+    "description": "Dialog body."
+  },
+  "copyDone": "Done",
+  "@copyDone": {
+    "description": "Done."
+  },
+  "copyTooMany": "You already share 20 trips. Stop sharing one to add another.",
+  "@copyTooMany": {
+    "description": "Too many shared."
+  },
+  "copyShareWhat": "Only what you write here is shared: no dates, no who you travelled with and not your account.",
+  "@copyShareWhat": {
+    "description": "Share explanation."
+  },
+  "copyFieldTitle": "Title (e.g. Japan in 10 days)",
+  "@copyFieldTitle": {
+    "description": "Field: title."
+  },
+  "copyFieldAuthor": "Name others will see",
+  "@copyFieldAuthor": {
+    "description": "Field: public name."
+  },
+  "copyFieldDestination": "Destination",
+  "@copyFieldDestination": {
+    "description": "Field: destination."
+  },
+  "copyFieldDays": "Days",
+  "@copyFieldDays": {
+    "description": "Field: days."
+  },
+  "copyFieldCurrency": "Currency (EUR, USD...)",
+  "@copyFieldCurrency": {
+    "description": "Field: currency."
+  },
+  "copyFromExpenses": "Fill in from an expense group",
+  "@copyFromExpenses": {
+    "description": "Fill from expenses."
+  },
+  "copyAddLine": "Add something you paid for",
+  "@copyAddLine": {
+    "description": "Add a line."
+  },
+  "copyTotal": "Total: {total}",
+  "@copyTotal": {
+    "description": "Total.",
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "copyShareButton": "Share and get the code",
+  "@copyShareButton": {
+    "description": "Share button."
+  },
+  "copySharePrivacy": "Anyone with the code can see it. You can stop sharing it whenever you want, and it is deleted if you delete your account.",
+  "@copySharePrivacy": {
+    "description": "Privacy note."
+  },
+  "copyLineTitle": "What was it (e.g. Flight with a stop in Istanbul)",
+  "@copyLineTitle": {
+    "description": "Line title."
+  },
+  "copyLinePrice": "Price ({currency})",
+  "@copyLinePrice": {
+    "description": "Line price.",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "copyLineSave": "Save",
+  "@copyLineSave": {
+    "description": "Save line."
+  },
+  "copyKindFlight": "Flight",
+  "@copyKindFlight": {
+    "description": "Kind."
+  },
+  "copyKindStay": "Stay",
+  "@copyKindStay": {
+    "description": "Kind."
+  },
+  "copyKindTransport": "Transport",
+  "@copyKindTransport": {
+    "description": "Kind."
+  },
+  "copyKindFood": "Food",
+  "@copyKindFood": {
+    "description": "Kind."
+  },
+  "copyKindActivity": "Activity",
+  "@copyKindActivity": {
+    "description": "Kind."
+  },
+  "copyKindOther": "Other",
+  "@copyKindOther": {
+    "description": "Kind."
   }
 }

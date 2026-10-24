@@ -28,6 +28,8 @@ import '../features/money/money_screen.dart';
 import '../features/settings/language_screen.dart';
 import '../features/offline/offline_screen.dart';
 import '../features/easy/easy_home_screen.dart';
+import '../features/copy_trip/copy_trip_screen.dart';
+import '../features/copy_trip/share_trip_screen.dart';
 import '../features/family/family_screen.dart';
 import '../features/help/help_screen.dart';
 import '../features/papers/papers_screen.dart';
@@ -65,6 +67,13 @@ abstract final class Routes {
   static const String travelWith = '/travel-with';
   static const String help = '/help';
   static const String family = '/family';
+  static const String shareTrip = '/copy-trip/share';
+
+  /// "Copia este viaje"; con [code] abre directamente ese viaje.
+  static String copyTrip({String? code}) => Uri(
+    path: '/copy-trip',
+    queryParameters: code == null ? null : <String, String>{'code': code},
+  ).toString();
 
   /// Explorar: precio por meses y clima. `from` = aeropuerto de salida.
   static String explore({String? origin}) => Uri(
@@ -311,6 +320,16 @@ GoRouter buildRouter({
       path: Routes.help,
       builder: (BuildContext context, GoRouterState state) =>
           const HelpScreen(),
+    ),
+    GoRoute(
+      path: '/copy-trip',
+      builder: (BuildContext context, GoRouterState state) =>
+          CopyTripScreen(code: state.uri.queryParameters['code']),
+    ),
+    GoRoute(
+      path: Routes.shareTrip,
+      builder: (BuildContext context, GoRouterState state) =>
+          const ShareTripScreen(),
     ),
     GoRoute(
       path: Routes.family,

@@ -51,6 +51,9 @@ enum LocalData {
 
   /// El vuelo y el hotel que se enseñan en el Modo fácil.
   easyTrip,
+
+  /// Los viajes que has copiado de otros (ya adaptados a tu presupuesto).
+  copiedTrips,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real
