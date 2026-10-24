@@ -16,6 +16,7 @@ import 'package:nomadiq/auth/token_store.dart';
 import 'package:nomadiq/core/api_client.dart';
 import 'package:nomadiq/core/router.dart';
 import 'package:nomadiq/core/services.dart';
+import 'package:nomadiq/features/help/help_contacts.dart';
 import 'package:nomadiq/features/offline/city_downloader.dart';
 import 'package:nomadiq/features/offline/saved_guides.dart';
 import 'package:nomadiq/features/audioguide/guide_player.dart';
@@ -165,6 +166,7 @@ AppServices fakeServices(
   OfflineMaps? offlineMaps,
   NetProbe? net,
   SavedGuides? saved,
+  HelpContacts help = const HelpContacts(),
   DocSource? docSource,
   DocTextReader? docReader,
 }) {
@@ -197,6 +199,7 @@ AppServices fakeServices(
     offlineMaps: offlineMaps,
     net: net,
     saved: saved ?? const NoSavedGuides(),
+    help: help,
     docSource: docSource ?? const NoDocSource(),
     docReader: docReader ?? const NoDocTextReader(),
   );

@@ -4335,5 +4335,137 @@
   "twDisclaimer": "General rules of many airlines. Each one has its own, and the first thing is to ask your doctor.",
   "@twDisclaimer": {
     "description": "Disclaimer for pregnancy rules."
+  },
+  "helpTitle": "Help",
+  "@helpTitle": {
+    "description": "Title of the help screen."
+  },
+  "helpSubtitle": "Flyra first; a person if you need one",
+  "@helpSubtitle": {
+    "description": "Help screen subtitle."
+  },
+  "helpAskFlyra": "Ask Flyra",
+  "@helpAskFlyra": {
+    "description": "Card: ask Flyra."
+  },
+  "helpAskFlyraWhy": "Sorts out almost everything at once, day and night",
+  "@helpAskFlyraWhy": {
+    "description": "Why ask Flyra first."
+  },
+  "helpPeople": "TALK TO A PERSON",
+  "@helpPeople": {
+    "description": "Section header: talk to a person."
+  },
+  "helpAirline": "The airline or agency you bought from",
+  "@helpAirline": {
+    "description": "Option: your airline or agency."
+  },
+  "helpAirlineSub": "Changes, cancellations and luggage",
+  "@helpAirlineSub": {
+    "description": "What the airline handles."
+  },
+  "helpAirlineMore": "Call the number in your booking email. If the flight went wrong, Papers works out what they owe you and writes the letter for you.",
+  "@helpAirlineMore": {
+    "description": "Details for the airline option."
+  },
+  "helpAirlineCta": "See my rights",
+  "@helpAirlineCta": {
+    "description": "Button: open Papers (rights)."
+  },
+  "helpInsurance": "Your travel insurance assistance",
+  "@helpInsurance": {
+    "description": "Option: travel insurance assistance."
+  },
+  "helpInsuranceSub": "Doctor, theft or accident · 24 h",
+  "@helpInsuranceSub": {
+    "description": "What insurance covers."
+  },
+  "helpInsuranceMore": "The 24 h assistance number is in your policy, saved in your Vault. If you are covered, they usually pay the doctor directly.",
+  "@helpInsuranceMore": {
+    "description": "Details for the insurance option."
+  },
+  "helpInsuranceCta": "Open my policy",
+  "@helpInsuranceCta": {
+    "description": "Button: open the vault."
+  },
+  "helpClaims": "Claim experts",
+  "@helpClaims": {
+    "description": "Option: claim experts."
+  },
+  "helpClaimsSub": "Delays, cancellations and overbooking",
+  "@helpClaimsSub": {
+    "description": "What claim experts do."
+  },
+  "helpClaimsMore": "They can claim for you and keep a share only if you get paid. NomadIQ may earn a commission if you hire them. If you prefer, write the letter yourself for free in Papers.",
+  "@helpClaimsMore": {
+    "description": "Details for claim experts, incl. commission disclosure."
+  },
+  "helpClaimsCta": "Have them claim for me",
+  "@helpClaimsCta": {
+    "description": "Button: let experts claim for me."
+  },
+  "helpVisa": "Visa agency",
+  "@helpVisa": {
+    "description": "Option: visa agency."
+  },
+  "helpVisaSub": "Complicated or urgent visas",
+  "@helpVisaSub": {
+    "description": "What the visa agency does."
+  },
+  "helpVisaMore": "A specialist agency checks your papers and books the appointment. They tell you the price before starting. NomadIQ may earn a commission.",
+  "@helpVisaMore": {
+    "description": "Details for the visa agency, incl. commission disclosure."
+  },
+  "helpVisaCta": "Ask for a quote",
+  "@helpVisaCta": {
+    "description": "Button: ask for a quote."
+  },
+  "helpSupport": "NomadIQ support",
+  "@helpSupport": {
+    "description": "Option: NomadIQ support."
+  },
+  "helpSupportSub": "A person from the team, by email",
+  "@helpSupportSub": {
+    "description": "What NomadIQ support handles."
+  },
+  "helpSupportMore": "For problems with the app itself. The email already includes the app version and your language, so you do not have to explain everything.",
+  "@helpSupportMore": {
+    "description": "Details for NomadIQ support."
+  },
+  "helpSupportCta": "Write to the team",
+  "@helpSupportCta": {
+    "description": "Button: email the team."
+  },
+  "helpTagFree": "Free",
+  "@helpTagFree": {
+    "description": "Tag: free."
+  },
+  "helpTagPolicy": "In your policy",
+  "@helpTagPolicy": {
+    "description": "Tag: included in your policy."
+  },
+  "helpTagIfWin": "Only if you win",
+  "@helpTagIfWin": {
+    "description": "Tag: only pay if you win."
+  },
+  "helpTagPaid": "Paid",
+  "@helpTagPaid": {
+    "description": "Tag: paid."
+  },
+  "helpMailSubject": "NomadIQ · Help",
+  "@helpMailSubject": {
+    "description": "Subject of the support email."
+  },
+  "helpMailBody": "Tell us what happened:\n\n\n—\nNomadIQ {version} · {language}",
+  "@helpMailBody": {
+    "description": "Body of the support email.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
   }
 }

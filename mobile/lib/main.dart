@@ -105,6 +105,7 @@ Future<void> main() async {
       ),
     ),
     net: const SystemNetProbe(),
+    help: AppConfig.help,
     // Las audioguías ya descargadas: si no hay red, se oyen estas.
     saved: OfflineSavedGuides(
       library: OfflineLibrary(store),

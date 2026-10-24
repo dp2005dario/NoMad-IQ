@@ -306,6 +306,8 @@ void main() {
       expect(find.text('Hola, viajero'), findsOneWidget);
       await tester.tap(find.byTooltip('Cuenta'));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Inicia sesión o crea una cuenta'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Inicia sesión o crea una cuenta'));
       await tester.pumpAndSettle();
       expect(find.widgetWithText(FilledButton, 'Entrar'), findsOneWidget);

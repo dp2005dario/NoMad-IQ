@@ -7,6 +7,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
+import '../features/help/help_contacts.dart';
+
 abstract final class AppConfig {
   /// La versión que se enseña en Ajustes. Debe coincidir con "version" de
   /// pubspec.yaml (la parte antes del +).
@@ -93,5 +95,31 @@ abstract final class AppConfig {
       messagingSenderId: _fbSenderId,
       projectId: _fbProjectId,
     );
+  }
+
+  // Ayuda: con quién te pone en contacto la pantalla "Ayuda". Se pasan al
+  // compilar (--dart-define) porque dependen de acuerdos que aún no existen
+  // (socios de reclamaciones y visados) o del correo de soporte que elija el
+  // dueño. Si faltan, esa opción simplemente no sale.
+  static const String _supportEmail = String.fromEnvironment(
+    'NOMADIQ_SUPPORT_EMAIL',
+  );
+  static const String _claimsUrl = String.fromEnvironment(
+    'NOMADIQ_CLAIMS_PARTNER_URL',
+  );
+  static const String _visaUrl = String.fromEnvironment(
+    'NOMADIQ_VISA_PARTNER_URL',
+  );
+
+  static HelpContacts get help => HelpContacts(
+    supportEmail: _supportEmail.contains('@') ? _supportEmail : null,
+    claimsUrl: _https(_claimsUrl),
+    visaUrl: _https(_visaUrl),
+  );
+
+  /// Solo se aceptan enlaces https (nunca una web sin cifrar).
+  static Uri? _https(String url) {
+    final Uri? u = Uri.tryParse(url);
+    return u != null && u.scheme == 'https' && u.host.isNotEmpty ? u : null;
   }
 }

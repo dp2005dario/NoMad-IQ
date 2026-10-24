@@ -16,6 +16,7 @@ import '../features/flights/climate_api.dart';
 import '../features/flights/fares_api.dart';
 import '../features/flyra/flyra_api.dart';
 import '../features/group/group_api.dart';
+import '../features/help/help_contacts.dart';
 import '../features/map/geo_api.dart';
 import '../features/map/location.dart';
 import '../features/map/location_tracker.dart';
@@ -58,6 +59,7 @@ class AppServices {
     this.docSource = const NoDocSource(),
     this.docReader = const NoDocTextReader(),
     this.saved = const NoSavedGuides(),
+    this.help = const HelpContacts(),
     OfflineFiles? offlineFiles,
     OfflineMaps? offlineMaps,
     NetProbe? net,
@@ -175,6 +177,9 @@ class AppServices {
 
   /// Crea un reproductor nuevo para cada audioguía que se abre.
   final GuidePlayerFactory newPlayer;
+
+  /// Con quién te pone en contacto la pantalla "Ayuda".
+  final HelpContacts help;
 
   /// Las audioguías que ya están guardadas en este móvil ("Sin conexión").
   final SavedGuides saved;
