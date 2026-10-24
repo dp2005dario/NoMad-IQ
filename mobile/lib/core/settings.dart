@@ -42,6 +42,9 @@ enum LocalData {
 
   /// "1" = descargar ciudades solo cuando haya wifi.
   offlineWifiOnly,
+
+  /// Lo que ya tienes listo para viajar con tu mascota (chip, vacuna...).
+  petChecks,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real

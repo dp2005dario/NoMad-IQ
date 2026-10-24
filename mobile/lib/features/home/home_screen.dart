@@ -94,6 +94,13 @@ class HomeScreen extends StatelessWidget {
                     label: t.beforeTitle,
                     onTap: () => context.push(Routes.before),
                   ),
+                  // Viajar con tu mascota o estando embarazada.
+                  _Shortcut(
+                    icon: Icons.pets_rounded,
+                    color: NomadColors.money,
+                    label: t.twTitle,
+                    onTap: () => context.push(Routes.travelWith),
+                  ),
                   // La carta del restaurante, traducida y explicada.
                   _Shortcut(
                     icon: Icons.restaurant_menu_rounded,

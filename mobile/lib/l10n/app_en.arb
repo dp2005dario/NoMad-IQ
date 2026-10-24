@@ -4165,5 +4165,175 @@
   "offlineOpen": "Offline cities",
   "@offlineOpen": {
     "description": "Button: open the offline cities screen."
+  },
+  "twTitle": "Travelling with…",
+  "@twTitle": {
+    "description": "Title: travelling with a pet or pregnant."
+  },
+  "twSubtitle": "The rules for flying with your pet or while pregnant",
+  "@twSubtitle": {
+    "description": "Subtitle of the travelling-with screen."
+  },
+  "twTabPet": "My pet",
+  "@twTabPet": {
+    "description": "Tab: my pet."
+  },
+  "twTabPregnant": "Pregnant",
+  "@twTabPregnant": {
+    "description": "Tab: pregnant."
+  },
+  "twPetWeight": "Your pet's weight (kg)",
+  "@twPetWeight": {
+    "description": "Field: pet weight in kg."
+  },
+  "twCarrierWeight": "Carrier weight (kg)",
+  "@twCarrierWeight": {
+    "description": "Field: carrier weight in kg."
+  },
+  "twCabin": "It can travel with you in the cabin",
+  "@twCabin": {
+    "description": "Verdict: the pet can travel in the cabin."
+  },
+  "twCabinWhy": "Up to {max} kg including the carrier, depending on the airline. It usually costs about 40-60 € each way.",
+  "@twCabinWhy": {
+    "description": "Why it fits in the cabin; price range.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "twHold": "It will have to go in the hold",
+  "@twHold": {
+    "description": "Verdict: the pet must travel in the hold."
+  },
+  "twHoldWhy": "It weighs more than {max} kg with the carrier. Book it with the airline early: not all accept it and places are few.",
+  "@twHoldWhy": {
+    "description": "Why it goes in the hold.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "twEuTitle": "TO TRAVEL IN THE EU",
+  "@twEuTitle": {
+    "description": "Section header: rules for travelling in the EU."
+  },
+  "twChip": "Microchip",
+  "@twChip": {
+    "description": "Checklist: microchip."
+  },
+  "twChipWhy": "Put in before the vaccine",
+  "@twChipWhy": {
+    "description": "Microchip must be put before the vaccine."
+  },
+  "twRabies": "Valid rabies vaccine",
+  "@twRabies": {
+    "description": "Checklist: rabies vaccine."
+  },
+  "twRabiesWhy": "Given at least {days} days before the trip",
+  "@twRabiesWhy": {
+    "description": "The vaccine must be at least N days old.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "twPassport": "European pet passport",
+  "@twPassport": {
+    "description": "Checklist: EU pet passport."
+  },
+  "twPassportWhy": "Your vet gives it to you",
+  "@twPassportWhy": {
+    "description": "Who gives the pet passport."
+  },
+  "twOutsideEu": "Outside the EU every country asks for different things (sometimes an antibody test months before). Talk to your vet early.",
+  "@twOutsideEu": {
+    "description": "Note: outside the EU rules differ."
+  },
+  "twPetHotels": "When booking a hotel, filter by \"pets allowed\": many charge a small fee per night.",
+  "@twPetHotels": {
+    "description": "Tip: filter hotels that accept pets."
+  },
+  "twPetDisclaimer": "General rules: always confirm with your airline and your vet.",
+  "@twPetDisclaimer": {
+    "description": "Disclaimer for pet rules."
+  },
+  "twWeeksQuestion": "How many weeks pregnant will you be on the return flight?",
+  "@twWeeksQuestion": {
+    "description": "Question: weeks pregnant on the return flight."
+  },
+  "twWeeks": "{weeks} weeks",
+  "@twWeeks": {
+    "description": "N weeks (pregnancy).",
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "twTwins": "Twin pregnancy",
+  "@twTwins": {
+    "description": "Switch: twin pregnancy."
+  },
+  "twVerdictFly": "You can fly without papers",
+  "@twVerdictFly": {
+    "description": "Verdict: can fly without papers."
+  },
+  "twVerdictFlyWhy": "Until week {weeks} they do not usually ask for anything. Bring your pregnancy record just in case.",
+  "@twVerdictFlyWhy": {
+    "description": "Explanation: no papers until week N.",
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "twVerdictCert": "You need a medical certificate",
+  "@twVerdictCert": {
+    "description": "Verdict: needs a medical certificate."
+  },
+  "twVerdictCertWhy": "Between week {from} and week {to} they ask for a note from your doctor, from the last 7 days, saying you can fly.",
+  "@twVerdictCertWhy": {
+    "description": "Explanation for the certificate weeks.",
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "twVerdictNo": "Better not to fly",
+  "@twVerdictNo": {
+    "description": "Verdict: better not to fly."
+  },
+  "twVerdictNoWhy": "From week {weeks} most airlines will not let you board. Look at the train or change the dates.",
+  "@twVerdictNoWhy": {
+    "description": "Explanation: from week N most airlines refuse.",
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "twTipAisle": "Aisle seat so you can get up every hour",
+  "@twTipAisle": {
+    "description": "Tip: aisle seat."
+  },
+  "twTipInsurance": "Insurance that covers pregnancy and birth",
+  "@twTipInsurance": {
+    "description": "Tip: insurance covering pregnancy."
+  },
+  "twTipHospital": "Note down the maternity hospital nearest your hotel",
+  "@twTipHospital": {
+    "description": "Tip: note the nearest maternity hospital."
+  },
+  "twDisclaimer": "General rules of many airlines. Each one has its own, and the first thing is to ask your doctor.",
+  "@twDisclaimer": {
+    "description": "Disclaimer for pregnancy rules."
   }
 }

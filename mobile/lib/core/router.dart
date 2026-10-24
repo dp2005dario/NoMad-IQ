@@ -28,6 +28,7 @@ import '../features/money/money_screen.dart';
 import '../features/settings/language_screen.dart';
 import '../features/offline/offline_screen.dart';
 import '../features/papers/papers_screen.dart';
+import '../features/travel_with/travel_with_screen.dart';
 import '../features/passport/passport_screen.dart';
 import '../features/menu/menu_screen.dart';
 import '../features/trip/before_screen.dart';
@@ -58,6 +59,7 @@ abstract final class Routes {
   static const String menu = '/menu';
   static const String before = '/before';
   static const String offline = '/offline';
+  static const String travelWith = '/travel-with';
 
   /// Explorar: precio por meses y clima. `from` = aeropuerto de salida.
   static String explore({String? origin}) => Uri(
@@ -299,6 +301,11 @@ GoRouter buildRouter({
       path: Routes.passport,
       builder: (BuildContext context, GoRouterState state) =>
           const PassportScreen(),
+    ),
+    GoRoute(
+      path: Routes.travelWith,
+      builder: (BuildContext context, GoRouterState state) =>
+          const TravelWithScreen(),
     ),
     GoRoute(
       path: Routes.offline,
