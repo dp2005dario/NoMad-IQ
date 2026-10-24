@@ -68,7 +68,7 @@ http:
     # y "borrar mis datos" (ai-orchestrator).
     ai:
       entryPoints: [web]
-      rule: PathPrefix(`/v1/audioguides`) || PathPrefix(`/v1/recommendations`) || PathPrefix(`/v1/group-negotiations`) || Path(`/v1/flyra/chat`) || Path(`/v1/menu/translate`) || PathPrefix(`/v1/landmarks`) || PathPrefix(`/v1/expense-groups`) || Path(`/v1/me/data`)
+      rule: PathPrefix(`/v1/audioguides`) || PathPrefix(`/v1/recommendations`) || PathPrefix(`/v1/group-negotiations`) || Path(`/v1/flyra/chat`) || Path(`/v1/menu/translate`) || PathPrefix(`/v1/landmarks`) || PathPrefix(`/v1/expense-groups`) || PathPrefix(`/v1/shared-trips`) || Path(`/v1/me/data`)
       middlewares: [strip-identity, rate-limit, small-body, authenticated]
       service: ai-orchestrator
 

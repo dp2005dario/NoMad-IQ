@@ -192,6 +192,12 @@ class Settings(BaseSettings):
     overpass_timeout_seconds: float = Field(default=25.0, gt=0, le=60)
     atm_ttl_seconds: int = Field(default=24 * 3600, ge=3600, le=7 * 24 * 3600)
 
+    # --- Copia este viaje (ver el paquete shared_trips/): PostgreSQL; adaptar necesita Ollama y Redis
+    shared_trips_enabled: bool = True
+    # Adaptaciones por persona y día (las que salen de la caché no cuentan).
+    trip_adapt_daily_limit: int = Field(default=10, ge=1, le=200)
+    trip_adapt_timeout_seconds: float = Field(default=60.0, gt=0, le=180)
+
     # --- Traductor de cartas (ver el paquete menu/): necesita Ollama y Redis ----------
     menu_enabled: bool = True
     # Cartas gratis por persona y día: el tope que evita sorpresas de coste.

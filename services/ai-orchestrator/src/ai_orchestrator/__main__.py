@@ -99,6 +99,10 @@ from ai_orchestrator.pseudonym import Pseudonymizer
 from ai_orchestrator.quota import RedisQuota
 from ai_orchestrator.recommender import FareRecommender, RecommenderSettings
 from ai_orchestrator.retrieval import KnowledgeBase, NoKnowledge, QdrantKnowledge
+from ai_orchestrator.shared_trips.api import shared_trip_router
+from ai_orchestrator.shared_trips.service import QUOTA_PREFIX as TRIP_ADAPT_QUOTA_PREFIX
+from ai_orchestrator.shared_trips.service import AdaptSettings, RedisAdaptCache, TripAdapter
+from ai_orchestrator.shared_trips.store import PostgresSharedTrips
 from ai_orchestrator.store import (
     Pool,
     PostgresPriceHistory,
@@ -543,6 +547,7 @@ async def run(settings: Settings) -> int:
             or settings.mapillary_token is not None
             or (settings.flyra_enabled and llm is not None)
             or (settings.menu_enabled and llm is not None)
+            or (settings.shared_trips_enabled and llm is not None)
             or settings.atms_enabled
             or settings.climate_enabled
             else None
@@ -597,6 +602,24 @@ async def run(settings: Settings) -> int:
         # --- Gastos compartidos (solo PostgreSQL) --------------------------------------
         expenses = expense_router(PostgresExpenses(pool)) if settings.expenses_enabled else None
 
+        # --- Copia este viaje (PostgreSQL; Flyra adapta con Ollama + caché en Redis) -----
+        shared_trips: APIRouter | None = None
+        if settings.shared_trips_enabled:
+            adapter = (
+                TripAdapter(
+                    llm=llm,
+                    quota=RedisQuota(public_redis, prefix=TRIP_ADAPT_QUOTA_PREFIX),
+                    cache=RedisAdaptCache(public_redis),
+                    settings=AdaptSettings(
+                        daily_limit=settings.trip_adapt_daily_limit,
+                        timeout_seconds=settings.trip_adapt_timeout_seconds,
+                    ),
+                )
+                if llm is not None and public_redis is not None
+                else None
+            )
+            shared_trips = shared_trip_router(PostgresSharedTrips(pool), adapter)
+
         # --- Negociación de grupo (tercer consumidor + relé del outbox) -----------------
         negotiations: APIRouter | None = None
         negotiation_consumer: NegotiationRequestConsumer | None = None
@@ -625,6 +648,7 @@ async def run(settings: Settings) -> int:
                 audio=audio,
                 negotiations=negotiations,
                 expenses=expenses,
+                shared_trips=shared_trips,
                 places=places,
                 streetview=streetview,
                 flyra=flyra,

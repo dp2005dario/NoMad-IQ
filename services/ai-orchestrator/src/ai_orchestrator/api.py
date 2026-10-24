@@ -219,6 +219,7 @@ def create_api(
     audio: AudioCatalog | None = None,
     negotiations: APIRouter | None = None,
     expenses: APIRouter | None = None,
+    shared_trips: APIRouter | None = None,
     places: PlaceService | None = None,
     streetview: StreetViewService | None = None,
     flyra: FlyraService | None = None,
@@ -514,6 +515,10 @@ def create_api(
     if expenses is not None:
         # Las rutas /v1/expense-groups viven en expenses/api.py.
         app.include_router(expenses)
+
+    if shared_trips is not None:
+        # Las rutas /v1/shared-trips ("Copia este viaje") viven en shared_trips/api.py.
+        app.include_router(shared_trips)
 
     if negotiations is not None:
         # Las rutas /v1/group-negotiations viven en negotiation/api.py.

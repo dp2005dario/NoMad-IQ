@@ -10,6 +10,8 @@ Qué pasa con cada cosa:
   gente, el bote es también de ellos (sus cuentas no pueden descuadrarse de
   repente), así que tu asiento se queda pero **anónimo**: sin tu cuenta y
   con el nombre "—". Es como tachar tu nombre de la libreta del piso.
+- **Viajes compartidos** ("Copia este viaje"): los tuyos se dejan de
+  compartir (se borran), y se olvida qué viajes copiaste tú.
 - **Negociaciones de grupo**: igual. Tu asiento queda anónimo y tus
   preferencias privadas (presupuesto, gustos) se borran.
 
@@ -47,6 +49,7 @@ class ErasureReport:
     groups_deleted: int
     seats_anonymized: int
     negotiation_seats_anonymized: int
+    shared_trips_deleted: int = 0
 
 
 class UserDataEraser(Protocol):
@@ -82,6 +85,8 @@ class PostgresEraser:
                     anon,
                     ERASED_NAME,
                 )
+                shared = await conn.execute("DELETE FROM ai.shared_trips WHERE owner_id = $1", user_id)
+                await conn.execute("DELETE FROM ai.shared_trip_copies WHERE user_id = $1", user_id)
                 negotiation_seats = await conn.execute(
                     "UPDATE ai.group_negotiation_members SET user_id = $2, preferences = NULL"
                     " WHERE user_id = $1",
@@ -100,6 +105,7 @@ class PostgresEraser:
             groups_deleted=_count(groups),
             seats_anonymized=_count(seats),
             negotiation_seats_anonymized=_count(negotiation_seats),
+            shared_trips_deleted=_count(shared),
         )
         # Solo números: ni el user_id ni el id anónimo (unirlos en un log
         # desharía el anonimato).
@@ -110,6 +116,7 @@ class PostgresEraser:
                 "groups_deleted": report.groups_deleted,
                 "seats_anonymized": report.seats_anonymized,
                 "negotiation_seats_anonymized": report.negotiation_seats_anonymized,
+                "shared_trips_deleted": report.shared_trips_deleted,
             },
         )
         return report
