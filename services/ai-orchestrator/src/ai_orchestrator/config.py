@@ -192,6 +192,14 @@ class Settings(BaseSettings):
     overpass_timeout_seconds: float = Field(default=25.0, gt=0, le=60)
     atm_ttl_seconds: int = Field(default=24 * 3600, ge=3600, le=7 * 24 * 3600)
 
+    # --- Clima medio por meses (ver el paquete climate/): NASA POWER, gratis -----------
+    climate_enabled: bool = True
+    nasa_power_url: str = "https://power.larc.nasa.gov/api/temporal/climatology/point"
+    nasa_rate_per_second: float = Field(default=1.0, gt=0, le=10)
+    nasa_burst: int = Field(default=3, ge=1, le=20)
+    nasa_timeout_seconds: float = Field(default=25.0, gt=0, le=60)
+    climate_ttl_seconds: int = Field(default=30 * 24 * 3600, ge=24 * 3600, le=90 * 24 * 3600)
+
     # --- Chat libre con Flyra (ver el paquete flyra/) --------------------------------
     # Necesita Ollama (LLM_ENABLED) y Redis (el contador de preguntas diarias).
     flyra_enabled: bool = True

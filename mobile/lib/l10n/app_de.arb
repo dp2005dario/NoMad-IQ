@@ -844,5 +844,22 @@
   "noticesSafety": "Sicherheit",
   "noticesEmpty": "Noch keine Hinweise.",
   "noticesFooter": "Höchstens ein Orts-Hinweis alle 45 Minuten und nie derselbe Ort zweimal am Tag. Sicherheitshinweise kommen immer. Dieser Verlauf existiert nur auf deinem Handy.",
-  "noticesClear": "Verlauf löschen"
+  "noticesClear": "Verlauf löschen",
+  "exploreTitle": "Entdecken",
+  "exploreSubtitle": "Wohin günstig fliegen und gutes Wetter?",
+  "exploreSearch": "Jahr ansehen",
+  "exploreMonthlyPrices": "Preis pro Monat · hin und zurück",
+  "exploreCheapest": "Am günstigsten: {month}",
+  "exploreCheap": "günstig",
+  "exploreDear": "teuer",
+  "exploreTemperature": "TEMPERATUR",
+  "exploreRainDays": "REGENTAGE",
+  "exploreDaysValue": "{days, plural, =1{1 Tag} other{{days} Tage}}",
+  "exploreVerdict": "FAZIT",
+  "exploreVerdictGreat": "{month} ist ideal: günstig und angenehm.",
+  "exploreVerdictCheapRain": "{month} ist am günstigsten, aber das Wetter ist rauer. Nimm eine Jacke mit.",
+  "exploreVerdictNoClimate": "{month} ist der günstigste Monat, den wir gesehen haben.",
+  "exploreSeeFlights": "Flüge nach {city} ansehen",
+  "exploreNoPrices": "Diese Strecke hat zuletzt niemand gesucht, daher gibt es keine Monatspreise. Probiere die Suche mit einem Datum.",
+  "exploreWeatherSource": "Durchschnittsklima: NASA POWER (30-Jahres-Mittel). Preise: was andere Reisende gefunden haben."
 }

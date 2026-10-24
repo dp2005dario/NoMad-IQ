@@ -112,6 +112,14 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 
+    # Clima medio de cada mes (Explorar): medias de la NASA, públicas e
+    # iguales para todos.
+    climate:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/climate`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
     # Vuelos SIN cuenta: chollos e historial de precios. Son iguales para todo
     # el mundo, así que también los ve quien entra como invitado (precios
     # reales para todos). Solo lectura (GET) y con el mismo límite por IP.
@@ -123,11 +131,12 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: price-consumer
 
-    # Buscador de vuelos (origen, destino, fechas, viajeros): público, como
-    # los chollos, pero con su límite más estricto.
+    # Buscador de vuelos (origen, destino, fechas, viajeros) y precio por
+    # meses (Explorar): públicos, como los chollos, pero con su límite más
+    # estricto.
     fares-search:
       entryPoints: [web]
-      rule: Method(`GET`) && Path(`/v1/fares/search`)
+      rule: Method(`GET`) && (Path(`/v1/fares/search`) || Path(`/v1/fares/months`))
       priority: 100
       middlewares: [strip-identity, search-rate-limit]
       service: price-consumer

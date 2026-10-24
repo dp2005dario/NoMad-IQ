@@ -61,6 +61,7 @@ type SearchService struct {
 
 type cached struct {
 	offers   []domain.Offer
+	months   []domain.MonthFare // solo en las entradas de MonthlyFares
 	observed time.Time
 	expires  time.Time
 }
@@ -184,4 +185,61 @@ func (s *SearchService) store(key string, e cached) {
 		}
 	}
 	s.cache[key] = e
+}
+
+// MonthlyFares implementa el RPC del mismo nombre (pantalla Explorar). Pasa
+// por la misma caché y el mismo "singleflight" que el buscador: una ruta
+// popular cuesta UNA petición al proveedor cada CacheTTL.
+func (s *SearchService) MonthlyFares(ctx context.Context, req *flightsv1.MonthlyFaresRequest) (*flightsv1.MonthlyFaresResponse, error) {
+	monthly, ok := s.searcher.(provider.MonthlySearcher)
+	if !ok {
+		return nil, status.Error(codes.Unimplemented, "este proveedor no da precios por meses")
+	}
+	route, err := protomap.RouteFromProto(req.GetRoute())
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	key := "monthly|" + string(route.Origin) + "-" + string(route.Destination)
+	entry, ok := s.lookup(key)
+	if !ok {
+		v, err, _ := s.flight.Do(key, func() (any, error) {
+			if e, ok := s.lookup(key); ok {
+				return e, nil
+			}
+			fetchCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.cfg.Timeout)
+			defer cancel()
+			months, err := monthly.Monthly(fetchCtx, route)
+			if err != nil {
+				return nil, err
+			}
+			if len(months) > domain.MaxMonths {
+				months = months[:domain.MaxMonths]
+			}
+			e := cached{months: months, observed: s.now().UTC()}
+			s.store(key, e)
+			return e, nil
+		})
+		if err != nil {
+			return nil, s.searchStatus(err)
+		}
+		entry = v.(cached)
+	}
+	out := make([]*flightsv1.MonthFare, len(entry.months))
+	for i, m := range entry.months {
+		out[i] = &flightsv1.MonthFare{
+			Year:          int32(m.Year),
+			Month:         int32(m.Month),
+			PricePerAdult: protomap.MoneyToProto(m.PricePerAdult),
+			CarrierIata:   m.CarrierIATA,
+			DepartureAt:   m.DepartureAt,
+			ReturnAt:      m.ReturnAt,
+			Transfers:     int32(m.Transfers),
+			BookingUrl:    m.DeepLink,
+		}
+	}
+	return &flightsv1.MonthlyFaresResponse{
+		Months:     out,
+		ObservedAt: timestamppb.New(entry.observed),
+		Provider:   monthly.Name(),
+	}, nil
 }

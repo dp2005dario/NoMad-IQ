@@ -12,6 +12,7 @@ import '../features/camera/camera_device.dart';
 import '../features/camera/landmarks_api.dart';
 import '../features/camera/speaker.dart';
 import '../features/flights/booking.dart';
+import '../features/flights/climate_api.dart';
 import '../features/flights/fares_api.dart';
 import '../features/flyra/flyra_api.dart';
 import '../features/group/group_api.dart';
@@ -85,6 +86,9 @@ class AppServices {
   final GeoApi geo;
   final AudioguideApi audioguides;
   final FaresApi fares;
+
+  /// Clima medio de cada mes (Explorar): medias de la NASA desde el servidor.
+  late final ClimateApi climate = ClimateApi(api);
 
   /// El chat libre con Flyra (la IA de la app).
   final FlyraApi flyra;

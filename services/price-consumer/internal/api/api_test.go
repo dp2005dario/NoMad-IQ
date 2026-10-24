@@ -413,3 +413,71 @@ func TestEraseMe(t *testing.T) {
 		t.Errorf("sin identidad: %d", rec.Code)
 	}
 }
+
+// monthlySearcher también sabe dar precios por meses.
+type monthlySearcher struct {
+	fakeSearcher
+	route string
+	err   error
+}
+
+func (m *monthlySearcher) Monthly(_ context.Context, origin, destination string) (domain.MonthlyResult, error) {
+	m.route = origin + "-" + destination
+	if m.err != nil {
+		return domain.MonthlyResult{}, m.err
+	}
+	eur := domain.Money{Currency: "EUR", AmountMinor: 51200}
+	return domain.MonthlyResult{
+		Provider:   "travelpayouts",
+		ObservedAt: today,
+		Months: []domain.MonthFare{
+			{Year: 2027, Month: time.March, PricePerAdult: eur, CarrierIATA: "QR", DepartureAt: "2027-03-11",
+				ReturnAt: "2027-03-20", Transfers: 1, DeepLink: "https://www.aviasales.com/search/MAD1103NRT20031?marker=1"},
+			{Year: 2027, Month: time.April, PricePerAdult: eur, DeepLink: "http://insecure.example"},
+		},
+	}, nil
+}
+
+func TestMonthsIsPublicAndSkipsUnsafeLinks(t *testing.T) {
+	m := &monthlySearcher{}
+	rec := get(newSearchAPI(m), "/v1/fares/months?origin=mad&destination=NRT")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("código %d: %s", rec.Code, rec.Body)
+	}
+	if m.route != "MAD-NRT" {
+		t.Errorf("ruta: %s", m.route)
+	}
+	months := decode(t, rec)["months"].([]any)
+	if len(months) != 1 {
+		t.Fatalf("meses: %v", months)
+	}
+	first := months[0].(map[string]any)
+	if first["month"] != "2027-03" || first["carrier"] != "QR" {
+		t.Errorf("mes: %v", first)
+	}
+}
+
+func TestMonthsValidatesAndDegrades(t *testing.T) {
+	m := &monthlySearcher{}
+	h := newSearchAPI(m)
+	for _, path := range []string{
+		"/v1/fares/months?origin=MAD&destination=MAD",
+		"/v1/fares/months?origin=MADRID&destination=NRT",
+		"/v1/fares/months?origin=MAD",
+	} {
+		if rec := get(h, path); rec.Code != http.StatusBadRequest {
+			t.Errorf("%s: %d", path, rec.Code)
+		}
+	}
+	if m.route != "" {
+		t.Error("con datos malos no se pregunta al proveedor")
+	}
+	busy := get(newSearchAPI(&monthlySearcher{err: domain.ErrSearchBusy}), "/v1/fares/months?origin=MAD&destination=NRT")
+	if busy.Code != http.StatusTooManyRequests {
+		t.Errorf("ocupado: %d", busy.Code)
+	}
+	// Un buscador sin precios por meses: 503.
+	if rec := get(newSearchAPI(&fakeSearcher{}), "/v1/fares/months?origin=MAD&destination=NRT"); rec.Code != http.StatusServiceUnavailable {
+		t.Errorf("sin soporte: %d", rec.Code)
+	}
+}

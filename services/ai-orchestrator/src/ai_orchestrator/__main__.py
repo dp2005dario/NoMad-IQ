@@ -68,6 +68,8 @@ from ai_orchestrator.audioguides.service import AudioguideService, ServiceSettin
 from ai_orchestrator.audioguides.speech import PiperOpusSynthesizer, SpeechError, discover_voices
 from ai_orchestrator.audioguides.versions import ZoneVersionCache
 from ai_orchestrator.audioguides.writer import AudioguideWriter, WriterSettings
+from ai_orchestrator.climate.nasa import NasaBusyError, NasaClient
+from ai_orchestrator.climate.service import ClimateService, ClimateSettings, RedisClimateCache
 from ai_orchestrator.config import Settings
 from ai_orchestrator.consumer import AlertProcessor, FareAlertConsumer
 from ai_orchestrator.erasure import PostgresEraser
@@ -314,6 +316,28 @@ def _atms(settings: Settings, redis: Redis, stack: AsyncExitStack) -> AtmService
     )
 
 
+def _climate(settings: Settings, redis: Redis, stack: AsyncExitStack) -> ClimateService:
+    """Clima medio: NASA POWER con límite de ritmo + caché en Redis."""
+    http = httpx.AsyncClient(
+        timeout=httpx.Timeout(settings.nasa_timeout_seconds, connect=5.0),
+        follow_redirects=False,
+    )
+    stack.push_async_callback(http.aclose)
+    return ClimateService(
+        nasa=NasaClient(
+            http,
+            url=settings.nasa_power_url,
+            limiter=RateLimiter(
+                settings.nasa_rate_per_second,
+                settings.nasa_burst,
+                busy=lambda: NasaBusyError("límite de peticiones a la NASA"),
+            ),
+        ),
+        cache=RedisClimateCache(redis),
+        settings=ClimateSettings(ttl_seconds=settings.climate_ttl_seconds),
+    )
+
+
 class _NoRatesCache:
     """Sin Redis: los tipos se guardan solo en la memoria del proceso."""
 
@@ -505,6 +529,7 @@ async def run(settings: Settings) -> int:
             or settings.mapillary_token is not None
             or (settings.flyra_enabled and llm is not None)
             or settings.atms_enabled
+            or settings.climate_enabled
             else None
         )
         wikimedia = (
@@ -528,6 +553,11 @@ async def run(settings: Settings) -> int:
         atms: AtmService | None = None
         if settings.atms_enabled and public_redis is not None:
             atms = _atms(settings, public_redis, stack)
+
+        # --- Clima medio por meses (NASA POWER con caché en Redis) ----------------------
+        climate: ClimateService | None = None
+        if settings.climate_enabled and public_redis is not None:
+            climate = _climate(settings, public_redis, stack)
 
         # --- Chat libre con Flyra (Ollama + cupo diario en Redis) ------------------------
         # Sin LLM no hay chat: la ruta no existe y la app lo explica.
@@ -581,6 +611,7 @@ async def run(settings: Settings) -> int:
                 landmarks=landmarks,
                 fx=fx,
                 atms=atms,
+                climate=climate,
                 eraser=PostgresEraser(pool),
                 expose_docs=settings.expose_api_docs,
             ),

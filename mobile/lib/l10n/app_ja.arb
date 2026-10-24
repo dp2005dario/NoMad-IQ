@@ -844,5 +844,22 @@
   "noticesSafety": "安全",
   "noticesEmpty": "まだお知らせはありません。",
   "noticesFooter": "スポットのお知らせは最大45分に1回、同じ場所は1日に1回まで。安全のお知らせは必ず届きます。この履歴はあなたのスマホにだけあります。",
-  "noticesClear": "履歴を消す"
+  "noticesClear": "履歴を消す",
+  "exploreTitle": "さがす",
+  "exploreSubtitle": "安くて天気のいい行き先は？",
+  "exploreSearch": "1年を見る",
+  "exploreMonthlyPrices": "月ごとの料金・往復",
+  "exploreCheapest": "いちばん安い：{month}",
+  "exploreCheap": "安い",
+  "exploreDear": "高い",
+  "exploreTemperature": "気温",
+  "exploreRainDays": "雨の日",
+  "exploreDaysValue": "{days, plural, other{{days} 日}}",
+  "exploreVerdict": "結論",
+  "exploreVerdictGreat": "{month} がちょうどいい：安くて快適。",
+  "exploreVerdictCheapRain": "{month} はいちばん安いけれど天気は厳しめ。上着を持って。",
+  "exploreVerdictNoClimate": "{month} が見つかった中でいちばん安い月です。",
+  "exploreSeeFlights": "{city} 行きの便を見る",
+  "exploreNoPrices": "この路線は最近検索されていないため月別の料金がありません。日付を指定して検索してみて。",
+  "exploreWeatherSource": "平均気候：NASA POWER（30年平均）。料金：他の旅行者が見つけた価格。"
 }

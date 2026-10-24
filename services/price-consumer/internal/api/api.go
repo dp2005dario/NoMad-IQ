@@ -29,6 +29,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -78,6 +79,12 @@ type Searcher interface {
 	Search(ctx context.Context, spec domain.RouteSpec, adults int) (domain.SearchResult, error)
 }
 
+// MonthlySearcher da el precio más barato de cada mes para una ruta. Es
+// opcional: si el Searcher no lo implementa, /v1/fares/months responde 503.
+type MonthlySearcher interface {
+	Monthly(ctx context.Context, origin, destination string) (domain.MonthlyResult, error)
+}
+
 // Config son los límites de la API.
 type Config struct {
 	// Searcher del buscador; nil = buscador desactivado (responde 503).
@@ -106,6 +113,7 @@ func New(cfg Config, st Store, watcher Watcher, log *slog.Logger) http.Handler {
 	mux.HandleFunc("DELETE /v1/fares/watches/{route_key}", h.withUser(h.unwatch))
 	mux.HandleFunc("GET /v1/fares/history/{route_key}", public(h.history))
 	mux.HandleFunc("GET /v1/fares/search", public(h.search))
+	mux.HandleFunc("GET /v1/fares/months", public(h.months))
 	mux.HandleFunc("GET /v1/fares/alerts", h.withUser(h.alerts))
 	mux.HandleFunc("DELETE /v1/fares/me", h.withUser(h.eraseMe))
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
@@ -323,6 +331,64 @@ func (h *handler) search(w http.ResponseWriter, r *http.Request, _ string) {
 		Provider:   res.Provider,
 		ObservedAt: res.ObservedAt.UTC(),
 		Offers:     offers,
+	})
+}
+
+// iata: tres letras mayúsculas ("MAD").
+var iata = regexp.MustCompile(`^[A-Z]{3}$`)
+
+// months: "¿qué mes sale más barato ir de MAD a NRT?" (pantalla Explorar).
+// Público, como el buscador: también para quien entra como invitado.
+func (h *handler) months(w http.ResponseWriter, r *http.Request, _ string) {
+	q := r.URL.Query()
+	origin := strings.ToUpper(strings.TrimSpace(q.Get("origin")))
+	destination := strings.ToUpper(strings.TrimSpace(q.Get("destination")))
+	if !iata.MatchString(origin) || !iata.MatchString(destination) || origin == destination {
+		problem(w, http.StatusBadRequest, "origin y destination: dos aeropuertos IATA distintos")
+		return
+	}
+	monthly, ok := h.cfg.Searcher.(MonthlySearcher)
+	if !ok {
+		problem(w, http.StatusServiceUnavailable, "el buscador no está disponible")
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), searchTimeout)
+	defer cancel()
+	res, err := monthly.Monthly(ctx, origin, destination)
+	switch {
+	case errors.Is(err, domain.ErrSearchBusy):
+		w.Header().Set("Retry-After", "5")
+		problem(w, http.StatusTooManyRequests, "mucha gente buscando: inténtalo en unos segundos")
+		return
+	case domain.IsValidation(err):
+		problem(w, http.StatusBadRequest, err.Error())
+		return
+	case err != nil:
+		h.unavailable(w, "months", err)
+		return
+	}
+	out := make([]monthJSON, 0, len(res.Months))
+	for _, m := range res.Months {
+		link := safeLink(m.DeepLink)
+		if link == "" || m.Month < time.January || m.Month > time.December || m.PricePerAdult.Validate("price") != nil {
+			continue
+		}
+		out = append(out, monthJSON{
+			Month:         fmt.Sprintf("%04d-%02d", m.Year, int(m.Month)),
+			PricePerAdult: moneyJSON{AmountMinor: m.PricePerAdult.AmountMinor, Currency: m.PricePerAdult.Currency},
+			Carrier:       m.CarrierIATA,
+			DepartureAt:   m.DepartureAt,
+			ReturnAt:      m.ReturnAt,
+			Transfers:     m.Transfers,
+			BookingURL:    link,
+		})
+	}
+	writeJSON(w, http.StatusOK, monthsJSON{
+		Origin:      origin,
+		Destination: destination,
+		Provider:    res.Provider,
+		ObservedAt:  res.ObservedAt.UTC(),
+		Months:      out,
 	})
 }
 

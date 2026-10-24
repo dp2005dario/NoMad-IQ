@@ -10,6 +10,7 @@ import '../features/audioguide/audioguide_screen.dart';
 import '../features/camera/camera_screen.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/coming_soon/coming_soon_screen.dart';
+import '../features/flights/explore_screen.dart';
 import '../features/flights/fare_alerts_screen.dart';
 import '../features/flights/fare_route_screen.dart';
 import '../features/flights/flight_search_screen.dart';
@@ -51,6 +52,12 @@ abstract final class Routes {
   static const String papers = '/papers';
   static const String passport = '/passport';
   static const String notices = '/notices';
+
+  /// Explorar: precio por meses y clima. `from` = aeropuerto de salida.
+  static String explore({String? origin}) => Uri(
+    path: '/explore',
+    queryParameters: origin == null ? null : <String, String>{'from': origin},
+  ).toString();
   static const String privacy = '/settings/privacy';
 
   /// La audioguía de una zona. El nombre va en la dirección para poder
@@ -261,6 +268,11 @@ GoRouter buildRouter({
       path: Routes.papers,
       builder: (BuildContext context, GoRouterState state) =>
           const PapersScreen(),
+    ),
+    GoRoute(
+      path: '/explore',
+      builder: (BuildContext context, GoRouterState state) =>
+          ExploreScreen(origin: state.uri.queryParameters['from'] ?? ''),
     ),
     GoRoute(
       path: Routes.notices,

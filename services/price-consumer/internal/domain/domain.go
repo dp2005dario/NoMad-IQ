@@ -448,3 +448,23 @@ type SearchResult struct {
 	ObservedAt time.Time
 	Provider   string
 }
+
+// MonthFare es el ida y vuelta más barato visto para salir en un mes
+// (pantalla Explorar).
+type MonthFare struct {
+	Year          int
+	Month         time.Month
+	PricePerAdult Money
+	CarrierIATA   string
+	DepartureAt   string
+	ReturnAt      string
+	Transfers     int
+	DeepLink      string
+}
+
+// MonthlyResult es la respuesta de "precio por meses".
+type MonthlyResult struct {
+	Months     []MonthFare
+	ObservedAt time.Time
+	Provider   string
+}

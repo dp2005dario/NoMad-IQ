@@ -3691,5 +3691,103 @@
   "noticesClear": "Clear history",
   "@noticesClear": {
     "description": "Clear history button."
+  },
+  "exploreTitle": "Explore",
+  "@exploreTitle": {
+    "description": "Explore screen title."
+  },
+  "exploreSubtitle": "Where can I fly cheap with good weather?",
+  "@exploreSubtitle": {
+    "description": "Subtitle."
+  },
+  "exploreSearch": "See the year",
+  "@exploreSearch": {
+    "description": "Button that loads prices and weather."
+  },
+  "exploreMonthlyPrices": "Price by month · return",
+  "@exploreMonthlyPrices": {
+    "description": "Chart title."
+  },
+  "exploreCheapest": "Cheapest: {month}",
+  "@exploreCheapest": {
+    "description": "Label of the cheapest month.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreCheap": "cheap",
+  "@exploreCheap": {
+    "description": "Chart legend: cheap."
+  },
+  "exploreDear": "pricey",
+  "@exploreDear": {
+    "description": "Chart legend: expensive."
+  },
+  "exploreTemperature": "TEMPERATURE",
+  "@exploreTemperature": {
+    "description": "Weather stat."
+  },
+  "exploreRainDays": "RAINY DAYS",
+  "@exploreRainDays": {
+    "description": "Weather stat."
+  },
+  "exploreDaysValue": "{days, plural, =1{1 day} other{{days} days}}",
+  "@exploreDaysValue": {
+    "description": "Number of rainy days in a month.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "exploreVerdict": "THE VERDICT",
+  "@exploreVerdict": {
+    "description": "Verdict heading."
+  },
+  "exploreVerdictGreat": "{month} is the sweet spot: cheap and pleasant.",
+  "@exploreVerdictGreat": {
+    "description": "Verdict: cheap and nice weather.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreVerdictCheapRain": "{month} is the cheapest, but the weather is harsher. Bring a jacket.",
+  "@exploreVerdictCheapRain": {
+    "description": "Verdict: cheap but rainy or extreme.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreVerdictNoClimate": "{month} is the cheapest month we have seen.",
+  "@exploreVerdictNoClimate": {
+    "description": "Verdict when weather data is missing.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreSeeFlights": "See flights to {city}",
+  "@exploreSeeFlights": {
+    "description": "Button to open the search for that month.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreNoPrices": "Nobody has searched this route lately, so we have no monthly prices. Try the search with a date.",
+  "@exploreNoPrices": {
+    "description": "No monthly prices for that route."
+  },
+  "exploreWeatherSource": "Average weather: NASA POWER (30-year means). Prices: what other travellers found.",
+  "@exploreWeatherSource": {
+    "description": "Credit for the weather data."
   }
 }

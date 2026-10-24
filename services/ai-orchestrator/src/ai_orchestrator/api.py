@@ -54,6 +54,8 @@ from ai_orchestrator.audioguides.audio_catalog import AudioCatalog, AudioLookup
 from ai_orchestrator.audioguides.cache import CacheError
 from ai_orchestrator.audioguides.domain import AudioguideScript
 from ai_orchestrator.audioguides.service import AudioguideService
+from ai_orchestrator.climate.domain import Climate
+from ai_orchestrator.climate.service import ClimateBusyError, ClimateService, ClimateUnavailableError
 from ai_orchestrator.domain import Recommendation, Verdict
 from ai_orchestrator.erasure import UserDataEraser
 from ai_orchestrator.flyra.domain import ChatReply, ChatRequest
@@ -202,6 +204,8 @@ STREET_CACHE = "public, max-age=3600"
 FX_CACHE = "public, max-age=3600"
 # Los cajeros casi nunca cambian: seis horas en el móvil y en la CDN.
 ATM_CACHE = "public, max-age=21600"
+# El clima medio no cambia: el móvil puede guardarlo una semana.
+CLIMATE_CACHE = "public, max-age=604800"
 # "Esta ciudad no tiene ficha" se recuerda menos (por si aparece).
 PLACE_MISSING_CACHE = "public, max-age=3600"
 
@@ -219,6 +223,7 @@ def create_api(
     landmarks: LandmarkService | None = None,
     fx: FxService | None = None,
     atms: AtmService | None = None,
+    climate: ClimateService | None = None,
     eraser: UserDataEraser | None = None,
     expose_docs: bool = False,
 ) -> FastAPI:
@@ -380,6 +385,23 @@ def create_api(
                 return resp
             # Sin cajeros también es 200 (lista vacía): la app lo explica.
             return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": ATM_CACHE})
+
+    if climate is not None:
+
+        @app.get("/v1/climate", response_model=Climate)
+        async def get_climate(
+            lat: Annotated[float, Query(ge=-90, le=90)],
+            lon: Annotated[float, Query(ge=-180, le=180)],
+        ) -> JSONResponse:
+            # Pública (también para invitados): medias de la NASA, iguales
+            # para todos.
+            try:
+                found = await climate.at(lat, lon)
+            except (ClimateBusyError, ClimateUnavailableError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "clima no disponible")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": CLIMATE_CACHE})
 
     if fx is not None:
 

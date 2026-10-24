@@ -844,5 +844,22 @@
   "noticesSafety": "安全",
   "noticesEmpty": "还没有通知。",
   "noticesFooter": "地点通知最多每 45 分钟一条，同一地点一天不会重复。安全通知总会送达。此记录只保存在你的手机上。",
-  "noticesClear": "清除记录"
+  "noticesClear": "清除记录",
+  "exploreTitle": "探索",
+  "exploreSubtitle": "去哪里机票便宜又天气好？",
+  "exploreSearch": "查看全年",
+  "exploreMonthlyPrices": "各月价格 · 往返",
+  "exploreCheapest": "最便宜：{month}",
+  "exploreCheap": "便宜",
+  "exploreDear": "贵",
+  "exploreTemperature": "气温",
+  "exploreRainDays": "雨天天数",
+  "exploreDaysValue": "{days, plural, other{{days} 天}}",
+  "exploreVerdict": "结论",
+  "exploreVerdictGreat": "{month} 最合适：便宜又舒服。",
+  "exploreVerdictCheapRain": "{month} 最便宜，但天气较差，记得带外套。",
+  "exploreVerdictNoClimate": "{month} 是我们见到最便宜的月份。",
+  "exploreSeeFlights": "查看飞往{city}的航班",
+  "exploreNoPrices": "最近没人搜索这条航线，所以没有月度价格。试试按日期搜索。",
+  "exploreWeatherSource": "平均气候：NASA POWER（30 年均值）。价格：其他旅客搜到的。"
 }

@@ -844,5 +844,22 @@
   "noticesSafety": "السلامة",
   "noticesEmpty": "لا تنبيهات بعد.",
   "noticesFooter": "تنبيه مكان واحد كل 45 دقيقة على الأكثر، ولا يتكرر المكان نفسه في اليوم. تنبيهات السلامة تصل دائمًا. هذا السجل موجود على هاتفك فقط.",
-  "noticesClear": "مسح السجل"
+  "noticesClear": "مسح السجل",
+  "exploreTitle": "استكشف",
+  "exploreSubtitle": "إلى أين أطير بسعر زهيد وبطقس جيد؟",
+  "exploreSearch": "اعرض السنة",
+  "exploreMonthlyPrices": "السعر شهريًا · ذهاب وعودة",
+  "exploreCheapest": "الأرخص: {month}",
+  "exploreCheap": "رخيص",
+  "exploreDear": "غالي",
+  "exploreTemperature": "درجة الحرارة",
+  "exploreRainDays": "أيام المطر",
+  "exploreDaysValue": "{days, plural, =1{يوم واحد} other{{days} أيام}}",
+  "exploreVerdict": "الحكم",
+  "exploreVerdictGreat": "{month} هو الوقت الأمثل: رخيص وطقسه لطيف.",
+  "exploreVerdictCheapRain": "{month} هو الأرخص، لكن الطقس أقسى. خُذ معك سترة.",
+  "exploreVerdictNoClimate": "{month} هو أرخص شهر رأيناه.",
+  "exploreSeeFlights": "اعرض الرحلات إلى {city}",
+  "exploreNoPrices": "لم يبحث أحد عن هذا المسار مؤخرًا، فلا توجد أسعار شهرية. جرّب البحث بتاريخ.",
+  "exploreWeatherSource": "المناخ المتوسط: NASA POWER (متوسطات 30 عامًا). الأسعار: ما وجده مسافرون آخرون."
 }

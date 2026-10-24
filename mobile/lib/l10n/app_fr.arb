@@ -844,5 +844,22 @@
   "noticesSafety": "Sécurité",
   "noticesEmpty": "Aucune alerte pour l'instant.",
   "noticesFooter": "Au plus une alerte de lieu toutes les 45 minutes, jamais le même lieu deux fois par jour. Les alertes de sécurité arrivent toujours. Cet historique n'existe que sur ton téléphone.",
-  "noticesClear": "Effacer l'historique"
+  "noticesClear": "Effacer l'historique",
+  "exploreTitle": "Explorer",
+  "exploreSubtitle": "Où voler pas cher avec du beau temps ?",
+  "exploreSearch": "Voir l'année",
+  "exploreMonthlyPrices": "Prix par mois · aller-retour",
+  "exploreCheapest": "Le moins cher : {month}",
+  "exploreCheap": "pas cher",
+  "exploreDear": "cher",
+  "exploreTemperature": "TEMPÉRATURE",
+  "exploreRainDays": "JOURS DE PLUIE",
+  "exploreDaysValue": "{days, plural, =1{1 jour} other{{days} jours}}",
+  "exploreVerdict": "LE VERDICT",
+  "exploreVerdictGreat": "{month} est le bon moment : pas cher et agréable.",
+  "exploreVerdictCheapRain": "{month} est le moins cher, mais le temps est plus rude. Prends une veste.",
+  "exploreVerdictNoClimate": "{month} est le mois le moins cher que nous avons vu.",
+  "exploreSeeFlights": "Voir les vols vers {city}",
+  "exploreNoPrices": "Personne n'a cherché cette route récemment : pas de prix par mois. Essaie la recherche avec une date.",
+  "exploreWeatherSource": "Climat moyen : NASA POWER (moyennes sur 30 ans). Prix : ce qu'ont trouvé d'autres voyageurs."
 }

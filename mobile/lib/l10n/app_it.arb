@@ -844,5 +844,22 @@
   "noticesSafety": "Sicurezza",
   "noticesEmpty": "Ancora nessun avviso.",
   "noticesFooter": "Al massimo un avviso di zona ogni 45 minuti e mai la stessa zona due volte al giorno. Quelli di sicurezza arrivano sempre. Questa cronologia esiste solo sul tuo telefono.",
-  "noticesClear": "Cancella cronologia"
+  "noticesClear": "Cancella cronologia",
+  "exploreTitle": "Esplora",
+  "exploreSubtitle": "Dove volare spendendo poco e con bel tempo?",
+  "exploreSearch": "Vedi l'anno",
+  "exploreMonthlyPrices": "Prezzo per mese · andata e ritorno",
+  "exploreCheapest": "Il più economico: {month}",
+  "exploreCheap": "economico",
+  "exploreDear": "caro",
+  "exploreTemperature": "TEMPERATURA",
+  "exploreRainDays": "GIORNI DI PIOGGIA",
+  "exploreDaysValue": "{days, plural, =1{1 giorno} other{{days} giorni}}",
+  "exploreVerdict": "IL VERDETTO",
+  "exploreVerdictGreat": "{month} è il momento giusto: economico e piacevole.",
+  "exploreVerdictCheapRain": "{month} è il più economico, ma il tempo è peggiore. Porta una giacca.",
+  "exploreVerdictNoClimate": "{month} è il mese più economico che abbiamo visto.",
+  "exploreSeeFlights": "Vedi i voli per {city}",
+  "exploreNoPrices": "Nessuno ha cercato questa rotta di recente, quindi non abbiamo prezzi mensili. Prova la ricerca con una data.",
+  "exploreWeatherSource": "Clima medio: NASA POWER (medie di 30 anni). Prezzi: quelli trovati da altri viaggiatori."
 }
