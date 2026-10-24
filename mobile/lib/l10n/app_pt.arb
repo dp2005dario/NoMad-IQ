@@ -861,5 +861,19 @@
   "exploreVerdictNoClimate": "{month} é o mês mais barato que vimos.",
   "exploreSeeFlights": "Ver voos para {city}",
   "exploreNoPrices": "Ninguém procurou esta rota ultimamente, por isso não temos preços por mês. Tenta a pesquisa com uma data.",
-  "exploreWeatherSource": "Clima médio: NASA POWER (médias de 30 anos). Preços: o que outros viajantes encontraram."
+  "exploreWeatherSource": "Clima médio: NASA POWER (médias de 30 anos). Preços: o que outros viajantes encontraram.",
+  "menuTitle": "Tradutor de ementas",
+  "menuSubtitle": "Tira uma foto da ementa e explicamos cada prato",
+  "menuTakePhoto": "Fotografar a ementa",
+  "menuFromGallery": "Escolher uma foto",
+  "menuReading": "A Flyra está a ler a ementa…",
+  "menuNothingRead": "Não conseguimos ler nada. Tenta outra vez com mais luz e a ementa plana.",
+  "menuNoDishes": "Não reconhecemos nenhum prato nessa foto.",
+  "menuOutOfCards": "Já usaste as ementas de hoje. Amanhã renova-se.",
+  "menuTapADish": "Toca num prato para saber o que é",
+  "menuOrderLike": "PEDE-O ASSIM",
+  "menuAllergenNote": "Os avisos de alergias são uma ajuda, não uma garantia: pergunta sempre ao pessoal.",
+  "menuPlaceLanguage": "Idioma do local",
+  "menuLeftToday": "{count, plural, =1{resta 1 ementa hoje} other{restam {count} ementas hoje}}",
+  "menuSignIn": "O tradutor de ementas é para contas NomadIQ. Entra para o usar."
 }

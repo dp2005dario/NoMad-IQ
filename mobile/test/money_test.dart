@@ -192,6 +192,7 @@ class FakeScanner implements ReceiptScanner {
   Future<List<String>?> scan(
     ReceiptSource source, {
     String currency = 'EUR',
+    String? language,
   }) async {
     asked.add(source);
     return rows;

@@ -64,6 +64,8 @@ from ai_orchestrator.fx.service import FxRates, FxService, FxUnavailableError
 from ai_orchestrator.identity import Principal, current_principal
 from ai_orchestrator.landmarks.domain import Landmark, Recognition, RecognizeRequest
 from ai_orchestrator.landmarks.service import LandmarkBusyError, LandmarkService
+from ai_orchestrator.menu.domain import MenuReply, MenuRequest
+from ai_orchestrator.menu.service import MenuBusyError, MenuService
 from ai_orchestrator.places.domain import PlaceCard
 from ai_orchestrator.places.service import PlaceBusyError, PlaceService, PlaceUnavailableError
 from ai_orchestrator.quota import QuotaExceededError
@@ -220,6 +222,7 @@ def create_api(
     places: PlaceService | None = None,
     streetview: StreetViewService | None = None,
     flyra: FlyraService | None = None,
+    menu: MenuService | None = None,
     landmarks: LandmarkService | None = None,
     fx: FxService | None = None,
     atms: AtmService | None = None,
@@ -436,6 +439,27 @@ def create_api(
                 resp.headers["Retry-After"] = "30"
                 return resp
             # Las respuestas son personales: que ningún proxy las guarde.
+            return JSONResponse(reply.model_dump(mode="json"), headers={"Cache-Control": "no-store"})
+
+    if menu is not None:
+
+        @app.post("/v1/menu/translate", response_model=MenuReply)
+        async def translate_menu(
+            principal: Annotated[Principal, Depends(current_principal)],
+            body: MenuRequest,
+        ) -> JSONResponse:
+            # Con sesión: cada cuenta tiene su cupo diario de cartas.
+            try:
+                reply = await menu.translate(principal.user_id, body)
+            except QuotaExceededError as exc:
+                resp = _problem(429, "Demasiadas peticiones", "ya no quedan cartas por hoy")
+                resp.headers["Retry-After"] = str(exc.retry_after)
+                return resp
+            except MenuBusyError:
+                resp = _problem(503, "Servicio no disponible temporalmente", "Flyra está ocupada")
+                resp.headers["Retry-After"] = "30"
+                return resp
+            # La carta es de esta persona: que ningún proxy la guarde.
             return JSONResponse(reply.model_dump(mode="json"), headers={"Cache-Control": "no-store"})
 
     if landmarks is not None:

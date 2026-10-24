@@ -24,6 +24,7 @@ import '../features/map/street_photos_api.dart';
 import '../features/money/atms_api.dart';
 import '../features/money/expenses_api.dart';
 import '../features/money/fx_api.dart';
+import '../features/menu/menu_api.dart';
 import '../features/money/receipt_scanner.dart';
 import '../features/push/notices.dart';
 import '../features/push/push_registrar.dart';
@@ -89,6 +90,9 @@ class AppServices {
 
   /// Clima medio de cada mes (Explorar): medias de la NASA desde el servidor.
   late final ClimateApi climate = ClimateApi(api);
+
+  /// Traductor de cartas de restaurante (pantalla Menú).
+  late final MenuApi menu = MenuApi(api);
 
   /// El chat libre con Flyra (la IA de la app).
   final FlyraApi flyra;

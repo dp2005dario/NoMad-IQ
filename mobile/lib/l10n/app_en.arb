@@ -3789,5 +3789,66 @@
   "exploreWeatherSource": "Average weather: NASA POWER (30-year means). Prices: what other travellers found.",
   "@exploreWeatherSource": {
     "description": "Credit for the weather data."
+  },
+  "menuTitle": "Menu translator",
+  "@menuTitle": {
+    "description": "Menu translator screen title and shortcut."
+  },
+  "menuSubtitle": "Photograph the menu and we explain every dish",
+  "@menuSubtitle": {
+    "description": "Subtitle."
+  },
+  "menuTakePhoto": "Photograph the menu",
+  "@menuTakePhoto": {
+    "description": "Button: camera."
+  },
+  "menuFromGallery": "Choose a photo",
+  "@menuFromGallery": {
+    "description": "Button: pick a photo."
+  },
+  "menuReading": "Flyra is reading the menu…",
+  "@menuReading": {
+    "description": "While Flyra works."
+  },
+  "menuNothingRead": "We could not read any text. Try again with more light and the page flat.",
+  "@menuNothingRead": {
+    "description": "The photo had no readable text."
+  },
+  "menuNoDishes": "We did not recognise any dish in that photo.",
+  "@menuNoDishes": {
+    "description": "Flyra found no dishes."
+  },
+  "menuOutOfCards": "You have used today's menus. It resets tomorrow.",
+  "@menuOutOfCards": {
+    "description": "Daily quota spent."
+  },
+  "menuTapADish": "Tap a dish to see what it is",
+  "@menuTapADish": {
+    "description": "Hint above the list."
+  },
+  "menuOrderLike": "ORDER IT LIKE THIS",
+  "@menuOrderLike": {
+    "description": "Heading above the phrase."
+  },
+  "menuAllergenNote": "Allergy warnings are a help, not a guarantee: always ask the staff.",
+  "@menuAllergenNote": {
+    "description": "Warning under the allergens line."
+  },
+  "menuPlaceLanguage": "Language of the place",
+  "@menuPlaceLanguage": {
+    "description": "Field: language spoken where you are."
+  },
+  "menuLeftToday": "{count, plural, =1{1 menu left today} other{{count} menus left today}}",
+  "@menuLeftToday": {
+    "description": "How many menus are left today.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "menuSignIn": "The menu translator is for NomadIQ accounts. Sign in to use it.",
+  "@menuSignIn": {
+    "description": "Guests cannot use it."
   }
 }

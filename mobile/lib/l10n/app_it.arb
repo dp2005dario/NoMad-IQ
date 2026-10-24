@@ -861,5 +861,19 @@
   "exploreVerdictNoClimate": "{month} è il mese più economico che abbiamo visto.",
   "exploreSeeFlights": "Vedi i voli per {city}",
   "exploreNoPrices": "Nessuno ha cercato questa rotta di recente, quindi non abbiamo prezzi mensili. Prova la ricerca con una data.",
-  "exploreWeatherSource": "Clima medio: NASA POWER (medie di 30 anni). Prezzi: quelli trovati da altri viaggiatori."
+  "exploreWeatherSource": "Clima medio: NASA POWER (medie di 30 anni). Prezzi: quelli trovati da altri viaggiatori.",
+  "menuTitle": "Traduttore di menù",
+  "menuSubtitle": "Fotografa il menù e ti spieghiamo ogni piatto",
+  "menuTakePhoto": "Fotografa il menù",
+  "menuFromGallery": "Scegli una foto",
+  "menuReading": "Flyra sta leggendo il menù…",
+  "menuNothingRead": "Non abbiamo letto nulla. Riprova con più luce e il menù ben steso.",
+  "menuNoDishes": "Non abbiamo riconosciuto nessun piatto in quella foto.",
+  "menuOutOfCards": "Hai usato i menù di oggi. Domani si rinnova.",
+  "menuTapADish": "Tocca un piatto per sapere cos'è",
+  "menuOrderLike": "ORDINALO COSÌ",
+  "menuAllergenNote": "Gli avvisi sulle allergie sono un aiuto, non una garanzia: chiedi sempre al personale.",
+  "menuPlaceLanguage": "Lingua del posto",
+  "menuLeftToday": "{count, plural, =1{resta 1 menù oggi} other{restano {count} menù oggi}}",
+  "menuSignIn": "Il traduttore di menù è per gli account NomadIQ. Accedi per usarlo."
 }

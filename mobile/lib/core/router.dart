@@ -28,6 +28,7 @@ import '../features/money/money_screen.dart';
 import '../features/settings/language_screen.dart';
 import '../features/papers/papers_screen.dart';
 import '../features/passport/passport_screen.dart';
+import '../features/menu/menu_screen.dart';
 import '../features/push/notices_screen.dart';
 import '../features/settings/privacy_screen.dart';
 import '../features/settings/settings_screen.dart';
@@ -52,6 +53,7 @@ abstract final class Routes {
   static const String papers = '/papers';
   static const String passport = '/passport';
   static const String notices = '/notices';
+  static const String menu = '/menu';
 
   /// Explorar: precio por meses y clima. `from` = aeropuerto de salida.
   static String explore({String? origin}) => Uri(
@@ -273,6 +275,11 @@ GoRouter buildRouter({
       path: '/explore',
       builder: (BuildContext context, GoRouterState state) =>
           ExploreScreen(origin: state.uri.queryParameters['from'] ?? ''),
+    ),
+    GoRoute(
+      path: Routes.menu,
+      builder: (BuildContext context, GoRouterState state) =>
+          const MenuScreen(),
     ),
     GoRoute(
       path: Routes.notices,

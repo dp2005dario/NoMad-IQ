@@ -861,5 +861,19 @@
   "exploreVerdictNoClimate": "{month} が見つかった中でいちばん安い月です。",
   "exploreSeeFlights": "{city} 行きの便を見る",
   "exploreNoPrices": "この路線は最近検索されていないため月別の料金がありません。日付を指定して検索してみて。",
-  "exploreWeatherSource": "平均気候：NASA POWER（30年平均）。料金：他の旅行者が見つけた価格。"
+  "exploreWeatherSource": "平均気候：NASA POWER（30年平均）。料金：他の旅行者が見つけた価格。",
+  "menuTitle": "メニュー翻訳",
+  "menuSubtitle": "メニューを撮ると一皿ずつ説明します",
+  "menuTakePhoto": "メニューを撮る",
+  "menuFromGallery": "写真を選ぶ",
+  "menuReading": "Flyraがメニューを読んでいます…",
+  "menuNothingRead": "文字が読めませんでした。明るい場所でメニューを平らにして再度お試しください。",
+  "menuNoDishes": "この写真から料理を見つけられませんでした。",
+  "menuOutOfCards": "本日分のメニューを使い切りました。明日またどうぞ。",
+  "menuTapADish": "料理をタップすると何かわかります",
+  "menuOrderLike": "こう注文する",
+  "menuAllergenNote": "アレルギー表示は目安で保証ではありません。必ずお店に確認してください。",
+  "menuPlaceLanguage": "現地の言語",
+  "menuLeftToday": "{count, plural, other{本日あと {count} 回}}",
+  "menuSignIn": "メニュー翻訳はNomadIQアカウント向けです。ログインしてご利用ください。"
 }

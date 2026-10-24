@@ -861,5 +861,19 @@
   "exploreVerdictNoClimate": "{month} est le mois le moins cher que nous avons vu.",
   "exploreSeeFlights": "Voir les vols vers {city}",
   "exploreNoPrices": "Personne n'a cherché cette route récemment : pas de prix par mois. Essaie la recherche avec une date.",
-  "exploreWeatherSource": "Climat moyen : NASA POWER (moyennes sur 30 ans). Prix : ce qu'ont trouvé d'autres voyageurs."
+  "exploreWeatherSource": "Climat moyen : NASA POWER (moyennes sur 30 ans). Prix : ce qu'ont trouvé d'autres voyageurs.",
+  "menuTitle": "Traducteur de menus",
+  "menuSubtitle": "Prends la carte en photo et on t'explique chaque plat",
+  "menuTakePhoto": "Photographier la carte",
+  "menuFromGallery": "Choisir une photo",
+  "menuReading": "Flyra lit la carte…",
+  "menuNothingRead": "Nous n'avons rien pu lire. Réessaie avec plus de lumière et la carte à plat.",
+  "menuNoDishes": "Nous n'avons reconnu aucun plat sur cette photo.",
+  "menuOutOfCards": "Tu as utilisé les menus du jour. Ça repart demain.",
+  "menuTapADish": "Touche un plat pour savoir ce que c'est",
+  "menuOrderLike": "COMMANDE-LE AINSI",
+  "menuAllergenNote": "Les alertes allergies sont une aide, pas une garantie : demande toujours au personnel.",
+  "menuPlaceLanguage": "Langue du lieu",
+  "menuLeftToday": "{count, plural, =1{il reste 1 menu aujourd'hui} other{il reste {count} menus aujourd'hui}}",
+  "menuSignIn": "Le traducteur de menus est pour les comptes NomadIQ. Connecte-toi pour l'utiliser."
 }

@@ -861,5 +861,19 @@
   "exploreVerdictNoClimate": "{month} es el mes más barato que hemos visto.",
   "exploreSeeFlights": "Ver vuelos a {city}",
   "exploreNoPrices": "Nadie ha buscado esta ruta últimamente, así que no tenemos precios por meses. Prueba el buscador con una fecha.",
-  "exploreWeatherSource": "Clima medio: NASA POWER (medias de 30 años). Precios: lo que encontraron otros viajeros."
+  "exploreWeatherSource": "Clima medio: NASA POWER (medias de 30 años). Precios: lo que encontraron otros viajeros.",
+  "menuTitle": "Traductor de cartas",
+  "menuSubtitle": "Haz una foto de la carta y te explicamos cada plato",
+  "menuTakePhoto": "Fotografiar la carta",
+  "menuFromGallery": "Elegir una foto",
+  "menuReading": "Flyra está leyendo la carta…",
+  "menuNothingRead": "No hemos podido leer nada. Prueba otra vez con más luz y la carta plana.",
+  "menuNoDishes": "No hemos reconocido ningún plato en esa foto.",
+  "menuOutOfCards": "Has usado las cartas de hoy. Mañana se renueva.",
+  "menuTapADish": "Toca un plato para saber qué es",
+  "menuOrderLike": "PÍDELO ASÍ",
+  "menuAllergenNote": "Los avisos de alergias son una ayuda, no una garantía: pregunta siempre al personal.",
+  "menuPlaceLanguage": "Idioma del sitio",
+  "menuLeftToday": "{count, plural, =1{te queda 1 carta hoy} other{te quedan {count} cartas hoy}}",
+  "menuSignIn": "El traductor de cartas es para cuentas de NomadIQ. Entra para usarlo."
 }

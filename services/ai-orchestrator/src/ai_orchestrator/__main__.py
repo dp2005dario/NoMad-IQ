@@ -84,6 +84,8 @@ from ai_orchestrator.landmarks.service import LandmarkService, LandmarkSettings,
 from ai_orchestrator.landmarks.wikidata import LandmarkSource
 from ai_orchestrator.llm.client import LLMClient, OllamaClient
 from ai_orchestrator.logs import setup_logging
+from ai_orchestrator.menu.service import QUOTA_PREFIX as MENU_QUOTA_PREFIX
+from ai_orchestrator.menu.service import MenuService, MenuSettings
 from ai_orchestrator.negotiation.agents import AgentSettings
 from ai_orchestrator.negotiation.api import ApiSettings, negotiation_router
 from ai_orchestrator.negotiation.consumer import NegotiationRequestConsumer
@@ -316,6 +318,18 @@ def _atms(settings: Settings, redis: Redis, stack: AsyncExitStack) -> AtmService
     )
 
 
+def _menu(settings: Settings, llm: LLMClient, redis: Redis) -> MenuService:
+    """Traductor de cartas: el mismo modelo que Flyra + cupo diario en Redis."""
+    return MenuService(
+        llm=llm,
+        quota=RedisQuota(redis, prefix=MENU_QUOTA_PREFIX),
+        settings=MenuSettings(
+            daily_limit=settings.menu_daily_limit,
+            timeout_seconds=settings.menu_timeout_seconds,
+        ),
+    )
+
+
 def _climate(settings: Settings, redis: Redis, stack: AsyncExitStack) -> ClimateService:
     """Clima medio: NASA POWER con límite de ritmo + caché en Redis."""
     http = httpx.AsyncClient(
@@ -528,6 +542,7 @@ async def run(settings: Settings) -> int:
             or settings.landmarks_enabled
             or settings.mapillary_token is not None
             or (settings.flyra_enabled and llm is not None)
+            or (settings.menu_enabled and llm is not None)
             or settings.atms_enabled
             or settings.climate_enabled
             else None
@@ -553,6 +568,11 @@ async def run(settings: Settings) -> int:
         atms: AtmService | None = None
         if settings.atms_enabled and public_redis is not None:
             atms = _atms(settings, public_redis, stack)
+
+        # --- Traductor de cartas (Ollama + cupo diario en Redis) ------------------------
+        menu: MenuService | None = None
+        if settings.menu_enabled and llm is not None and public_redis is not None:
+            menu = _menu(settings, llm, public_redis)
 
         # --- Clima medio por meses (NASA POWER con caché en Redis) ----------------------
         climate: ClimateService | None = None
@@ -612,6 +632,7 @@ async def run(settings: Settings) -> int:
                 fx=fx,
                 atms=atms,
                 climate=climate,
+                menu=menu,
                 eraser=PostgresEraser(pool),
                 expose_docs=settings.expose_api_docs,
             ),

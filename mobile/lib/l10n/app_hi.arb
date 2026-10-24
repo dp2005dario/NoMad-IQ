@@ -861,5 +861,19 @@
   "exploreVerdictNoClimate": "{month} सबसे सस्ता महीना है जो हमें मिला।",
   "exploreSeeFlights": "{city} की उड़ानें देखें",
   "exploreNoPrices": "इस रूट को हाल में किसी ने नहीं खोजा, इसलिए महीनेवार क़ीमत नहीं है। तारीख़ के साथ खोजें।",
-  "exploreWeatherSource": "औसत मौसम: NASA POWER (30 साल का औसत)। क़ीमतें: अन्य यात्रियों को मिली।"
+  "exploreWeatherSource": "औसत मौसम: NASA POWER (30 साल का औसत)। क़ीमतें: अन्य यात्रियों को मिली।",
+  "menuTitle": "मेन्यू अनुवादक",
+  "menuSubtitle": "मेन्यू की फ़ोटो लें, हम हर व्यंजन समझाएँगे",
+  "menuTakePhoto": "मेन्यू की फ़ोटो लें",
+  "menuFromGallery": "फ़ोटो चुनें",
+  "menuReading": "Flyra मेन्यू पढ़ रही है…",
+  "menuNothingRead": "कोई टेक्स्ट नहीं पढ़ा जा सका। ज़्यादा रोशनी में और मेन्यू सीधा रखकर फिर कोशिश करें।",
+  "menuNoDishes": "उस फ़ोटो में कोई व्यंजन नहीं पहचाना गया।",
+  "menuOutOfCards": "आज के मेन्यू ख़त्म हो गए। कल फिर मिलेंगे।",
+  "menuTapADish": "किसी व्यंजन को छुएँ और जानें वह क्या है",
+  "menuOrderLike": "ऐसे ऑर्डर करें",
+  "menuAllergenNote": "एलर्जी चेतावनी मदद है, गारंटी नहीं: स्टाफ़ से हमेशा पूछें।",
+  "menuPlaceLanguage": "जगह की भाषा",
+  "menuLeftToday": "{count, plural, =1{आज 1 मेन्यू बचा} other{आज {count} मेन्यू बचे}}",
+  "menuSignIn": "मेन्यू अनुवादक NomadIQ खातों के लिए है। उपयोग के लिए साइन इन करें।"
 }

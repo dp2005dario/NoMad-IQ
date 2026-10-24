@@ -16,10 +16,17 @@ import 'package:image_picker/image_picker.dart';
 enum ReceiptSource { camera, gallery }
 
 abstract interface class ReceiptScanner {
-  /// Las filas del ticket de arriba abajo, o null si la persona canceló.
-  /// [currency] (la del bote) sirve para elegir el alfabeto: un ticket en
-  /// yenes casi seguro está en japonés.
-  Future<List<String>?> scan(ReceiptSource source, {String currency = 'EUR'});
+  /// Las filas del texto de la foto, de arriba abajo, o null si la persona
+  /// canceló.
+  ///
+  /// El alfabeto del lector se elige con [language] si se sabe el idioma del
+  /// sitio (la carta del restaurante: "ja") y, si no, con [currency] (la del
+  /// bote: un ticket en yenes casi seguro está en japonés).
+  Future<List<String>?> scan(
+    ReceiptSource source, {
+    String currency = 'EUR',
+    String? language,
+  });
 }
 
 /// Un escáner que nunca lee nada (aparatos sin cámara y tests).
@@ -30,6 +37,7 @@ class NoReceiptScanner implements ReceiptScanner {
   Future<List<String>?> scan(
     ReceiptSource source, {
     String currency = 'EUR',
+    String? language,
   }) async => null;
 }
 
@@ -43,6 +51,7 @@ class DeviceReceiptScanner implements ReceiptScanner {
   Future<List<String>?> scan(
     ReceiptSource source, {
     String currency = 'EUR',
+    String? language,
   }) async {
     final XFile? photo = await _picker.pickImage(
       source: source == ReceiptSource.camera
@@ -55,7 +64,9 @@ class DeviceReceiptScanner implements ReceiptScanner {
       requestFullMetadata: false,
     );
     if (photo == null) return null;
-    final TextRecognizer reader = TextRecognizer(script: scriptFor(currency));
+    final TextRecognizer reader = TextRecognizer(
+      script: scriptForLanguage(language) ?? scriptFor(currency),
+    );
     try {
       final RecognizedText text = await reader.processImage(
         InputImage.fromFilePath(photo.path),
@@ -82,6 +93,17 @@ class DeviceReceiptScanner implements ReceiptScanner {
 
 /// El alfabeto del lector según la moneda del bote. Los lectores de chino,
 /// japonés, coreano y devanagari también leen letras latinas y números.
+/// El alfabeto por el idioma del sitio ("ja", "zh-Hans", "ko", "hi"); null
+/// si no se sabe o si ese idioma se escribe en letras latinas.
+TextRecognitionScript? scriptForLanguage(String? language) =>
+    switch (language?.split('-').first) {
+      'ja' => TextRecognitionScript.japanese,
+      'zh' || 'yue' => TextRecognitionScript.chinese,
+      'ko' => TextRecognitionScript.korean,
+      'hi' || 'mr' || 'ne' => TextRecognitionScript.devanagiri,
+      _ => null,
+    };
+
 TextRecognitionScript scriptFor(String currency) => switch (currency) {
   'JPY' => TextRecognitionScript.japanese,
   'CNY' || 'HKD' || 'TWD' || 'MOP' => TextRecognitionScript.chinese,

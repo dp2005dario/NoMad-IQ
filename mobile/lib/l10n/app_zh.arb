@@ -861,5 +861,19 @@
   "exploreVerdictNoClimate": "{month} 是我们见到最便宜的月份。",
   "exploreSeeFlights": "查看飞往{city}的航班",
   "exploreNoPrices": "最近没人搜索这条航线，所以没有月度价格。试试按日期搜索。",
-  "exploreWeatherSource": "平均气候：NASA POWER（30 年均值）。价格：其他旅客搜到的。"
+  "exploreWeatherSource": "平均气候：NASA POWER（30 年均值）。价格：其他旅客搜到的。",
+  "menuTitle": "菜单翻译",
+  "menuSubtitle": "拍下菜单，我们逐菜解释",
+  "menuTakePhoto": "拍摄菜单",
+  "menuFromGallery": "选择照片",
+  "menuReading": "Flyra 正在读菜单…",
+  "menuNothingRead": "没能读出文字。请在光线更好、菜单摊平时重试。",
+  "menuNoDishes": "这张照片里没有识别出菜品。",
+  "menuOutOfCards": "今天的菜单次数已用完，明天重置。",
+  "menuTapADish": "点一道菜，看看它是什么",
+  "menuOrderLike": "这样点菜",
+  "menuAllergenNote": "过敏提示只是帮助，不是保证：请务必询问店员。",
+  "menuPlaceLanguage": "当地语言",
+  "menuLeftToday": "{count, plural, other{今天还剩 {count} 份菜单}}",
+  "menuSignIn": "菜单翻译需要 NomadIQ 账号，请登录后使用。"
 }

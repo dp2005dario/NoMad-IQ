@@ -192,6 +192,12 @@ class Settings(BaseSettings):
     overpass_timeout_seconds: float = Field(default=25.0, gt=0, le=60)
     atm_ttl_seconds: int = Field(default=24 * 3600, ge=3600, le=7 * 24 * 3600)
 
+    # --- Traductor de cartas (ver el paquete menu/): necesita Ollama y Redis ----------
+    menu_enabled: bool = True
+    # Cartas gratis por persona y día: el tope que evita sorpresas de coste.
+    menu_daily_limit: int = Field(default=20, ge=1, le=200)
+    menu_timeout_seconds: float = Field(default=60.0, gt=0, le=180)
+
     # --- Clima medio por meses (ver el paquete climate/): NASA POWER, gratis -----------
     climate_enabled: bool = True
     nasa_power_url: str = "https://power.larc.nasa.gov/api/temporal/climatology/point"

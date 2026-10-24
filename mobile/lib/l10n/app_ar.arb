@@ -861,5 +861,19 @@
   "exploreVerdictNoClimate": "{month} هو أرخص شهر رأيناه.",
   "exploreSeeFlights": "اعرض الرحلات إلى {city}",
   "exploreNoPrices": "لم يبحث أحد عن هذا المسار مؤخرًا، فلا توجد أسعار شهرية. جرّب البحث بتاريخ.",
-  "exploreWeatherSource": "المناخ المتوسط: NASA POWER (متوسطات 30 عامًا). الأسعار: ما وجده مسافرون آخرون."
+  "exploreWeatherSource": "المناخ المتوسط: NASA POWER (متوسطات 30 عامًا). الأسعار: ما وجده مسافرون آخرون.",
+  "menuTitle": "مترجم قوائم الطعام",
+  "menuSubtitle": "صوّر القائمة ونشرح لك كل طبق",
+  "menuTakePhoto": "صوّر القائمة",
+  "menuFromGallery": "اختر صورة",
+  "menuReading": "فلايرا تقرأ القائمة…",
+  "menuNothingRead": "لم نتمكن من قراءة أي نص. حاول مرة أخرى بإضاءة أفضل والقائمة مستوية.",
+  "menuNoDishes": "لم نتعرّف على أي طبق في هذه الصورة.",
+  "menuOutOfCards": "استهلكت قوائم اليوم. تتجدد غدًا.",
+  "menuTapADish": "اضغط على طبق لتعرف ما هو",
+  "menuOrderLike": "اطلبه هكذا",
+  "menuAllergenNote": "تنبيهات الحساسية مساعدة وليست ضمانًا: اسأل العاملين دائمًا.",
+  "menuPlaceLanguage": "لغة المكان",
+  "menuLeftToday": "{count, plural, =1{تبقّت قائمة واحدة اليوم} other{تبقّت {count} قوائم اليوم}}",
+  "menuSignIn": "مترجم القوائم لحسابات NomadIQ. سجّل الدخول لاستخدامه."
 }
