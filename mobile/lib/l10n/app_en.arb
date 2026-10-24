@@ -4467,5 +4467,139 @@
         "type": "String"
       }
     }
+  },
+  "easyTitle": "Easy mode",
+  "@easyTitle": {
+    "description": "Easy mode name."
+  },
+  "easySettingWhy": "Big letters and only what matters",
+  "@easySettingWhy": {
+    "description": "Settings subtitle for easy mode."
+  },
+  "easyNormal": "Normal mode",
+  "@easyNormal": {
+    "description": "Button: back to normal mode."
+  },
+  "easyHello": "Hello, {name}",
+  "@easyHello": {
+    "description": "Greeting with name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "easyHelloGuest": "Hello",
+  "@easyHelloGuest": {
+    "description": "Greeting without name."
+  },
+  "easyYourFlight": "YOUR FLIGHT",
+  "@easyYourFlight": {
+    "description": "Header: your flight."
+  },
+  "easyGate": "Gate",
+  "@easyGate": {
+    "description": "Label: gate."
+  },
+  "easyLeaveAt": "Leave home at {time}",
+  "@easyLeaveAt": {
+    "description": "When to leave home.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "easyNoTrip": "Put your flight and hotel here (or ask someone in your family).",
+  "@easyNoTrip": {
+    "description": "No trip saved yet."
+  },
+  "easySetTrip": "Set my trip",
+  "@easySetTrip": {
+    "description": "Button: set my trip."
+  },
+  "easyEditTrip": "Change",
+  "@easyEditTrip": {
+    "description": "Button: change trip."
+  },
+  "easyToHotel": "Take me to the hotel",
+  "@easyToHotel": {
+    "description": "Big button: take me to the hotel."
+  },
+  "easyNoHotel": "Add the hotel address in your trip first.",
+  "@easyNoHotel": {
+    "description": "No hotel address yet."
+  },
+  "easyFamily": "Call the family",
+  "@easyFamily": {
+    "description": "Big button: call family."
+  },
+  "easyWhoCall": "Who are you calling?",
+  "@easyWhoCall": {
+    "description": "Dialog title: who to call."
+  },
+  "easyNoFamily": "There is nobody yet. Add your family in SOS.",
+  "@easyNoFamily": {
+    "description": "No family contacts yet."
+  },
+  "easyAddFamily": "Add family",
+  "@easyAddFamily": {
+    "description": "Button: add family (opens SOS)."
+  },
+  "easyPapers": "My papers",
+  "@easyPapers": {
+    "description": "Big button: my documents."
+  },
+  "easyAskFlyra": "Ask Flyra",
+  "@easyAskFlyra": {
+    "description": "Big button: ask Flyra."
+  },
+  "easyAskFlyraWhy": "Write it the way you would say it",
+  "@easyAskFlyraWhy": {
+    "description": "Subtitle: write as you would speak."
+  },
+  "easySos": "Emergency",
+  "@easySos": {
+    "description": "Big button: emergency."
+  },
+  "easyAirportHelp": "Help at the airport",
+  "@easyAirportHelp": {
+    "description": "Card: airport assistance."
+  },
+  "easyAirportHelpWhy": "It is free. The airline picks you up at the entrance and takes you to the plane. Ask your airline for it at least 48 hours before.",
+  "@easyAirportHelpWhy": {
+    "description": "Airport assistance explanation."
+  },
+  "easyDeparture": "Flight day and time",
+  "@easyDeparture": {
+    "description": "Field: flight date and time."
+  },
+  "easyFrom": "From (airport)",
+  "@easyFrom": {
+    "description": "Field: from airport."
+  },
+  "easyTo": "To (airport)",
+  "@easyTo": {
+    "description": "Field: to airport."
+  },
+  "easyGateField": "Gate (if you know it)",
+  "@easyGateField": {
+    "description": "Field: gate, optional."
+  },
+  "easyHotelName": "Hotel name",
+  "@easyHotelName": {
+    "description": "Field: hotel name."
+  },
+  "easyHotelAddress": "Hotel address",
+  "@easyHotelAddress": {
+    "description": "Field: hotel address."
+  },
+  "easySave": "Save",
+  "@easySave": {
+    "description": "Button: save."
+  },
+  "easyPickDay": "Choose day and time",
+  "@easyPickDay": {
+    "description": "Button: choose day and time."
   }
 }

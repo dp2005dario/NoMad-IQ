@@ -27,6 +27,7 @@ import '../features/money/expense_group_screen.dart';
 import '../features/money/money_screen.dart';
 import '../features/settings/language_screen.dart';
 import '../features/offline/offline_screen.dart';
+import '../features/easy/easy_home_screen.dart';
 import '../features/help/help_screen.dart';
 import '../features/papers/papers_screen.dart';
 import '../features/travel_with/travel_with_screen.dart';
@@ -175,7 +176,7 @@ GoRouter buildRouter({
         StatefulNavigationShell shell,
       ) => AppShell(shell: shell),
       branches: <StatefulShellBranch>[
-        _tab(Routes.home, (_) => const HomeScreen()),
+        _tab(Routes.home, (_) => const HomeOrEasy()),
         _tab(Routes.map, (_) => const MapScreen()),
         _tab(Routes.camera, (_) => const CameraScreen()),
         _tab(Routes.flights, (_) => const FlightsScreen()),

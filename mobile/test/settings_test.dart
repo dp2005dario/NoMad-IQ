@@ -239,6 +239,11 @@ void main() {
       expect(find.text('ana@example.com'), findsOneWidget);
       expect(find.text('ID: U1 · copiar'), findsOneWidget);
       expect(find.text('Borrar mi cuenta y mis datos'), findsOneWidget);
+      // Ajustes es una lista larga: la versión está al final.
+      await tester.scrollUntilVisible(
+        find.textContaining('NomadIQ 1.0.0'),
+        300,
+      );
       expect(find.textContaining('NomadIQ 1.0.0'), findsOneWidget);
     });
 
@@ -248,6 +253,16 @@ void main() {
         final (FakeGateway g, SessionController session, _) = await open(
           tester,
         );
+        await tester.scrollUntilVisible(
+          find.text('Borrar mi cuenta y mis datos'),
+          300,
+        );
+        // Al centro de la pantalla, que la barra de abajo no lo tape.
+        await Scrollable.ensureVisible(
+          tester.element(find.text('Borrar mi cuenta y mis datos')),
+          alignment: 0.5,
+        );
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Borrar mi cuenta y mis datos'));
         await tester.pumpAndSettle();
         expect(find.text('¿Borrar tu cuenta?'), findsOneWidget);

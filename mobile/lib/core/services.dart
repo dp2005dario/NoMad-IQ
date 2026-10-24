@@ -14,6 +14,7 @@ import '../features/camera/speaker.dart';
 import '../features/flights/booking.dart';
 import '../features/flights/climate_api.dart';
 import '../features/flights/fares_api.dart';
+import '../features/easy/easy_mode.dart';
 import '../features/flyra/flyra_api.dart';
 import '../features/group/group_api.dart';
 import '../features/help/help_contacts.dart';
@@ -177,6 +178,9 @@ class AppServices {
 
   /// Crea un reproductor nuevo para cada audioguía que se abre.
   final GuidePlayerFactory newPlayer;
+
+  /// ¿Inicio en Modo fácil? (letras grandes y solo lo importante)
+  late final EasyMode easyMode = EasyMode(prefs);
 
   /// Con quién te pone en contacto la pantalla "Ayuda".
   final HelpContacts help;

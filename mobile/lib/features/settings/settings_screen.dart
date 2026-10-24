@@ -1,5 +1,7 @@
 // Ajustes (maqueta "Ajustes"): tu perfil, el idioma, la Bóveda, cerrar
 // sesión y "Borrar mi cuenta y mis datos" (con "Descargar mis datos" antes).
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -214,6 +216,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: () => context.push(Routes.language),
+                    ),
+                    const Divider(height: 1),
+                    // Modo fácil: Inicio con letras grandes y lo importante.
+                    ValueListenableBuilder<bool>(
+                      valueListenable: ServicesScope.of(context).easyMode,
+                      builder: (BuildContext context, bool easy, _) =>
+                          SwitchListTile(
+                            secondary: const Icon(
+                              Icons.text_increase_rounded,
+                              color: NomadColors.mint,
+                            ),
+                            title: Text(t.easyTitle),
+                            subtitle: Text(t.easySettingWhy),
+                            value: easy,
+                            onChanged: (bool on) => unawaited(
+                              ServicesScope.of(context).easyMode.set(on),
+                            ),
+                          ),
                     ),
                     const Divider(height: 1),
                     ListTile(

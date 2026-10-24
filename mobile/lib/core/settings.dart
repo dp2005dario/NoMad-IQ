@@ -45,6 +45,12 @@ enum LocalData {
 
   /// Lo que ya tienes listo para viajar con tu mascota (chip, vacuna...).
   petChecks,
+
+  /// "1" = la app se abre en Modo fácil (letras grandes, solo lo importante).
+  easyMode,
+
+  /// El vuelo y el hotel que se enseñan en el Modo fácil.
+  easyTrip,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real
