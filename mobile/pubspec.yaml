@@ -67,6 +67,9 @@ dependencies:
   pdfx: ^2.11.0
   path_provider: ^2.1.6
   just_audio_background: ^0.0.1-beta.17
+  # Dice si el móvil está en wifi o con datos: así "Sin conexión" no gasta
+  # tu tarifa descargando una ciudad en el extranjero sin querer.
+  connectivity_plus: ^7.3.1
 
 dev_dependencies:
   flutter_test:

@@ -235,6 +235,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: () => context.push(Routes.vault),
                     ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.download_for_offline_rounded,
+                        color: NomadColors.flights,
+                      ),
+                      title: Text(t.offlineOpen),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => context.push(Routes.offline),
+                    ),
                   ],
                 ),
               ),

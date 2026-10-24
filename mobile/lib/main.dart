@@ -1,5 +1,6 @@
 // Punto de entrada: lo primero que se ejecuta al abrir la app.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +21,11 @@ import 'features/camera/speaker.dart';
 import 'core/settings.dart';
 import 'features/audioguide/guide_player.dart';
 import 'features/map/location.dart';
+import 'features/map/map_style.dart';
 import 'features/map/map_surface.dart';
+import 'features/offline/offline_platform.dart';
+import 'features/offline/city_pack.dart';
+import 'features/offline/saved_guides.dart';
 import 'features/push/firebase_push.dart';
 import 'features/money/receipt_scanner.dart';
 import 'features/push/notices.dart';
@@ -66,6 +71,7 @@ Future<void> main() async {
   final bool push =
       defaultTargetPlatform == TargetPlatform.android &&
       await startFirebasePush();
+  final AppOfflineFiles offlineFiles = AppOfflineFiles();
   final AppServices services = AppServices(
     api: ApiClient(baseUrl: AppConfig.apiBaseUrl, session: session),
     location: const DeviceLocationSource(),
@@ -85,6 +91,25 @@ Future<void> main() async {
     ),
     tilesUrl: AppConfig.tilesUrl,
     glyphsUrl: AppConfig.glyphsUrl,
+    // "Sin conexión": archivos en la carpeta privada, el mapa descargado con
+    // MapLibre y saber si hay wifi antes de gastar datos.
+    offlineFiles: offlineFiles,
+    offlineMaps: MapLibreOfflineMaps(
+      styleJson: () => jsonEncode(
+        buildMapStyle(
+          look: MapLook.day,
+          language: store.readLocale()?.split('-').first ?? 'en',
+          tilesUrl: AppConfig.tilesUrl,
+          glyphsUrl: AppConfig.glyphsUrl,
+        ),
+      ),
+    ),
+    net: const SystemNetProbe(),
+    // Las audioguías ya descargadas: si no hay red, se oyen estas.
+    saved: OfflineSavedGuides(
+      library: OfflineLibrary(store),
+      fileUri: offlineFiles.uriOf,
+    ),
     notices: notices,
     prefs: store,
   );

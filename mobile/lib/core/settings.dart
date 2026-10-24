@@ -36,6 +36,12 @@ enum LocalData {
 
   /// Lo que ya llevas listo de la lista de "Antes de salir".
   packing,
+
+  /// Las ciudades descargadas para usarlas sin conexión.
+  offlineCities,
+
+  /// "1" = descargar ciudades solo cuando haya wifi.
+  offlineWifiOnly,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real

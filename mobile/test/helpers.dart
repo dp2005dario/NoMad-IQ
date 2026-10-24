@@ -16,6 +16,8 @@ import 'package:nomadiq/auth/token_store.dart';
 import 'package:nomadiq/core/api_client.dart';
 import 'package:nomadiq/core/router.dart';
 import 'package:nomadiq/core/services.dart';
+import 'package:nomadiq/features/offline/city_downloader.dart';
+import 'package:nomadiq/features/offline/saved_guides.dart';
 import 'package:nomadiq/features/audioguide/guide_player.dart';
 import 'package:nomadiq/features/flights/booking.dart';
 import 'package:nomadiq/features/map/geo.dart';
@@ -159,6 +161,10 @@ AppServices fakeServices(
   Speaker? speaker,
   ReceiptScanner? receipts,
   Vault? vault,
+  OfflineFiles? offlineFiles,
+  OfflineMaps? offlineMaps,
+  NetProbe? net,
+  SavedGuides? saved,
   DocSource? docSource,
   DocTextReader? docReader,
 }) {
@@ -187,6 +193,10 @@ AppServices fakeServices(
     speaker: speaker ?? const SilentSpeaker(),
     receipts: receipts ?? const NoReceiptScanner(),
     vault: vault,
+    offlineFiles: offlineFiles,
+    offlineMaps: offlineMaps,
+    net: net,
+    saved: saved ?? const NoSavedGuides(),
     docSource: docSource ?? const NoDocSource(),
     docReader: docReader ?? const NoDocTextReader(),
   );

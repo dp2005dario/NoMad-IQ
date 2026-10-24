@@ -4036,5 +4036,134 @@
   "beforePackInsuranceWhy": "We did not find a valid policy in your Vault",
   "@beforePackInsuranceWhy": {
     "description": "Why insurance."
+  },
+  "offlineTitle": "Offline",
+  "@offlineTitle": {
+    "description": "Title of the offline cities screen."
+  },
+  "offlineIntro": "Download a city and you keep the map, the audio guides and the zone alerts, even in airplane mode or with no data abroad.",
+  "@offlineIntro": {
+    "description": "What downloading a city gives you."
+  },
+  "offlineCityField": "City airport (e.g. NRT)",
+  "@offlineCityField": {
+    "description": "Text field: the airport code of the city to download."
+  },
+  "offlineDownload": "Download",
+  "@offlineDownload": {
+    "description": "Button: download this city."
+  },
+  "offlineUpdate": "Update",
+  "@offlineUpdate": {
+    "description": "Button: download the city again to refresh it."
+  },
+  "offlineDelete": "Delete",
+  "@offlineDelete": {
+    "description": "Button: delete a downloaded city."
+  },
+  "offlineWifiOnly": "Download over wifi only",
+  "@offlineWifiOnly": {
+    "description": "Switch: only download over wifi."
+  },
+  "offlineWifiOnlyWhy": "So it does not eat your data",
+  "@offlineWifiOnlyWhy": {
+    "description": "Why the wifi-only switch exists."
+  },
+  "offlineUsed": "NomadIQ is using {size}",
+  "@offlineUsed": {
+    "description": "Storage used by the app, with the size.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineDetail": "{guides, plural, =1{1 audio guide} other{{guides} audio guides}} · {size} · saved {date}",
+  "@offlineDetail": {
+    "description": "A downloaded city: how many guides, how big, when.",
+    "placeholders": {
+      "guides": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineNone": "You have not downloaded any city yet.",
+  "@offlineNone": {
+    "description": "No city downloaded yet."
+  },
+  "offlineMapMissing": "The map could not be saved; the audio guides were.",
+  "@offlineMapMissing": {
+    "description": "The audio was saved but the map was not."
+  },
+  "offlineOtherLanguage": "Downloaded in another language: download it again to get yours.",
+  "@offlineOtherLanguage": {
+    "description": "The city was downloaded in another language."
+  },
+  "offlineStepZones": "Looking for the neighbourhoods",
+  "@offlineStepZones": {
+    "description": "Download step: asking for the neighbourhoods."
+  },
+  "offlineStepGuides": "Getting the scripts",
+  "@offlineStepGuides": {
+    "description": "Download step: getting the scripts."
+  },
+  "offlineStepAudio": "Getting the audio ({done} of {total})",
+  "@offlineStepAudio": {
+    "description": "Download step: audio files, with progress.",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineStepMap": "Saving the map",
+  "@offlineStepMap": {
+    "description": "Download step: saving the map tiles."
+  },
+  "offlineWaitingWifi": "Waiting for wifi: you asked for wifi only.",
+  "@offlineWaitingWifi": {
+    "description": "Error: waiting for wifi because of the switch."
+  },
+  "offlineNoNet": "There is no connection right now.",
+  "@offlineNoNet": {
+    "description": "Error: no connection at all."
+  },
+  "offlineNothingThere": "That city has no audio guides yet.",
+  "@offlineNothingThere": {
+    "description": "Error: that city has no audio guides yet."
+  },
+  "offlineFailed": "It could not be downloaded. Try again.",
+  "@offlineFailed": {
+    "description": "Error: the download did not finish."
+  },
+  "offlineUnknownAirport": "We do not know that airport.",
+  "@offlineUnknownAirport": {
+    "description": "The typed airport code is not in the app's list."
+  },
+  "offlineMax": "You can keep {max} cities at most: delete one to add another.",
+  "@offlineMax": {
+    "description": "You can only keep 10 cities.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineSaved": "Saved on your phone",
+  "@offlineSaved": {
+    "description": "Badge: this audio guide is the copy saved on the phone."
+  },
+  "offlineOpen": "Offline cities",
+  "@offlineOpen": {
+    "description": "Button: open the offline cities screen."
   }
 }

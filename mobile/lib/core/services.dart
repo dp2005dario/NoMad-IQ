@@ -26,6 +26,9 @@ import '../features/money/expenses_api.dart';
 import '../features/money/fx_api.dart';
 import '../features/menu/menu_api.dart';
 import '../features/money/receipt_scanner.dart';
+import '../features/offline/city_downloader.dart';
+import '../features/offline/city_pack.dart';
+import '../features/offline/saved_guides.dart';
 import '../features/push/notices.dart';
 import '../features/push/push_registrar.dart';
 import '../features/route/flight3d.dart';
@@ -54,6 +57,10 @@ class AppServices {
     this.receipts = const NoReceiptScanner(),
     this.docSource = const NoDocSource(),
     this.docReader = const NoDocTextReader(),
+    this.saved = const NoSavedGuides(),
+    OfflineFiles? offlineFiles,
+    OfflineMaps? offlineMaps,
+    NetProbe? net,
     Vault? vault,
     SettingsStore? prefs,
   }) : geo = GeoApi(api),
@@ -67,6 +74,9 @@ class AppServices {
        places = PlacesApi(api),
        streetPhotos = StreetPhotosApi(api),
        prefs = prefs ?? MemorySettingsStore(),
+       offlineFiles = offlineFiles ?? MemoryOfflineFiles(),
+       offlineMaps = offlineMaps ?? const NoOfflineMaps(),
+       net = net ?? const AlwaysWifi(),
        vault =
            vault ??
            Vault(
@@ -165,6 +175,32 @@ class AppServices {
 
   /// Crea un reproductor nuevo para cada audioguía que se abre.
   final GuidePlayerFactory newPlayer;
+
+  /// Las audioguías que ya están guardadas en este móvil ("Sin conexión").
+  final SavedGuides saved;
+
+  /// Dónde se guardan los audios descargados.
+  final OfflineFiles offlineFiles;
+
+  /// El mapa descargado para usarlo sin red.
+  final OfflineMaps offlineMaps;
+
+  /// ¿Wifi, datos o nada? Decide si se puede descargar ahora.
+  final NetProbe net;
+
+  /// Las ciudades descargadas (la lista vive solo en el móvil).
+  late final OfflineLibrary offlineCities = OfflineLibrary(prefs);
+
+  /// Quien descarga una ciudad entera (mapa, guiones y audios).
+  late final CityDownloader downloads = CityDownloader(
+    api: api,
+    geo: geo,
+    guides: audioguides,
+    files: offlineFiles,
+    maps: offlineMaps,
+    net: net,
+    cities: offlineCities,
+  );
 
   /// De dónde salen los mapas (ver AppConfig).
   final Uri tilesUrl;

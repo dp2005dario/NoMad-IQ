@@ -11,6 +11,7 @@ import '../../core/api_client.dart';
 import '../../core/languages.dart';
 import '../../core/router.dart';
 import '../../core/services.dart';
+import '../offline/saved_guides.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
@@ -51,6 +52,10 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
   Timer? _retry;
   int _attempts = 0;
   bool _reloadedAudio = false;
+
+  /// true si lo que se está oyendo es la copia guardada en el móvil (la
+  /// descargó "Sin conexión"): se avisa con una etiqueta.
+  bool _fromPhone = false;
 
   /// Velocidades que se van alternando al pulsar el botón "1×".
   static const List<double> _speeds = <double>[1, 1.25, 1.5, 0.75];
@@ -110,11 +115,32 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
         _retry = Timer(widget.retryEvery, () => unawaited(_load()));
         return;
       }
+      // Antes de rendirse: ¿está descargada en el móvil? Si la bajaste con
+      // "Sin conexión", funciona igual en modo avión.
+      if (await _loadSaved()) return;
+      if (!mounted) return;
       setState(() {
         _stage = _Stage.failed;
         _error = e.error;
       });
     }
+  }
+
+  /// Abre la copia guardada en el móvil. Devuelve true si la había.
+  Future<bool> _loadSaved() async {
+    final SavedGuide? saved = await _services.saved.of(
+      widget.zoneId,
+      _language,
+    );
+    if (saved == null || !mounted) return false;
+    _retry?.cancel();
+    _script = saved.script;
+    _stage = _Stage.ready;
+    _fromPhone = true;
+    setState(() {});
+    final AudioManifest? audio = saved.audio;
+    if (audio != null) await _play(audio);
+    return true;
   }
 
   Future<void> _loadAudio() async {
@@ -124,6 +150,27 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
         _language,
       );
       if (!mounted) return;
+      await _play(audio);
+    } on ApiException {
+      // Sin audio del servidor: si lo tienes descargado, se oye ese.
+      final SavedGuide? saved = await _services.saved.of(
+        widget.zoneId,
+        _language,
+      );
+      final AudioManifest? phone = saved?.audio;
+      if (phone != null && mounted) {
+        _fromPhone = true;
+        await _play(phone);
+        return;
+      }
+      // Y si tampoco, se puede leer el texto.
+      if (mounted) setState(() => _audio = null);
+    }
+  }
+
+  /// Carga el audio en el reproductor (venga del servidor o del móvil).
+  Future<void> _play(AudioManifest audio) async {
+    try {
       final Playback? before = _player?.playback.value;
       GuidePlayer? player = _player;
       if (player == null) {
@@ -154,7 +201,6 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
       );
       await player.setSpeed(_speeds[_speed]);
     } on ApiException {
-      // Sin audio (aún grabándose, o sin red): se puede leer el texto.
       if (mounted) setState(() => _audio = null);
     }
   }
@@ -303,6 +349,10 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
             icon: Icons.translate_rounded,
             text: t.guideOtherLanguage(otherLanguage),
           ),
+        ],
+        if (_fromPhone) ...<Widget>[
+          const SizedBox(height: 12),
+          _Note(icon: Icons.download_done_rounded, text: t.offlineSaved),
         ],
         if (audio?.stale ?? false) ...<Widget>[
           const SizedBox(height: 12),

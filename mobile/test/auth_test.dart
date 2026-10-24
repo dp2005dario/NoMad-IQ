@@ -258,6 +258,9 @@ void main() {
       await tester.tap(find.byTooltip('Cuenta'));
       await tester.pumpAndSettle();
       expect(find.text(email), findsOneWidget);
+      // Ajustes es una lista larga: hay que llegar hasta el botón.
+      await tester.ensureVisible(find.text('Cerrar sesión'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Cerrar sesión'));
       await tester.pumpAndSettle();
       expect(
