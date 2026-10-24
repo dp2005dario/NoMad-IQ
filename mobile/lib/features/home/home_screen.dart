@@ -115,6 +115,13 @@ class HomeScreen extends StatelessWidget {
                     label: t.copyTitle,
                     onTap: () => context.push(Routes.copyTrip()),
                   ),
+                  // Liga y cambios de cromos con tus amigos.
+                  _Shortcut(
+                    icon: Icons.style_rounded,
+                    color: NomadColors.group,
+                    label: t.cardsTitle,
+                    onTap: () => context.push(Routes.cards),
+                  ),
                   // La carta del restaurante, traducida y explicada.
                   _Shortcut(
                     icon: Icons.restaurant_menu_rounded,

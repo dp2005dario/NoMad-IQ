@@ -27,6 +27,7 @@ import '../features/map/street_photos_api.dart';
 import '../features/money/atms_api.dart';
 import '../features/money/expenses_api.dart';
 import '../features/money/fx_api.dart';
+import '../features/cards/league_api.dart';
 import '../features/copy_trip/shared_trip_api.dart';
 import '../features/menu/menu_api.dart';
 import '../features/money/receipt_scanner.dart';
@@ -113,6 +114,9 @@ class AppServices {
 
   /// "Copia este viaje": compartir con código y que Flyra lo adapte.
   late final SharedTripApi sharedTrips = SharedTripApi(api);
+
+  /// Cromos con amigos: ligas, cambios y la ciudad de cada uno.
+  late final LeagueApi leagues = LeagueApi(api);
 
   /// El chat libre con Flyra (la IA de la app).
   final FlyraApi flyra;

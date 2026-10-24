@@ -5059,5 +5059,310 @@
   "copyKindOther": "Other",
   "@copyKindOther": {
     "description": "Kind."
+  },
+  "cardsTitle": "Cards with friends",
+  "@cardsTitle": {
+    "description": "Cards with friends screen title."
+  },
+  "cardsSubtitle": "Swap, compete and see where they are",
+  "@cardsSubtitle": {
+    "description": "Subtitle."
+  },
+  "cardsHow": "Make a league with your friends. Your Passport stamps are your cards: each month whoever gets the most points with new cards wins, and you can swap cards you are missing.",
+  "@cardsHow": {
+    "description": "How it works."
+  },
+  "cardsCreate": "Create a league",
+  "@cardsCreate": {
+    "description": "Create league."
+  },
+  "cardsJoin": "Join with a code",
+  "@cardsJoin": {
+    "description": "Join league."
+  },
+  "cardsLeave": "Leave this league",
+  "@cardsLeave": {
+    "description": "Leave league."
+  },
+  "cardsPrivacy": "The people in the league will see your name, your cards (monument, year and month) and how many countries you have. Never your location, unless you turn on your city in Friends.",
+  "@cardsPrivacy": {
+    "description": "What is shared."
+  },
+  "cardsRetry": "Try again",
+  "@cardsRetry": {
+    "description": "Retry."
+  },
+  "cardsOffline": "No connection. Try again in a moment.",
+  "@cardsOffline": {
+    "description": "Offline."
+  },
+  "cardsNotFound": "There is no league with that code.",
+  "@cardsNotFound": {
+    "description": "Not found."
+  },
+  "cardsConflict": "That can't be done: the league is full or one of you already has that card.",
+  "@cardsConflict": {
+    "description": "Conflict."
+  },
+  "cardsFailed": "Something went wrong. Try again.",
+  "@cardsFailed": {
+    "description": "Generic failure."
+  },
+  "cardsTabSwap": "Swap",
+  "@cardsTabSwap": {
+    "description": "Tab."
+  },
+  "cardsTabLeague": "League",
+  "@cardsTabLeague": {
+    "description": "Tab."
+  },
+  "cardsTabFriends": "Friends",
+  "@cardsTabFriends": {
+    "description": "Tab."
+  },
+  "cardsCodeLabel": "League code",
+  "@cardsCodeLabel": {
+    "description": "Field."
+  },
+  "cardsLeagueName": "League name",
+  "@cardsLeagueName": {
+    "description": "Field."
+  },
+  "cardsMyName": "Your name in the league",
+  "@cardsMyName": {
+    "description": "Field."
+  },
+  "cardsOfferSent": "Offer sent. You'll see it here when they answer.",
+  "@cardsOfferSent": {
+    "description": "Offer sent."
+  },
+  "cardsIncoming": "{name} gives you {give} for your {want}",
+  "@cardsIncoming": {
+    "description": "Incoming swap.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "give": {
+        "type": "String"
+      },
+      "want": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsDecline": "No, thanks",
+  "@cardsDecline": {
+    "description": "Decline."
+  },
+  "cardsAccept": "Swap",
+  "@cardsAccept": {
+    "description": "Accept."
+  },
+  "cardsOutgoing": "Waiting for {name}: your {give} for {want}",
+  "@cardsOutgoing": {
+    "description": "Outgoing swap.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "give": {
+        "type": "String"
+      },
+      "want": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsProposeTitle": "Propose a swap",
+  "@cardsProposeTitle": {
+    "description": "Propose title."
+  },
+  "cardsSwapRule": "You both get a copy: your cards stay yours. Copies don't give league points, so nobody wins by swapping.",
+  "@cardsSwapRule": {
+    "description": "Swap rule."
+  },
+  "cardsInviteFirst": "Invite your friends with the code {code}.",
+  "@cardsInviteFirst": {
+    "description": "Alone in league.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsYouWant": "Cards of theirs you are missing",
+  "@cardsYouWant": {
+    "description": "Their cards."
+  },
+  "cardsNothingToWant": "You already have all of theirs.",
+  "@cardsNothingToWant": {
+    "description": "None."
+  },
+  "cardsYouGive": "What you give in return",
+  "@cardsYouGive": {
+    "description": "My cards."
+  },
+  "cardsNothingToGive": "They already have all of yours. Get new stamps with the camera.",
+  "@cardsNothingToGive": {
+    "description": "None."
+  },
+  "cardsSendOffer": "Send the offer",
+  "@cardsSendOffer": {
+    "description": "Send offer."
+  },
+  "cardsReceived": "Copies you got in swaps",
+  "@cardsReceived": {
+    "description": "Copies."
+  },
+  "cardsRarity": "{rarity} · {points} points",
+  "@cardsRarity": {
+    "description": "Rarity and points.",
+    "placeholders": {
+      "rarity": {
+        "type": "String"
+      },
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "cardsCopyCode": "Copy the league code",
+  "@cardsCopyCode": {
+    "description": "Copy code."
+  },
+  "cardsPosition": "You're #{pos} of {total}",
+  "@cardsPosition": {
+    "description": "Position.",
+    "placeholders": {
+      "pos": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "cardsBehind": "{points} points behind {name}",
+  "@cardsBehind": {
+    "description": "Points behind.",
+    "placeholders": {
+      "points": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsPointsRule": "Points this month: common card 10, rare 40, epic 80, legendary 150. The rarity is the age of the monument.",
+  "@cardsPointsRule": {
+    "description": "Points rule."
+  },
+  "cardsInviteCode": "League code: {code}",
+  "@cardsInviteCode": {
+    "description": "Invite code.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsYou": "You",
+  "@cardsYou": {
+    "description": "You."
+  },
+  "cardsMeta": "{countries, plural, =1{1 country} other{{countries} countries}} · {legendary, plural, =1{1 legendary} other{{legendary} legendary}}",
+  "@cardsMeta": {
+    "description": "Countries and legendary.",
+    "placeholders": {
+      "countries": {
+        "type": "int"
+      },
+      "legendary": {
+        "type": "int"
+      }
+    }
+  },
+  "cardsPoints": "{points} pts",
+  "@cardsPoints": {
+    "description": "Points.",
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "cardsNoCity": "We couldn't tell your city (no GPS or too far from everything).",
+  "@cardsNoCity": {
+    "description": "No city found."
+  },
+  "cardsAgoMinutes": "{n, plural, =1{1 min ago} other{{n} min ago}}",
+  "@cardsAgoMinutes": {
+    "description": "Minutes ago.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "cardsAgoHours": "{n, plural, =1{1 h ago} other{{n} h ago}}",
+  "@cardsAgoHours": {
+    "description": "Hours ago.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "cardsAgoDays": "{n, plural, =1{1 day ago} other{{n} days ago}}",
+  "@cardsAgoDays": {
+    "description": "Days ago.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "cardsShareCity": "Tell the league which city I'm in",
+  "@cardsShareCity": {
+    "description": "Share city switch."
+  },
+  "cardsSharingCity": "They see: {city}. Only the city, never the exact spot.",
+  "@cardsSharingCity": {
+    "description": "Sharing city.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsShareCityWhy": "Only the city of the nearest airport, and it is updated when you turn it on. Turn it off and it disappears.",
+  "@cardsShareCityWhy": {
+    "description": "Why share city."
+  },
+  "cardsNoShare": "Doesn't share where they are",
+  "@cardsNoShare": {
+    "description": "Friend not sharing."
+  },
+  "cardsFriendsPrivacy": "You only see those who share with you, and only their city.",
+  "@cardsFriendsPrivacy": {
+    "description": "Friends privacy."
+  },
+  "cardsLegendary": "Legendary",
+  "@cardsLegendary": {
+    "description": "Card rarity name."
+  },
+  "cardsEpic": "Epic",
+  "@cardsEpic": {
+    "description": "Card rarity name."
+  },
+  "cardsRare": "Rare",
+  "@cardsRare": {
+    "description": "Card rarity name."
+  },
+  "cardsCommon": "Common",
+  "@cardsCommon": {
+    "description": "Card rarity name."
   }
 }
