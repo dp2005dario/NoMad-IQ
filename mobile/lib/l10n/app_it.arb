@@ -836,5 +836,13 @@
   "passportRarityCommon": "Comune",
   "passportRarityWhy": "Più antico è il monumento, più rara è la figurina.",
   "passportStampedOn": "Timbrato il {date}",
-  "passportSeeOnMap": "Vedi sulla mappa"
+  "passportSeeOnMap": "Vedi sulla mappa",
+  "noticesTitle": "Avvisi",
+  "noticesAll": "Tutti",
+  "noticesZones": "Zone",
+  "noticesFlights": "Voli",
+  "noticesSafety": "Sicurezza",
+  "noticesEmpty": "Ancora nessun avviso.",
+  "noticesFooter": "Al massimo un avviso di zona ogni 45 minuti e mai la stessa zona due volte al giorno. Quelli di sicurezza arrivano sempre. Questa cronologia esiste solo sul tuo telefono.",
+  "noticesClear": "Cancella cronologia"
 }

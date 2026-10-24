@@ -836,5 +836,13 @@
   "passportRarityCommon": "普通",
   "passportRarityWhy": "古迹越古老，卡片越稀有。",
   "passportStampedOn": "{date} 盖章",
-  "passportSeeOnMap": "在地图上查看"
+  "passportSeeOnMap": "在地图上查看",
+  "noticesTitle": "通知",
+  "noticesAll": "全部",
+  "noticesZones": "地点",
+  "noticesFlights": "航班",
+  "noticesSafety": "安全",
+  "noticesEmpty": "还没有通知。",
+  "noticesFooter": "地点通知最多每 45 分钟一条，同一地点一天不会重复。安全通知总会送达。此记录只保存在你的手机上。",
+  "noticesClear": "清除记录"
 }

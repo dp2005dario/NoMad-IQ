@@ -102,3 +102,19 @@ En la ficha de Play Console ("Seguridad de los datos") Google pide también
 **una web** donde se pueda pedir el borrado sin tener la app. Basta una
 página sencilla con un formulario o un email de contacto; la prepararemos con
 la política de privacidad.
+
+## Avisos (el historial)
+
+La **campana** de Inicio abre **Avisos**: todo lo que te ha llegado, con
+pestañas **Todos / Zonas / Vuelos / Seguridad**. Tocar un aviso abre su
+pantalla.
+
+- Cada aviso que el móvil enseña se apunta con su texto ya traducido en
+  `LocalData.noticeLog` (los 100 últimos). Lo hace `showPush` en
+  `mobile/lib/features/push/firebase_push.dart`, también con la app cerrada.
+- Como ese "apunte" puede venir de otro proceso, la pantalla vuelve a leer
+  del disco al abrirse (`SettingsStore.reload()`).
+- El servidor no guarda qué avisos te llegaron: el historial solo existe en
+  tu teléfono y se borra con **Borrar historial** o al borrar la cuenta.
+
+Probarlo en VS Code: `cd mobile` y `flutter test test/notices_test.dart`.

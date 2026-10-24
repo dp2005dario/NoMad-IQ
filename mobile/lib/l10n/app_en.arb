@@ -3659,5 +3659,37 @@
   "passportSeeOnMap": "See on the map",
   "@passportSeeOnMap": {
     "description": "Opens the place in OpenStreetMap."
+  },
+  "noticesTitle": "Notifications",
+  "@noticesTitle": {
+    "description": "Notification history screen title and Home bell tooltip."
+  },
+  "noticesAll": "All",
+  "@noticesAll": {
+    "description": "Tab: all."
+  },
+  "noticesZones": "Places",
+  "@noticesZones": {
+    "description": "Tab: zone notices."
+  },
+  "noticesFlights": "Flights",
+  "@noticesFlights": {
+    "description": "Tab: fare alerts."
+  },
+  "noticesSafety": "Safety",
+  "@noticesSafety": {
+    "description": "Tab: safety."
+  },
+  "noticesEmpty": "No notifications yet.",
+  "@noticesEmpty": {
+    "description": "No notifications yet."
+  },
+  "noticesFooter": "At most one place notice every 45 minutes, and never the same place twice in a day. Safety notices always arrive. This history only exists on your phone.",
+  "@noticesFooter": {
+    "description": "Explains limits and privacy."
+  },
+  "noticesClear": "Clear history",
+  "@noticesClear": {
+    "description": "Clear history button."
   }
 }

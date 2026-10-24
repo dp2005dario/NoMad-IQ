@@ -836,5 +836,13 @@
   "passportRarityCommon": "コモン",
   "passportRarityWhy": "古い名所ほどカードはレアになります。",
   "passportStampedOn": "{date} にスタンプ",
-  "passportSeeOnMap": "地図で見る"
+  "passportSeeOnMap": "地図で見る",
+  "noticesTitle": "お知らせ",
+  "noticesAll": "すべて",
+  "noticesZones": "スポット",
+  "noticesFlights": "フライト",
+  "noticesSafety": "安全",
+  "noticesEmpty": "まだお知らせはありません。",
+  "noticesFooter": "スポットのお知らせは最大45分に1回、同じ場所は1日に1回まで。安全のお知らせは必ず届きます。この履歴はあなたのスマホにだけあります。",
+  "noticesClear": "履歴を消す"
 }

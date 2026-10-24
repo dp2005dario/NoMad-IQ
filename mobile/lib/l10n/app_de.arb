@@ -836,5 +836,13 @@
   "passportRarityCommon": "Gewöhnlich",
   "passportRarityWhy": "Je älter das Denkmal, desto seltener die Karte.",
   "passportStampedOn": "Gestempelt am {date}",
-  "passportSeeOnMap": "Auf der Karte ansehen"
+  "passportSeeOnMap": "Auf der Karte ansehen",
+  "noticesTitle": "Hinweise",
+  "noticesAll": "Alle",
+  "noticesZones": "Orte",
+  "noticesFlights": "Flüge",
+  "noticesSafety": "Sicherheit",
+  "noticesEmpty": "Noch keine Hinweise.",
+  "noticesFooter": "Höchstens ein Orts-Hinweis alle 45 Minuten und nie derselbe Ort zweimal am Tag. Sicherheitshinweise kommen immer. Dieser Verlauf existiert nur auf deinem Handy.",
+  "noticesClear": "Verlauf löschen"
 }

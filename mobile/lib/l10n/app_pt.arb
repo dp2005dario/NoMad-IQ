@@ -836,5 +836,13 @@
   "passportRarityCommon": "Comum",
   "passportRarityWhy": "Quanto mais antigo o monumento, mais raro o cromo.",
   "passportStampedOn": "Carimbado a {date}",
-  "passportSeeOnMap": "Ver no mapa"
+  "passportSeeOnMap": "Ver no mapa",
+  "noticesTitle": "Avisos",
+  "noticesAll": "Todos",
+  "noticesZones": "Zonas",
+  "noticesFlights": "Voos",
+  "noticesSafety": "Segurança",
+  "noticesEmpty": "Ainda não recebeste avisos.",
+  "noticesFooter": "No máximo um aviso de zona a cada 45 minutos e nunca a mesma zona duas vezes no mesmo dia. Os de segurança chegam sempre. Este histórico só existe no teu telemóvel.",
+  "noticesClear": "Apagar histórico"
 }

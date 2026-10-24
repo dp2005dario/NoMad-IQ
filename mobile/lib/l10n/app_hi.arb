@@ -836,5 +836,13 @@
   "passportRarityCommon": "सामान्य",
   "passportRarityWhy": "स्मारक जितना पुराना, उसका कार्ड उतना दुर्लभ।",
   "passportStampedOn": "{date} को मुहर लगी",
-  "passportSeeOnMap": "मानचित्र पर देखें"
+  "passportSeeOnMap": "मानचित्र पर देखें",
+  "noticesTitle": "सूचनाएँ",
+  "noticesAll": "सभी",
+  "noticesZones": "जगहें",
+  "noticesFlights": "उड़ानें",
+  "noticesSafety": "सुरक्षा",
+  "noticesEmpty": "अभी कोई सूचना नहीं।",
+  "noticesFooter": "जगह की सूचना ज़्यादा से ज़्यादा हर 45 मिनट में एक, और एक दिन में एक जगह दोबारा नहीं। सुरक्षा सूचनाएँ हमेशा आती हैं। यह इतिहास सिर्फ़ आपके फ़ोन पर है।",
+  "noticesClear": "इतिहास मिटाएँ"
 }

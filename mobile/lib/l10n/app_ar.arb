@@ -836,5 +836,13 @@
   "passportRarityCommon": "عادية",
   "passportRarityWhy": "كلما كان المعلم أقدم كانت بطاقته أندر.",
   "passportStampedOn": "خُتم في {date}",
-  "passportSeeOnMap": "عرض على الخريطة"
+  "passportSeeOnMap": "عرض على الخريطة",
+  "noticesTitle": "التنبيهات",
+  "noticesAll": "الكل",
+  "noticesZones": "الأماكن",
+  "noticesFlights": "الرحلات",
+  "noticesSafety": "السلامة",
+  "noticesEmpty": "لا تنبيهات بعد.",
+  "noticesFooter": "تنبيه مكان واحد كل 45 دقيقة على الأكثر، ولا يتكرر المكان نفسه في اليوم. تنبيهات السلامة تصل دائمًا. هذا السجل موجود على هاتفك فقط.",
+  "noticesClear": "مسح السجل"
 }

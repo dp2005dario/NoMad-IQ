@@ -836,5 +836,13 @@
   "passportRarityCommon": "Commune",
   "passportRarityWhy": "Plus le monument est ancien, plus sa carte est rare.",
   "passportStampedOn": "Tamponné le {date}",
-  "passportSeeOnMap": "Voir sur la carte"
+  "passportSeeOnMap": "Voir sur la carte",
+  "noticesTitle": "Alertes",
+  "noticesAll": "Toutes",
+  "noticesZones": "Lieux",
+  "noticesFlights": "Vols",
+  "noticesSafety": "Sécurité",
+  "noticesEmpty": "Aucune alerte pour l'instant.",
+  "noticesFooter": "Au plus une alerte de lieu toutes les 45 minutes, jamais le même lieu deux fois par jour. Les alertes de sécurité arrivent toujours. Cet historique n'existe que sur ton téléphone.",
+  "noticesClear": "Effacer l'historique"
 }

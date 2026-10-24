@@ -30,6 +30,9 @@ enum LocalData {
 
   /// Tu ficha médica (grupo sanguíneo, alergias...). Solo en este móvil.
   medicalCard,
+
+  /// El historial de avisos que te han llegado (los últimos 100).
+  noticeLog,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real
@@ -60,6 +63,10 @@ abstract interface class SettingsStore {
   /// Otros datos del móvil (ver [LocalData]); null = no hay / borrar.
   String? readData(LocalData key);
   Future<void> writeData(LocalData key, String? json);
+
+  /// Vuelve a leer del disco lo que otra parte de la app (los avisos que
+  /// llegan con la app cerrada) haya escrito mientras tanto.
+  Future<void> reload();
 
   /// Borra todo lo personal (al borrar la cuenta). Se quedan el idioma y los
   /// tipos de cambio, que no dicen nada de ti.
@@ -102,6 +109,9 @@ final class PreferencesSettingsStore implements SettingsStore {
 
   @override
   String? readLocale() => _prefs.getString(_localeKey);
+
+  @override
+  Future<void> reload() => _prefs.reloadCache();
 
   @override
   Future<void> wipePersonal() async {
@@ -227,6 +237,9 @@ final class MemorySettingsStore implements SettingsStore {
   @override
   Future<void> writeData(LocalData key, String? json) async =>
       json == null ? data.remove(key) : data[key] = json;
+
+  @override
+  Future<void> reload() async {}
 
   @override
   Future<void> wipePersonal() async {

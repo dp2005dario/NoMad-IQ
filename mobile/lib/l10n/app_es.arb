@@ -836,5 +836,13 @@
   "passportRarityCommon": "Común",
   "passportRarityWhy": "Cuanto más antiguo el monumento, más rara su carta.",
   "passportStampedOn": "Sellado el {date}",
-  "passportSeeOnMap": "Ver en el mapa"
+  "passportSeeOnMap": "Ver en el mapa",
+  "noticesTitle": "Avisos",
+  "noticesAll": "Todos",
+  "noticesZones": "Zonas",
+  "noticesFlights": "Vuelos",
+  "noticesSafety": "Seguridad",
+  "noticesEmpty": "Aún no te ha llegado ningún aviso.",
+  "noticesFooter": "Como mucho un aviso de zona cada 45 minutos y nunca la misma zona dos veces en un día. Los de seguridad llegan siempre. Este historial solo existe en tu teléfono.",
+  "noticesClear": "Borrar historial"
 }

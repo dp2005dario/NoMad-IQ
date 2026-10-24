@@ -33,6 +33,12 @@ class HomeScreen extends StatelessWidget {
                     style: text.headlineMedium,
                   ),
                 ),
+                // La campana: el historial de avisos (solo en el móvil).
+                IconButton(
+                  tooltip: t.noticesTitle,
+                  onPressed: () => context.push(Routes.notices),
+                  icon: const Icon(Icons.notifications_none_rounded),
+                ),
                 _AccountButton(session: session, name: name),
               ],
             ),
