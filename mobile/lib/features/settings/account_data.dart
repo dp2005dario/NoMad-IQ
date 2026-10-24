@@ -12,6 +12,7 @@ import 'package:file_picker/file_picker.dart';
 import '../../auth/session.dart';
 import '../../core/api_client.dart';
 import '../../core/settings.dart';
+import '../family/family.dart';
 import '../vault/vault.dart';
 
 /// Dónde se guarda la copia (en el móvil: el selector "Guardar como" de
@@ -155,7 +156,8 @@ class EraseFailed implements Exception {
 /// 2. borra tus datos en cada servicio (gastos, vuelos...) mientras el pase
 ///    aún vale;
 /// 3. borra la cuenta en el auth-gateway (desde aquí ya no hay pase);
-/// 4. borra lo de este móvil: la Bóveda (y su llave) y tus ajustes.
+/// 4. borra lo de este móvil: la Bóveda (y su llave), tus ajustes y los
+///    perfiles de familia.
 ///
 /// Si el paso 2 o 3 falla (sin red), la cuenta sigue viva y se puede
 /// repetir: borrar dos veces no hace daño.
@@ -165,9 +167,13 @@ class AccountEraser {
     required this.api,
     required this.vault,
     required this.prefs,
+    this.family,
   });
 
   final SessionController session;
+
+  /// Los perfiles de familia (cifrados aparte, en el Keystore).
+  final FamilyStore? family;
   final ApiClient api;
   final Vault vault;
   final SettingsStore prefs;
@@ -199,5 +205,6 @@ class AccountEraser {
     // La cuenta ya no existe: lo del móvil se borra pase lo que pase.
     await vault.forget();
     await prefs.wipePersonal();
+    await family?.save(<FamilyMember>[]);
   }
 }

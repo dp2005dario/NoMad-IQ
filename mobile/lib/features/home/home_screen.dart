@@ -101,6 +101,13 @@ class HomeScreen extends StatelessWidget {
                     label: t.twTitle,
                     onTap: () => context.push(Routes.travelWith),
                   ),
+                  // Quién viaja contigo: alergias, edades y gustos.
+                  _Shortcut(
+                    icon: Icons.family_restroom_rounded,
+                    color: NomadColors.group,
+                    label: t.famTitle,
+                    onTap: () => context.push(Routes.family),
+                  ),
                   // La carta del restaurante, traducida y explicada.
                   _Shortcut(
                     icon: Icons.restaurant_menu_rounded,

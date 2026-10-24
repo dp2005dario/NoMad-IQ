@@ -20,6 +20,7 @@ import 'features/camera/camera_device.dart';
 import 'features/camera/speaker.dart';
 import 'core/settings.dart';
 import 'features/audioguide/guide_player.dart';
+import 'features/family/family.dart';
 import 'features/map/location.dart';
 import 'features/map/map_style.dart';
 import 'features/map/map_surface.dart';
@@ -106,6 +107,7 @@ Future<void> main() async {
     ),
     net: const SystemNetProbe(),
     help: AppConfig.help,
+    family: SecureFamilyStore(),
     // Las audioguías ya descargadas: si no hay red, se oyen estas.
     saved: OfflineSavedGuides(
       library: OfflineLibrary(store),

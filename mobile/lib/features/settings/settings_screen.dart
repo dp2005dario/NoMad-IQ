@@ -94,6 +94,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       api: services.api,
       vault: services.vault,
       prefs: services.prefs,
+      family: services.family,
     );
     setState(() => _busy = true);
     try {

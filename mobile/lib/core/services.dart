@@ -15,6 +15,7 @@ import '../features/flights/booking.dart';
 import '../features/flights/climate_api.dart';
 import '../features/flights/fares_api.dart';
 import '../features/easy/easy_mode.dart';
+import '../features/family/family.dart';
 import '../features/flyra/flyra_api.dart';
 import '../features/group/group_api.dart';
 import '../features/help/help_contacts.dart';
@@ -61,6 +62,7 @@ class AppServices {
     this.docReader = const NoDocTextReader(),
     this.saved = const NoSavedGuides(),
     this.help = const HelpContacts(),
+    FamilyStore? family,
     OfflineFiles? offlineFiles,
     OfflineMaps? offlineMaps,
     NetProbe? net,
@@ -80,6 +82,7 @@ class AppServices {
        offlineFiles = offlineFiles ?? MemoryOfflineFiles(),
        offlineMaps = offlineMaps ?? const NoOfflineMaps(),
        net = net ?? const AlwaysWifi(),
+       family = family ?? MemoryFamilyStore(),
        vault =
            vault ??
            Vault(
@@ -178,6 +181,9 @@ class AppServices {
 
   /// Crea un reproductor nuevo para cada audioguía que se abre.
   final GuidePlayerFactory newPlayer;
+
+  /// Los perfiles de familia (cifrados en el Keystore del móvil).
+  final FamilyStore family;
 
   /// ¿Inicio en Modo fácil? (letras grandes y solo lo importante)
   late final EasyMode easyMode = EasyMode(prefs);

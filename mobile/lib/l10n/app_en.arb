@@ -4601,5 +4601,173 @@
   "easyPickDay": "Choose day and time",
   "@easyPickDay": {
     "description": "Button: choose day and time."
+  },
+  "famTitle": "Family profiles",
+  "@famTitle": {
+    "description": "Family profiles screen title."
+  },
+  "famSubtitle": "Flyra plans with everyone in mind",
+  "@famSubtitle": {
+    "description": "Subtitle."
+  },
+  "famAdd": "Add a person",
+  "@famAdd": {
+    "description": "Button: add a person."
+  },
+  "famEmpty": "Add who travels with you: age, allergies, needs and what they like.",
+  "@famEmpty": {
+    "description": "No profiles yet."
+  },
+  "famName": "Name",
+  "@famName": {
+    "description": "Field: name."
+  },
+  "famAge": "Age",
+  "@famAge": {
+    "description": "Field: age."
+  },
+  "famAgeYears": "{age, plural, =1{1 year} other{{age} years}}",
+  "@famAgeYears": {
+    "description": "Age in years.",
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "famAllergies": "Allergies or food (separate with commas)",
+  "@famAllergies": {
+    "description": "Field: allergies, comma separated."
+  },
+  "famNeeds": "Needs",
+  "@famNeeds": {
+    "description": "Section: needs."
+  },
+  "famLikes": "Likes",
+  "@famLikes": {
+    "description": "Section: likes."
+  },
+  "famNeedWalk": "Walks little",
+  "@famNeedWalk": {
+    "description": "Need: walks little."
+  },
+  "famNeedCarSeat": "Car seat",
+  "@famNeedCarSeat": {
+    "description": "Need: car seat."
+  },
+  "famNeedStroller": "Stroller",
+  "@famNeedStroller": {
+    "description": "Need: stroller."
+  },
+  "famNeedMeds": "Medication at set times",
+  "@famNeedMeds": {
+    "description": "Need: medication on schedule."
+  },
+  "famLikeMuseums": "Museums",
+  "@famLikeMuseums": {
+    "description": "Like."
+  },
+  "famLikeFood": "Good food",
+  "@famLikeFood": {
+    "description": "Like."
+  },
+  "famLikePhoto": "Photography",
+  "@famLikePhoto": {
+    "description": "Like."
+  },
+  "famLikeAnimals": "Animals",
+  "@famLikeAnimals": {
+    "description": "Like."
+  },
+  "famLikeMusic": "Music",
+  "@famLikeMusic": {
+    "description": "Like."
+  },
+  "famLikeBeach": "Beach",
+  "@famLikeBeach": {
+    "description": "Like."
+  },
+  "famLikeNature": "Nature",
+  "@famLikeNature": {
+    "description": "Like."
+  },
+  "famLikeShopping": "Shopping",
+  "@famLikeShopping": {
+    "description": "Like."
+  },
+  "famPlanTitle": "This is how I would plan it",
+  "@famPlanTitle": {
+    "description": "Header: plan for the family."
+  },
+  "famBecause": "Because of {names}",
+  "@famBecause": {
+    "description": "Who the tip is for.",
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "famTipAllergy": "Restaurants that list allergens: the menu translator helps you check each dish.",
+  "@famTipAllergy": {
+    "description": "Tip: allergies."
+  },
+  "famTipWalk": "Tram or taxi for the hills, and frequent breaks.",
+  "@famTipWalk": {
+    "description": "Tip: walks little."
+  },
+  "famTipCarSeat": "Ask for a child seat when renting a car or booking a taxi.",
+  "@famTipCarSeat": {
+    "description": "Tip: car seat."
+  },
+  "famTipStroller": "Look for step-free access in the metro and museums.",
+  "@famTipStroller": {
+    "description": "Tip: stroller."
+  },
+  "famTipMeds": "Medication in your hand luggage, with the prescription. Mind the time difference.",
+  "@famTipMeds": {
+    "description": "Tip: medication."
+  },
+  "famTipKids": "Many museums are free or cheaper for children: always ask.",
+  "@famTipKids": {
+    "description": "Tip: children."
+  },
+  "famTipSeniors": "Ask for senior discounts and carry an ID with your age.",
+  "@famTipSeniors": {
+    "description": "Tip: seniors."
+  },
+  "famAskFlyra": "Ask Flyra for a plan for everyone",
+  "@famAskFlyra": {
+    "description": "Button: ask Flyra for a family plan."
+  },
+  "famFlyraQuestion": "Plan a day of our trip that works for all of us: {people}",
+  "@famFlyraQuestion": {
+    "description": "Prefilled question to Flyra (user can edit before sending).",
+    "placeholders": {
+      "people": {
+        "type": "String"
+      }
+    }
+  },
+  "famPrivacy": "Everything is stored encrypted and only on this phone. Flyra only sees it if you send the question.",
+  "@famPrivacy": {
+    "description": "Privacy note."
+  },
+  "famSave": "Save",
+  "@famSave": {
+    "description": "Button: save."
+  },
+  "famDelete": "Delete",
+  "@famDelete": {
+    "description": "Button: delete person."
+  },
+  "famAllergyTag": "Allergy: {what}",
+  "@famAllergyTag": {
+    "description": "Chip text for an allergy.",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
   }
 }

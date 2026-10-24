@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:nomadiq/auth/session.dart';
 import 'package:nomadiq/core/router.dart';
 import 'package:nomadiq/core/settings.dart';
+import 'package:nomadiq/features/family/family.dart';
 import 'package:nomadiq/features/push/notice_prefs.dart';
 import 'package:nomadiq/features/push/push_notice.dart';
 import 'package:nomadiq/features/settings/account_data.dart';
@@ -136,11 +137,14 @@ void main() {
           prefs: prefs,
           vault: vault,
         );
+        final MemoryFamilyStore family = MemoryFamilyStore();
+        await family.save(<FamilyMember>[const FamilyMember(name: 'Leo')]);
         final AccountEraser eraser = AccountEraser(
           session: session,
           api: services.api,
           vault: vault,
           prefs: prefs,
+          family: family,
         );
 
         await expectLater(
@@ -170,6 +174,7 @@ void main() {
         expect(prefs.groupName, isNull);
         expect(prefs.stamps, isNull);
         expect(prefs.data.keys, <LocalData>[LocalData.fxRates]);
+        expect(family.raw, isNull);
       },
     );
 
