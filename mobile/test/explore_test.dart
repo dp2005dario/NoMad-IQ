@@ -21,8 +21,8 @@ Map<String, Object?> month(
     'currency': 'EUR',
   },
   'carrier': 'IB',
-  'departure_at': '${m}-11',
-  'return_at': '${m}-20',
+  'departure_at': '$m-11',
+  'return_at': '$m-20',
   'transfers': 0,
   'booking_url': link,
 };
