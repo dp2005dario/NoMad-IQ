@@ -220,6 +220,7 @@ def create_api(
     negotiations: APIRouter | None = None,
     expenses: APIRouter | None = None,
     shared_trips: APIRouter | None = None,
+    leagues: APIRouter | None = None,
     places: PlaceService | None = None,
     streetview: StreetViewService | None = None,
     flyra: FlyraService | None = None,
@@ -519,6 +520,10 @@ def create_api(
     if shared_trips is not None:
         # Las rutas /v1/shared-trips ("Copia este viaje") viven en shared_trips/api.py.
         app.include_router(shared_trips)
+
+    if leagues is not None:
+        # Las rutas /v1/leagues ("Cromos con amigos") viven en leagues/api.py.
+        app.include_router(leagues)
 
     if negotiations is not None:
         # Las rutas /v1/group-negotiations viven en negotiation/api.py.

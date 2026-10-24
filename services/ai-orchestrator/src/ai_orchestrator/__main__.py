@@ -82,6 +82,8 @@ from ai_orchestrator.fx.service import FxService, RedisRatesCache
 from ai_orchestrator.landmarks.service import QUOTA_PREFIX as LANDMARK_QUOTA_PREFIX
 from ai_orchestrator.landmarks.service import LandmarkService, LandmarkSettings, RedisLandmarkCache
 from ai_orchestrator.landmarks.wikidata import LandmarkSource
+from ai_orchestrator.leagues.api import league_router
+from ai_orchestrator.leagues.store import PostgresLeagues
 from ai_orchestrator.llm.client import LLMClient, OllamaClient
 from ai_orchestrator.logs import setup_logging
 from ai_orchestrator.menu.service import QUOTA_PREFIX as MENU_QUOTA_PREFIX
@@ -620,6 +622,9 @@ async def run(settings: Settings) -> int:
             )
             shared_trips = shared_trip_router(PostgresSharedTrips(pool), adapter)
 
+        # --- Cromos con amigos (solo PostgreSQL) -----------------------------------------
+        leagues = league_router(PostgresLeagues(pool)) if settings.leagues_enabled else None
+
         # --- Negociación de grupo (tercer consumidor + relé del outbox) -----------------
         negotiations: APIRouter | None = None
         negotiation_consumer: NegotiationRequestConsumer | None = None
@@ -649,6 +654,7 @@ async def run(settings: Settings) -> int:
                 negotiations=negotiations,
                 expenses=expenses,
                 shared_trips=shared_trips,
+                leagues=leagues,
                 places=places,
                 streetview=streetview,
                 flyra=flyra,

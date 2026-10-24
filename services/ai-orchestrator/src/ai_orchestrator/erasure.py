@@ -12,6 +12,8 @@ Qué pasa con cada cosa:
   con el nombre "—". Es como tachar tu nombre de la libreta del piso.
 - **Viajes compartidos** ("Copia este viaje"): los tuyos se dejan de
   compartir (se borran), y se olvida qué viajes copiaste tú.
+- **Ligas de cromos**: sales de todas (tus cromos, tu ciudad y tus cambios
+  se borran; si eras la última persona, la liga entera).
 - **Negociaciones de grupo**: igual. Tu asiento queda anónimo y tus
   preferencias privadas (presupuesto, gustos) se borran.
 
@@ -50,6 +52,7 @@ class ErasureReport:
     seats_anonymized: int
     negotiation_seats_anonymized: int
     shared_trips_deleted: int = 0
+    leagues_left: int = 0
 
 
 class UserDataEraser(Protocol):
@@ -87,6 +90,17 @@ class PostgresEraser:
                 )
                 shared = await conn.execute("DELETE FROM ai.shared_trips WHERE owner_id = $1", user_id)
                 await conn.execute("DELETE FROM ai.shared_trip_copies WHERE user_id = $1", user_id)
+                await conn.execute(
+                    "DELETE FROM ai.league_swaps s USING ai.league_members m"
+                    " WHERE m.user_id = $1 AND s.league_id = m.league_id"
+                    " AND (s.from_seat = m.seat OR s.to_seat = m.seat)",
+                    user_id,
+                )
+                left = await conn.execute("DELETE FROM ai.league_members WHERE user_id = $1", user_id)
+                await conn.execute(
+                    "DELETE FROM ai.leagues l WHERE NOT EXISTS"
+                    " (SELECT 1 FROM ai.league_members m WHERE m.league_id = l.league_id)"
+                )
                 negotiation_seats = await conn.execute(
                     "UPDATE ai.group_negotiation_members SET user_id = $2, preferences = NULL"
                     " WHERE user_id = $1",
@@ -106,6 +120,7 @@ class PostgresEraser:
             seats_anonymized=_count(seats),
             negotiation_seats_anonymized=_count(negotiation_seats),
             shared_trips_deleted=_count(shared),
+            leagues_left=_count(left),
         )
         # Solo números: ni el user_id ni el id anónimo (unirlos en un log
         # desharía el anonimato).
@@ -117,6 +132,7 @@ class PostgresEraser:
                 "seats_anonymized": report.seats_anonymized,
                 "negotiation_seats_anonymized": report.negotiation_seats_anonymized,
                 "shared_trips_deleted": report.shared_trips_deleted,
+                "leagues_left": report.leagues_left,
             },
         )
         return report
