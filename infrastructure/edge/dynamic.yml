@@ -64,10 +64,11 @@ http:
       middlewares: [strip-identity, rate-limit, small-body, authenticated]
       service: geo-engine
 
-    # Audioguías, recomendaciones y negociación de grupo (ai-orchestrator).
+    # Audioguías, recomendaciones, negociación de grupo, chat con Flyra, modo cámara, gastos compartidos
+    # y "borrar mis datos" (ai-orchestrator).
     ai:
       entryPoints: [web]
-      rule: PathPrefix(`/v1/audioguides`) || PathPrefix(`/v1/recommendations`) || PathPrefix(`/v1/group-negotiations`)
+      rule: PathPrefix(`/v1/audioguides`) || PathPrefix(`/v1/recommendations`) || PathPrefix(`/v1/group-negotiations`) || Path(`/v1/flyra/chat`) || Path(`/v1/menu/translate`) || PathPrefix(`/v1/landmarks`) || PathPrefix(`/v1/expense-groups`) || PathPrefix(`/v1/shared-trips`) || PathPrefix(`/v1/leagues`) || Path(`/v1/me/data`)
       middlewares: [strip-identity, rate-limit, small-body, authenticated]
       service: ai-orchestrator
 
@@ -95,6 +96,30 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 
+    # Cajeros cercanos (OpenStreetMap): públicos como las fichas. La app manda
+    # el punto ya redondeado a ~1 km. Solo GET y esa ruta exacta.
+    atms:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/atms`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
+    # Tipos de cambio del BCE (pestaña Divisas): públicos y gratis, iguales
+    # para todos. Solo GET y esa ruta exacta.
+    fx:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/fx/rates`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
+    # Clima medio de cada mes (Explorar): medias de la NASA, públicas e
+    # iguales para todos.
+    climate:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/climate`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
     # Vuelos SIN cuenta: chollos e historial de precios. Son iguales para todo
     # el mundo, así que también los ve quien entra como invitado (precios
     # reales para todos). Solo lectura (GET) y con el mismo límite por IP.
@@ -106,11 +131,12 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: price-consumer
 
-    # Buscador de vuelos (origen, destino, fechas, viajeros): público, como
-    # los chollos, pero con su límite más estricto.
+    # Buscador de vuelos (origen, destino, fechas, viajeros) y precio por
+    # meses (Explorar): públicos, como los chollos, pero con su límite más
+    # estricto.
     fares-search:
       entryPoints: [web]
-      rule: Method(`GET`) && Path(`/v1/fares/search`)
+      rule: Method(`GET`) && (Path(`/v1/fares/search`) || Path(`/v1/fares/months`))
       priority: 100
       middlewares: [strip-identity, search-rate-limit]
       service: price-consumer

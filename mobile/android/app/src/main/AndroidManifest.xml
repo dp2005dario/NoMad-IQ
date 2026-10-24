@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Hablar con el backend (inicio de sesión, vuelos, mapa...). -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Ubicación. FINE = GPS preciso; COARSE = aproximada (Android 12+ deja
@@ -12,9 +13,22 @@
          (que exige un formulario aparte en Google Play). -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <!-- Audioguías con el móvil bloqueado: otro servicio en primer plano, de
+         tipo "reproducción multimedia", y que la CPU no se duerma mientras
+         suena (WAKE_LOCK). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Android 13+: permiso para enseñar notificaciones (avisos push y la
          notificación fija del modo viaje). Se pide al encender el modo viaje. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Modo cámara: solo fotos para reconocer monumentos. El paquete de la
+         cámara también pide micrófono y escribir en la memoria (para vídeo);
+         como no los usamos, los quitamos (tools:node="remove"). Y la cámara
+         no es obligatoria: la app se instala también en aparatos sin ella. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
     <!-- allowBackup="false": la sesión cifrada no debe copiarse a la nube ni a
          otro móvil (su clave vive en el chip del teléfono y no viajaría). -->
     <application
@@ -45,6 +59,25 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- El servicio de audio de just_audio_background (paquete
+             audio_service) y quien recibe los botones de los auriculares. -->
+        <service
+            android:name="com.ryanheise.audioservice.AudioService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="true"
+            tools:ignore="Instantiatable">
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
+        <receiver
+            android:name="com.ryanheise.audioservice.MediaButtonReceiver"
+            android:exported="true"
+            tools:ignore="Instantiatable">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
@@ -65,6 +98,10 @@
         <intent>
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="https"/>
+        </intent>
+        <!-- La voz del móvil (texto a voz) para "Escuchar" en el modo cámara. -->
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE"/>
         </intent>
     </queries>
 </manifest>

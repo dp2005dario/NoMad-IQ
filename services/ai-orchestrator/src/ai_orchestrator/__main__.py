@@ -54,6 +54,8 @@ from pydantic import SecretStr, ValidationError
 from redis.asyncio import Redis
 
 from ai_orchestrator.api import create_api, create_management_api
+from ai_orchestrator.atms.overpass import OverpassBusyError, OverpassClient
+from ai_orchestrator.atms.service import AtmService, AtmSettings, RedisAtmCache
 from ai_orchestrator.audioguides.audio_catalog import AudioCatalog
 from ai_orchestrator.audioguides.audio_gc import AudioGarbageCollector, GcSettings
 from ai_orchestrator.audioguides.audio_jobs import NOTIFY_CHANNEL, PostgresAudioJobs, PostgresAudioManifests
@@ -66,10 +68,26 @@ from ai_orchestrator.audioguides.service import AudioguideService, ServiceSettin
 from ai_orchestrator.audioguides.speech import PiperOpusSynthesizer, SpeechError, discover_voices
 from ai_orchestrator.audioguides.versions import ZoneVersionCache
 from ai_orchestrator.audioguides.writer import AudioguideWriter, WriterSettings
+from ai_orchestrator.climate.nasa import NasaBusyError, NasaClient
+from ai_orchestrator.climate.service import ClimateService, ClimateSettings, RedisClimateCache
 from ai_orchestrator.config import Settings
 from ai_orchestrator.consumer import AlertProcessor, FareAlertConsumer
+from ai_orchestrator.erasure import PostgresEraser
+from ai_orchestrator.expenses.api import expense_router
+from ai_orchestrator.expenses.store import PostgresExpenses
+from ai_orchestrator.flyra.service import KEY_PREFIX as FLYRA_QUOTA_PREFIX
+from ai_orchestrator.flyra.service import FlyraService, FlyraSettings
+from ai_orchestrator.fx.ecb import EcbClient
+from ai_orchestrator.fx.service import FxService, RedisRatesCache
+from ai_orchestrator.landmarks.service import QUOTA_PREFIX as LANDMARK_QUOTA_PREFIX
+from ai_orchestrator.landmarks.service import LandmarkService, LandmarkSettings, RedisLandmarkCache
+from ai_orchestrator.landmarks.wikidata import LandmarkSource
+from ai_orchestrator.leagues.api import league_router
+from ai_orchestrator.leagues.store import PostgresLeagues
 from ai_orchestrator.llm.client import LLMClient, OllamaClient
 from ai_orchestrator.logs import setup_logging
+from ai_orchestrator.menu.service import QUOTA_PREFIX as MENU_QUOTA_PREFIX
+from ai_orchestrator.menu.service import MenuService, MenuSettings
 from ai_orchestrator.negotiation.agents import AgentSettings
 from ai_orchestrator.negotiation.api import ApiSettings, negotiation_router
 from ai_orchestrator.negotiation.consumer import NegotiationRequestConsumer
@@ -80,8 +98,13 @@ from ai_orchestrator.places.airports import Airports
 from ai_orchestrator.places.service import PlaceService, PlaceSettings, RedisPlaceCache
 from ai_orchestrator.places.wikimedia import RateLimiter, WikimediaClient
 from ai_orchestrator.pseudonym import Pseudonymizer
+from ai_orchestrator.quota import RedisQuota
 from ai_orchestrator.recommender import FareRecommender, RecommenderSettings
 from ai_orchestrator.retrieval import KnowledgeBase, NoKnowledge, QdrantKnowledge
+from ai_orchestrator.shared_trips.api import shared_trip_router
+from ai_orchestrator.shared_trips.service import QUOTA_PREFIX as TRIP_ADAPT_QUOTA_PREFIX
+from ai_orchestrator.shared_trips.service import AdaptSettings, RedisAdaptCache, TripAdapter
+from ai_orchestrator.shared_trips.store import PostgresSharedTrips
 from ai_orchestrator.store import (
     Pool,
     PostgresPriceHistory,
@@ -196,8 +219,8 @@ def _redis(settings: Settings, stack: AsyncExitStack) -> Redis:
     return redis
 
 
-def _places(settings: Settings, redis: Redis, stack: AsyncExitStack) -> PlaceService:
-    """Fichas de ciudad: Wikimedia con límite de ritmo + caché en Redis."""
+def _wikimedia(settings: Settings, stack: AsyncExitStack) -> WikimediaClient:
+    """Un cliente de Wikimedia (y un solo límite de ritmo) para fichas y monumentos."""
     http = httpx.AsyncClient(
         headers={"User-Agent": settings.wikimedia_user_agent},
         timeout=httpx.Timeout(settings.wikimedia_timeout_seconds, connect=5.0),
@@ -205,14 +228,53 @@ def _places(settings: Settings, redis: Redis, stack: AsyncExitStack) -> PlaceSer
         follow_redirects=False,
     )
     stack.push_async_callback(http.aclose)
+    return WikimediaClient(
+        http,
+        limiter=RateLimiter(settings.wikimedia_rate_per_second, settings.wikimedia_burst),
+    )
+
+
+def _places(settings: Settings, redis: Redis, wikimedia: WikimediaClient) -> PlaceService:
+    """Fichas de ciudad: Wikimedia con límite de ritmo + caché en Redis."""
     return PlaceService(
         airports=Airports.bundled(),
-        wikimedia=WikimediaClient(
-            http,
-            limiter=RateLimiter(settings.wikimedia_rate_per_second, settings.wikimedia_burst),
-        ),
+        wikimedia=wikimedia,
         cache=RedisPlaceCache(redis),
         settings=PlaceSettings(ttl_seconds=settings.place_ttl_seconds),
+    )
+
+
+def _landmarks(
+    settings: Settings, redis: Redis, wikimedia: WikimediaClient, stack: AsyncExitStack
+) -> LandmarkService:
+    """Modo cámara: Wikidata + caché/cupo en Redis + (si hay) modelo de visión."""
+    vision: OllamaClient | None = None
+    if settings.llm_enabled and settings.landmark_vision_model:
+        vision_http = httpx.AsyncClient(
+            base_url=settings.ollama_url,
+            timeout=httpx.Timeout(settings.landmark_vision_timeout_seconds + 5, connect=5.0),
+            verify=_client_tls(
+                settings.ollama_tls_ca_file, settings.ollama_tls_cert_file, settings.ollama_tls_key_file
+            ),
+        )
+        stack.push_async_callback(vision_http.aclose)
+        # Una foto a la vez: el modelo de visión es el que más máquina gasta.
+        vision = OllamaClient(
+            vision_http,
+            model=settings.landmark_vision_model,
+            embed_model=settings.ollama_embed_model,
+            num_ctx=settings.ollama_num_ctx,
+            max_concurrency=1,
+        )
+    return LandmarkService(
+        source=LandmarkSource(wikimedia),
+        cache=RedisLandmarkCache(redis),
+        quota=RedisQuota(redis, prefix=LANDMARK_QUOTA_PREFIX),
+        settings=LandmarkSettings(
+            daily_limit=settings.landmark_daily_limit,
+            vision_timeout_seconds=settings.landmark_vision_timeout_seconds,
+        ),
+        vision=vision,
     )
 
 
@@ -237,6 +299,83 @@ def _streetview(
         ),
         cache=RedisStreetCache(redis),
         settings=StreetSettings(ttl_seconds=settings.street_ttl_seconds),
+    )
+
+
+def _atms(settings: Settings, redis: Redis, stack: AsyncExitStack) -> AtmService:
+    """Cajeros: Overpass (OpenStreetMap) con límite de ritmo + caché en Redis."""
+    http = httpx.AsyncClient(
+        timeout=httpx.Timeout(settings.overpass_timeout_seconds, connect=5.0),
+        follow_redirects=False,
+    )
+    stack.push_async_callback(http.aclose)
+    return AtmService(
+        overpass=OverpassClient(
+            http,
+            url=settings.overpass_url,
+            limiter=RateLimiter(
+                settings.overpass_rate_per_second,
+                settings.overpass_burst,
+                busy=lambda: OverpassBusyError("límite de peticiones a Overpass"),
+            ),
+        ),
+        cache=RedisAtmCache(redis),
+        settings=AtmSettings(ttl_seconds=settings.atm_ttl_seconds),
+    )
+
+
+def _menu(settings: Settings, llm: LLMClient, redis: Redis) -> MenuService:
+    """Traductor de cartas: el mismo modelo que Flyra + cupo diario en Redis."""
+    return MenuService(
+        llm=llm,
+        quota=RedisQuota(redis, prefix=MENU_QUOTA_PREFIX),
+        settings=MenuSettings(
+            daily_limit=settings.menu_daily_limit,
+            timeout_seconds=settings.menu_timeout_seconds,
+        ),
+    )
+
+
+def _climate(settings: Settings, redis: Redis, stack: AsyncExitStack) -> ClimateService:
+    """Clima medio: NASA POWER con límite de ritmo + caché en Redis."""
+    http = httpx.AsyncClient(
+        timeout=httpx.Timeout(settings.nasa_timeout_seconds, connect=5.0),
+        follow_redirects=False,
+    )
+    stack.push_async_callback(http.aclose)
+    return ClimateService(
+        nasa=NasaClient(
+            http,
+            url=settings.nasa_power_url,
+            limiter=RateLimiter(
+                settings.nasa_rate_per_second,
+                settings.nasa_burst,
+                busy=lambda: NasaBusyError("límite de peticiones a la NASA"),
+            ),
+        ),
+        cache=RedisClimateCache(redis),
+        settings=ClimateSettings(ttl_seconds=settings.climate_ttl_seconds),
+    )
+
+
+class _NoRatesCache:
+    """Sin Redis: los tipos se guardan solo en la memoria del proceso."""
+
+    async def get(self) -> None:
+        return None
+
+    async def put(self, rates: object, *, ttl_seconds: int) -> None:
+        return None
+
+
+def _fx(settings: Settings, redis: Redis | None, stack: AsyncExitStack) -> FxService:
+    """Tipos de cambio del BCE con caché (memoria + Redis si lo hay)."""
+    http = httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0), follow_redirects=False)
+    stack.push_async_callback(http.aclose)
+    return FxService(
+        source=EcbClient(http),
+        cache=RedisRatesCache(redis) if redis is not None else _NoRatesCache(),
+        ttl_seconds=settings.fx_ttl_seconds,
     )
 
 
@@ -402,20 +541,89 @@ async def run(settings: Settings) -> int:
             )
 
         # --- Fichas de ciudad (Wikipedia/Wikidata con caché en Redis) -------------------
-        # Fichas y fotos de calle comparten una conexión a Redis.
+        # Fichas, fotos de calle y el cupo de Flyra comparten una conexión a Redis.
         public_redis = (
             _redis(settings, stack)
-            if settings.places_enabled or settings.mapillary_token is not None
+            if settings.places_enabled
+            or settings.landmarks_enabled
+            or settings.mapillary_token is not None
+            or (settings.flyra_enabled and llm is not None)
+            or (settings.menu_enabled and llm is not None)
+            or (settings.shared_trips_enabled and llm is not None)
+            or settings.atms_enabled
+            or settings.climate_enabled
             else None
         )
+        wikimedia = (
+            _wikimedia(settings, stack) if settings.places_enabled or settings.landmarks_enabled else None
+        )
         places: PlaceService | None = None
-        if settings.places_enabled and public_redis is not None:
-            places = _places(settings, public_redis, stack)
+        if settings.places_enabled and public_redis is not None and wikimedia is not None:
+            places = _places(settings, public_redis, wikimedia)
+
+        # --- Modo cámara: reconocer monumentos -------------------------------------------
+        landmarks: LandmarkService | None = None
+        if settings.landmarks_enabled and public_redis is not None and wikimedia is not None:
+            landmarks = _landmarks(settings, public_redis, wikimedia, stack)
 
         # --- Fotos reales de la calle (Mapillary con caché en Redis) ---------------------
         streetview: StreetViewService | None = None
         if settings.mapillary_token is not None and public_redis is not None:
             streetview = _streetview(settings, settings.mapillary_token, public_redis, stack)
+
+        # --- Cajeros cercanos (OpenStreetMap con caché en Redis) ------------------------
+        atms: AtmService | None = None
+        if settings.atms_enabled and public_redis is not None:
+            atms = _atms(settings, public_redis, stack)
+
+        # --- Traductor de cartas (Ollama + cupo diario en Redis) ------------------------
+        menu: MenuService | None = None
+        if settings.menu_enabled and llm is not None and public_redis is not None:
+            menu = _menu(settings, llm, public_redis)
+
+        # --- Clima medio por meses (NASA POWER con caché en Redis) ----------------------
+        climate: ClimateService | None = None
+        if settings.climate_enabled and public_redis is not None:
+            climate = _climate(settings, public_redis, stack)
+
+        # --- Chat libre con Flyra (Ollama + cupo diario en Redis) ------------------------
+        # Sin LLM no hay chat: la ruta no existe y la app lo explica.
+        flyra: FlyraService | None = None
+        if settings.flyra_enabled and llm is not None and public_redis is not None:
+            flyra = FlyraService(
+                llm=llm,
+                quota=RedisQuota(public_redis, prefix=FLYRA_QUOTA_PREFIX),
+                settings=FlyraSettings(
+                    daily_limit=settings.flyra_daily_limit, timeout_seconds=settings.flyra_timeout_seconds
+                ),
+            )
+
+        # --- Tipos de cambio (BCE, públicos y gratis) --------------------------------------
+        fx = _fx(settings, public_redis, stack) if settings.fx_enabled else None
+
+        # --- Gastos compartidos (solo PostgreSQL) --------------------------------------
+        expenses = expense_router(PostgresExpenses(pool)) if settings.expenses_enabled else None
+
+        # --- Copia este viaje (PostgreSQL; Flyra adapta con Ollama + caché en Redis) -----
+        shared_trips: APIRouter | None = None
+        if settings.shared_trips_enabled:
+            adapter = (
+                TripAdapter(
+                    llm=llm,
+                    quota=RedisQuota(public_redis, prefix=TRIP_ADAPT_QUOTA_PREFIX),
+                    cache=RedisAdaptCache(public_redis),
+                    settings=AdaptSettings(
+                        daily_limit=settings.trip_adapt_daily_limit,
+                        timeout_seconds=settings.trip_adapt_timeout_seconds,
+                    ),
+                )
+                if llm is not None and public_redis is not None
+                else None
+            )
+            shared_trips = shared_trip_router(PostgresSharedTrips(pool), adapter)
+
+        # --- Cromos con amigos (solo PostgreSQL) -----------------------------------------
+        leagues = league_router(PostgresLeagues(pool)) if settings.leagues_enabled else None
 
         # --- Negociación de grupo (tercer consumidor + relé del outbox) -----------------
         negotiations: APIRouter | None = None
@@ -444,8 +652,18 @@ async def run(settings: Settings) -> int:
                 audioguides=audioguides,
                 audio=audio,
                 negotiations=negotiations,
+                expenses=expenses,
+                shared_trips=shared_trips,
+                leagues=leagues,
                 places=places,
                 streetview=streetview,
+                flyra=flyra,
+                landmarks=landmarks,
+                fx=fx,
+                atms=atms,
+                climate=climate,
+                menu=menu,
+                eraser=PostgresEraser(pool),
                 expose_docs=settings.expose_api_docs,
             ),
             settings.http_port,

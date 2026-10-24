@@ -386,6 +386,70 @@ class SearchResult {
   final List<Offer> offers;
 }
 
+/// El billete más barato visto para salir en un mes (pantalla Explorar).
+class MonthFare {
+  const MonthFare({
+    required this.year,
+    required this.month,
+    required this.pricePerAdult,
+    required this.bookingUrl,
+    this.carrier = '',
+    this.departureAt = '',
+    this.returnAt,
+    this.transfers = 0,
+  });
+
+  final int year;
+
+  /// 1 = enero ... 12 = diciembre.
+  final int month;
+  final Money pricePerAdult;
+  final String carrier;
+
+  /// Día de salida y de vuelta ("2027-03-11"), tal como los da el proveedor.
+  final String departureAt;
+  final String? returnAt;
+  final int transfers;
+  final Uri bookingUrl;
+
+  /// Devuelve null (en vez de romper) si el mes viene raro o el enlace no es
+  /// https: mejor enseñar un mes menos que algo que no se puede reservar.
+  static MonthFare? parse(Object? json) {
+    if (json is! Map<String, Object?>) return null;
+    final Object? raw = json['month'];
+    final Object? url = json['booking_url'];
+    if (raw is! String || url is! String) return null;
+    // "2027-03": el año y el mes.
+    final List<String> parts = raw.split('-');
+    final int? year = parts.length == 2 ? int.tryParse(parts[0]) : null;
+    final int? month = parts.length == 2 ? int.tryParse(parts[1]) : null;
+    final Uri? link = Uri.tryParse(url);
+    if (year == null ||
+        month == null ||
+        month < 1 ||
+        month > 12 ||
+        link == null ||
+        link.scheme != 'https' ||
+        link.host.isEmpty) {
+      return null;
+    }
+    final Object? carrier = json['carrier'];
+    final Object? departure = json['departure_at'];
+    final Object? ret = json['return_at'];
+    final Object? transfers = json['transfers'];
+    return MonthFare(
+      year: year,
+      month: month,
+      pricePerAdult: Money.parse(json['price_per_adult']),
+      carrier: carrier is String ? carrier : '',
+      departureAt: departure is String ? departure : '',
+      returnAt: ret is String && ret.isNotEmpty ? ret : null,
+      transfers: transfers is int && transfers >= 0 ? transfers : 0,
+      bookingUrl: link,
+    );
+  }
+}
+
 /// Resultado de pedir vigilar una ruta.
 enum WatchResult { added, updated }
 
@@ -490,6 +554,21 @@ class FaresApi {
       adults: n,
       offers: <Offer>[for (final Offer? o in offers) ?o],
     );
+  }
+
+  /// Explorar: el billete más barato de cada mes del próximo año. Público
+  /// (también para invitados), como los chollos.
+  Future<List<MonthFare>> months({
+    required String origin,
+    required String destination,
+  }) async {
+    final Object? json = await _api.getJson(
+      '/v1/fares/months',
+      query: <String, String>{'origin': origin, 'destination': destination},
+      public: true,
+    );
+    final List<MonthFare?> months = _list(json, 'months', MonthFare.parse);
+    return <MonthFare>[for (final MonthFare? m in months) ?m];
   }
 
   static List<T> _list<T>(Object? json, String key, T Function(Object?) parse) {

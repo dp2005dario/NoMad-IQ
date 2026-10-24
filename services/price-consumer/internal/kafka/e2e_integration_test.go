@@ -138,7 +138,16 @@ func TestEndToEnd(t *testing.T) {
 	}
 	defer reader.Close()
 
-	var alert *flightsv1.FareAlertTriggered
+	// La alerta que esperamos. El price-consumer del docker compose comparte
+	// la base de datos y el topic, así que puede publicar OTRA alerta para el
+	// mismo usuario (con su propio historial): no cuenta como error, se
+	// espera a la nuestra y se guarda la última distinta solo para el mensaje.
+	expected := func(a *flightsv1.FareAlertTriggered) bool {
+		return a.GetAlertType() == flightsv1.FareAlertType_FARE_ALERT_TYPE_ERROR_FARE &&
+			a.GetCurrentPrice().GetAmountMinor() == 15000 && a.GetReferencePrice().GetAmountMinor() == 50000 &&
+			a.GetDropBasisPoints() == 7000 && a.GetRoute().GetOriginIata() == "ZZA"
+	}
+	var alert, other *flightsv1.FareAlertTriggered
 	dlqSeen := false
 	for (alert == nil || !dlqSeen) && ctx.Err() == nil {
 		fetches := reader.PollFetches(ctx)
@@ -150,7 +159,11 @@ func TestEndToEnd(t *testing.T) {
 					t.Errorf("alerta ilegible: %v", err)
 					return
 				}
-				alert = &evt
+				if expected(&evt) {
+					alert = &evt
+				} else {
+					other = &evt
+				}
 			case r.Topic == events.TopicPriceObservedDLQ && string(r.Key) == poisonKey:
 				dlqSeen = true
 			}
@@ -163,14 +176,9 @@ func TestEndToEnd(t *testing.T) {
 	<-relayDone
 
 	if alert == nil {
-		t.Fatal("no llegó ninguna alerta a flights.fare-alerts.v1")
+		t.Fatalf("no llegó la alerta esperada a flights.fare-alerts.v1 (otra: %v)", other)
 	}
 	if !dlqSeen {
 		t.Error("el mensaje basura no llegó a la DLQ")
-	}
-	if alert.GetAlertType() != flightsv1.FareAlertType_FARE_ALERT_TYPE_ERROR_FARE ||
-		alert.GetCurrentPrice().GetAmountMinor() != 15000 || alert.GetReferencePrice().GetAmountMinor() != 50000 ||
-		alert.GetDropBasisPoints() != 7000 || alert.GetRoute().GetOriginIata() != "ZZA" {
-		t.Errorf("alerta inesperada: %v", alert)
 	}
 }

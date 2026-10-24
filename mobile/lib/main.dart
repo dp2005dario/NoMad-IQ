@@ -1,8 +1,10 @@
 // Punto de entrada: lo primero que se ejecuta al abrir la app.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
 import 'app.dart';
 import 'auth/auth_api.dart';
@@ -11,11 +13,22 @@ import 'auth/token_store.dart';
 import 'core/api_client.dart';
 import 'core/config.dart';
 import 'core/services.dart';
+import 'features/vault/doc_source.dart';
+import 'features/vault/vault.dart';
+import 'features/vault/vault_store.dart';
+import 'features/camera/camera_device.dart';
+import 'features/camera/speaker.dart';
 import 'core/settings.dart';
 import 'features/audioguide/guide_player.dart';
+import 'features/family/family.dart';
 import 'features/map/location.dart';
+import 'features/map/map_style.dart';
 import 'features/map/map_surface.dart';
+import 'features/offline/offline_platform.dart';
+import 'features/offline/city_pack.dart';
+import 'features/offline/saved_guides.dart';
 import 'features/push/firebase_push.dart';
+import 'features/money/receipt_scanner.dart';
 import 'features/push/notices.dart';
 import 'features/push/push_registrar.dart';
 import 'features/push/push_state.dart';
@@ -26,6 +39,18 @@ Future<void> main() async {
   // Necesario antes de usar plugins (como el almacenamiento) en main().
   WidgetsFlutterBinding.ensureInitialized();
   registerDataLicenses();
+  // Audioguías con el móvil bloqueado (maqueta "Bloqueo"): play/pausa y
+  // partes en la pantalla de bloqueo, la notificación, el reloj y el coche.
+  // Android pide un "servicio en primer plano" de tipo multimedia mientras
+  // suena; la notificación se puede quitar al pausar.
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    await JustAudioBackground.init(
+      androidNotificationChannelId: 'com.nomadiq.app.audioguide',
+      androidNotificationChannelName: 'Audioguías · Audio guides',
+      androidNotificationIcon: 'mipmap/ic_launcher',
+      androidStopForegroundOnPause: true,
+    );
+  }
   final SettingsStore store = await PreferencesSettingsStore.open();
   final SessionController session = SessionController(
     api: AuthApi(baseUrl: AppConfig.apiBaseUrl),
@@ -47,6 +72,7 @@ Future<void> main() async {
   final bool push =
       defaultTargetPlatform == TargetPlatform.android &&
       await startFirebasePush();
+  final AppOfflineFiles offlineFiles = AppOfflineFiles();
   final AppServices services = AppServices(
     api: ApiClient(baseUrl: AppConfig.apiBaseUrl, session: session),
     location: const DeviceLocationSource(),
@@ -54,8 +80,39 @@ Future<void> main() async {
     webScene: (String html, void Function(String) onMessage) =>
         WebScene(html: html, onMessage: onMessage),
     newPlayer: JustAudioGuidePlayer.new,
+    newCamera: DeviceCamera.new,
+    speaker: DeviceSpeaker(),
+    receipts: DeviceReceiptScanner(),
+    docSource: DeviceDocSource(),
+    docReader: const DeviceDocTextReader(),
+    vault: Vault(
+      keys: SecureVaultKeyStore(),
+      files: DirVaultFiles(),
+      unlocker: DeviceUnlocker(),
+    ),
     tilesUrl: AppConfig.tilesUrl,
     glyphsUrl: AppConfig.glyphsUrl,
+    // "Sin conexión": archivos en la carpeta privada, el mapa descargado con
+    // MapLibre y saber si hay wifi antes de gastar datos.
+    offlineFiles: offlineFiles,
+    offlineMaps: MapLibreOfflineMaps(
+      styleJson: () => jsonEncode(
+        buildMapStyle(
+          look: MapLook.day,
+          language: store.readLocale()?.split('-').first ?? 'en',
+          tilesUrl: AppConfig.tilesUrl,
+          glyphsUrl: AppConfig.glyphsUrl,
+        ),
+      ),
+    ),
+    net: const SystemNetProbe(),
+    help: AppConfig.help,
+    family: SecureFamilyStore(),
+    // Las audioguías ya descargadas: si no hay red, se oyen estas.
+    saved: OfflineSavedGuides(
+      library: OfflineLibrary(store),
+      fileUri: offlineFiles.uriOf,
+    ),
     notices: notices,
     prefs: store,
   );
@@ -65,7 +122,9 @@ Future<void> main() async {
       store: SecurePushStateStore(),
       transport: const FirebasePushTransport(),
       session: session,
+      prefs: services.prefs,
     )..start();
+    services.push = registrar;
     // Cada vez que se vuelve a la app, se comprueba el registro (si falló
     // por falta de red, aquí se reintenta). Casi siempre no hace nada.
     AppLifecycleListener(onResume: () => unawaited(registrar.sync()));

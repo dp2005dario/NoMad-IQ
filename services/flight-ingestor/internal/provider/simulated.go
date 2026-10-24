@@ -137,3 +137,36 @@ func (s *Simulated) Search(ctx context.Context, spec domain.SearchSpec, limit in
 	})
 	return offers, nil
 }
+
+// Monthly implementa MonthlySearcher con precios inventados pero estables:
+// el verano y diciembre salen más caros, como en la vida real.
+func (s *Simulated) Monthly(ctx context.Context, route domain.Route) ([]domain.MonthFare, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, fmt.Errorf("simulated: %w", err)
+	}
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(string(route.Origin) + "-" + string(route.Destination)))
+	seed := h.Sum64()
+	base := int64(8_000 + seed%80_000)
+	// Cuánto sube cada mes (en %): enero barato, agosto caro.
+	season := [12]int64{-10, -15, -5, 5, 0, 15, 35, 40, 0, -5, -15, 25}
+	now := s.now().UTC()
+	first := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	out := make([]domain.MonthFare, 0, domain.MaxMonths)
+	for i := range domain.MaxMonths {
+		m := first.AddDate(0, i, 0)
+		dep := m.AddDate(0, 0, int(seed%20)+3)
+		ret := dep.AddDate(0, 0, 7)
+		out = append(out, domain.MonthFare{
+			Year:          m.Year(),
+			Month:         m.Month(),
+			PricePerAdult: domain.Money{Currency: "EUR", AmountMinor: base + base*season[m.Month()-1]/100},
+			CarrierIATA:   simulatedCarriers[(int(seed%97)+i)%len(simulatedCarriers)],
+			DepartureAt:   dep.Format(time.DateOnly),
+			ReturnAt:      ret.Format(time.DateOnly),
+			Transfers:     int(seed % 2),
+			DeepLink:      fmt.Sprintf("https://example.invalid/book?route=%s-%s&month=%s", route.Origin, route.Destination, m.Format("2006-01")),
+		})
+	}
+	return out, nil
+}

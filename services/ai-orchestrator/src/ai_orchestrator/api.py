@@ -42,20 +42,33 @@ from collections.abc import Awaitable, Callable
 from datetime import datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Query, Request
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from ai_orchestrator.atms.domain import Atms
+from ai_orchestrator.atms.service import AtmBusyError, AtmService, AtmUnavailableError
 from ai_orchestrator.audioguides.audio_catalog import AudioCatalog, AudioLookup
 from ai_orchestrator.audioguides.cache import CacheError
 from ai_orchestrator.audioguides.domain import AudioguideScript
 from ai_orchestrator.audioguides.service import AudioguideService
+from ai_orchestrator.climate.domain import Climate
+from ai_orchestrator.climate.service import ClimateBusyError, ClimateService, ClimateUnavailableError
 from ai_orchestrator.domain import Recommendation, Verdict
+from ai_orchestrator.erasure import UserDataEraser
+from ai_orchestrator.flyra.domain import ChatReply, ChatRequest
+from ai_orchestrator.flyra.service import FlyraBusyError, FlyraService
+from ai_orchestrator.fx.service import FxRates, FxService, FxUnavailableError
 from ai_orchestrator.identity import Principal, current_principal
+from ai_orchestrator.landmarks.domain import Landmark, Recognition, RecognizeRequest
+from ai_orchestrator.landmarks.service import LandmarkBusyError, LandmarkService
+from ai_orchestrator.menu.domain import MenuReply, MenuRequest
+from ai_orchestrator.menu.service import MenuBusyError, MenuService
 from ai_orchestrator.places.domain import PlaceCard
 from ai_orchestrator.places.service import PlaceBusyError, PlaceService, PlaceUnavailableError
+from ai_orchestrator.quota import QuotaExceededError
 from ai_orchestrator.store import RecommendationStore, StoreError
 from ai_orchestrator.streetview.domain import StreetPhotos
 from ai_orchestrator.streetview.service import StreetBusyError, StreetUnavailableError, StreetViewService
@@ -189,6 +202,12 @@ IMMUTABLE_CACHE = "public, max-age=31536000, immutable"
 PLACE_CACHE = "public, max-age=86400"
 # Las fotos de calle: una hora (sus direcciones caducan a los pocos días).
 STREET_CACHE = "public, max-age=3600"
+# Los tipos de cambio cambian una vez al día: una hora en cachés intermedias.
+FX_CACHE = "public, max-age=3600"
+# Los cajeros casi nunca cambian: seis horas en el móvil y en la CDN.
+ATM_CACHE = "public, max-age=21600"
+# El clima medio no cambia: el móvil puede guardarlo una semana.
+CLIMATE_CACHE = "public, max-age=604800"
 # "Esta ciudad no tiene ficha" se recuerda menos (por si aparece).
 PLACE_MISSING_CACHE = "public, max-age=3600"
 
@@ -199,8 +218,18 @@ def create_api(
     audioguides: AudioguideService | None = None,
     audio: AudioCatalog | None = None,
     negotiations: APIRouter | None = None,
+    expenses: APIRouter | None = None,
+    shared_trips: APIRouter | None = None,
+    leagues: APIRouter | None = None,
     places: PlaceService | None = None,
     streetview: StreetViewService | None = None,
+    flyra: FlyraService | None = None,
+    menu: MenuService | None = None,
+    landmarks: LandmarkService | None = None,
+    fx: FxService | None = None,
+    atms: AtmService | None = None,
+    climate: ClimateService | None = None,
+    eraser: UserDataEraser | None = None,
     expose_docs: bool = False,
 ) -> FastAPI:
     """Crea la API pública (puerto con mTLS)."""
@@ -345,6 +374,156 @@ def create_api(
                 return resp
             # Sin fotos también es 200 (lista vacía): la app lo explica.
             return JSONResponse(photos.model_dump(mode="json"), headers={"Cache-Control": STREET_CACHE})
+
+    if atms is not None:
+
+        @app.get("/v1/atms", response_model=Atms)
+        async def get_atms(
+            lat: Annotated[float, Query(ge=-85, le=85)],
+            lon: Annotated[float, Query(ge=-180, le=180)],
+        ) -> JSONResponse:
+            try:
+                found = await atms.near(lat, lon)
+            except (AtmBusyError, AtmUnavailableError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "cajeros ocupados")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            # Sin cajeros también es 200 (lista vacía): la app lo explica.
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": ATM_CACHE})
+
+    if climate is not None:
+
+        @app.get("/v1/climate", response_model=Climate)
+        async def get_climate(
+            lat: Annotated[float, Query(ge=-90, le=90)],
+            lon: Annotated[float, Query(ge=-180, le=180)],
+        ) -> JSONResponse:
+            # Pública (también para invitados): medias de la NASA, iguales
+            # para todos.
+            try:
+                found = await climate.at(lat, lon)
+            except (ClimateBusyError, ClimateUnavailableError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "clima no disponible")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": CLIMATE_CACHE})
+
+    if fx is not None:
+
+        @app.get("/v1/fx/rates", response_model=FxRates)
+        async def get_fx_rates() -> JSONResponse:
+            # Pública (también para invitados): son datos oficiales y gratuitos.
+            try:
+                rates = await fx.rates()
+            except FxUnavailableError:
+                resp = _problem(503, "Servicio no disponible temporalmente", "tipos de cambio no disponibles")
+                resp.headers["Retry-After"] = "300"
+                return resp
+            return JSONResponse(rates.model_dump(mode="json"), headers={"Cache-Control": FX_CACHE})
+
+    if flyra is not None:
+
+        @app.post("/v1/flyra/chat", response_model=ChatReply)
+        async def flyra_chat(
+            principal: Annotated[Principal, Depends(current_principal)],
+            body: ChatRequest,
+        ) -> JSONResponse:
+            # Solo con sesión iniciada: así cada persona tiene su cupo diario y
+            # nadie puede gastar la máquina del modelo de forma anónima.
+            try:
+                reply = await flyra.answer(principal.user_id, body)
+            except QuotaExceededError as exc:
+                resp = _problem(429, "Demasiadas peticiones", "ya no quedan preguntas a Flyra por hoy")
+                resp.headers["Retry-After"] = str(exc.retry_after)
+                return resp
+            except FlyraBusyError:
+                resp = _problem(503, "Servicio no disponible temporalmente", "Flyra está ocupada")
+                resp.headers["Retry-After"] = "30"
+                return resp
+            # Las respuestas son personales: que ningún proxy las guarde.
+            return JSONResponse(reply.model_dump(mode="json"), headers={"Cache-Control": "no-store"})
+
+    if menu is not None:
+
+        @app.post("/v1/menu/translate", response_model=MenuReply)
+        async def translate_menu(
+            principal: Annotated[Principal, Depends(current_principal)],
+            body: MenuRequest,
+        ) -> JSONResponse:
+            # Con sesión: cada cuenta tiene su cupo diario de cartas.
+            try:
+                reply = await menu.translate(principal.user_id, body)
+            except QuotaExceededError as exc:
+                resp = _problem(429, "Demasiadas peticiones", "ya no quedan cartas por hoy")
+                resp.headers["Retry-After"] = str(exc.retry_after)
+                return resp
+            except MenuBusyError:
+                resp = _problem(503, "Servicio no disponible temporalmente", "Flyra está ocupada")
+                resp.headers["Retry-After"] = "30"
+                return resp
+            # La carta es de esta persona: que ningún proxy la guarde.
+            return JSONResponse(reply.model_dump(mode="json"), headers={"Cache-Control": "no-store"})
+
+    if landmarks is not None:
+
+        @app.post("/v1/landmarks/recognize", response_model=Recognition)
+        async def recognize_landmark(
+            principal: Annotated[Principal, Depends(current_principal)],
+            body: RecognizeRequest,
+        ) -> JSONResponse:
+            # Con sesión: cada cuenta tiene sus usos diarios del modo cámara.
+            try:
+                found = await landmarks.recognize(principal.user_id, body)
+            except QuotaExceededError as exc:
+                resp = _problem(429, "Demasiadas peticiones", "ya no quedan usos de la cámara por hoy")
+                resp.headers["Retry-After"] = str(exc.retry_after)
+                return resp
+            except LandmarkBusyError:
+                resp = _problem(503, "Servicio no disponible temporalmente", "monumentos ocupados")
+                resp.headers["Retry-After"] = "30"
+                return resp
+            # Depende de dónde estás: que ningún proxy lo guarde.
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": "no-store"})
+
+        @app.get("/v1/landmarks/{qid}", response_model=Landmark)
+        async def get_landmark(
+            _: Annotated[Principal, Depends(current_principal)],
+            qid: Annotated[str, Path(pattern=r"^Q[1-9][0-9]{0,11}$")],
+            lang: Annotated[str, Query(pattern=r"^([A-Za-z]{2,3})?$")] = "",
+        ) -> JSONResponse:
+            try:
+                card = await landmarks.landmark(qid, lang or "en")
+            except LandmarkBusyError:
+                resp = _problem(503, "Servicio no disponible temporalmente", "monumentos ocupados")
+                resp.headers["Retry-After"] = "30"
+                return resp
+            if card is None:
+                return _problem(404, "No encontrado", "no hay ficha para este lugar")
+            return JSONResponse(
+                card.model_dump(mode="json"), headers={"Cache-Control": "private, max-age=86400"}
+            )
+
+    if eraser is not None:
+
+        @app.delete("/v1/me/data", status_code=204)
+        async def erase_my_data(principal: Annotated[Principal, Depends(current_principal)]) -> Response:
+            # "Borrar mi cuenta": la app llama aquí ANTES de borrar la cuenta
+            # en el auth-gateway (después ya no tendría pase). Repetirlo no
+            # hace daño: la segunda vez no encuentra nada que borrar.
+            await eraser.erase(principal.user_id)
+            return Response(status_code=204)
+
+    if expenses is not None:
+        # Las rutas /v1/expense-groups viven en expenses/api.py.
+        app.include_router(expenses)
+
+    if shared_trips is not None:
+        # Las rutas /v1/shared-trips ("Copia este viaje") viven en shared_trips/api.py.
+        app.include_router(shared_trips)
+
+    if leagues is not None:
+        # Las rutas /v1/leagues ("Cromos con amigos") viven en leagues/api.py.
+        app.include_router(leagues)
 
     if negotiations is not None:
         # Las rutas /v1/group-negotiations viven en negotiation/api.py.

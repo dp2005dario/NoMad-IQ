@@ -113,3 +113,22 @@ func WatchToProto(w domain.Watch) *flightsv1.RouteWatch {
 		Cabin:         CabinToProto(w.Spec.Cabin),
 	}
 }
+
+// RouteFromProto valida una ruta que llega de fuera ("MAD" → "NRT").
+func RouteFromProto(route *flightsv1.Route) (domain.Route, error) {
+	if route == nil {
+		return domain.Route{}, &domain.ValidationError{Field: "route", Reason: "obligatoria"}
+	}
+	origin, err := domain.ParseAirport("route.origin_iata", route.GetOriginIata())
+	if err != nil {
+		return domain.Route{}, err
+	}
+	destination, err := domain.ParseAirport("route.destination_iata", route.GetDestinationIata())
+	if err != nil {
+		return domain.Route{}, err
+	}
+	if origin == destination {
+		return domain.Route{}, &domain.ValidationError{Field: "route", Reason: "origen y destino iguales"}
+	}
+	return domain.Route{Origin: origin, Destination: destination}, nil
+}

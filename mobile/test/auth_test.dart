@@ -258,6 +258,9 @@ void main() {
       await tester.tap(find.byTooltip('Cuenta'));
       await tester.pumpAndSettle();
       expect(find.text(email), findsOneWidget);
+      // Ajustes es una lista larga: hay que llegar hasta el botón.
+      await tester.scrollUntilVisible(find.text('Cerrar sesión'), 300);
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Cerrar sesión'));
       await tester.pumpAndSettle();
       expect(
@@ -302,6 +305,11 @@ void main() {
       await pumpApp(tester, locale: 'es', initialLocation: Routes.home);
       expect(find.text('Hola, viajero'), findsOneWidget);
       await tester.tap(find.byTooltip('Cuenta'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Inicia sesión o crea una cuenta'),
+        300,
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.text('Inicia sesión o crea una cuenta'));
       await tester.pumpAndSettle();

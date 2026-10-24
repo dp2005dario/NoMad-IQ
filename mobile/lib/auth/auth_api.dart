@@ -122,6 +122,14 @@ class AuthApi {
     return UserProfile(id: _string(json, 'id'), email: _string(json, 'email'));
   }
 
+  /// "Borrar mi cuenta": pide la contraseña otra vez. 204 = borrada para
+  /// siempre; 401 = contraseña mal (se lanza invalidCredentials).
+  Future<void> deleteAccount(String accessToken, String password) async {
+    await _send('DELETE', '/v1/me', <String, Object?>{
+      'password': password,
+    }, accessToken: accessToken);
+  }
+
   void close() => _client.close();
 
   // ---------------------------------------------------------------------------

@@ -51,6 +51,25 @@ dependencies:
   timezone: ^0.11.2
   # Un "navegador" dentro de una pantalla: ahí se ve el Vuelo 3D (three.js).
   webview_flutter: ^4.14.1
+  # El visor de la cámara y la foto para reconocer monumentos (modo cámara).
+  camera: ^0.12.1
+  # La brújula: hacia dónde mira el móvil (así se sabe qué monumento apuntas).
+  flutter_compass: ^0.8.1
+  # La voz del móvil: lee en alto la ficha del monumento (gratis y sin red).
+  flutter_tts: ^4.2.5
+  # Lee el texto de una foto DENTRO del móvil (ML Kit de Google, gratis y sin
+  # red): así Flyra "lee" el ticket de la cena sin mandar la foto a nadie.
+  google_mlkit_text_recognition: ^0.17.1
+  # Abre la cámara (o la galería) del sistema para hacer la foto del ticket.
+  image_picker: ^1.2.4
+  local_auth: ^3.0.2
+  file_picker: ^13.1.0
+  pdfx: ^2.11.0
+  path_provider: ^2.1.6
+  just_audio_background: ^0.0.1-beta.17
+  # Dice si el móvil está en wifi o con datos: así "Sin conexión" no gasta
+  # tu tarifa descargando una ciudad en el extranjero sin querer.
+  connectivity_plus: ^7.3.1
 
 dev_dependencies:
   flutter_test:

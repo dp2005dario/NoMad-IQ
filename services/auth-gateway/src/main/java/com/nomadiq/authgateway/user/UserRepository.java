@@ -78,6 +78,17 @@ public class UserRepository {
                 .update() == 1;
     }
 
+    /**
+     * Borra al usuario DE VERDAD (no lo marca: desaparece la fila). Sus tokens
+     * de refresco se van con él solos ({@code ON DELETE CASCADE} en la tabla).
+     * Devuelve false si ya no existía.
+     */
+    public boolean delete(UUID id) {
+        return jdbc.sql("DELETE FROM users WHERE id = :id")
+                .param("id", id)
+                .update() == 1;
+    }
+
     /** Convierte una fila de la tabla en un objeto Java. */
     private static UserAccount map(ResultSet rs, int rowNum) throws SQLException {
         Timestamp disabled = rs.getTimestamp("disabled_at");

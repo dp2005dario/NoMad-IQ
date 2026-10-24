@@ -565,3 +565,22 @@ Para cambiar la histéresis, en `infrastructure/.env` añade por ejemplo
 | **Cerrojo consultivo** | Un "cerrojo" de PostgreSQL que solo respetan los programas que lo piden; sirve para que una tarea la haga uno solo. |
 | **Huérfano** | Archivo que ya no aparece en ningún manifiesto (por ejemplo, de una grabación que se cortó). |
 | **GPL** | Licencia de software libre que obliga a compartir el código de lo que se distribuye junto con él. |
+
+## Con el móvil bloqueado (maqueta "Bloqueo")
+
+La audioguía sigue sonando con la pantalla apagada y se controla desde la
+**pantalla de bloqueo**, la notificación, los auriculares, el reloj o el
+coche (Bluetooth): play/pausa, parte anterior y siguiente.
+
+- Lo hace el paquete **just_audio_background** (que usa `audio_service`).
+  Se arranca una vez en `mobile/lib/main.dart` con `JustAudioBackground.init`.
+- Cada parte lleva una "etiqueta" (`MediaItem`) con la zona y "Parte 1 de 4 ·
+  título": es lo que se lee en la pantalla de bloqueo
+  (`NowPlaying` en `guide_player.dart`).
+- Android lo exige así: la actividad principal es
+  `AudioServiceFragmentActivity` (en `MainActivity.kt`) y el
+  `AndroidManifest.xml` declara el servicio de audio con el permiso
+  `FOREGROUND_SERVICE_MEDIA_PLAYBACK`. Al pausar, la notificación se puede
+  quitar deslizando.
+- Para probarlo hace falta un móvil de verdad: `flutter run`, abre una
+  audioguía, dale a play y bloquea el móvil.

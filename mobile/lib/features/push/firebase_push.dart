@@ -16,6 +16,10 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/widgets.dart';
 
 import '../../core/config.dart';
+import '../../core/settings.dart';
+import '../../l10n/generated/app_localizations.dart';
+import 'notice_log.dart';
+import 'notice_prefs.dart';
 import 'notices.dart';
 import 'push_notice.dart';
 import 'push_registrar.dart';
@@ -73,5 +77,20 @@ Future<void> showPush(Map<String, dynamic> data, PushStateStore store) async {
     state,
   );
   if (notice == null) return;
-  await DeviceNotices.instance.show(notice, localizationsFor(notice.language));
+  // ¿Lo has apagado en Privacidad? Entonces se queda en silencio.
+  final SettingsStore prefs = await PreferencesSettingsStore.open();
+  if (mutedKinds(prefs).contains(notice.kind)) return;
+  final AppLocalizations t = localizationsFor(notice.language);
+  await DeviceNotices.instance.show(notice, t);
+  // Y se apunta en el historial de Avisos (solo en este móvil).
+  final (String title, String body) = await noticeTexts(notice, t);
+  await NoticeLog(prefs).add(
+    NoticeEntry(
+      kind: notice.kind,
+      title: title,
+      body: body,
+      at: DateTime.now(),
+      route: notice.route,
+    ),
+  );
 }

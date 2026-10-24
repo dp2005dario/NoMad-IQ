@@ -8,6 +8,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show SocketException;
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -81,6 +82,37 @@ class ApiClient {
 
   Future<Object?> delete(String path) =>
       _send('DELETE', _base.resolve(path), null);
+
+  /// Descarga un archivo tal cual (no JSON): lo usa "Sin conexión" para
+  /// guardarse los .opus de las audioguías. Se limita el tamaño para que un
+  /// servidor equivocado no llene el móvil.
+  Future<Uint8List> getBytes(
+    String pathOrUrl, {
+    bool public = false,
+    int maxBytes = 8 * 1024 * 1024,
+  }) async {
+    final Uri uri = _base.resolve(pathOrUrl);
+    String? token;
+    if (_session.status == SessionStatus.signedIn) {
+      token = await _token(() => _session.accessToken());
+    } else if (!public) {
+      throw const ApiException(ApiError.signedOut);
+    }
+    http.Response response = await _once('GET', uri, null, token);
+    if (response.statusCode == 401 && token != null) {
+      final String rejected = token;
+      token = await _token(() => _session.renewAccessToken(rejected));
+      response = await _once('GET', uri, null, token);
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      _decode(response); // lanza el error con nombre que toque
+      throw const ApiException(ApiError.unavailable);
+    }
+    if (response.bodyBytes.length > maxBytes) {
+      throw const ApiException(ApiError.unavailable);
+    }
+    return response.bodyBytes;
+  }
 
   /// La sesión con la que se firman las peticiones (para quien necesite
   /// enterarse de cuándo se entra o se sale).

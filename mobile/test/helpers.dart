@@ -16,6 +16,10 @@ import 'package:nomadiq/auth/token_store.dart';
 import 'package:nomadiq/core/api_client.dart';
 import 'package:nomadiq/core/router.dart';
 import 'package:nomadiq/core/services.dart';
+import 'package:nomadiq/features/family/family.dart';
+import 'package:nomadiq/features/help/help_contacts.dart';
+import 'package:nomadiq/features/offline/city_downloader.dart';
+import 'package:nomadiq/features/offline/saved_guides.dart';
 import 'package:nomadiq/features/audioguide/guide_player.dart';
 import 'package:nomadiq/features/flights/booking.dart';
 import 'package:nomadiq/features/map/geo.dart';
@@ -26,6 +30,11 @@ import 'package:nomadiq/features/map/position_reporter.dart';
 import 'package:nomadiq/features/push/notices.dart';
 import 'package:nomadiq/features/map/map_surface.dart';
 import 'package:nomadiq/core/settings.dart';
+import 'package:nomadiq/features/camera/camera_device.dart';
+import 'package:nomadiq/features/camera/speaker.dart';
+import 'package:nomadiq/features/money/receipt_scanner.dart';
+import 'package:nomadiq/features/vault/doc_source.dart';
+import 'package:nomadiq/features/vault/vault.dart';
 
 /// Un auth-gateway falso, en memoria, que se comporta como el de verdad:
 /// una cuenta, pases largos de un solo uso y errores con sus códigos HTTP.
@@ -71,6 +80,17 @@ class FakeGateway {
         return _tokens();
       case '/v1/auth/logout':
         liveRefresh.remove(body['refresh_token']);
+        return http.Response('', 204);
+      case '/v1/me' when req.method == 'DELETE':
+        // Borrar la cuenta: como el de verdad, pide la contraseña.
+        final String? email = accounts.keys.isEmpty
+            ? null
+            : accounts.keys.first;
+        if (email == null || accounts[email] != body['password']) {
+          return http.Response('{}', 401);
+        }
+        accounts.remove(email);
+        liveRefresh.clear();
         return http.Response('', 204);
       case '/v1/me':
         return _json(<String, Object?>{
@@ -138,6 +158,19 @@ AppServices fakeServices(
   NoticeCenter? notices,
   SettingsStore? prefs,
   OpenBooking? openBooking,
+  Future<bool> Function(Uri)? openLink,
+  CameraFactory? newCamera,
+  Speaker? speaker,
+  ReceiptScanner? receipts,
+  Vault? vault,
+  OfflineFiles? offlineFiles,
+  OfflineMaps? offlineMaps,
+  NetProbe? net,
+  SavedGuides? saved,
+  HelpContacts help = const HelpContacts(),
+  FamilyStore? family,
+  DocSource? docSource,
+  DocTextReader? docReader,
 }) {
   final FakeGateway g = gateway ?? FakeGateway();
   final FakeMap m = map ?? FakeMap();
@@ -159,6 +192,19 @@ AppServices fakeServices(
     notices: notices ?? FakeNotices(),
     prefs: prefs,
     openBooking: openBooking ?? (Uri _) async => true,
+    openLink: openLink ?? (Uri _) async => true,
+    newCamera: newCamera,
+    speaker: speaker ?? const SilentSpeaker(),
+    receipts: receipts ?? const NoReceiptScanner(),
+    vault: vault,
+    offlineFiles: offlineFiles,
+    offlineMaps: offlineMaps,
+    net: net,
+    saved: saved ?? const NoSavedGuides(),
+    help: help,
+    family: family,
+    docSource: docSource ?? const NoDocSource(),
+    docReader: docReader ?? const NoDocTextReader(),
   );
 }
 
@@ -277,8 +323,16 @@ class FakePlayer implements GuidePlayer {
   @override
   ValueListenable<Playback> get playback => state;
 
+  NowPlaying? info;
+
   @override
-  Future<void> load(List<Uri> parts, {int part = 0, Duration? position}) async {
+  Future<void> load(
+    List<Uri> parts, {
+    int part = 0,
+    Duration? position,
+    NowPlaying? info,
+  }) async {
+    this.info = info;
     loaded = parts;
     state.value = Playback(part: part, position: position ?? Duration.zero);
   }
@@ -355,6 +409,9 @@ Future<SettingsController> pumpApp(
   String initialLocation = Routes.welcome,
   SessionController? session,
   AppServices? services,
+  // Pantallas con animaciones sin fin (el escáner de la cámara) nunca "se
+  // calman": con false solo se dibuja un fotograma.
+  bool settle = true,
 }) async {
   final SettingsController settings = SettingsController(
     MemorySettingsStore(locale),
@@ -368,7 +425,11 @@ Future<SettingsController> pumpApp(
       router: buildRouter(session: s, initialLocation: initialLocation),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+  }
   return settings;
 }
 

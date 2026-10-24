@@ -175,6 +175,65 @@ class Settings(BaseSettings):
     mapillary_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
     street_ttl_seconds: int = Field(default=6 * 3600, ge=600, le=48 * 3600)
 
+    # --- Gastos compartidos (ver el paquete expenses/): solo necesita PostgreSQL ---
+    expenses_enabled: bool = True
+
+    # --- Tipos de cambio (ver el paquete fx/): del BCE, gratis y sin clave --------------
+    fx_enabled: bool = True
+    fx_ttl_seconds: int = Field(default=6 * 3600, ge=600, le=48 * 3600)
+
+    # --- Cajeros cercanos (ver el paquete atms/): OpenStreetMap, gratis y sin clave ----
+    atms_enabled: bool = True
+    # El buscador Overpass. Se puede cambiar por otro espejo o uno propio.
+    overpass_url: str = "https://overpass-api.de/api/interpreter"
+    # Su norma de uso justo: muy pocas peticiones por segundo (por copia).
+    overpass_rate_per_second: float = Field(default=1.0, gt=0, le=10)
+    overpass_burst: int = Field(default=3, ge=1, le=20)
+    overpass_timeout_seconds: float = Field(default=25.0, gt=0, le=60)
+    atm_ttl_seconds: int = Field(default=24 * 3600, ge=3600, le=7 * 24 * 3600)
+
+    # --- Cromos con amigos (ver el paquete leagues/): solo PostgreSQL
+    leagues_enabled: bool = True
+
+    # --- Copia este viaje (ver el paquete shared_trips/): PostgreSQL; adaptar necesita Ollama y Redis
+    shared_trips_enabled: bool = True
+    # Adaptaciones por persona y día (las que salen de la caché no cuentan).
+    trip_adapt_daily_limit: int = Field(default=10, ge=1, le=200)
+    trip_adapt_timeout_seconds: float = Field(default=60.0, gt=0, le=180)
+
+    # --- Traductor de cartas (ver el paquete menu/): necesita Ollama y Redis ----------
+    menu_enabled: bool = True
+    # Cartas gratis por persona y día: el tope que evita sorpresas de coste.
+    menu_daily_limit: int = Field(default=20, ge=1, le=200)
+    menu_timeout_seconds: float = Field(default=60.0, gt=0, le=180)
+
+    # --- Clima medio por meses (ver el paquete climate/): NASA POWER, gratis -----------
+    climate_enabled: bool = True
+    nasa_power_url: str = "https://power.larc.nasa.gov/api/temporal/climatology/point"
+    nasa_rate_per_second: float = Field(default=1.0, gt=0, le=10)
+    nasa_burst: int = Field(default=3, ge=1, le=20)
+    nasa_timeout_seconds: float = Field(default=25.0, gt=0, le=60)
+    climate_ttl_seconds: int = Field(default=30 * 24 * 3600, ge=24 * 3600, le=90 * 24 * 3600)
+
+    # --- Chat libre con Flyra (ver el paquete flyra/) --------------------------------
+    # Necesita Ollama (LLM_ENABLED) y Redis (el contador de preguntas diarias).
+    flyra_enabled: bool = True
+    # Preguntas gratis por persona y día: el tope que evita sorpresas de coste.
+    flyra_daily_limit: int = Field(default=50, ge=1, le=1000)
+    # Si el modelo tarda más que esto, "Flyra está ocupada" y no cuenta.
+    flyra_timeout_seconds: float = Field(default=45.0, gt=0, le=300)
+
+    # --- Modo cámara: reconocer monumentos (ver el paquete landmarks/) --------------
+    # Necesita Redis (caché y cupo) y salida a Wikimedia, como las fichas.
+    landmarks_enabled: bool = True
+    # Usos gratis del modo cámara por persona y día.
+    landmark_daily_limit: int = Field(default=100, ge=1, le=2000)
+    # Modelo de Ollama "con ojos" que mira la foto (p. ej. "qwen2.5vl:3b",
+    # hay que descargarlo con "ollama pull"). Vacío = sin visión: se decide
+    # solo por GPS y brújula y la app pregunta "¿Es este?".
+    landmark_vision_model: str | None = Field(default=None, max_length=100)
+    landmark_vision_timeout_seconds: float = Field(default=25.0, gt=0, le=120)
+
     # --- Redis (caché de audioguías y fichas de ciudad) -----------------------------------------------
     redis_host: str | None = None
     redis_port: int = Field(default=6379, ge=1, le=65535)
@@ -303,13 +362,27 @@ class Settings(BaseSettings):
                 "las fotos de calle necesitan Redis: define REDIS_HOST y REDIS_PASSWORD "
                 "(o quita MAPILLARY_TOKEN)"
             )
+        if self.landmarks_enabled and (not self.redis_host or self.redis_password is None):
+            problems.append(
+                "el modo cámara necesita Redis: define REDIS_HOST y REDIS_PASSWORD "
+                "(o LANDMARKS_ENABLED=false)"
+            )
+        if self.flyra_enabled and self.llm_enabled and (not self.redis_host or self.redis_password is None):
+            problems.append(
+                "el chat con Flyra necesita Redis: define REDIS_HOST y REDIS_PASSWORD (o FLYRA_ENABLED=false)"
+            )
         if self.mapillary_token is not None and not re.fullmatch(
             r"MLY\|[0-9]+\|[0-9a-f]+", self.mapillary_token.get_secret_value()
         ):
             # No repetimos el valor en el mensaje: es un secreto.
             problems.append("MAPILLARY_TOKEN no tiene forma de token de Mapillary (MLY|...)")
         if (
-            (self.places_enabled or self.mapillary_token is not None)
+            (
+                self.places_enabled
+                or self.landmarks_enabled
+                or self.mapillary_token is not None
+                or self.flyra_enabled
+            )
             and not self.audioguides_enabled
             and not self.redis_tls
             and not self.redis_insecure_dev

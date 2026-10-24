@@ -33,6 +33,12 @@ class HomeScreen extends StatelessWidget {
                     style: text.headlineMedium,
                   ),
                 ),
+                // La campana: el historial de avisos (solo en el móvil).
+                IconButton(
+                  tooltip: t.noticesTitle,
+                  onPressed: () => context.push(Routes.notices),
+                  icon: const Icon(Icons.notifications_none_rounded),
+                ),
                 _AccountButton(session: session, name: name),
               ],
             ),
@@ -40,7 +46,7 @@ class HomeScreen extends StatelessWidget {
             _AskFlyra(
               hint: t.homeFlyraPrompt,
               label: t.talkToFlyra,
-              onTap: () => context.push(Routes.soon(Feature.flyra)),
+              onTap: () => context.push(Routes.flyra()),
             ),
             const SizedBox(height: 28),
             Text(t.shortcutsTitle, style: text.titleLarge),
@@ -55,16 +61,81 @@ class HomeScreen extends StatelessWidget {
                 final double width =
                     (box.maxWidth - gap * (columns - 1)) / columns;
                 final List<Widget> tiles = <Widget>[
-                  for (final Feature f in const <Feature>[
-                    Feature.vault,
-                    Feature.expenses,
-                  ])
-                    _Shortcut(
-                      icon: f.icon,
-                      color: f.color,
-                      label: f.label(t),
-                      onTap: () => context.push(Routes.soon(f)),
-                    ),
+                  // SOS el primero: en un apuro no hay que buscarlo.
+                  _Shortcut(
+                    icon: Icons.sos_rounded,
+                    color: const Color(0xFFE53935),
+                    label: t.sosTitle,
+                    onTap: () => context.push(Routes.sos),
+                  ),
+                  _Shortcut(
+                    icon: Feature.vault.icon,
+                    color: Feature.vault.color,
+                    label: Feature.vault.label(t),
+                    onTap: () => context.push(Routes.vault),
+                  ),
+                  _Shortcut(
+                    icon: Icons.assignment_turned_in_rounded,
+                    color: NomadColors.flights,
+                    label: t.papersTitle,
+                    onTap: () => context.push(Routes.papers),
+                  ),
+                  // Gastos: los botes compartidos (Dinero → Tu dinero).
+                  _Shortcut(
+                    icon: Feature.expenses.icon,
+                    color: Feature.expenses.color,
+                    label: Feature.expenses.label(t),
+                    onTap: () => context.push(Routes.money()),
+                  ),
+                  // Todo lo que hay que tener listo antes de un viaje.
+                  _Shortcut(
+                    icon: Icons.luggage_rounded,
+                    color: NomadColors.mint,
+                    label: t.beforeTitle,
+                    onTap: () => context.push(Routes.before),
+                  ),
+                  // Viajar con tu mascota o estando embarazada.
+                  _Shortcut(
+                    icon: Icons.pets_rounded,
+                    color: NomadColors.money,
+                    label: t.twTitle,
+                    onTap: () => context.push(Routes.travelWith),
+                  ),
+                  // Quién viaja contigo: alergias, edades y gustos.
+                  _Shortcut(
+                    icon: Icons.family_restroom_rounded,
+                    color: NomadColors.group,
+                    label: t.famTitle,
+                    onTap: () => context.push(Routes.family),
+                  ),
+                  // Copiar el viaje de otra persona (Flyra lo adapta).
+                  _Shortcut(
+                    icon: Icons.content_copy_rounded,
+                    color: NomadColors.mint,
+                    label: t.copyTitle,
+                    onTap: () => context.push(Routes.copyTrip()),
+                  ),
+                  // Liga y cambios de cromos con tus amigos.
+                  _Shortcut(
+                    icon: Icons.style_rounded,
+                    color: NomadColors.group,
+                    label: t.cardsTitle,
+                    onTap: () => context.push(Routes.cards),
+                  ),
+                  // La carta del restaurante, traducida y explicada.
+                  _Shortcut(
+                    icon: Icons.restaurant_menu_rounded,
+                    color: NomadColors.money,
+                    label: t.menuTitle,
+                    onTap: () => context.push(Routes.menu),
+                  ),
+                  // Los sellos de los monumentos que reconoce la cámara.
+                  _Shortcut(
+                    icon: Icons.approval_rounded,
+                    color: const Color(0xFFE9C46A),
+                    label: t.passportTitle,
+                    onTap: () => context.push(Routes.passport),
+                  ),
                   // Las audioguías viven en el Mapa: se abren al tocar una zona.
                   _Shortcut(
                     icon: Feature.audioguides.icon,
@@ -109,7 +180,7 @@ String? displayName(String? email) {
 }
 
 /// El círculo con tu inicial (maquetas: "tu avatar D en cada pantalla").
-/// Abre la hoja de cuenta: idioma y cerrar sesión (o entrar, si eres invitado).
+/// Abre Ajustes: idioma, Bóveda, cerrar sesión, borrar la cuenta...
 class _AccountButton extends StatelessWidget {
   const _AccountButton({required this.session, required this.name});
 
@@ -122,56 +193,7 @@ class _AccountButton extends StatelessWidget {
     final String? initial = name?.characters.first;
     return IconButton(
       tooltip: t.accountMenu,
-      onPressed: () => showModalBottomSheet<void>(
-        context: context,
-        // Por encima de TODO, también de la barra de pestañas y la cámara
-        // (si no, la hoja se abriría "dentro" de la pestaña, debajo de ellas).
-        useRootNavigator: true,
-        showDragHandle: true,
-        builder: (BuildContext sheet) => SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                leading: const Icon(Icons.person_rounded),
-                title: Text(session.user?.email ?? t.accountGuest),
-              ),
-              ListTile(
-                leading: const Icon(Icons.translate_rounded),
-                title: Text(t.languageTitle),
-                onTap: () {
-                  Navigator.pop(sheet);
-                  context.push(Routes.language);
-                },
-              ),
-              if (session.status == SessionStatus.signedIn)
-                ListTile(
-                  leading: const Icon(
-                    Icons.logout_rounded,
-                    color: NomadColors.safety,
-                  ),
-                  title: Text(t.signOut),
-                  onTap: () {
-                    Navigator.pop(sheet);
-                    session.signOut();
-                  },
-                )
-              else
-                ListTile(
-                  leading: const Icon(
-                    Icons.login_rounded,
-                    color: NomadColors.mint,
-                  ),
-                  title: Text(t.signInFromGuest),
-                  onTap: () {
-                    Navigator.pop(sheet);
-                    context.push(Routes.signIn);
-                  },
-                ),
-            ],
-          ),
-        ),
-      ),
+      onPressed: () => context.push(Routes.settings),
       icon: CircleAvatar(
         backgroundColor: NomadColors.group,
         foregroundColor: NomadColors.background,

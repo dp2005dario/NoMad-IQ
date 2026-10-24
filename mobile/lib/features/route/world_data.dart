@@ -35,6 +35,9 @@ class Airports {
 
   int get length => _byCode.length;
 
+  /// Todos (para buscar el más cercano a un punto).
+  Iterable<Airport> get all => _byCode.values;
+
   /// Lee el formato de assets/geo/airports.txt: "MAD|40.472|-3.563|Madrid|Spain|Europe/Madrid".
   /// Una línea rara se salta (mejor un aeropuerto menos que no abrir).
   static Airports parse(String text) {

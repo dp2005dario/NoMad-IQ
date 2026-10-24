@@ -55,6 +55,19 @@ public final class ApiModels {
         }
     }
 
+    /**
+     * Borrar la cuenta: se vuelve a pedir la contraseña. Así, quien coja un
+     * móvil desbloqueado ajeno no puede borrar la cuenta de su dueño.
+     */
+    public record DeleteAccountRequest(
+            @NotNull(message = "es obligatoria") @Size(min = 1, max = 128, message = "máximo 128 caracteres") String password) {
+
+        @Override
+        public String toString() {
+            return "DeleteAccountRequest[password=***]";
+        }
+    }
+
     /** Logout: el token de refresco es opcional (si no se envía, solo se anula el de acceso). */
     public record LogoutRequest(@JsonProperty("refresh_token") @Size(max = 128, message = "demasiado largo") String refreshToken) {
 

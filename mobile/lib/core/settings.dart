@@ -1,10 +1,60 @@
 // Ajustes del usuario que la app recuerda entre aperturas (idioma, modo viaje,
-// el aeropuerto desde el que buscas vuelos y tu nombre en los viajes en grupo).
+// el aeropuerto desde el que buscas vuelos, tu nombre en los viajes en grupo
+// y tu conversación con Flyra, que solo vive en este móvil).
 //
 // ChangeNotifier es un "altavoz": cuando el ajuste cambia, avisa a quien esté
 // escuchando (la app entera) y la pantalla se vuelve a dibujar en el idioma nuevo.
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+/// Otros datos pequeños que se guardan en el móvil como texto JSON, cada
+/// uno con su nombre fijo (así nadie puede escribir claves inventadas).
+enum LocalData {
+  /// Los últimos tipos de cambio buenos (Divisas funciona sin red).
+  fxRates,
+
+  /// Tus tarjetas (nombre, 4 últimos dígitos y comisiones) y el gasto previsto.
+  travelCards,
+
+  /// El presupuesto del viaje (qué bote, límite y fechas).
+  tripBudget,
+
+  /// Tipos de aviso que NO quieres (["fareAlert"]). Se filtran en el móvil.
+  mutedNotices,
+
+  /// "1" = has pedido "Olvidar este teléfono": no se registra para avisos.
+  pushOff,
+
+  /// Tus contactos de emergencia (nombre y teléfono) para el SOS.
+  sosContacts,
+
+  /// Tu ficha médica (grupo sanguíneo, alergias...). Solo en este móvil.
+  medicalCard,
+
+  /// El historial de avisos que te han llegado (los últimos 100).
+  noticeLog,
+
+  /// Lo que ya llevas listo de la lista de "Antes de salir".
+  packing,
+
+  /// Las ciudades descargadas para usarlas sin conexión.
+  offlineCities,
+
+  /// "1" = descargar ciudades solo cuando haya wifi.
+  offlineWifiOnly,
+
+  /// Lo que ya tienes listo para viajar con tu mascota (chip, vacuna...).
+  petChecks,
+
+  /// "1" = la app se abre en Modo fácil (letras grandes, solo lo importante).
+  easyMode,
+
+  /// El vuelo y el hotel que se enseñan en el Modo fácil.
+  easyTrip,
+
+  /// Los viajes que has copiado de otros (ya adaptados a tu presupuesto).
+  copiedTrips,
+}
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real
 /// se conecta SharedPreferences y en los tests una versión en memoria.
@@ -21,7 +71,31 @@ abstract interface class SettingsStore {
   /// Cómo te llamas para tus grupos ("Noelia"); null = aún no lo dijiste.
   String? readGroupName();
   Future<void> writeGroupName(String name);
+
+  /// Tu chat con Flyra (texto JSON); null = vacío. Nunca sale del móvil
+  /// salvo los últimos mensajes que se mandan al preguntar.
+  String? readFlyraChat();
+  Future<void> writeFlyraChat(String? json);
+
+  /// Tus sellos de monumentos (texto JSON) para el Pasaporte; null = ninguno.
+  String? readStamps();
+  Future<void> writeStamps(String json);
+
+  /// Otros datos del móvil (ver [LocalData]); null = no hay / borrar.
+  String? readData(LocalData key);
+  Future<void> writeData(LocalData key, String? json);
+
+  /// Vuelve a leer del disco lo que otra parte de la app (los avisos que
+  /// llegan con la app cerrada) haya escrito mientras tanto.
+  Future<void> reload();
+
+  /// Borra todo lo personal (al borrar la cuenta). Se quedan el idioma y los
+  /// tipos de cambio, que no dicen nada de ti.
+  Future<void> wipePersonal();
 }
+
+/// Lo que NO se borra con [SettingsStore.wipePersonal].
+const Set<LocalData> _notPersonal = <LocalData>{LocalData.fxRates};
 
 /// Versión real: guarda en el almacenamiento del móvil (SharedPreferences).
 final class PreferencesSettingsStore implements SettingsStore {
@@ -31,18 +105,23 @@ final class PreferencesSettingsStore implements SettingsStore {
   static const String _travelKey = 'travel_mode';
   static const String _originKey = 'flight_origin';
   static const String _groupNameKey = 'group_name';
+  static const String _flyraKey = 'flyra_chat';
+  static const String _stampsKey = 'stamps';
   final SharedPreferencesWithCache _prefs;
 
   static Future<PreferencesSettingsStore> open() async {
     final SharedPreferencesWithCache prefs =
         await SharedPreferencesWithCache.create(
-          cacheOptions: const SharedPreferencesWithCacheOptions(
+          cacheOptions: SharedPreferencesWithCacheOptions(
             // Solo puede leer/escribir estas claves.
             allowList: <String>{
               _localeKey,
               _travelKey,
               _originKey,
               _groupNameKey,
+              _flyraKey,
+              _stampsKey,
+              for (final LocalData d in LocalData.values) 'data_${d.name}',
             },
           ),
         );
@@ -51,6 +130,25 @@ final class PreferencesSettingsStore implements SettingsStore {
 
   @override
   String? readLocale() => _prefs.getString(_localeKey);
+
+  @override
+  Future<void> reload() => _prefs.reloadCache();
+
+  @override
+  Future<void> wipePersonal() async {
+    for (final String key in <String>[
+      _travelKey,
+      _originKey,
+      _groupNameKey,
+      _flyraKey,
+      _stampsKey,
+    ]) {
+      await _prefs.remove(key);
+    }
+    for (final LocalData d in LocalData.values) {
+      if (!_notPersonal.contains(d)) await _prefs.remove('data_${d.name}');
+    }
+  }
 
   @override
   Future<void> writeLocale(String? tag) => tag == null
@@ -76,6 +174,28 @@ final class PreferencesSettingsStore implements SettingsStore {
   @override
   Future<void> writeGroupName(String name) =>
       _prefs.setString(_groupNameKey, name);
+
+  @override
+  String? readFlyraChat() => _prefs.getString(_flyraKey);
+
+  @override
+  Future<void> writeFlyraChat(String? json) => json == null
+      ? _prefs.remove(_flyraKey)
+      : _prefs.setString(_flyraKey, json);
+
+  @override
+  String? readStamps() => _prefs.getString(_stampsKey);
+
+  @override
+  Future<void> writeStamps(String json) => _prefs.setString(_stampsKey, json);
+
+  @override
+  String? readData(LocalData key) => _prefs.getString('data_${key.name}');
+
+  @override
+  Future<void> writeData(LocalData key, String? json) => json == null
+      ? _prefs.remove('data_${key.name}')
+      : _prefs.setString('data_${key.name}', json);
 }
 
 /// Versión en memoria para los tests (no toca el disco).
@@ -113,6 +233,44 @@ final class MemorySettingsStore implements SettingsStore {
 
   @override
   Future<void> writeGroupName(String name) async => groupName = name;
+
+  String? flyraChat;
+
+  @override
+  String? readFlyraChat() => flyraChat;
+
+  @override
+  Future<void> writeFlyraChat(String? json) async => flyraChat = json;
+
+  String? stamps;
+
+  @override
+  String? readStamps() => stamps;
+
+  @override
+  Future<void> writeStamps(String json) async => stamps = json;
+
+  final Map<LocalData, String> data = <LocalData, String>{};
+
+  @override
+  String? readData(LocalData key) => data[key];
+
+  @override
+  Future<void> writeData(LocalData key, String? json) async =>
+      json == null ? data.remove(key) : data[key] = json;
+
+  @override
+  Future<void> reload() async {}
+
+  @override
+  Future<void> wipePersonal() async {
+    travelMode = false;
+    flightOrigin = null;
+    groupName = null;
+    flyraChat = null;
+    stamps = null;
+    data.removeWhere((LocalData k, _) => !_notPersonal.contains(k));
+  }
 }
 
 class SettingsController extends ChangeNotifier {

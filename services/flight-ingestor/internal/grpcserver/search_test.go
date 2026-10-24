@@ -163,3 +163,70 @@ func TestSearchFaresErrors(t *testing.T) {
 		t.Errorf("fallo del proveedor: %v", err)
 	}
 }
+
+// monthlyFake también sabe dar precios por meses.
+type monthlyFake struct {
+	fakeSearcher
+	monthCalls atomic.Int64
+}
+
+func (f *monthlyFake) Monthly(_ context.Context, route domain.Route) ([]domain.MonthFare, error) {
+	f.monthCalls.Add(1)
+	return []domain.MonthFare{{
+		Year: 2027, Month: time.March,
+		PricePerAdult: domain.Money{Currency: "EUR", AmountMinor: 51200},
+		DepartureAt:   "2027-03-11", ReturnAt: "2027-03-20",
+		DeepLink: "https://www.aviasales.com/search/" + string(route.Origin) + "1103" + string(route.Destination) + "20031?marker=1",
+	}}, nil
+}
+
+func TestMonthlyFaresCachesAndValidates(t *testing.T) {
+	f := &monthlyFake{}
+	store, _ := watchlist.New(10)
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	search := NewSearchService(SearchConfig{CacheTTL: time.Minute, CacheEntries: 4, Timeout: time.Second}, f, log)
+	search.now = func() time.Time { return searchNow }
+	srv, _ := NewServer(NewService(store), search, nil, log)
+	lis := bufconn.Listen(1 << 20)
+	go func() { _ = srv.Serve(lis) }()
+	t.Cleanup(srv.Stop)
+	conn, err := grpc.NewClient("passthrough:///bufnet",
+		grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) { return lis.DialContext(ctx) }),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = conn.Close() })
+	client := flightsv1.NewFareSearchServiceClient(conn)
+
+	req := &flightsv1.MonthlyFaresRequest{Route: &flightsv1.Route{OriginIata: "MAD", DestinationIata: "NRT"}}
+	for range 2 {
+		resp, err := client.MonthlyFares(context.Background(), req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		m := resp.GetMonths()[0]
+		if m.GetMonth() != 3 || m.GetYear() != 2027 || m.GetPricePerAdult().GetAmountMinor() != 51200 || resp.GetProvider() != "fake" {
+			t.Errorf("respuesta: %v", resp)
+		}
+	}
+	if f.monthCalls.Load() != 1 {
+		t.Errorf("llamadas = %d, se esperaba 1 (caché)", f.monthCalls.Load())
+	}
+	_, err = client.MonthlyFares(context.Background(), &flightsv1.MonthlyFaresRequest{
+		Route: &flightsv1.Route{OriginIata: "MAD", DestinationIata: "MAD"},
+	})
+	if status.Code(err) != codes.InvalidArgument {
+		t.Errorf("misma ciudad → %v", err)
+	}
+}
+
+func TestMonthlyFaresUnimplementedWithoutSupport(t *testing.T) {
+	client, _ := newSearchClient(t, &fakeSearcher{}, time.Minute)
+	_, err := client.MonthlyFares(context.Background(), &flightsv1.MonthlyFaresRequest{
+		Route: &flightsv1.Route{OriginIata: "MAD", DestinationIata: "NRT"},
+	})
+	if status.Code(err) != codes.Unimplemented {
+		t.Errorf("sin soporte → %v", err)
+	}
+}

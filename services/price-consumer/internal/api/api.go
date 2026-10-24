@@ -19,6 +19,7 @@
 //	       [&return=2026-12-22][&adults=2][&cabin=ECONOMY]
 //	                                            buscador de vuelos (público)
 //	GET    /v1/fares/alerts                    mis últimos avisos de precio
+//	DELETE /v1/fares/me                        borrar todo lo mío (al borrar la cuenta)
 //
 // route_key tiene el formato ORIGEN-DESTINO:AAAA-MM-DD[:AAAA-MM-DD]:CABINA,
 // por ejemplo MAD-NRT:2026-12-01:2026-12-15:ECONOMY.
@@ -28,6 +29,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -63,6 +65,7 @@ type Store interface {
 	DeleteSubscription(ctx context.Context, userID, routeKey string) error
 	History(ctx context.Context, routeKey string, since time.Time) (string, []domain.PricePoint, error)
 	Alerts(ctx context.Context, userID string, limit int) ([]domain.AlertView, error)
+	EraseUser(ctx context.Context, userID string) (int64, error)
 }
 
 // Watcher pide al flight-ingestor que empiece a consultar una ruta. Es "mejor
@@ -74,6 +77,12 @@ type Watcher interface {
 // Searcher es el buscador de vuelos (el flight-ingestor por gRPC).
 type Searcher interface {
 	Search(ctx context.Context, spec domain.RouteSpec, adults int) (domain.SearchResult, error)
+}
+
+// MonthlySearcher da el precio más barato de cada mes para una ruta. Es
+// opcional: si el Searcher no lo implementa, /v1/fares/months responde 503.
+type MonthlySearcher interface {
+	Monthly(ctx context.Context, origin, destination string) (domain.MonthlyResult, error)
 }
 
 // Config son los límites de la API.
@@ -104,7 +113,9 @@ func New(cfg Config, st Store, watcher Watcher, log *slog.Logger) http.Handler {
 	mux.HandleFunc("DELETE /v1/fares/watches/{route_key}", h.withUser(h.unwatch))
 	mux.HandleFunc("GET /v1/fares/history/{route_key}", public(h.history))
 	mux.HandleFunc("GET /v1/fares/search", public(h.search))
+	mux.HandleFunc("GET /v1/fares/months", public(h.months))
 	mux.HandleFunc("GET /v1/fares/alerts", h.withUser(h.alerts))
+	mux.HandleFunc("DELETE /v1/fares/me", h.withUser(h.eraseMe))
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
 		problem(w, http.StatusNotFound, "no encontrado")
 	})
@@ -323,6 +334,64 @@ func (h *handler) search(w http.ResponseWriter, r *http.Request, _ string) {
 	})
 }
 
+// iata: tres letras mayúsculas ("MAD").
+var iata = regexp.MustCompile(`^[A-Z]{3}$`)
+
+// months: "¿qué mes sale más barato ir de MAD a NRT?" (pantalla Explorar).
+// Público, como el buscador: también para quien entra como invitado.
+func (h *handler) months(w http.ResponseWriter, r *http.Request, _ string) {
+	q := r.URL.Query()
+	origin := strings.ToUpper(strings.TrimSpace(q.Get("origin")))
+	destination := strings.ToUpper(strings.TrimSpace(q.Get("destination")))
+	if !iata.MatchString(origin) || !iata.MatchString(destination) || origin == destination {
+		problem(w, http.StatusBadRequest, "origin y destination: dos aeropuertos IATA distintos")
+		return
+	}
+	monthly, ok := h.cfg.Searcher.(MonthlySearcher)
+	if !ok {
+		problem(w, http.StatusServiceUnavailable, "el buscador no está disponible")
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), searchTimeout)
+	defer cancel()
+	res, err := monthly.Monthly(ctx, origin, destination)
+	switch {
+	case errors.Is(err, domain.ErrSearchBusy):
+		w.Header().Set("Retry-After", "5")
+		problem(w, http.StatusTooManyRequests, "mucha gente buscando: inténtalo en unos segundos")
+		return
+	case domain.IsValidation(err):
+		problem(w, http.StatusBadRequest, err.Error())
+		return
+	case err != nil:
+		h.unavailable(w, "months", err)
+		return
+	}
+	out := make([]monthJSON, 0, len(res.Months))
+	for _, m := range res.Months {
+		link := safeLink(m.DeepLink)
+		if link == "" || m.Month < time.January || m.Month > time.December || m.PricePerAdult.Validate("price") != nil {
+			continue
+		}
+		out = append(out, monthJSON{
+			Month:         fmt.Sprintf("%04d-%02d", m.Year, int(m.Month)),
+			PricePerAdult: moneyJSON{AmountMinor: m.PricePerAdult.AmountMinor, Currency: m.PricePerAdult.Currency},
+			Carrier:       m.CarrierIATA,
+			DepartureAt:   m.DepartureAt,
+			ReturnAt:      m.ReturnAt,
+			Transfers:     m.Transfers,
+			BookingURL:    link,
+		})
+	}
+	writeJSON(w, http.StatusOK, monthsJSON{
+		Origin:      origin,
+		Destination: destination,
+		Provider:    res.Provider,
+		ObservedAt:  res.ObservedAt.UTC(),
+		Months:      out,
+	})
+}
+
 func (h *handler) watches(w http.ResponseWriter, r *http.Request, userID string) {
 	list, err := h.store.Watches(r.Context(), userID)
 	if err != nil {
@@ -433,6 +502,19 @@ func (h *handler) unwatch(w http.ResponseWriter, r *http.Request, userID string)
 	default:
 		h.unavailable(w, "unwatch", err)
 	}
+}
+
+// eraseMe es "Borrar mi cuenta": la app lo llama antes de borrar la cuenta en
+// el auth-gateway. Repetirlo no hace daño (la segunda vez no hay nada).
+func (h *handler) eraseMe(w http.ResponseWriter, r *http.Request, userID string) {
+	n, err := h.store.EraseUser(r.Context(), userID)
+	if err != nil {
+		h.unavailable(w, "erase", err)
+		return
+	}
+	// Solo el número: nunca quién.
+	h.log.Info("datos de una persona borrados", "rows", n)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *handler) history(w http.ResponseWriter, r *http.Request, _ string) {

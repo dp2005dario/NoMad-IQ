@@ -197,6 +197,37 @@ func (g *GRPCIngestor) Search(ctx context.Context, spec domain.RouteSpec, adults
 	return out, nil
 }
 
+// Monthly pide al flight-ingestor el precio más barato de cada mes
+// (MonthlyFares), por la misma conexión mTLS.
+func (g *GRPCIngestor) Monthly(ctx context.Context, origin, destination string) (domain.MonthlyResult, error) {
+	resp, err := flightsv1.NewFareSearchServiceClient(g.conn).MonthlyFares(ctx, &flightsv1.MonthlyFaresRequest{
+		Route: &flightsv1.Route{OriginIata: origin, DestinationIata: destination},
+	})
+	switch status.Code(err) {
+	case codes.OK:
+	case codes.ResourceExhausted, codes.DeadlineExceeded:
+		return domain.MonthlyResult{}, domain.ErrSearchBusy
+	case codes.InvalidArgument:
+		return domain.MonthlyResult{}, domain.Invalid("months", "%s", status.Convert(err).Message())
+	default:
+		return domain.MonthlyResult{}, fmt.Errorf("MonthlyFares %s-%s: %w", origin, destination, err)
+	}
+	out := domain.MonthlyResult{Provider: resp.GetProvider(), ObservedAt: resp.GetObservedAt().AsTime()}
+	for _, m := range resp.GetMonths() {
+		out.Months = append(out.Months, domain.MonthFare{
+			Year:          int(m.GetYear()),
+			Month:         timeMonth(m.GetMonth()),
+			PricePerAdult: moneyFromProto(m.GetPricePerAdult()),
+			CarrierIATA:   m.GetCarrierIata(),
+			DepartureAt:   m.GetDepartureAt(),
+			ReturnAt:      m.GetReturnAt(),
+			Transfers:     int(m.GetTransfers()),
+			DeepLink:      m.GetBookingUrl(),
+		})
+	}
+	return out, nil
+}
+
 func moneyFromProto(m *commonv1.Money) domain.Money {
 	return domain.Money{Currency: m.GetCurrencyCode(), AmountMinor: m.GetAmountMinor()}
 }

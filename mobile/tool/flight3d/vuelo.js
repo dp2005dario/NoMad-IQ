@@ -1141,6 +1141,7 @@ const boardingPass = canvasTex(512, 230, (g, W, H) => {
   for (let x = 410, i = 0; x < W - 16; x += 4 + (i % 3), i++) { g.fillStyle = '#0B1217'; g.fillRect(x, 80, (i * 7) % 3 + 1, 120); }
 });
 const WALK = 1.3;
+const BUS_DOOR_Z = 8.4; // the bus door (left side, 1.2 m in front of its centre)
 const PAX = [
   { shirt: '#2F6FD6', pants: '#2B2F3A', skin: '#E8B894', hair: '#3A2A1E', bag: 'roll' },
   { shirt: '#E2574C', pants: '#3B3F4A', skin: '#C68B62', hair: '#1E1A17', bag: 'back' },
@@ -1161,7 +1162,15 @@ function person(o) {
   head.add(new THREE.Mesh(new THREE.SphereGeometry(0.118, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.52), hair).translateY(0.012).translateZ(-0.008));
   const arms = [-1, 1].map((sd) => { const sh = new THREE.Group(); sh.position.set(sd * 0.175, 0.78, 0); const arm = new THREE.Mesh(new THREE.CapsuleGeometry(0.04, 0.3, 4, 8), shirt); arm.position.y = -0.17; sh.add(arm, new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), skin).translateY(-0.37)); g.add(sh); return sh; });
   if (o.bag === 'back') g.add(box(0.24, 0.3, 0.12, M('#3A4654'), 0, 0.66, -0.14));
-  if (o.bag === 'roll') { const sb = new THREE.Group(); sb.add(box(0.22, 0.32, 0.12, M(o.shirt === '#F4F4F2' ? '#C8102E' : '#2B3A48'), 0, 0.2, 0), cyl(0.012, 0.012, 0.32, 6, M('#9AA4AC'), 0, 0.52, 0)); sb.position.set(-0.24, 0, -0.26); sb.rotation.x = -0.35; g.add(sb); }
+  if (o.bag === 'roll') {
+    // trolley dragged behind on its wheels: the group pivots on the wheel axle and leans FORWARD so the
+    // top of the handle lands exactly in the left hand (hand at y 0.43, 0.11 behind the body; handle top 0.68 from the axle)
+    const sb = new THREE.Group(), lean = Math.acos(0.426 / 0.68);
+    sb.add(box(0.25, 0.36, 0.17, M(o.shirt === '#F4F4F2' ? '#C8102E' : '#2B3A48'), 0, 0.22, 0.05), cyl(0.012, 0.012, 0.28, 6, M('#9AA4AC'), 0, 0.54, 0.0));
+    const wheel = new THREE.CylinderGeometry(0.03, 0.03, 0.025, 10).rotateZ(Math.PI / 2);
+    for (const sd of [-1, 1]) sb.add(new THREE.Mesh(wheel, shoe).translateX(sd * 0.09).translateY(0.03));
+    sb.rotation.x = lean; sb.position.set(-0.19, 0, -0.109 - 0.68 * Math.sin(lean)); g.add(sb);
+  }
   const P = { g, legs, arms, head, o };
   if (o.hero) {
     // Noelia: long hair, a big happy face and her boarding pass
@@ -1187,7 +1196,7 @@ function person(o) {
 const pax = PAX.map((o, i) => {
   const P = person(o);
   const zOff = [0, 0.55, 0, 1.1, 0.25, -0.5][i];
-  P.path = [v3(0.3, 2.05, DOOR_Z), v3(1.95, 2.05, DOOR_Z), v3(5.25, 0.03, DOOR_Z), v3(6.6, 0, 7.2), o.hero ? v3(8.6, 0, 9.6) : v3(12.6, 0, 7.6 + zOff)];
+  P.path = [v3(0.3, 2.05, DOOR_Z), v3(1.95, 2.05, DOOR_Z), v3(5.25, 0.03, DOOR_Z), v3(6.6, 0, 7.2), ...(o.hero ? [v3(8.6, 0, 9.6)] : [v3(12.1, 0, 7.6 + zOff * 0.5), v3(12.7, 0, BUS_DOOR_Z)])];
   P.cum = [0]; for (let k = 1; k < P.path.length; k++) P.cum.push(P.cum[k - 1] + P.path[k].distanceTo(P.path[k - 1]));
   P.len = P.cum[P.cum.length - 1];
   P.start = 16.8 + 1.1 * i;

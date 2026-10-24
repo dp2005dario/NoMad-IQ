@@ -554,8 +554,69 @@ cd mobile
 flutter test test/group_test.dart
 ```
 
+## 9 quater. Chat con Flyra
+
+La caja "Pregúntale a Flyra lo que quieras" de **Inicio** abre el chat con
+Flyra. Le puedes preguntar de todo (qué ver, qué comer, qué llevar, frases
+útiles… o cualquier curiosidad). Detalles del servidor en
+`docs/guia-flyra-chat.md`.
+
+| En pantalla | Qué hace |
+|---|---|
+| Bocadillos | Los tuyos en verde menta; los de Flyra en violeta, con su golondrina. El texto se puede seleccionar y copiar |
+| Sugerencias | Cuatro preguntas de ejemplo al empezar: se envían al tocarlas |
+| "Flyra está pensando…" | Mientras llega la respuesta (unos segundos) |
+| "Te quedan N preguntas hoy" | El cupo gratis de cada cuenta (50 al día). Al gastarlo, la caja se bloquea hasta mañana |
+| Papelera (arriba) | Borra la conversación del móvil |
+| Modo invitado | Pide iniciar sesión: el cupo diario va por cuenta |
+
+### Cómo funciona (con analogías)
+
+- **Flyra no tiene memoria**: es como llamar a una persona que no te recuerda.
+  Por eso la app le "recuerda" la conversación enviando los últimos mensajes
+  (hasta 20) con cada pregunta (`turnsToSend` en
+  `lib/features/flyra/flyra_api.dart`).
+- **La conversación vive solo en tu móvil** (`SettingsStore.readFlyraChat`):
+  el servidor no la guarda ni la escribe en los registros.
+- **Si Flyra está ocupada**, tu pregunta vuelve a la caja para reenviarla, y
+  no te gasta ninguna pregunta del día.
+
+### Probarlo en tu PC
+
+```bash
+cd mobile
+flutter test test/flyra_test.dart
+```
+
+## 9 quinquies. Cámara: reconocer monumentos
+
+El botón verde del centro abre el **modo cámara** (maqueta "Modo cámara").
+Apuntas a un monumento, tocas el botón y sale su ficha: nombre, año,
+distancia, historia de Wikipedia en tu idioma, **Escuchar** (la voz del
+móvil la lee) y **Mi sello** (para el Pasaporte). Si no era ese, "¿No es
+este?" enseña los de alrededor. Todo en `docs/guia-camara.md`.
+
+```bash
+cd mobile
+flutter test test/camera_test.dart
+```
+
+## 9 sexies. Dinero: gastos compartidos
+
+El atajo **Gastos** de Inicio abre **Dinero** (maqueta "Gastos"). En **Tu
+dinero** creas un bote para un viaje o un piso, invitas con un código y
+apuntáis lo que paga cada uno. Puedes **escanear el ticket**: el móvil lo lee
+sin mandar la foto a nadie y cada amigo marca lo que se pidió. Arriba ves
+"Le debes a Álex 21,50 €" y el botón **Saldar**. Todo en
+`docs/guia-gastos.md`.
+
+```bash
+cd mobile
+flutter test test/money_test.dart
+```
+
 ## 10. Lo siguiente
 
 Cada PR sustituye una pantalla "Muy pronto" por la de verdad, siguiendo las
-maquetas, en este orden: (Vuelos, Ruta del vuelo, Vuelo 3D y Grupo ya están)
-Cámara, Dinero y Bóveda.
+maquetas, en este orden: (Vuelos, Ruta del vuelo, Vuelo 3D, Grupo, el chat
+con Flyra, la Cámara y los Gastos ya están) el resto de Dinero y la Bóveda.

@@ -17,6 +17,36 @@ service FareSearchService {
   // RESOURCE_EXHAUSTED = el proveedor pide frenar (demasiadas búsquedas a la
   // vez): la app dice "inténtalo en unos segundos" en vez de gastar más.
   rpc SearchFares(SearchFaresRequest) returns (SearchFaresResponse);
+
+  // El precio más barato de ida y vuelta de cada mes de los próximos ~12
+  // (pantalla Explorar: "¿cuándo sale más barato ir a Tokio?").
+  rpc MonthlyFares(MonthlyFaresRequest) returns (MonthlyFaresResponse);
+}
+
+message MonthlyFaresRequest {
+  Route route = 1;
+}
+
+// MonthFare es el billete más barato que se ha visto para salir ese mes.
+message MonthFare {
+  int32 year = 1;
+  // 1 = enero ... 12 = diciembre.
+  int32 month = 2;
+  nomadiq.common.v1.Money price_per_adult = 3;
+  string carrier_iata = 4;
+  // Salida y vuelta en RFC 3339 (o solo "AAAA-MM-DD").
+  string departure_at = 5;
+  string return_at = 6;
+  int32 transfers = 7;
+  // Enlace https de reserva, con nuestro código de afiliado.
+  string booking_url = 8;
+}
+
+message MonthlyFaresResponse {
+  // Ordenados por fecha (el mes más cercano primero).
+  repeated MonthFare months = 1;
+  google.protobuf.Timestamp observed_at = 2;
+  string provider = 3;
 }
 
 message SearchFaresRequest {

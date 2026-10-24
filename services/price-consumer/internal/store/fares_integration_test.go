@@ -87,6 +87,17 @@ func TestFaresQueries(t *testing.T) {
 		t.Errorf("borrar dos veces: %v", err)
 	}
 
+	// "Borrar mi cuenta": todo lo suyo fuera, y repetirlo no falla.
+	if err := db.UpsertSubscription(ctx, domain.Subscription{UserID: user, RouteKey: key}); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := db.EraseUser(ctx, user); err != nil || n < 1 {
+		t.Errorf("borrar usuario: n=%d err=%v", n, err)
+	}
+	if n, err := db.EraseUser(ctx, user); err != nil || n != 0 {
+		t.Errorf("borrar usuario otra vez: n=%d err=%v", n, err)
+	}
+
 	// Una suscripción a un vuelo que ya salió se borra sola.
 	past := observation(origin, destination, domain.Date{Year: 2020, Month: 1, Day: 1}, 1, now).RouteKey()
 	if err := db.UpsertSubscription(ctx, domain.Subscription{UserID: user, RouteKey: past}); err != nil {

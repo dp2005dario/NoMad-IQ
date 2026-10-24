@@ -1619,5 +1619,3750 @@
   "groupYourAgent": "Your agent",
   "@groupYourAgent": {
     "description": "Title of the current user's own agent."
+  },
+  "flyraSubtitle": "Your travel assistant",
+  "@flyraSubtitle": {
+    "description": "Subtitle under Flyra's name in the chat header."
+  },
+  "flyraWelcome": "Hi! I'm Flyra. Ask me anything: what to see, what to eat, how to get around, what to pack… or whatever you're curious about.",
+  "@flyraWelcome": {
+    "description": "First chat bubble from Flyra. Flyra is a name, never translate."
+  },
+  "flyraSuggestion1": "What can I see in 2 days in Lisbon?",
+  "@flyraSuggestion1": {
+    "description": "Example question chip."
+  },
+  "flyraSuggestion2": "What should I pack for a week in Japan?",
+  "@flyraSuggestion2": {
+    "description": "Example question chip."
+  },
+  "flyraSuggestion3": "How do I get from the airport to the city centre?",
+  "@flyraSuggestion3": {
+    "description": "Example question chip."
+  },
+  "flyraSuggestion4": "Teach me 5 useful phrases in Italian",
+  "@flyraSuggestion4": {
+    "description": "Example question chip."
+  },
+  "flyraInputHint": "Write your question",
+  "@flyraInputHint": {
+    "description": "Placeholder of the chat text box."
+  },
+  "flyraSend": "Send",
+  "@flyraSend": {
+    "description": "Send button (screen readers)."
+  },
+  "flyraThinking": "Flyra is thinking…",
+  "@flyraThinking": {
+    "description": "Shown while waiting for the AI answer. Flyra is a name."
+  },
+  "flyraBusy": "Flyra is very busy right now. Try again in a moment.",
+  "@flyraBusy": {
+    "description": "The AI server is overloaded or down."
+  },
+  "flyraOutOfQuestions": "You've used today's free questions. Flyra will be back for you tomorrow.",
+  "@flyraOutOfQuestions": {
+    "description": "Daily free quota used up."
+  },
+  "flyraRemaining": "{count, plural, =1{1 question left today} other{{count} questions left today}}",
+  "@flyraRemaining": {
+    "description": "How many free questions remain today.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "flyraDisclaimer": "Flyra can make mistakes: check prices in Flights and rules on official sites.",
+  "@flyraDisclaimer": {
+    "description": "Small print under the chat."
+  },
+  "flyraSignIn": "Sign in to chat with Flyra: every account gets free questions each day.",
+  "@flyraSignIn": {
+    "description": "Guests must sign in to chat."
+  },
+  "flyraClear": "Clear conversation",
+  "@flyraClear": {
+    "description": "Button that deletes the chat history from the phone."
+  },
+  "cameraSignIn": "Sign in to use camera mode: every account gets free scans each day.",
+  "@cameraSignIn": {
+    "description": "Camera mode needs an account."
+  },
+  "cameraPermission": "NomadIQ needs the camera to see the monument you're pointing at.",
+  "@cameraPermission": {
+    "description": "Why camera and location permissions are needed."
+  },
+  "cameraAllow": "Allow the camera",
+  "@cameraAllow": {
+    "description": "Button to ask camera permission again."
+  },
+  "cameraNoCamera": "This device has no camera available right now.",
+  "@cameraNoCamera": {
+    "description": "Device has no usable camera."
+  },
+  "cameraSearching": "Looking…",
+  "@cameraSearching": {
+    "description": "Status pill while aiming."
+  },
+  "cameraRecognized": "Landmark recognized",
+  "@cameraRecognized": {
+    "description": "Status pill when the vision model recognized it."
+  },
+  "cameraMaybe": "Probably this one",
+  "@cameraMaybe": {
+    "description": "Status pill when it's a best guess."
+  },
+  "cameraNoneShort": "Nothing famous here",
+  "@cameraNoneShort": {
+    "description": "Status pill when nothing found."
+  },
+  "cameraRescan": "Scan again",
+  "@cameraRescan": {
+    "description": "Button to scan again."
+  },
+  "cameraBadgeRecognized": "RECOGNIZED",
+  "@cameraBadgeRecognized": {
+    "description": "Small uppercase label over the name."
+  },
+  "cameraBadgeGuess": "IS IT THIS ONE?",
+  "@cameraBadgeGuess": {
+    "description": "Small uppercase label when it's a guess."
+  },
+  "cameraHint": "Point at a monument and tap the button",
+  "@cameraHint": {
+    "description": "Hint while aiming."
+  },
+  "cameraShoot": "Recognize",
+  "@cameraShoot": {
+    "description": "Shutter button (screen readers)."
+  },
+  "cameraOutOfScans": "You've used today's free scans. Come back tomorrow.",
+  "@cameraOutOfScans": {
+    "description": "Daily scan quota used up."
+  },
+  "cameraBusy": "Camera mode is very busy. Try again in a moment.",
+  "@cameraBusy": {
+    "description": "Server overloaded."
+  },
+  "cameraNoLocation": "I need your location to know where you are. Turn on GPS and try again.",
+  "@cameraNoLocation": {
+    "description": "GPS not available."
+  },
+  "cameraNothing": "I don't recognize any famous place here. Try again a bit closer.",
+  "@cameraNothing": {
+    "description": "No famous place recognized."
+  },
+  "cameraBuilt": "Built",
+  "@cameraBuilt": {
+    "description": "Fact chip label: year built."
+  },
+  "cameraDistance": "Distance",
+  "@cameraDistance": {
+    "description": "Fact chip label: distance."
+  },
+  "cameraMeters": "{meters} m",
+  "@cameraMeters": {
+    "description": "Distance in metres.",
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "cameraListen": "Listen",
+  "@cameraListen": {
+    "description": "Read the card aloud."
+  },
+  "cameraStopListening": "Stop",
+  "@cameraStopListening": {
+    "description": "Stop reading aloud."
+  },
+  "cameraSaveStamp": "Get my stamp",
+  "@cameraSaveStamp": {
+    "description": "Save a passport stamp for this monument."
+  },
+  "cameraStampSaved": "Stamp saved",
+  "@cameraStampSaved": {
+    "description": "Stamp already saved."
+  },
+  "cameraWikipedia": "Read more on Wikipedia",
+  "@cameraWikipedia": {
+    "description": "Link to the Wikipedia article."
+  },
+  "cameraNotThis": "Not this one?",
+  "@cameraNotThis": {
+    "description": "Header over other nearby places."
+  },
+  "cameraMaybeOneOf": "Is it one of these?",
+  "@cameraMaybeOneOf": {
+    "description": "Header over nearby places when nothing recognized."
+  },
+  "cameraCredits": "Data: Wikipedia, Wikidata and Wikimedia Commons",
+  "@cameraCredits": {
+    "description": "Data credits under the card."
+  },
+  "moneyTitle": "Money",
+  "@moneyTitle": {
+    "description": "Title of the Money screen."
+  },
+  "moneyTabExpenses": "Your money",
+  "@moneyTabExpenses": {
+    "description": "Money tab: shared expenses."
+  },
+  "moneyTabAbroad": "Money abroad",
+  "@moneyTabAbroad": {
+    "description": "Money tab: ATMs, cards, budget, insurance."
+  },
+  "moneyTabKitty": "Shared kitty",
+  "@moneyTabKitty": {
+    "description": "Money tab: common kitty."
+  },
+  "moneyTabRooms": "Rooms",
+  "@moneyTabRooms": {
+    "description": "Money tab: splitting rooms."
+  },
+  "moneyTabFx": "Currencies",
+  "@moneyTabFx": {
+    "description": "Money tab: currency exchange."
+  },
+  "moneySoon": "Coming very soon.",
+  "@moneySoon": {
+    "description": "Placeholder for a money tab not built yet."
+  },
+  "moneyExpensesIntro": "Share a pot with your friends: snap the receipt, Flyra reads it and tells everyone what they owe.",
+  "@moneyExpensesIntro": {
+    "description": "Intro text of shared expenses."
+  },
+  "moneySignIn": "Sign in to share expenses with your friends.",
+  "@moneySignIn": {
+    "description": "Shared expenses need an account."
+  },
+  "moneyNewPot": "New pot",
+  "@moneyNewPot": {
+    "description": "Button: create a new pot."
+  },
+  "moneyJoinPot": "Join with a code",
+  "@moneyJoinPot": {
+    "description": "Button: join a pot with a code."
+  },
+  "moneyNoPots": "You have no pots yet. Create one for your next trip or your shared flat.",
+  "@moneyNoPots": {
+    "description": "Empty list of pots."
+  },
+  "moneyPotMeta": "{count, plural, =1{1 person} other{{count} people}} · {total} spent",
+  "@moneyPotMeta": {
+    "description": "Pot card: people and total spent.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "moneyOwedToYou": "You're owed {amount}",
+  "@moneyOwedToYou": {
+    "description": "Positive balance.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "moneyYouOwe": "You owe {amount}",
+  "@moneyYouOwe": {
+    "description": "Negative balance.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "moneySettled": "All square",
+  "@moneySettled": {
+    "description": "Balance is zero / payment recorded."
+  },
+  "moneyPotName": "Pot name",
+  "@moneyPotName": {
+    "description": "Field: pot name."
+  },
+  "moneyPotNameHint": "Japan with friends",
+  "@moneyPotNameHint": {
+    "description": "Hint for pot name."
+  },
+  "moneyPotCurrency": "Currency for the accounts",
+  "@moneyPotCurrency": {
+    "description": "Field: pot currency."
+  },
+  "moneyYourNameHelp": "It's what the others in the pot will see.",
+  "@moneyYourNameHelp": {
+    "description": "Helper under your name."
+  },
+  "moneyCreate": "Create pot",
+  "@moneyCreate": {
+    "description": "Button: create pot."
+  },
+  "moneyPotFull": "This pot is full (20 people).",
+  "@moneyPotFull": {
+    "description": "Pot is full."
+  },
+  "moneyPotGone": "This pot doesn't exist or you're not in it.",
+  "@moneyPotGone": {
+    "description": "Pot not found."
+  },
+  "moneyCodeCopied": "Code copied: send it to your friends.",
+  "@moneyCodeCopied": {
+    "description": "Snack: invite code copied."
+  },
+  "moneyCopyCode": "Copy the invite code",
+  "@moneyCopyCode": {
+    "description": "Tooltip: copy invite code."
+  },
+  "moneyInviteCode": "Code to join",
+  "@moneyInviteCode": {
+    "description": "Label of invite code card."
+  },
+  "moneyAddExpense": "Add expense",
+  "@moneyAddExpense": {
+    "description": "Button/title: add expense."
+  },
+  "moneyScanReceipt": "Scan the receipt",
+  "@moneyScanReceipt": {
+    "description": "Option: scan receipt with camera."
+  },
+  "moneyScanPrivacy": "Read on your phone: the photo never leaves it.",
+  "@moneyScanPrivacy": {
+    "description": "Privacy note for receipt scan."
+  },
+  "moneyReceiptFromGallery": "Use a photo of the receipt",
+  "@moneyReceiptFromGallery": {
+    "description": "Option: receipt photo from gallery."
+  },
+  "moneyAddByHand": "Type it in",
+  "@moneyAddByHand": {
+    "description": "Option: type the expense."
+  },
+  "moneyScanNothing": "I couldn't read any lines on this receipt: type it in.",
+  "@moneyScanNothing": {
+    "description": "Receipt read but nothing found."
+  },
+  "moneyExpenseSaved": "Expense saved",
+  "@moneyExpenseSaved": {
+    "description": "Snack: expense saved."
+  },
+  "moneySettleTitle": "Pay {name}",
+  "@moneySettleTitle": {
+    "description": "Dialog title: pay someone.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "moneySettleHelp": "Pay them as usual (cash, bank transfer…) and record it here so the accounts add up for everyone.",
+  "@moneySettleHelp": {
+    "description": "Explains that settling only records a payment."
+  },
+  "moneyAmount": "Amount",
+  "@moneyAmount": {
+    "description": "Field: amount."
+  },
+  "moneySettleConfirm": "I've paid",
+  "@moneySettleConfirm": {
+    "description": "Button: record payment."
+  },
+  "moneyBalances": "Who owes what",
+  "@moneyBalances": {
+    "description": "Header: who owes what."
+  },
+  "moneyExpenses": "Expenses · {total}",
+  "@moneyExpenses": {
+    "description": "Header of expense list with total.",
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "moneyNoExpenses": "No expenses yet. Add the first one with the button below.",
+  "@moneyNoExpenses": {
+    "description": "Empty expense list."
+  },
+  "moneyPaidBy": "Paid by {name} · {date}",
+  "@moneyPaidBy": {
+    "description": "Expense subtitle: payer and date.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "moneyYouOweTo": "You owe {name}",
+  "@moneyYouOweTo": {
+    "description": "Debt line before the amount.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "moneySettle": "Settle",
+  "@moneySettle": {
+    "description": "Button: settle up."
+  },
+  "moneyScannedLines": "{count, plural, =0{No lines read: add them below} =1{1 line read from the receipt} other{{count} lines read from the receipt}}",
+  "@moneyScannedLines": {
+    "description": "How many receipt lines were read.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "moneyWhat": "What was it?",
+  "@moneyWhat": {
+    "description": "Field: what was it."
+  },
+  "moneyWhatHint": "Dinner in La Latina",
+  "@moneyWhatHint": {
+    "description": "Hint for expense title."
+  },
+  "moneyWhoPaid": "Who paid?",
+  "@moneyWhoPaid": {
+    "description": "Field: who paid."
+  },
+  "moneyForWhom": "Between whom?",
+  "@moneyForWhom": {
+    "description": "Header: who shares this expense."
+  },
+  "moneySplitEqual": "Equal parts",
+  "@moneySplitEqual": {
+    "description": "Split mode: equal parts."
+  },
+  "moneySplitItems": "By what each had",
+  "@moneySplitItems": {
+    "description": "Split mode: by what each had."
+  },
+  "moneyItemsHelp": "Tap the circles to say who had each line. Lines with nobody are shared by everyone.",
+  "@moneyItemsHelp": {
+    "description": "How to assign receipt lines."
+  },
+  "moneyAddLine": "Add line",
+  "@moneyAddLine": {
+    "description": "Button: add receipt line."
+  },
+  "moneyLinesMismatch": "The lines add up to {lines} and the total is {total}: the difference is shared in proportion.",
+  "@moneyLinesMismatch": {
+    "description": "Receipt lines don't add up to the total.",
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "moneyAmountInvalid": "Write an amount, like 12.50",
+  "@moneyAmountInvalid": {
+    "description": "Invalid amount."
+  },
+  "moneyNobody": "Pick at least one person.",
+  "@moneyNobody": {
+    "description": "No participants selected."
+  },
+  "moneyNoLines": "Add the receipt lines, or split in equal parts.",
+  "@moneyNoLines": {
+    "description": "Split by items without lines."
+  },
+  "moneyCheckFields": "Something doesn't add up: check the fields.",
+  "@moneyCheckFields": {
+    "description": "Server rejected the expense."
+  },
+  "moneySave": "Save expense",
+  "@moneySave": {
+    "description": "Button: save expense."
+  },
+  "moneyLineName": "Item",
+  "@moneyLineName": {
+    "description": "Hint: line name."
+  },
+  "moneyRemoveLine": "Remove line",
+  "@moneyRemoveLine": {
+    "description": "Tooltip: remove line."
+  },
+  "moneyEveryone": "Everyone",
+  "@moneyEveryone": {
+    "description": "Chip: shared by everyone."
+  },
+  "moneyClaimHelp": "Tap a line to say \"I had this\" (or tap again to undo).",
+  "@moneyClaimHelp": {
+    "description": "How to claim receipt lines."
+  },
+  "moneyDelete": "Delete",
+  "@moneyDelete": {
+    "description": "Button: delete expense."
+  },
+  "moneyDeleteTitle": "Delete this expense?",
+  "@moneyDeleteTitle": {
+    "description": "Dialog: delete expense?"
+  },
+  "moneyDeleteHelp": "The accounts will be recalculated for everyone in the pot.",
+  "@moneyDeleteHelp": {
+    "description": "Dialog body: delete expense."
+  },
+  "moneyOriginal": "On the receipt: {amount}",
+  "@moneyOriginal": {
+    "description": "Original amount in another currency.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "moneyTotal": "TOTAL",
+  "@moneyTotal": {
+    "description": "Receipt total label."
+  },
+  "fxAmount": "Amount",
+  "@fxAmount": {
+    "description": "Field: amount to convert."
+  },
+  "fxFrom": "From",
+  "@fxFrom": {
+    "description": "Field: source currency."
+  },
+  "fxTo": "To",
+  "@fxTo": {
+    "description": "Field: target currency."
+  },
+  "fxSwap": "Swap currencies",
+  "@fxSwap": {
+    "description": "Tooltip: swap currencies."
+  },
+  "fxReady": "READY TO THROW",
+  "@fxReady": {
+    "description": "Coin stage label before the toss."
+  },
+  "fxInTheAir": "IN THE AIR!",
+  "@fxInTheAir": {
+    "description": "Coin stage label while flying."
+  },
+  "fxLanded": "CONVERTED TO {currency}",
+  "@fxLanded": {
+    "description": "Coin stage label after landing.",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "fxAre": "{amount} is",
+  "@fxAre": {
+    "description": "Result line before the converted amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "fxHint": "Throw the coin to convert",
+  "@fxHint": {
+    "description": "Hint before throwing the coin."
+  },
+  "fxThrow": "Throw the coin",
+  "@fxThrow": {
+    "description": "Button: throw the coin."
+  },
+  "fxThrowAgain": "Throw again",
+  "@fxThrowAgain": {
+    "description": "Button: throw again."
+  },
+  "fxRateLine": "{one} = {rate} {symbol} · official European Central Bank rate of {day}",
+  "@fxRateLine": {
+    "description": "Official rate and its date.",
+    "placeholders": {
+      "one": {
+        "type": "String"
+      },
+      "rate": {
+        "type": "String"
+      },
+      "symbol": {
+        "type": "String"
+      },
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "fxOffline": "No connection: using the rates saved on {day}.",
+  "@fxOffline": {
+    "description": "Rates come from the saved copy.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "roomsSuite": "Double with bathroom",
+  "@roomsSuite": {
+    "description": "Room type: best double room."
+  },
+  "roomsDouble": "Double",
+  "@roomsDouble": {
+    "description": "Room type: double."
+  },
+  "roomsSingle": "Single",
+  "@roomsSingle": {
+    "description": "Room type: single."
+  },
+  "roomsSofa": "Sofa bed",
+  "@roomsSofa": {
+    "description": "Room type: sofa bed."
+  },
+  "roomsDefaultTitle": "Accommodation",
+  "@roomsDefaultTitle": {
+    "description": "Default expense title for rooms."
+  },
+  "roomsSaved": "Saved in the pot {pot}",
+  "@roomsSaved": {
+    "description": "Snack: rooms saved to a pot.",
+    "placeholders": {
+      "pot": {
+        "type": "String"
+      }
+    }
+  },
+  "roomsNeedPot": "First create a pot in “Your money” with the people you're sleeping with: then they'll appear here.",
+  "@roomsNeedPot": {
+    "description": "Rooms need a pot first."
+  },
+  "roomsIntro": "Beds are drawn at random and whoever sleeps better pays a little more.",
+  "@roomsIntro": {
+    "description": "Intro for fair rooms."
+  },
+  "roomsPot": "Pot",
+  "@roomsPot": {
+    "description": "Field: which pot."
+  },
+  "roomsPlace": "Accommodation",
+  "@roomsPlace": {
+    "description": "Field: accommodation name."
+  },
+  "roomsPlaceHint": "Flat in Porto · 4 nights",
+  "@roomsPlaceHint": {
+    "description": "Hint for accommodation name."
+  },
+  "roomsTotal": "Total price",
+  "@roomsTotal": {
+    "description": "Field: total price."
+  },
+  "roomsFair": "By room",
+  "@roomsFair": {
+    "description": "Mode: by room."
+  },
+  "roomsEqual": "Everyone equal",
+  "@roomsEqual": {
+    "description": "Mode: everyone equal."
+  },
+  "roomsEach": "per person",
+  "@roomsEach": {
+    "description": "Per person label."
+  },
+  "roomsRemove": "Remove room",
+  "@roomsRemove": {
+    "description": "Tooltip: remove room."
+  },
+  "roomsEmpty": "Nobody here",
+  "@roomsEmpty": {
+    "description": "Room with nobody."
+  },
+  "roomsNotEnoughBeds": "{count, plural, =1{1 person has no bed: add a room.} other{{count} people have no bed: add rooms.}}",
+  "@roomsNotEnoughBeds": {
+    "description": "More people than beds.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "roomsHowFair": "Each room has a weight: the double with bathroom counts 1.4, a double 1, a single 0.9 and the sofa bed 0.6. The total is split by those weights without losing a cent.",
+  "@roomsHowFair": {
+    "description": "How the fair split works."
+  },
+  "roomsHowEqual": "The total is split equally and the beds are drawn at random.",
+  "@roomsHowEqual": {
+    "description": "How the equal split works."
+  },
+  "roomsShuffle": "Draw again",
+  "@roomsShuffle": {
+    "description": "Button: draw again."
+  },
+  "roomsSave": "Save in the pot",
+  "@roomsSave": {
+    "description": "Button: save in expenses."
+  },
+  "kittyName": "The shared kitty",
+  "@kittyName": {
+    "description": "Name of the shared kitty (seat 0) in lists."
+  },
+  "moneySplitWeights": "By percentage",
+  "@moneySplitWeights": {
+    "description": "Split mode: by percentages/weights."
+  },
+  "moneyWeightsInvalid": "Each person needs a share between 1 and 100",
+  "@moneyWeightsInvalid": {
+    "description": "Error: weights must be 1-100 for each person."
+  },
+  "kittyPut": "Put money in",
+  "@kittyPut": {
+    "description": "Button/dialog: put money into the kitty."
+  },
+  "kittyPutDone": "You put {amount} in the kitty",
+  "@kittyPutDone": {
+    "description": "Snack: you put money in.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kittyAskTitle": "How much should each person put?",
+  "@kittyAskTitle": {
+    "description": "Dialog: how much each person should put."
+  },
+  "kittyAskDone": "Asked everyone for {amount}",
+  "@kittyAskDone": {
+    "description": "Snack: asked everyone for an amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kittyRatioSaved": "Split saved",
+  "@kittyRatioSaved": {
+    "description": "Snack: couple split ratio saved."
+  },
+  "kittyGroup": "Group",
+  "@kittyGroup": {
+    "description": "Segment: group kitty."
+  },
+  "kittyCouple": "Couple",
+  "@kittyCouple": {
+    "description": "Segment: couple mode."
+  },
+  "kittyHeader": "{title} · {count} people",
+  "@kittyHeader": {
+    "description": "Kitty header: pot title and people count.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kittyMeta": "Put in {put} · spent {spent}",
+  "@kittyMeta": {
+    "description": "Kitty: total put and spent.",
+    "placeholders": {
+      "put": {
+        "type": "String"
+      },
+      "spent": {
+        "type": "String"
+      }
+    }
+  },
+  "kittySpends": "Paid with the kitty",
+  "@kittySpends": {
+    "description": "Section: what was paid with the kitty."
+  },
+  "kittyNoSpends": "Nothing paid with the kitty yet",
+  "@kittyNoSpends": {
+    "description": "Empty: nothing paid with the kitty yet."
+  },
+  "kittySpend": "Pay with kitty",
+  "@kittySpend": {
+    "description": "Button: pay something with the kitty."
+  },
+  "kittyAsk": "Ask everyone",
+  "@kittyAsk": {
+    "description": "Button: ask everyone to put money."
+  },
+  "kittyAskAgain": "Each one: {amount}",
+  "@kittyAskAgain": {
+    "description": "Button: current ask amount, tap to change.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kittyRefund": "Take back {amount}",
+  "@kittyRefund": {
+    "description": "Button: the kitty gives you back what is left for you.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kittyDone": "Done",
+  "@kittyDone": {
+    "description": "Person chip: already put their share."
+  },
+  "kittyPending": "Pending",
+  "@kittyPending": {
+    "description": "Person chip: still has to put money."
+  },
+  "kittyCoupleOnlyTwo": "Couple mode is for pots with exactly 2 people",
+  "@kittyCoupleOnlyTwo": {
+    "description": "Couple mode needs exactly 2 people in the pot."
+  },
+  "kittyHowSplit": "How do we split?",
+  "@kittyHowSplit": {
+    "description": "Couple: how do we split."
+  },
+  "kittyHalf": "Half each",
+  "@kittyHalf": {
+    "description": "Couple: split half and half."
+  },
+  "kittyByIncome": "By income",
+  "@kittyByIncome": {
+    "description": "Couple: split by income ratio."
+  },
+  "kittyTogether": "Spent together",
+  "@kittyTogether": {
+    "description": "Couple stat: spent together."
+  },
+  "kittyAccounts": "Accounts",
+  "@kittyAccounts": {
+    "description": "Couple stat: accounts."
+  },
+  "kittyOwes": "{name}: owes {amount}",
+  "@kittyOwes": {
+    "description": "Couple: who owes how much.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "kittyCoupleHelp": "Each expense is split with your percentage. No calculator, no awkward talks.",
+  "@kittyCoupleHelp": {
+    "description": "Couple mode explanation."
+  },
+  "kittyRatioLine": "You {mine}% · {other}%",
+  "@kittyRatioLine": {
+    "description": "Couple ratio line: mine vs other in percent.",
+    "placeholders": {
+      "mine": {
+        "type": "int"
+      },
+      "other": {
+        "type": "int"
+      }
+    }
+  },
+  "abroadAtms": "ATMs",
+  "@abroadAtms": {
+    "description": "Abroad part: ATMs."
+  },
+  "abroadCards": "Cards",
+  "@abroadCards": {
+    "description": "Abroad part: cards."
+  },
+  "abroadBudget": "Budget",
+  "@abroadBudget": {
+    "description": "Abroad part: budget."
+  },
+  "abroadInsurance": "Insurance",
+  "@abroadInsurance": {
+    "description": "Abroad part: insurance."
+  },
+  "abroadInsuranceIntro": "Save your travel insurance policy in the Vault and ask it things like \"Does it cover lost luggage?\". It is read on your phone and never leaves it.",
+  "@abroadInsuranceIntro": {
+    "description": "Insurance part explanation (until the vault is ready)."
+  },
+  "abroadAtmsIntro": "Find ATMs around you, the ones open 24 h and the ones that don't charge a fee. We only ask for your location when you tap the button.",
+  "@abroadAtmsIntro": {
+    "description": "ATMs intro."
+  },
+  "abroadAtmsSearch": "Find ATMs nearby",
+  "@abroadAtmsSearch": {
+    "description": "Button: search nearby ATMs."
+  },
+  "abroadAtmsNone": "No ATMs are mapped around here yet.",
+  "@abroadAtmsNone": {
+    "description": "No ATMs found nearby."
+  },
+  "abroadAtmUnnamed": "ATM",
+  "@abroadAtmUnnamed": {
+    "description": "ATM without a name."
+  },
+  "abroadMeters": "{m} m",
+  "@abroadMeters": {
+    "description": "Distance in meters.",
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "abroadKm": "{km} km",
+  "@abroadKm": {
+    "description": "Distance in km.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadOpen24h": "Open 24 h",
+  "@abroadOpen24h": {
+    "description": "ATM open 24 hours."
+  },
+  "abroadInBank": "inside a bank",
+  "@abroadInBank": {
+    "description": "ATM inside a bank branch."
+  },
+  "abroadFeeNo": "No fee",
+  "@abroadFeeNo": {
+    "description": "ATM charges no fee."
+  },
+  "abroadFeeYes": "Fee",
+  "@abroadFeeYes": {
+    "description": "ATM charges a fee."
+  },
+  "abroadFeeUnknown": "Fee?",
+  "@abroadFeeUnknown": {
+    "description": "ATM fee unknown."
+  },
+  "abroadRadarLabel": "{count} ATMs within {range}",
+  "@abroadRadarLabel": {
+    "description": "Accessibility label of the ATM radar.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadDccTitle": "If the ATM offers to charge you in your currency, say no",
+  "@abroadDccTitle": {
+    "description": "ATM tip title: dynamic currency conversion."
+  },
+  "abroadDccText": "That conversion is usually 5-10% more expensive. Always choose the local currency and let your bank convert it.",
+  "@abroadDccText": {
+    "description": "ATM tip text."
+  },
+  "abroadCardsIntro": "Add your cards with what they charge abroad (it's in your bank's terms) and we'll tell you which one is cheapest for this trip.",
+  "@abroadCardsIntro": {
+    "description": "Cards intro."
+  },
+  "abroadTripSpend": "Expected spending on the trip",
+  "@abroadTripSpend": {
+    "description": "Field: expected spend in the trip."
+  },
+  "abroadCashShare": "In cash (from ATMs): {pct}%",
+  "@abroadCashShare": {
+    "description": "Label: share in cash.",
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "abroadAddCard": "Add a card",
+  "@abroadAddCard": {
+    "description": "Button/dialog: add a card."
+  },
+  "abroadEditCard": "Edit card",
+  "@abroadEditCard": {
+    "description": "Dialog: edit a card."
+  },
+  "abroadBest": "BEST HERE",
+  "@abroadBest": {
+    "description": "Badge: cheapest card here."
+  },
+  "abroadCardFees": "Pay {pay} · withdraw {atm} + {fixed}",
+  "@abroadCardFees": {
+    "description": "Card fees line.",
+    "placeholders": {
+      "pay": {
+        "type": "String"
+      },
+      "atm": {
+        "type": "String"
+      },
+      "fixed": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadInYourTrip": "in your trip",
+  "@abroadInYourTrip": {
+    "description": "Under the card cost: in your trip."
+  },
+  "abroadCardTip": "Pay and withdraw with \"{card}\": you save about {amount} compared with the worst one.",
+  "@abroadCardTip": {
+    "description": "Tip: use the cheapest card.",
+    "placeholders": {
+      "card": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadCardsPrivacy": "Saved only on this phone. We never store the full card number.",
+  "@abroadCardsPrivacy": {
+    "description": "Cards privacy note."
+  },
+  "abroadCardName": "Name (e.g. My bank's debit)",
+  "@abroadCardName": {
+    "description": "Field: card name."
+  },
+  "abroadCardLast4": "Last 4 digits (optional)",
+  "@abroadCardLast4": {
+    "description": "Field: last 4 digits."
+  },
+  "abroadCardLast4Help": "Only to tell your cards apart",
+  "@abroadCardLast4Help": {
+    "description": "Help: why only 4 digits."
+  },
+  "abroadCardPayPct": "Fee when paying in another currency",
+  "@abroadCardPayPct": {
+    "description": "Field: fee when paying abroad."
+  },
+  "abroadCardAtmPct": "Fee when withdrawing cash",
+  "@abroadCardAtmPct": {
+    "description": "Field: % fee when withdrawing."
+  },
+  "abroadCardAtmFixed": "Fixed fee per withdrawal",
+  "@abroadCardAtmFixed": {
+    "description": "Field: fixed fee per withdrawal."
+  },
+  "abroadCardInvalid": "Write a name, 4 digits (or none) and fees between 0 and 20%.",
+  "@abroadCardInvalid": {
+    "description": "Error: card data invalid."
+  },
+  "abroadBudgetIntro": "Pick a pot, your limit and the trip days. Your share of each expense counts, and we show where you're heading.",
+  "@abroadBudgetIntro": {
+    "description": "Budget intro."
+  },
+  "abroadBudgetNoPots": "Create a pot in Expenses first (it can be just for you).",
+  "@abroadBudgetNoPots": {
+    "description": "Budget needs a pot."
+  },
+  "abroadBudgetPot": "Pot",
+  "@abroadBudgetPot": {
+    "description": "Field: which pot."
+  },
+  "abroadBudgetLimit": "My limit for the trip",
+  "@abroadBudgetLimit": {
+    "description": "Field: budget limit."
+  },
+  "abroadBudgetInvalid": "Choose a pot and write a limit greater than 0.",
+  "@abroadBudgetInvalid": {
+    "description": "Error: budget invalid."
+  },
+  "abroadBudgetHeader": "{title} · day {day} of {days} · budget {limit}",
+  "@abroadBudgetHeader": {
+    "description": "Budget header.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "day": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadOver": "At this pace you go over by {amount}",
+  "@abroadOver": {
+    "description": "Verdict: you go over.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadUnder": "You'd finish with {amount} to spare",
+  "@abroadUnder": {
+    "description": "Verdict: money left over.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadBudgetChart": "Spent so far {spent}; at the end {end}",
+  "@abroadBudgetChart": {
+    "description": "Accessibility label of budget chart.",
+    "placeholders": {
+      "spent": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadDayN": "day {n}",
+  "@abroadDayN": {
+    "description": "Chart label: day n.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "abroadToday": "today",
+  "@abroadToday": {
+    "description": "Chart label: today."
+  },
+  "abroadIfFromToday": "If from today…",
+  "@abroadIfFromToday": {
+    "description": "Section: if from today..."
+  },
+  "abroadPaceSame": "Keep the same",
+  "@abroadPaceSame": {
+    "description": "Pace: same as now."
+  },
+  "abroadPaceLess": "I spend 25% less",
+  "@abroadPaceLess": {
+    "description": "Pace: 25% less."
+  },
+  "abroadPaceHalf": "I spend half",
+  "@abroadPaceHalf": {
+    "description": "Pace: half."
+  },
+  "abroadPerDay": "≈ {amount} a day",
+  "@abroadPerDay": {
+    "description": "Per day amount.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "abroadBudgetEdit": "Change budget",
+  "@abroadBudgetEdit": {
+    "description": "Button: change budget."
+  },
+  "vaultTitle": "Vault",
+  "@vaultTitle": {
+    "description": "Vault screen title."
+  },
+  "vaultTapToOpen": "Tap to open with your fingerprint",
+  "@vaultTapToOpen": {
+    "description": "Locked vault: tap to open."
+  },
+  "vaultLockedText": "Your documents are stored encrypted on this phone. Without your fingerprint, nobody can see them, not even us.",
+  "@vaultLockedText": {
+    "description": "Locked vault explanation."
+  },
+  "vaultUnlockReason": "Open your NomadIQ vault",
+  "@vaultUnlockReason": {
+    "description": "System biometric prompt reason."
+  },
+  "vaultUnlockFailed": "The vault is still closed.",
+  "@vaultUnlockFailed": {
+    "description": "Unlock cancelled or failed."
+  },
+  "vaultNoLock": "Set a screen lock (fingerprint or PIN) on your phone to use the vault.",
+  "@vaultNoLock": {
+    "description": "Device has no screen lock."
+  },
+  "vaultOpenChip": "Open · closes by itself in {minutes} min",
+  "@vaultOpenChip": {
+    "description": "Open vault chip.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "vaultNumberHidden": "number hidden",
+  "@vaultNumberHidden": {
+    "description": "Passport number is hidden."
+  },
+  "vaultExpires": "Expires {date}",
+  "@vaultExpires": {
+    "description": "Expiry date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "vaultExpiresSoon": "Expires soon: {date}",
+  "@vaultExpiresSoon": {
+    "description": "Expires soon.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "vaultExpired": "Expired on {date}",
+  "@vaultExpired": {
+    "description": "Already expired.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "vaultScan": "Scan document",
+  "@vaultScan": {
+    "description": "Button: scan a document with the camera."
+  },
+  "vaultFromGallery": "From gallery",
+  "@vaultFromGallery": {
+    "description": "Button: add from gallery."
+  },
+  "vaultFromPdf": "A PDF",
+  "@vaultFromPdf": {
+    "description": "Button: add a PDF."
+  },
+  "vaultClose": "Close the vault",
+  "@vaultClose": {
+    "description": "Button: close the vault."
+  },
+  "vaultEmpty": "Nothing here yet. Scan your passport, ID or the insurance policy.",
+  "@vaultEmpty": {
+    "description": "Vault is empty."
+  },
+  "vaultReading": "Reading the document on your phone…",
+  "@vaultReading": {
+    "description": "Reading the document (OCR)."
+  },
+  "vaultSaved": "Saved encrypted in the vault",
+  "@vaultSaved": {
+    "description": "Document saved."
+  },
+  "vaultFull": "The vault is full (100 documents).",
+  "@vaultFull": {
+    "description": "Vault full."
+  },
+  "vaultTooBig": "That file is too big (maximum 15 MB).",
+  "@vaultTooBig": {
+    "description": "Document too big or empty."
+  },
+  "vaultKindPassport": "Passport",
+  "@vaultKindPassport": {
+    "description": "Document kind."
+  },
+  "vaultKindIdCard": "ID card",
+  "@vaultKindIdCard": {
+    "description": "Document kind."
+  },
+  "vaultKindBoarding": "Boarding pass",
+  "@vaultKindBoarding": {
+    "description": "Document kind."
+  },
+  "vaultKindInsurance": "Travel insurance",
+  "@vaultKindInsurance": {
+    "description": "Document kind."
+  },
+  "vaultKindBooking": "Booking",
+  "@vaultKindBooking": {
+    "description": "Document kind."
+  },
+  "vaultKindVisa": "Visa / ESTA",
+  "@vaultKindVisa": {
+    "description": "Document kind."
+  },
+  "vaultKindMedical": "Medical",
+  "@vaultKindMedical": {
+    "description": "Document kind."
+  },
+  "vaultKindOther": "Other",
+  "@vaultKindOther": {
+    "description": "Document kind."
+  },
+  "vaultDocKind": "Type",
+  "@vaultDocKind": {
+    "description": "Form: document kind."
+  },
+  "vaultDocTitle": "Name",
+  "@vaultDocTitle": {
+    "description": "Form: document name."
+  },
+  "vaultDocDetail": "Detail (optional)",
+  "@vaultDocDetail": {
+    "description": "Form: optional detail."
+  },
+  "vaultDocExpires": "Expiry date (optional)",
+  "@vaultDocExpires": {
+    "description": "Form: expiry date button."
+  },
+  "vaultNoExpiry": "No expiry date",
+  "@vaultNoExpiry": {
+    "description": "Tooltip: remove expiry."
+  },
+  "vaultEdit": "Edit",
+  "@vaultEdit": {
+    "description": "Tooltip: edit document."
+  },
+  "vaultDeleteConfirm": "Delete \"{title}\" from the vault?",
+  "@vaultDeleteConfirm": {
+    "description": "Confirm delete document.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "vaultCantShow": "This document can't be shown.",
+  "@vaultCantShow": {
+    "description": "Document can't be shown."
+  },
+  "vaultPrivacyNote": "AES-256 encrypted on this phone, with its key in the phone's secure chip. No screenshots while it's open, and it never goes to our server or any cloud.",
+  "@vaultPrivacyNote": {
+    "description": "Vault privacy note."
+  },
+  "insuranceOpenVault": "Open the vault",
+  "@insuranceOpenVault": {
+    "description": "Button: open vault for insurance."
+  },
+  "insuranceNoPolicy": "Save your policy in the vault with the type \"Travel insurance\" and you can ask it things here.",
+  "@insuranceNoPolicy": {
+    "description": "No insurance policy in the vault."
+  },
+  "insuranceReadOnPhone": "{pages} pages · read on your phone, never leaves it",
+  "@insuranceReadOnPhone": {
+    "description": "Policy subtitle.",
+    "placeholders": {
+      "pages": {
+        "type": "int"
+      }
+    }
+  },
+  "insuranceLuggage": "Lost luggage?",
+  "@insuranceLuggage": {
+    "description": "Insurance quick question."
+  },
+  "insuranceMedical": "If I get sick?",
+  "@insuranceMedical": {
+    "description": "Insurance quick question."
+  },
+  "insuranceCancellation": "If I cancel the trip?",
+  "@insuranceCancellation": {
+    "description": "Insurance quick question."
+  },
+  "insuranceDelay": "Delays and missed flights?",
+  "@insuranceDelay": {
+    "description": "Insurance quick question."
+  },
+  "insuranceTheft": "Theft?",
+  "@insuranceTheft": {
+    "description": "Insurance quick question."
+  },
+  "insuranceSports": "Skiing and sports?",
+  "@insuranceSports": {
+    "description": "Insurance quick question."
+  },
+  "insuranceAsk": "Ask something else",
+  "@insuranceAsk": {
+    "description": "Field: ask something else."
+  },
+  "insuranceNoHits": "I can't find anything about this in the policy. Call the assistance phone number to be sure.",
+  "@insuranceNoHits": {
+    "description": "Nothing found in policy."
+  },
+  "insurancePage": "Page {n}",
+  "@insurancePage": {
+    "description": "Policy page number.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "insuranceExclusion": "Looks like an exclusion",
+  "@insuranceExclusion": {
+    "description": "Looks like an exclusion."
+  },
+  "insuranceDisclaimer": "For guidance only: what counts is your policy. If in doubt, call the assistance number.",
+  "@insuranceDisclaimer": {
+    "description": "Insurance disclaimer."
+  },
+  "insuranceNoText": "I couldn't read the text of this policy (is it a blurry photo?). Try adding it again as a PDF.",
+  "@insuranceNoText": {
+    "description": "Couldn't read the policy text."
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Settings screen title."
+  },
+  "settingsSubtitle": "The important stuff, one tap away",
+  "@settingsSubtitle": {
+    "description": "Settings subtitle."
+  },
+  "settingsCopyId": "ID: {id} · copy",
+  "@settingsCopyId": {
+    "description": "Button that copies the short account ID.",
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsIdCopied": "ID copied",
+  "@settingsIdCopied": {
+    "description": "Shown after copying the ID."
+  },
+  "settingsSectionApp": "YOUR APP",
+  "@settingsSectionApp": {
+    "description": "Section header (uppercase in UI)."
+  },
+  "settingsSectionAccount": "ACCOUNT",
+  "@settingsSectionAccount": {
+    "description": "Section header (uppercase in UI)."
+  },
+  "settingsVault": "Vault and fingerprint",
+  "@settingsVault": {
+    "description": "Row that opens the vault settings."
+  },
+  "settingsDeleteAccount": "Delete my account and my data",
+  "@settingsDeleteAccount": {
+    "description": "Destructive row in settings."
+  },
+  "settingsFooter": "NomadIQ {version} · Made with love for travellers all over the world",
+  "@settingsFooter": {
+    "description": "Footer with the app version.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteTitle": "Delete your account?",
+  "@deleteTitle": {
+    "description": "Delete account dialog title."
+  },
+  "deleteBody": "We delete your account, your trips, your shared expenses, your price alerts and this phone's vault right away. Server backups disappear within 30 days. This can't be undone, so you can download a copy of your data first.",
+  "@deleteBody": {
+    "description": "Delete account dialog body."
+  },
+  "downloadMyData": "Download my data",
+  "@downloadMyData": {
+    "description": "Button: export my data as a file."
+  },
+  "downloadDone": "Copy saved",
+  "@downloadDone": {
+    "description": "Snackbar after saving the export."
+  },
+  "deleteConfirm": "Yes, delete my account",
+  "@deleteConfirm": {
+    "description": "Destructive confirm button."
+  },
+  "deletePasswordTitle": "Type your password",
+  "@deletePasswordTitle": {
+    "description": "Password prompt title before deleting."
+  },
+  "deletePasswordWhy": "So nobody holding your phone can delete your account.",
+  "@deletePasswordWhy": {
+    "description": "Why we ask the password again."
+  },
+  "deletePasswordLabel": "Password",
+  "@deletePasswordLabel": {
+    "description": "Password field label."
+  },
+  "deleteNow": "Delete forever",
+  "@deleteNow": {
+    "description": "Final delete button inside password prompt."
+  },
+  "deleteWrongPassword": "That password isn't right.",
+  "@deleteWrongPassword": {
+    "description": "Error: wrong password."
+  },
+  "deleteFailed": "We couldn't finish. Check your connection and try again: your account is still there.",
+  "@deleteFailed": {
+    "description": "Error: deletion failed (network); account untouched."
+  },
+  "deleteDone": "Your account has been deleted. Safe travels!",
+  "@deleteDone": {
+    "description": "Shown after the account is deleted."
+  },
+  "exportFailed": "We couldn't save the copy.",
+  "@exportFailed": {
+    "description": "Error: export couldn't be saved."
+  },
+  "privacyTitle": "Privacy",
+  "@privacyTitle": {
+    "description": "Privacy screen title."
+  },
+  "settingsPrivacy": "Privacy and security",
+  "@settingsPrivacy": {
+    "description": "Settings row to Privacy."
+  },
+  "privacyProtected": "This phone is protected",
+  "@privacyProtected": {
+    "description": "Status card title."
+  },
+  "privacyProtectedSub": "Notifications encrypted for this phone · encrypted vault",
+  "@privacyProtectedSub": {
+    "description": "Status card subtitle."
+  },
+  "privacyBackground": "Location in the background",
+  "@privacyBackground": {
+    "description": "Toggle: background location (travel mode)."
+  },
+  "privacyBackgroundSub": "To tell you when you enter a place with history, even with the app closed.",
+  "@privacyBackgroundSub": {
+    "description": "Toggle subtitle."
+  },
+  "privacyGuides": "Audioguide notifications",
+  "@privacyGuides": {
+    "description": "Toggle: audioguide notifications."
+  },
+  "privacyGuidesSub": "When you enter a place with history.",
+  "@privacyGuidesSub": {
+    "description": "Toggle subtitle."
+  },
+  "privacyDeals": "Flight deals",
+  "@privacyDeals": {
+    "description": "Toggle: flight deal notifications."
+  },
+  "privacyDealsSub": "When a route you watch drops in price.",
+  "@privacyDealsSub": {
+    "description": "Toggle subtitle."
+  },
+  "privacySafety": "Safety alerts",
+  "@privacySafety": {
+    "description": "Toggle: safety notifications (locked on)."
+  },
+  "privacySafetySub": "Always on.",
+  "@privacySafetySub": {
+    "description": "Toggle subtitle."
+  },
+  "privacyWhatWeKnow": "What we know about you",
+  "@privacyWhatWeKnow": {
+    "description": "Section title."
+  },
+  "privacyKnow1": "Your position, only at that moment, to know which zone you're in.",
+  "@privacyKnow1": {
+    "description": "Bullet."
+  },
+  "privacyKnow2": "For notifications you're a pseudonym, never your name.",
+  "@privacyKnow2": {
+    "description": "Bullet."
+  },
+  "privacyKnow3": "No history of the places you pass through.",
+  "@privacyKnow3": {
+    "description": "Bullet."
+  },
+  "privacyKnow4": "Not even Google can read your notifications: they're encrypted for this phone.",
+  "@privacyKnow4": {
+    "description": "Bullet."
+  },
+  "privacyForget": "Forget this phone",
+  "@privacyForget": {
+    "description": "Button: forget this phone (push)."
+  },
+  "privacyForgetSub": "Deletes its registration and its key right now. You can turn it back on whenever you want.",
+  "@privacyForgetSub": {
+    "description": "Explanation."
+  },
+  "privacyForgotten": "This phone gets no notifications.",
+  "@privacyForgotten": {
+    "description": "Shown when the phone is forgotten."
+  },
+  "privacyTurnBackOn": "Turn notifications back on",
+  "@privacyTurnBackOn": {
+    "description": "Button: re-enable push."
+  },
+  "sosTitle": "SOS",
+  "@sosTitle": {
+    "description": "SOS screen title."
+  },
+  "sosNear": "Near {city}",
+  "@sosNear": {
+    "description": "Where you are.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "sosAccuracy": "GPS ±{meters} m",
+  "@sosAccuracy": {
+    "description": "GPS accuracy.",
+    "placeholders": {
+      "meters": {
+        "type": "int"
+      }
+    }
+  },
+  "sosLocating": "Finding where you are…",
+  "@sosLocating": {
+    "description": "Looking for location."
+  },
+  "sosNoLocation": "No location: turn on GPS so we can send it.",
+  "@sosNoLocation": {
+    "description": "No location."
+  },
+  "sosQuestion": "Need help?",
+  "@sosQuestion": {
+    "description": "Big question."
+  },
+  "sosHoldHint": "Hold for 3 seconds. We'll prepare a text with your location for your contacts and show the local emergency number.",
+  "@sosHoldHint": {
+    "description": "Explains the hold button."
+  },
+  "sosButtonLabel": "Ask for help: hold for 3 seconds",
+  "@sosButtonLabel": {
+    "description": "Accessibility label of the big button."
+  },
+  "sosActive": "Get help now",
+  "@sosActive": {
+    "description": "Title after triggering."
+  },
+  "sosCall": "Call {number}",
+  "@sosCall": {
+    "description": "Call button.",
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "sosTextContacts": "Send my location to my contacts",
+  "@sosTextContacts": {
+    "description": "SMS button."
+  },
+  "sosNoContacts": "Add at least one contact so you can alert them.",
+  "@sosNoContacts": {
+    "description": "No contacts."
+  },
+  "sosImOk": "I'm OK",
+  "@sosImOk": {
+    "description": "Cancel / reset."
+  },
+  "sosMessage": "I need help! I'm here:",
+  "@sosMessage": {
+    "description": "SMS text before the map link."
+  },
+  "sosNumbersTitle": "NUMBERS HERE",
+  "@sosNumbersTitle": {
+    "description": "Section (uppercase)."
+  },
+  "sosGeneral": "Emergencies",
+  "@sosGeneral": {
+    "description": "Emergency number label."
+  },
+  "sosPolice": "Police",
+  "@sosPolice": {
+    "description": "Police label."
+  },
+  "sosAmbulance": "Ambulance",
+  "@sosAmbulance": {
+    "description": "Ambulance label."
+  },
+  "sosFire": "Fire",
+  "@sosFire": {
+    "description": "Fire brigade label."
+  },
+  "sosContactsTitle": "YOUR CONTACTS",
+  "@sosContactsTitle": {
+    "description": "Section (uppercase)."
+  },
+  "sosAddContact": "Add contact",
+  "@sosAddContact": {
+    "description": "Button."
+  },
+  "sosContactName": "Name",
+  "@sosContactName": {
+    "description": "Field."
+  },
+  "sosContactPhone": "Phone (with country code)",
+  "@sosContactPhone": {
+    "description": "Field."
+  },
+  "sosContactInvalid": "Write a valid phone number",
+  "@sosContactInvalid": {
+    "description": "Validation."
+  },
+  "sosSayThis": "SAY THIS",
+  "@sosSayThis": {
+    "description": "Section (uppercase)."
+  },
+  "sosMeansHelp": "It means “Help!”",
+  "@sosMeansHelp": {
+    "description": "Meaning of the phrase."
+  },
+  "sosMedicalTitle": "MEDICAL CARD",
+  "@sosMedicalTitle": {
+    "description": "Section (uppercase)."
+  },
+  "sosMedicalEmpty": "Add your blood type and allergies: it helps whoever treats you.",
+  "@sosMedicalEmpty": {
+    "description": "Empty medical card."
+  },
+  "sosMedicalEdit": "Edit card",
+  "@sosMedicalEdit": {
+    "description": "Button."
+  },
+  "sosBlood": "Blood type",
+  "@sosBlood": {
+    "description": "Field."
+  },
+  "sosBloodUnknown": "I don't know",
+  "@sosBloodUnknown": {
+    "description": "Option."
+  },
+  "sosAllergies": "Allergies",
+  "@sosAllergies": {
+    "description": "Field."
+  },
+  "sosConditions": "Conditions",
+  "@sosConditions": {
+    "description": "Field."
+  },
+  "sosMedication": "Medication",
+  "@sosMedication": {
+    "description": "Field."
+  },
+  "sosMedicalPrivacy": "Saved only on this phone.",
+  "@sosMedicalPrivacy": {
+    "description": "Privacy note."
+  },
+  "sosEmbassies": "Embassies and consulates nearby",
+  "@sosEmbassies": {
+    "description": "Button."
+  },
+  "sosEmbassiesSub": "If you lose your passport",
+  "@sosEmbassiesSub": {
+    "description": "Subtitle."
+  },
+  "sosSave": "Save",
+  "@sosSave": {
+    "description": "Save button."
+  },
+  "sosDelete": "Remove",
+  "@sosDelete": {
+    "description": "Delete contact tooltip."
+  },
+  "papersTitle": "Papers and rights",
+  "@papersTitle": {
+    "description": "Screen title."
+  },
+  "papersSubtitle": "We check them before every trip",
+  "@papersSubtitle": {
+    "description": "Subtitle."
+  },
+  "papersBeforeTitle": "BEFORE YOU GO",
+  "@papersBeforeTitle": {
+    "description": "Section (uppercase)."
+  },
+  "papersDestination": "Destination airport (e.g. NRT)",
+  "@papersDestination": {
+    "description": "Field."
+  },
+  "papersReturn": "Back on {date}",
+  "@papersReturn": {
+    "description": "Return day.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "papersPickReturn": "Choose return day",
+  "@papersPickReturn": {
+    "description": "Button."
+  },
+  "papersCheck": "Check with the Vault",
+  "@papersCheck": {
+    "description": "Button."
+  },
+  "papersUnknownAirport": "We don't know that airport",
+  "@papersUnknownAirport": {
+    "description": "Error."
+  },
+  "papersPassportOk": "Passport valid until {date}",
+  "@papersPassportOk": {
+    "description": "Check OK.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "papersPassportShort": "Your passport expires on {date}: many countries ask for 6 months to spare",
+  "@papersPassportShort": {
+    "description": "Check warning.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "papersPassportNoDate": "Add your passport's expiry date in the Vault",
+  "@papersPassportNoDate": {
+    "description": "Check warning."
+  },
+  "papersPassportMissing": "There's no passport in the Vault",
+  "@papersPassportMissing": {
+    "description": "Check missing."
+  },
+  "papersInsuranceOk": "Travel insurance in the Vault",
+  "@papersInsuranceOk": {
+    "description": "Check OK."
+  },
+  "papersInsuranceExpired": "Your insurance ends before you're back",
+  "@papersInsuranceExpired": {
+    "description": "Check warning."
+  },
+  "papersInsuranceMissing": "There's no travel insurance in the Vault",
+  "@papersInsuranceMissing": {
+    "description": "Check missing."
+  },
+  "papersPermit": "If your passport needs it: {name}",
+  "@papersPermit": {
+    "description": "Entry permit hint.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "papersOfficialSite": "Official website",
+  "@papersOfficialSite": {
+    "description": "Link."
+  },
+  "papersAllGood": "All set",
+  "@papersAllGood": {
+    "description": "All checks OK."
+  },
+  "papersIssues": "{count, plural, =1{1 warning} other{{count} warnings}}",
+  "@papersIssues": {
+    "description": "Number of warnings.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "papersRightsTitle": "YOUR RIGHTS AS A PASSENGER",
+  "@papersRightsTitle": {
+    "description": "Section (uppercase)."
+  },
+  "papersRightsIntro": "Was your flight late, cancelled, or were you not allowed to board? On flights from the EU (or to the EU with a European airline) you may be owed money.",
+  "@papersRightsIntro": {
+    "description": "Intro."
+  },
+  "papersFrom": "From (airport)",
+  "@papersFrom": {
+    "description": "Field."
+  },
+  "papersTo": "To (airport)",
+  "@papersTo": {
+    "description": "Field."
+  },
+  "papersEuAirline": "European airline",
+  "@papersEuAirline": {
+    "description": "Switch."
+  },
+  "papersDelay": "Delay",
+  "@papersDelay": {
+    "description": "Option."
+  },
+  "papersCancelled": "Cancelled",
+  "@papersCancelled": {
+    "description": "Option."
+  },
+  "papersDenied": "Denied boarding",
+  "@papersDenied": {
+    "description": "Option."
+  },
+  "papersDelayHours": "{hours} h late on arrival",
+  "@papersDelayHours": {
+    "description": "Slider label.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "papersYouMayGet": "You may be owed {amount}",
+  "@papersYouMayGet": {
+    "description": "Result.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "papersDistance": "Flight of {km} km",
+  "@papersDistance": {
+    "description": "Flight distance.",
+    "placeholders": {
+      "km": {
+        "type": "int"
+      }
+    }
+  },
+  "papersNotEu": "This flight isn't covered by the European rules.",
+  "@papersNotEu": {
+    "description": "Not covered."
+  },
+  "papersShortDelay": "Under 3 hours late there's no compensation (but they must give you food and drink while you wait).",
+  "@papersShortDelay": {
+    "description": "Short delay."
+  },
+  "papersExtraordinary": "If it was due to extraordinary circumstances (storm, air traffic control strike) the airline doesn't pay, but it has to prove it.",
+  "@papersExtraordinary": {
+    "description": "Caveat."
+  },
+  "papersClaim": "Prepare the claim",
+  "@papersClaim": {
+    "description": "Button."
+  },
+  "papersName": "Full name",
+  "@papersName": {
+    "description": "Field."
+  },
+  "papersBooking": "Booking code",
+  "@papersBooking": {
+    "description": "Field."
+  },
+  "papersFlight": "Flight number (e.g. IB6800)",
+  "@papersFlight": {
+    "description": "Field."
+  },
+  "papersFlightDay": "Flight on {date}",
+  "@papersFlightDay": {
+    "description": "Flight date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "papersSendEmail": "Open email with the letter",
+  "@papersSendEmail": {
+    "description": "Button."
+  },
+  "papersClaimNote": "No commission: all the money goes to you. The letter is in English, which every airline understands.",
+  "@papersClaimNote": {
+    "description": "Note."
+  },
+  "papersNoEmailApp": "There's no email app on this phone.",
+  "@papersNoEmailApp": {
+    "description": "Error."
+  },
+  "papersFillAll": "Fill in every field",
+  "@papersFillAll": {
+    "description": "Validation."
+  },
+  "passportTitle": "My passport",
+  "@passportTitle": {
+    "description": "Passport screen title and Home shortcut."
+  },
+  "passportCoverTitle": "TRAVEL PASSPORT",
+  "@passportCoverTitle": {
+    "description": "Big text on the passport cover."
+  },
+  "passportTapToOpen": "Tap to open",
+  "@passportTapToOpen": {
+    "description": "Hint on the cover."
+  },
+  "passportStamps": "{count, plural, =1{1 stamp} other{{count} stamps}}",
+  "@passportStamps": {
+    "description": "Number of stamps.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "passportCountries": "{count, plural, =1{1 country} other{{count} countries}}",
+  "@passportCountries": {
+    "description": "Number of countries.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "passportElsewhere": "Other places",
+  "@passportElsewhere": {
+    "description": "Page for stamps whose place is unknown."
+  },
+  "passportEmpty": "No stamps yet. Point the camera at a monument and save its stamp.",
+  "@passportEmpty": {
+    "description": "Empty passport."
+  },
+  "passportOpenCamera": "Open the camera",
+  "@passportOpenCamera": {
+    "description": "Button to open the camera."
+  },
+  "passportHint": "Every monument you visit gives you its card. Tap a card to learn its story.",
+  "@passportHint": {
+    "description": "Footer hint."
+  },
+  "passportRarityLegendary": "Legendary",
+  "@passportRarityLegendary": {
+    "description": "Card rarity: built before year 1000."
+  },
+  "passportRarityEpic": "Epic",
+  "@passportRarityEpic": {
+    "description": "Card rarity: built before 1600."
+  },
+  "passportRarityRare": "Rare",
+  "@passportRarityRare": {
+    "description": "Card rarity: built before 1900."
+  },
+  "passportRarityCommon": "Common",
+  "@passportRarityCommon": {
+    "description": "Card rarity: modern or unknown age."
+  },
+  "passportRarityWhy": "The older the monument, the rarer its card.",
+  "@passportRarityWhy": {
+    "description": "Explains rarity."
+  },
+  "passportStampedOn": "Stamped on {date}",
+  "@passportStampedOn": {
+    "description": "When the stamp was saved.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "passportSeeOnMap": "See on the map",
+  "@passportSeeOnMap": {
+    "description": "Opens the place in OpenStreetMap."
+  },
+  "noticesTitle": "Notifications",
+  "@noticesTitle": {
+    "description": "Notification history screen title and Home bell tooltip."
+  },
+  "noticesAll": "All",
+  "@noticesAll": {
+    "description": "Tab: all."
+  },
+  "noticesZones": "Places",
+  "@noticesZones": {
+    "description": "Tab: zone notices."
+  },
+  "noticesFlights": "Flights",
+  "@noticesFlights": {
+    "description": "Tab: fare alerts."
+  },
+  "noticesSafety": "Safety",
+  "@noticesSafety": {
+    "description": "Tab: safety."
+  },
+  "noticesEmpty": "No notifications yet.",
+  "@noticesEmpty": {
+    "description": "No notifications yet."
+  },
+  "noticesFooter": "At most one place notice every 45 minutes, and never the same place twice in a day. Safety notices always arrive. This history only exists on your phone.",
+  "@noticesFooter": {
+    "description": "Explains limits and privacy."
+  },
+  "noticesClear": "Clear history",
+  "@noticesClear": {
+    "description": "Clear history button."
+  },
+  "exploreTitle": "Explore",
+  "@exploreTitle": {
+    "description": "Explore screen title."
+  },
+  "exploreSubtitle": "Where can I fly cheap with good weather?",
+  "@exploreSubtitle": {
+    "description": "Subtitle."
+  },
+  "exploreSearch": "See the year",
+  "@exploreSearch": {
+    "description": "Button that loads prices and weather."
+  },
+  "exploreMonthlyPrices": "Price by month · return",
+  "@exploreMonthlyPrices": {
+    "description": "Chart title."
+  },
+  "exploreCheapest": "Cheapest: {month}",
+  "@exploreCheapest": {
+    "description": "Label of the cheapest month.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreCheap": "cheap",
+  "@exploreCheap": {
+    "description": "Chart legend: cheap."
+  },
+  "exploreDear": "pricey",
+  "@exploreDear": {
+    "description": "Chart legend: expensive."
+  },
+  "exploreTemperature": "TEMPERATURE",
+  "@exploreTemperature": {
+    "description": "Weather stat."
+  },
+  "exploreRainDays": "RAINY DAYS",
+  "@exploreRainDays": {
+    "description": "Weather stat."
+  },
+  "exploreDaysValue": "{days, plural, =1{1 day} other{{days} days}}",
+  "@exploreDaysValue": {
+    "description": "Number of rainy days in a month.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "exploreVerdict": "THE VERDICT",
+  "@exploreVerdict": {
+    "description": "Verdict heading."
+  },
+  "exploreVerdictGreat": "{month} is the sweet spot: cheap and pleasant.",
+  "@exploreVerdictGreat": {
+    "description": "Verdict: cheap and nice weather.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreVerdictCheapRain": "{month} is the cheapest, but the weather is harsher. Bring a jacket.",
+  "@exploreVerdictCheapRain": {
+    "description": "Verdict: cheap but rainy or extreme.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreVerdictNoClimate": "{month} is the cheapest month we have seen.",
+  "@exploreVerdictNoClimate": {
+    "description": "Verdict when weather data is missing.",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreSeeFlights": "See flights to {city}",
+  "@exploreSeeFlights": {
+    "description": "Button to open the search for that month.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "exploreNoPrices": "Nobody has searched this route lately, so we have no monthly prices. Try the search with a date.",
+  "@exploreNoPrices": {
+    "description": "No monthly prices for that route."
+  },
+  "exploreWeatherSource": "Average weather: NASA POWER (30-year means). Prices: what other travellers found.",
+  "@exploreWeatherSource": {
+    "description": "Credit for the weather data."
+  },
+  "menuTitle": "Menu translator",
+  "@menuTitle": {
+    "description": "Menu translator screen title and shortcut."
+  },
+  "menuSubtitle": "Photograph the menu and we explain every dish",
+  "@menuSubtitle": {
+    "description": "Subtitle."
+  },
+  "menuTakePhoto": "Photograph the menu",
+  "@menuTakePhoto": {
+    "description": "Button: camera."
+  },
+  "menuFromGallery": "Choose a photo",
+  "@menuFromGallery": {
+    "description": "Button: pick a photo."
+  },
+  "menuReading": "Flyra is reading the menu…",
+  "@menuReading": {
+    "description": "While Flyra works."
+  },
+  "menuNothingRead": "We could not read any text. Try again with more light and the page flat.",
+  "@menuNothingRead": {
+    "description": "The photo had no readable text."
+  },
+  "menuNoDishes": "We did not recognise any dish in that photo.",
+  "@menuNoDishes": {
+    "description": "Flyra found no dishes."
+  },
+  "menuOutOfCards": "You have used today's menus. It resets tomorrow.",
+  "@menuOutOfCards": {
+    "description": "Daily quota spent."
+  },
+  "menuTapADish": "Tap a dish to see what it is",
+  "@menuTapADish": {
+    "description": "Hint above the list."
+  },
+  "menuOrderLike": "ORDER IT LIKE THIS",
+  "@menuOrderLike": {
+    "description": "Heading above the phrase."
+  },
+  "menuAllergenNote": "Allergy warnings are a help, not a guarantee: always ask the staff.",
+  "@menuAllergenNote": {
+    "description": "Warning under the allergens line."
+  },
+  "menuPlaceLanguage": "Language of the place",
+  "@menuPlaceLanguage": {
+    "description": "Field: language spoken where you are."
+  },
+  "menuLeftToday": "{count, plural, =1{1 menu left today} other{{count} menus left today}}",
+  "@menuLeftToday": {
+    "description": "How many menus are left today.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "menuSignIn": "The menu translator is for NomadIQ accounts. Sign in to use it.",
+  "@menuSignIn": {
+    "description": "Guests cannot use it."
+  },
+  "beforeTitle": "Before you go",
+  "@beforeTitle": {
+    "description": "Before you go screen title and Home shortcut."
+  },
+  "beforeSubtitle": "{city} · {days, plural, =0{you leave today} =1{you leave tomorrow} other{you leave in {days} days}}",
+  "@beforeSubtitle": {
+    "description": "Subtitle: where and when.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "beforeReady": "{percent}% ready",
+  "@beforeReady": {
+    "description": "Readiness percentage label.",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "beforeFillTrip": "Tell us where you are going and when, and we check everything.",
+  "@beforeFillTrip": {
+    "description": "Ask for destination and dates."
+  },
+  "beforeDataTitle": "Mobile data there",
+  "@beforeDataTitle": {
+    "description": "Mobile data section."
+  },
+  "beforeRoamingFree": "Your European plan works the same there, with no extra cost.",
+  "@beforeRoamingFree": {
+    "description": "Roaming is free there."
+  },
+  "beforeRoamingAbroad": "Outside that area your plan may charge a lot. Compare travel eSIMs before you leave: with one, you land with data already working.",
+  "@beforeRoamingAbroad": {
+    "description": "Roaming costs money there."
+  },
+  "beforeCo2Title": "Your flight's footprint",
+  "@beforeCo2Title": {
+    "description": "Carbon section title."
+  },
+  "beforeCo2Estimate": "Rough estimate, return trip, per passenger. Flying direct pollutes less: taking off is what burns most.",
+  "@beforeCo2Estimate": {
+    "description": "Note under the chart."
+  },
+  "beforeCo2Direct": "Your direct flight",
+  "@beforeCo2Direct": {
+    "description": "Chart bar: direct flight."
+  },
+  "beforeCo2Stop": "With one stop",
+  "@beforeCo2Stop": {
+    "description": "Chart bar: one stop."
+  },
+  "beforeCo2Car": "A normal car in a year (12,000 km)",
+  "@beforeCo2Car": {
+    "description": "Chart bar: a car for a year."
+  },
+  "beforeCo2Trees": "{trees, plural, =1{what 1 tree absorbs in a year} other{what {trees} trees absorb in a year}}",
+  "@beforeCo2Trees": {
+    "description": "Comparison in trees.",
+    "placeholders": {
+      "trees": {
+        "type": "int"
+      }
+    }
+  },
+  "beforePackTitle": "For your bag",
+  "@beforePackTitle": {
+    "description": "Packing section."
+  },
+  "beforePackAdapter": "Plug adapter type {detail}",
+  "@beforePackAdapter": {
+    "description": "Plug adapter item.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePackAdapterWhy": "The sockets there are a different shape",
+  "@beforePackAdapterWhy": {
+    "description": "Why the adapter."
+  },
+  "beforePackTransformer": "Check the voltage: {detail} V there",
+  "@beforePackTransformer": {
+    "description": "Voltage item.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePackTransformerWhy": "Chargers usually work with both, but a hairdryer may not",
+  "@beforePackTransformerWhy": {
+    "description": "Why the transformer."
+  },
+  "beforePackUmbrella": "Umbrella or rain jacket",
+  "@beforePackUmbrella": {
+    "description": "Umbrella item.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePackUmbrellaWhy": "That month it usually rains about {detail} days",
+  "@beforePackUmbrellaWhy": {
+    "description": "Why the umbrella.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePackCoat": "A proper coat",
+  "@beforePackCoat": {
+    "description": "Coat item.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePackCoatWhy": "The average is around {detail}°",
+  "@beforePackCoatWhy": {
+    "description": "Why the coat.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePackSunscreen": "Sunscreen and a cap",
+  "@beforePackSunscreen": {
+    "description": "Sunscreen item.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePackSunscreenWhy": "Highs around {detail}°",
+  "@beforePackSunscreenWhy": {
+    "description": "Why the sunscreen.",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePackEsim": "Travel data sorted out",
+  "@beforePackEsim": {
+    "description": "eSIM item."
+  },
+  "beforePackEsimWhy": "So you land with maps and messages already working",
+  "@beforePackEsimWhy": {
+    "description": "Why the eSIM."
+  },
+  "beforePackOffline": "The city downloaded for offline use",
+  "@beforePackOffline": {
+    "description": "Offline city item."
+  },
+  "beforePackOfflineWhy": "Map, audio guides and zone alerts with no data",
+  "@beforePackOfflineWhy": {
+    "description": "Why download."
+  },
+  "beforePackPassport": "Check your passport",
+  "@beforePackPassport": {
+    "description": "Passport warning item."
+  },
+  "beforePackPassportWhy": "It expires soon: many countries ask for 6 months to spare",
+  "@beforePackPassportWhy": {
+    "description": "Why check the passport."
+  },
+  "beforePackInsurance": "Travel insurance",
+  "@beforePackInsurance": {
+    "description": "Insurance item."
+  },
+  "beforePackInsuranceWhy": "We did not find a valid policy in your Vault",
+  "@beforePackInsuranceWhy": {
+    "description": "Why insurance."
+  },
+  "offlineTitle": "Offline",
+  "@offlineTitle": {
+    "description": "Title of the offline cities screen."
+  },
+  "offlineIntro": "Download a city and you keep the map, the audio guides and the zone alerts, even in airplane mode or with no data abroad.",
+  "@offlineIntro": {
+    "description": "What downloading a city gives you."
+  },
+  "offlineCityField": "City airport (e.g. NRT)",
+  "@offlineCityField": {
+    "description": "Text field: the airport code of the city to download."
+  },
+  "offlineDownload": "Download",
+  "@offlineDownload": {
+    "description": "Button: download this city."
+  },
+  "offlineUpdate": "Update",
+  "@offlineUpdate": {
+    "description": "Button: download the city again to refresh it."
+  },
+  "offlineDelete": "Delete",
+  "@offlineDelete": {
+    "description": "Button: delete a downloaded city."
+  },
+  "offlineWifiOnly": "Download over wifi only",
+  "@offlineWifiOnly": {
+    "description": "Switch: only download over wifi."
+  },
+  "offlineWifiOnlyWhy": "So it does not eat your data",
+  "@offlineWifiOnlyWhy": {
+    "description": "Why the wifi-only switch exists."
+  },
+  "offlineUsed": "NomadIQ is using {size}",
+  "@offlineUsed": {
+    "description": "Storage used by the app, with the size.",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineDetail": "{guides, plural, =1{1 audio guide} other{{guides} audio guides}} · {size} · saved {date}",
+  "@offlineDetail": {
+    "description": "A downloaded city: how many guides, how big, when.",
+    "placeholders": {
+      "guides": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineNone": "You have not downloaded any city yet.",
+  "@offlineNone": {
+    "description": "No city downloaded yet."
+  },
+  "offlineMapMissing": "The map could not be saved; the audio guides were.",
+  "@offlineMapMissing": {
+    "description": "The audio was saved but the map was not."
+  },
+  "offlineOtherLanguage": "Downloaded in another language: download it again to get yours.",
+  "@offlineOtherLanguage": {
+    "description": "The city was downloaded in another language."
+  },
+  "offlineStepZones": "Looking for the neighbourhoods",
+  "@offlineStepZones": {
+    "description": "Download step: asking for the neighbourhoods."
+  },
+  "offlineStepGuides": "Getting the scripts",
+  "@offlineStepGuides": {
+    "description": "Download step: getting the scripts."
+  },
+  "offlineStepAudio": "Getting the audio ({done} of {total})",
+  "@offlineStepAudio": {
+    "description": "Download step: audio files, with progress.",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineStepMap": "Saving the map",
+  "@offlineStepMap": {
+    "description": "Download step: saving the map tiles."
+  },
+  "offlineWaitingWifi": "Waiting for wifi: you asked for wifi only.",
+  "@offlineWaitingWifi": {
+    "description": "Error: waiting for wifi because of the switch."
+  },
+  "offlineNoNet": "There is no connection right now.",
+  "@offlineNoNet": {
+    "description": "Error: no connection at all."
+  },
+  "offlineNothingThere": "That city has no audio guides yet.",
+  "@offlineNothingThere": {
+    "description": "Error: that city has no audio guides yet."
+  },
+  "offlineFailed": "It could not be downloaded. Try again.",
+  "@offlineFailed": {
+    "description": "Error: the download did not finish."
+  },
+  "offlineUnknownAirport": "We do not know that airport.",
+  "@offlineUnknownAirport": {
+    "description": "The typed airport code is not in the app's list."
+  },
+  "offlineMax": "You can keep {max} cities at most: delete one to add another.",
+  "@offlineMax": {
+    "description": "You can only keep 10 cities.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineSaved": "Saved on your phone",
+  "@offlineSaved": {
+    "description": "Badge: this audio guide is the copy saved on the phone."
+  },
+  "offlineOpen": "Offline cities",
+  "@offlineOpen": {
+    "description": "Button: open the offline cities screen."
+  },
+  "twTitle": "Travelling with…",
+  "@twTitle": {
+    "description": "Title: travelling with a pet or pregnant."
+  },
+  "twSubtitle": "The rules for flying with your pet or while pregnant",
+  "@twSubtitle": {
+    "description": "Subtitle of the travelling-with screen."
+  },
+  "twTabPet": "My pet",
+  "@twTabPet": {
+    "description": "Tab: my pet."
+  },
+  "twTabPregnant": "Pregnant",
+  "@twTabPregnant": {
+    "description": "Tab: pregnant."
+  },
+  "twPetWeight": "Your pet's weight (kg)",
+  "@twPetWeight": {
+    "description": "Field: pet weight in kg."
+  },
+  "twCarrierWeight": "Carrier weight (kg)",
+  "@twCarrierWeight": {
+    "description": "Field: carrier weight in kg."
+  },
+  "twCabin": "It can travel with you in the cabin",
+  "@twCabin": {
+    "description": "Verdict: the pet can travel in the cabin."
+  },
+  "twCabinWhy": "Up to {max} kg including the carrier, depending on the airline. It usually costs about 40-60 € each way.",
+  "@twCabinWhy": {
+    "description": "Why it fits in the cabin; price range.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "twHold": "It will have to go in the hold",
+  "@twHold": {
+    "description": "Verdict: the pet must travel in the hold."
+  },
+  "twHoldWhy": "It weighs more than {max} kg with the carrier. Book it with the airline early: not all accept it and places are few.",
+  "@twHoldWhy": {
+    "description": "Why it goes in the hold.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "twEuTitle": "TO TRAVEL IN THE EU",
+  "@twEuTitle": {
+    "description": "Section header: rules for travelling in the EU."
+  },
+  "twChip": "Microchip",
+  "@twChip": {
+    "description": "Checklist: microchip."
+  },
+  "twChipWhy": "Put in before the vaccine",
+  "@twChipWhy": {
+    "description": "Microchip must be put before the vaccine."
+  },
+  "twRabies": "Valid rabies vaccine",
+  "@twRabies": {
+    "description": "Checklist: rabies vaccine."
+  },
+  "twRabiesWhy": "Given at least {days} days before the trip",
+  "@twRabiesWhy": {
+    "description": "The vaccine must be at least N days old.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "twPassport": "European pet passport",
+  "@twPassport": {
+    "description": "Checklist: EU pet passport."
+  },
+  "twPassportWhy": "Your vet gives it to you",
+  "@twPassportWhy": {
+    "description": "Who gives the pet passport."
+  },
+  "twOutsideEu": "Outside the EU every country asks for different things (sometimes an antibody test months before). Talk to your vet early.",
+  "@twOutsideEu": {
+    "description": "Note: outside the EU rules differ."
+  },
+  "twPetHotels": "When booking a hotel, filter by \"pets allowed\": many charge a small fee per night.",
+  "@twPetHotels": {
+    "description": "Tip: filter hotels that accept pets."
+  },
+  "twPetDisclaimer": "General rules: always confirm with your airline and your vet.",
+  "@twPetDisclaimer": {
+    "description": "Disclaimer for pet rules."
+  },
+  "twWeeksQuestion": "How many weeks pregnant will you be on the return flight?",
+  "@twWeeksQuestion": {
+    "description": "Question: weeks pregnant on the return flight."
+  },
+  "twWeeks": "{weeks} weeks",
+  "@twWeeks": {
+    "description": "N weeks (pregnancy).",
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "twTwins": "Twin pregnancy",
+  "@twTwins": {
+    "description": "Switch: twin pregnancy."
+  },
+  "twVerdictFly": "You can fly without papers",
+  "@twVerdictFly": {
+    "description": "Verdict: can fly without papers."
+  },
+  "twVerdictFlyWhy": "Until week {weeks} they do not usually ask for anything. Bring your pregnancy record just in case.",
+  "@twVerdictFlyWhy": {
+    "description": "Explanation: no papers until week N.",
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "twVerdictCert": "You need a medical certificate",
+  "@twVerdictCert": {
+    "description": "Verdict: needs a medical certificate."
+  },
+  "twVerdictCertWhy": "Between week {from} and week {to} they ask for a note from your doctor, from the last 7 days, saying you can fly.",
+  "@twVerdictCertWhy": {
+    "description": "Explanation for the certificate weeks.",
+    "placeholders": {
+      "from": {
+        "type": "int"
+      },
+      "to": {
+        "type": "int"
+      }
+    }
+  },
+  "twVerdictNo": "Better not to fly",
+  "@twVerdictNo": {
+    "description": "Verdict: better not to fly."
+  },
+  "twVerdictNoWhy": "From week {weeks} most airlines will not let you board. Look at the train or change the dates.",
+  "@twVerdictNoWhy": {
+    "description": "Explanation: from week N most airlines refuse.",
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "twTipAisle": "Aisle seat so you can get up every hour",
+  "@twTipAisle": {
+    "description": "Tip: aisle seat."
+  },
+  "twTipInsurance": "Insurance that covers pregnancy and birth",
+  "@twTipInsurance": {
+    "description": "Tip: insurance covering pregnancy."
+  },
+  "twTipHospital": "Note down the maternity hospital nearest your hotel",
+  "@twTipHospital": {
+    "description": "Tip: note the nearest maternity hospital."
+  },
+  "twDisclaimer": "General rules of many airlines. Each one has its own, and the first thing is to ask your doctor.",
+  "@twDisclaimer": {
+    "description": "Disclaimer for pregnancy rules."
+  },
+  "helpTitle": "Help",
+  "@helpTitle": {
+    "description": "Title of the help screen."
+  },
+  "helpSubtitle": "Flyra first; a person if you need one",
+  "@helpSubtitle": {
+    "description": "Help screen subtitle."
+  },
+  "helpAskFlyra": "Ask Flyra",
+  "@helpAskFlyra": {
+    "description": "Card: ask Flyra."
+  },
+  "helpAskFlyraWhy": "Sorts out almost everything at once, day and night",
+  "@helpAskFlyraWhy": {
+    "description": "Why ask Flyra first."
+  },
+  "helpPeople": "TALK TO A PERSON",
+  "@helpPeople": {
+    "description": "Section header: talk to a person."
+  },
+  "helpAirline": "The airline or agency you bought from",
+  "@helpAirline": {
+    "description": "Option: your airline or agency."
+  },
+  "helpAirlineSub": "Changes, cancellations and luggage",
+  "@helpAirlineSub": {
+    "description": "What the airline handles."
+  },
+  "helpAirlineMore": "Call the number in your booking email. If the flight went wrong, Papers works out what they owe you and writes the letter for you.",
+  "@helpAirlineMore": {
+    "description": "Details for the airline option."
+  },
+  "helpAirlineCta": "See my rights",
+  "@helpAirlineCta": {
+    "description": "Button: open Papers (rights)."
+  },
+  "helpInsurance": "Your travel insurance assistance",
+  "@helpInsurance": {
+    "description": "Option: travel insurance assistance."
+  },
+  "helpInsuranceSub": "Doctor, theft or accident · 24 h",
+  "@helpInsuranceSub": {
+    "description": "What insurance covers."
+  },
+  "helpInsuranceMore": "The 24 h assistance number is in your policy, saved in your Vault. If you are covered, they usually pay the doctor directly.",
+  "@helpInsuranceMore": {
+    "description": "Details for the insurance option."
+  },
+  "helpInsuranceCta": "Open my policy",
+  "@helpInsuranceCta": {
+    "description": "Button: open the vault."
+  },
+  "helpClaims": "Claim experts",
+  "@helpClaims": {
+    "description": "Option: claim experts."
+  },
+  "helpClaimsSub": "Delays, cancellations and overbooking",
+  "@helpClaimsSub": {
+    "description": "What claim experts do."
+  },
+  "helpClaimsMore": "They can claim for you and keep a share only if you get paid. NomadIQ may earn a commission if you hire them. If you prefer, write the letter yourself for free in Papers.",
+  "@helpClaimsMore": {
+    "description": "Details for claim experts, incl. commission disclosure."
+  },
+  "helpClaimsCta": "Have them claim for me",
+  "@helpClaimsCta": {
+    "description": "Button: let experts claim for me."
+  },
+  "helpVisa": "Visa agency",
+  "@helpVisa": {
+    "description": "Option: visa agency."
+  },
+  "helpVisaSub": "Complicated or urgent visas",
+  "@helpVisaSub": {
+    "description": "What the visa agency does."
+  },
+  "helpVisaMore": "A specialist agency checks your papers and books the appointment. They tell you the price before starting. NomadIQ may earn a commission.",
+  "@helpVisaMore": {
+    "description": "Details for the visa agency, incl. commission disclosure."
+  },
+  "helpVisaCta": "Ask for a quote",
+  "@helpVisaCta": {
+    "description": "Button: ask for a quote."
+  },
+  "helpSupport": "NomadIQ support",
+  "@helpSupport": {
+    "description": "Option: NomadIQ support."
+  },
+  "helpSupportSub": "A person from the team, by email",
+  "@helpSupportSub": {
+    "description": "What NomadIQ support handles."
+  },
+  "helpSupportMore": "For problems with the app itself. The email already includes the app version and your language, so you do not have to explain everything.",
+  "@helpSupportMore": {
+    "description": "Details for NomadIQ support."
+  },
+  "helpSupportCta": "Write to the team",
+  "@helpSupportCta": {
+    "description": "Button: email the team."
+  },
+  "helpTagFree": "Free",
+  "@helpTagFree": {
+    "description": "Tag: free."
+  },
+  "helpTagPolicy": "In your policy",
+  "@helpTagPolicy": {
+    "description": "Tag: included in your policy."
+  },
+  "helpTagIfWin": "Only if you win",
+  "@helpTagIfWin": {
+    "description": "Tag: only pay if you win."
+  },
+  "helpTagPaid": "Paid",
+  "@helpTagPaid": {
+    "description": "Tag: paid."
+  },
+  "helpMailSubject": "NomadIQ · Help",
+  "@helpMailSubject": {
+    "description": "Subject of the support email."
+  },
+  "helpMailBody": "Tell us what happened:\n\n\n—\nNomadIQ {version} · {language}",
+  "@helpMailBody": {
+    "description": "Body of the support email.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      },
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "easyTitle": "Easy mode",
+  "@easyTitle": {
+    "description": "Easy mode name."
+  },
+  "easySettingWhy": "Big letters and only what matters",
+  "@easySettingWhy": {
+    "description": "Settings subtitle for easy mode."
+  },
+  "easyNormal": "Normal mode",
+  "@easyNormal": {
+    "description": "Button: back to normal mode."
+  },
+  "easyHello": "Hello, {name}",
+  "@easyHello": {
+    "description": "Greeting with name.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "easyHelloGuest": "Hello",
+  "@easyHelloGuest": {
+    "description": "Greeting without name."
+  },
+  "easyYourFlight": "YOUR FLIGHT",
+  "@easyYourFlight": {
+    "description": "Header: your flight."
+  },
+  "easyGate": "Gate",
+  "@easyGate": {
+    "description": "Label: gate."
+  },
+  "easyLeaveAt": "Leave home at {time}",
+  "@easyLeaveAt": {
+    "description": "When to leave home.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "easyNoTrip": "Put your flight and hotel here (or ask someone in your family).",
+  "@easyNoTrip": {
+    "description": "No trip saved yet."
+  },
+  "easySetTrip": "Set my trip",
+  "@easySetTrip": {
+    "description": "Button: set my trip."
+  },
+  "easyEditTrip": "Change",
+  "@easyEditTrip": {
+    "description": "Button: change trip."
+  },
+  "easyToHotel": "Take me to the hotel",
+  "@easyToHotel": {
+    "description": "Big button: take me to the hotel."
+  },
+  "easyNoHotel": "Add the hotel address in your trip first.",
+  "@easyNoHotel": {
+    "description": "No hotel address yet."
+  },
+  "easyFamily": "Call the family",
+  "@easyFamily": {
+    "description": "Big button: call family."
+  },
+  "easyWhoCall": "Who are you calling?",
+  "@easyWhoCall": {
+    "description": "Dialog title: who to call."
+  },
+  "easyNoFamily": "There is nobody yet. Add your family in SOS.",
+  "@easyNoFamily": {
+    "description": "No family contacts yet."
+  },
+  "easyAddFamily": "Add family",
+  "@easyAddFamily": {
+    "description": "Button: add family (opens SOS)."
+  },
+  "easyPapers": "My papers",
+  "@easyPapers": {
+    "description": "Big button: my documents."
+  },
+  "easyAskFlyra": "Ask Flyra",
+  "@easyAskFlyra": {
+    "description": "Big button: ask Flyra."
+  },
+  "easyAskFlyraWhy": "Write it the way you would say it",
+  "@easyAskFlyraWhy": {
+    "description": "Subtitle: write as you would speak."
+  },
+  "easySos": "Emergency",
+  "@easySos": {
+    "description": "Big button: emergency."
+  },
+  "easyAirportHelp": "Help at the airport",
+  "@easyAirportHelp": {
+    "description": "Card: airport assistance."
+  },
+  "easyAirportHelpWhy": "It is free. The airline picks you up at the entrance and takes you to the plane. Ask your airline for it at least 48 hours before.",
+  "@easyAirportHelpWhy": {
+    "description": "Airport assistance explanation."
+  },
+  "easyDeparture": "Flight day and time",
+  "@easyDeparture": {
+    "description": "Field: flight date and time."
+  },
+  "easyFrom": "From (airport)",
+  "@easyFrom": {
+    "description": "Field: from airport."
+  },
+  "easyTo": "To (airport)",
+  "@easyTo": {
+    "description": "Field: to airport."
+  },
+  "easyGateField": "Gate (if you know it)",
+  "@easyGateField": {
+    "description": "Field: gate, optional."
+  },
+  "easyHotelName": "Hotel name",
+  "@easyHotelName": {
+    "description": "Field: hotel name."
+  },
+  "easyHotelAddress": "Hotel address",
+  "@easyHotelAddress": {
+    "description": "Field: hotel address."
+  },
+  "easySave": "Save",
+  "@easySave": {
+    "description": "Button: save."
+  },
+  "easyPickDay": "Choose day and time",
+  "@easyPickDay": {
+    "description": "Button: choose day and time."
+  },
+  "famTitle": "Family profiles",
+  "@famTitle": {
+    "description": "Family profiles screen title."
+  },
+  "famSubtitle": "Flyra plans with everyone in mind",
+  "@famSubtitle": {
+    "description": "Subtitle."
+  },
+  "famAdd": "Add a person",
+  "@famAdd": {
+    "description": "Button: add a person."
+  },
+  "famEmpty": "Add who travels with you: age, allergies, needs and what they like.",
+  "@famEmpty": {
+    "description": "No profiles yet."
+  },
+  "famName": "Name",
+  "@famName": {
+    "description": "Field: name."
+  },
+  "famAge": "Age",
+  "@famAge": {
+    "description": "Field: age."
+  },
+  "famAgeYears": "{age, plural, =1{1 year} other{{age} years}}",
+  "@famAgeYears": {
+    "description": "Age in years.",
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "famAllergies": "Allergies or food (separate with commas)",
+  "@famAllergies": {
+    "description": "Field: allergies, comma separated."
+  },
+  "famNeeds": "Needs",
+  "@famNeeds": {
+    "description": "Section: needs."
+  },
+  "famLikes": "Likes",
+  "@famLikes": {
+    "description": "Section: likes."
+  },
+  "famNeedWalk": "Walks little",
+  "@famNeedWalk": {
+    "description": "Need: walks little."
+  },
+  "famNeedCarSeat": "Car seat",
+  "@famNeedCarSeat": {
+    "description": "Need: car seat."
+  },
+  "famNeedStroller": "Stroller",
+  "@famNeedStroller": {
+    "description": "Need: stroller."
+  },
+  "famNeedMeds": "Medication at set times",
+  "@famNeedMeds": {
+    "description": "Need: medication on schedule."
+  },
+  "famLikeMuseums": "Museums",
+  "@famLikeMuseums": {
+    "description": "Like."
+  },
+  "famLikeFood": "Good food",
+  "@famLikeFood": {
+    "description": "Like."
+  },
+  "famLikePhoto": "Photography",
+  "@famLikePhoto": {
+    "description": "Like."
+  },
+  "famLikeAnimals": "Animals",
+  "@famLikeAnimals": {
+    "description": "Like."
+  },
+  "famLikeMusic": "Music",
+  "@famLikeMusic": {
+    "description": "Like."
+  },
+  "famLikeBeach": "Beach",
+  "@famLikeBeach": {
+    "description": "Like."
+  },
+  "famLikeNature": "Nature",
+  "@famLikeNature": {
+    "description": "Like."
+  },
+  "famLikeShopping": "Shopping",
+  "@famLikeShopping": {
+    "description": "Like."
+  },
+  "famPlanTitle": "This is how I would plan it",
+  "@famPlanTitle": {
+    "description": "Header: plan for the family."
+  },
+  "famBecause": "Because of {names}",
+  "@famBecause": {
+    "description": "Who the tip is for.",
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "famTipAllergy": "Restaurants that list allergens: the menu translator helps you check each dish.",
+  "@famTipAllergy": {
+    "description": "Tip: allergies."
+  },
+  "famTipWalk": "Tram or taxi for the hills, and frequent breaks.",
+  "@famTipWalk": {
+    "description": "Tip: walks little."
+  },
+  "famTipCarSeat": "Ask for a child seat when renting a car or booking a taxi.",
+  "@famTipCarSeat": {
+    "description": "Tip: car seat."
+  },
+  "famTipStroller": "Look for step-free access in the metro and museums.",
+  "@famTipStroller": {
+    "description": "Tip: stroller."
+  },
+  "famTipMeds": "Medication in your hand luggage, with the prescription. Mind the time difference.",
+  "@famTipMeds": {
+    "description": "Tip: medication."
+  },
+  "famTipKids": "Many museums are free or cheaper for children: always ask.",
+  "@famTipKids": {
+    "description": "Tip: children."
+  },
+  "famTipSeniors": "Ask for senior discounts and carry an ID with your age.",
+  "@famTipSeniors": {
+    "description": "Tip: seniors."
+  },
+  "famAskFlyra": "Ask Flyra for a plan for everyone",
+  "@famAskFlyra": {
+    "description": "Button: ask Flyra for a family plan."
+  },
+  "famFlyraQuestion": "Plan a day of our trip that works for all of us: {people}",
+  "@famFlyraQuestion": {
+    "description": "Prefilled question to Flyra (user can edit before sending).",
+    "placeholders": {
+      "people": {
+        "type": "String"
+      }
+    }
+  },
+  "famPrivacy": "Everything is stored encrypted and only on this phone. Flyra only sees it if you send the question.",
+  "@famPrivacy": {
+    "description": "Privacy note."
+  },
+  "famSave": "Save",
+  "@famSave": {
+    "description": "Button: save."
+  },
+  "famDelete": "Delete",
+  "@famDelete": {
+    "description": "Button: delete person."
+  },
+  "famAllergyTag": "Allergy: {what}",
+  "@famAllergyTag": {
+    "description": "Chip text for an allergy.",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "copyTitle": "Copy this trip",
+  "@copyTitle": {
+    "description": "Copy a trip screen title."
+  },
+  "copySubtitle": "Flyra adapts it to your money",
+  "@copySubtitle": {
+    "description": "Subtitle."
+  },
+  "copyCodeLabel": "Code someone gave you",
+  "@copyCodeLabel": {
+    "description": "Field: trip code."
+  },
+  "copyOpen": "See the trip",
+  "@copyOpen": {
+    "description": "Button: open trip."
+  },
+  "copyBadCode": "Codes have 8 letters and numbers, like 7K2M-9QXD.",
+  "@copyBadCode": {
+    "description": "Invalid code."
+  },
+  "copyNotFound": "There is no trip with that code (or it is no longer shared).",
+  "@copyNotFound": {
+    "description": "Trip not found."
+  },
+  "copyOffline": "No connection. Try again in a moment.",
+  "@copyOffline": {
+    "description": "No connection."
+  },
+  "copyFailed": "Something went wrong. Try again.",
+  "@copyFailed": {
+    "description": "Generic failure."
+  },
+  "copyMyCopies": "Trips you copied",
+  "@copyMyCopies": {
+    "description": "Section: trips I copied."
+  },
+  "copyNoCopies": "None yet. They stay only on this phone.",
+  "@copyNoCopies": {
+    "description": "Empty copies."
+  },
+  "copyTripLine": "{destination} · {days, plural, =1{1 day} other{{days} days}} · {total}",
+  "@copyTripLine": {
+    "description": "Destination, days and total.",
+    "placeholders": {
+      "destination": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "copyRemove": "Remove",
+  "@copyRemove": {
+    "description": "Remove."
+  },
+  "copySharedByMe": "Trips you shared",
+  "@copySharedByMe": {
+    "description": "Section: trips I shared."
+  },
+  "copyNoShared": "You haven't shared any trip yet.",
+  "@copyNoShared": {
+    "description": "None shared."
+  },
+  "copyCopies": "{count, plural, =0{not copied yet} =1{copied once} other{copied {count} times}}",
+  "@copyCopies": {
+    "description": "How many people copied it.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "copyShareMine": "Share my trip",
+  "@copyShareMine": {
+    "description": "Button: share my trip."
+  },
+  "copyBy": "@{author} · {total} · {copies, plural, =0{not copied yet} =1{copied once} other{copied {copies} times}}",
+  "@copyBy": {
+    "description": "Author, total and copies.",
+    "placeholders": {
+      "author": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "copies": {
+        "type": "int"
+      }
+    }
+  },
+  "copyYourBudget": "Your budget",
+  "@copyYourBudget": {
+    "description": "Label: your budget."
+  },
+  "copyFlyraAdapts": "Flyra swaps the expensive things for cheaper options. Same trip, less money.",
+  "@copyFlyraAdapts": {
+    "description": "Hint under budget."
+  },
+  "copyWas": "{author}: {title}",
+  "@copyWas": {
+    "description": "What the original had.",
+    "placeholders": {
+      "author": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "copySame": "Same as the original",
+  "@copySame": {
+    "description": "Unchanged line."
+  },
+  "copyAsIs": "Just as {author} did it",
+  "@copyAsIs": {
+    "description": "No changes.",
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  },
+  "copyChanges": "{count, plural, =1{1 change} other{{count} changes}} to fit in {budget}",
+  "@copyChanges": {
+    "description": "N changes to fit budget.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "budget": {
+        "type": "String"
+      }
+    }
+  },
+  "copyDoesNotFit": "Even with the changes it is over your budget: Flyra won't make up prices to pretend it fits.",
+  "@copyDoesNotFit": {
+    "description": "Still over budget."
+  },
+  "copySave": "Copy to my trips",
+  "@copySave": {
+    "description": "Button: copy to my trips."
+  },
+  "copySaved": "Copied to your trips",
+  "@copySaved": {
+    "description": "Copied."
+  },
+  "copyPricesNote": "Prices are what the person who shared it paid, and Flyra's are estimates. Check the real price before booking.",
+  "@copyPricesNote": {
+    "description": "Prices disclaimer."
+  },
+  "copyUnshare": "Stop sharing",
+  "@copyUnshare": {
+    "description": "Stop sharing."
+  },
+  "copyCopyCode": "Copy code",
+  "@copyCopyCode": {
+    "description": "Copy the code."
+  },
+  "copyQuotaGone": "No more adaptations today. Tomorrow you get more.",
+  "@copyQuotaGone": {
+    "description": "Daily quota spent."
+  },
+  "copyFlyraBusy": "Flyra is busy right now. Try again in a minute.",
+  "@copyFlyraBusy": {
+    "description": "Flyra busy."
+  },
+  "copyNoGroups": "You don't have any expense group yet.",
+  "@copyNoGroups": {
+    "description": "No expense groups."
+  },
+  "copyPickGroup": "Which trip do you want to share?",
+  "@copyPickGroup": {
+    "description": "Pick an expense group."
+  },
+  "copyFillAll": "Fill in the title, your name, the destination, the days (1-60), the currency and at least one line.",
+  "@copyFillAll": {
+    "description": "Missing fields."
+  },
+  "copySharedTitle": "Trip shared",
+  "@copySharedTitle": {
+    "description": "Dialog: shared."
+  },
+  "copySharedBody": "Give this code to whoever you want. They open it in Copy this trip.",
+  "@copySharedBody": {
+    "description": "Dialog body."
+  },
+  "copyDone": "Done",
+  "@copyDone": {
+    "description": "Done."
+  },
+  "copyTooMany": "You already share 20 trips. Stop sharing one to add another.",
+  "@copyTooMany": {
+    "description": "Too many shared."
+  },
+  "copyShareWhat": "Only what you write here is shared: no dates, no who you travelled with and not your account.",
+  "@copyShareWhat": {
+    "description": "Share explanation."
+  },
+  "copyFieldTitle": "Title (e.g. Japan in 10 days)",
+  "@copyFieldTitle": {
+    "description": "Field: title."
+  },
+  "copyFieldAuthor": "Name others will see",
+  "@copyFieldAuthor": {
+    "description": "Field: public name."
+  },
+  "copyFieldDestination": "Destination",
+  "@copyFieldDestination": {
+    "description": "Field: destination."
+  },
+  "copyFieldDays": "Days",
+  "@copyFieldDays": {
+    "description": "Field: days."
+  },
+  "copyFieldCurrency": "Currency (EUR, USD...)",
+  "@copyFieldCurrency": {
+    "description": "Field: currency."
+  },
+  "copyFromExpenses": "Fill in from an expense group",
+  "@copyFromExpenses": {
+    "description": "Fill from expenses."
+  },
+  "copyAddLine": "Add something you paid for",
+  "@copyAddLine": {
+    "description": "Add a line."
+  },
+  "copyTotal": "Total: {total}",
+  "@copyTotal": {
+    "description": "Total.",
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "copyShareButton": "Share and get the code",
+  "@copyShareButton": {
+    "description": "Share button."
+  },
+  "copySharePrivacy": "Anyone with the code can see it. You can stop sharing it whenever you want, and it is deleted if you delete your account.",
+  "@copySharePrivacy": {
+    "description": "Privacy note."
+  },
+  "copyLineTitle": "What was it (e.g. Flight with a stop in Istanbul)",
+  "@copyLineTitle": {
+    "description": "Line title."
+  },
+  "copyLinePrice": "Price ({currency})",
+  "@copyLinePrice": {
+    "description": "Line price.",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "copyLineSave": "Save",
+  "@copyLineSave": {
+    "description": "Save line."
+  },
+  "copyKindFlight": "Flight",
+  "@copyKindFlight": {
+    "description": "Kind."
+  },
+  "copyKindStay": "Stay",
+  "@copyKindStay": {
+    "description": "Kind."
+  },
+  "copyKindTransport": "Transport",
+  "@copyKindTransport": {
+    "description": "Kind."
+  },
+  "copyKindFood": "Food",
+  "@copyKindFood": {
+    "description": "Kind."
+  },
+  "copyKindActivity": "Activity",
+  "@copyKindActivity": {
+    "description": "Kind."
+  },
+  "copyKindOther": "Other",
+  "@copyKindOther": {
+    "description": "Kind."
+  },
+  "cardsTitle": "Cards with friends",
+  "@cardsTitle": {
+    "description": "Cards with friends screen title."
+  },
+  "cardsSubtitle": "Swap, compete and see where they are",
+  "@cardsSubtitle": {
+    "description": "Subtitle."
+  },
+  "cardsHow": "Make a league with your friends. Your Passport stamps are your cards: each month whoever gets the most points with new cards wins, and you can swap cards you are missing.",
+  "@cardsHow": {
+    "description": "How it works."
+  },
+  "cardsCreate": "Create a league",
+  "@cardsCreate": {
+    "description": "Create league."
+  },
+  "cardsJoin": "Join with a code",
+  "@cardsJoin": {
+    "description": "Join league."
+  },
+  "cardsLeave": "Leave this league",
+  "@cardsLeave": {
+    "description": "Leave league."
+  },
+  "cardsPrivacy": "The people in the league will see your name, your cards (monument, year and month) and how many countries you have. Never your location, unless you turn on your city in Friends.",
+  "@cardsPrivacy": {
+    "description": "What is shared."
+  },
+  "cardsRetry": "Try again",
+  "@cardsRetry": {
+    "description": "Retry."
+  },
+  "cardsOffline": "No connection. Try again in a moment.",
+  "@cardsOffline": {
+    "description": "Offline."
+  },
+  "cardsNotFound": "There is no league with that code.",
+  "@cardsNotFound": {
+    "description": "Not found."
+  },
+  "cardsConflict": "That can't be done: the league is full or one of you already has that card.",
+  "@cardsConflict": {
+    "description": "Conflict."
+  },
+  "cardsFailed": "Something went wrong. Try again.",
+  "@cardsFailed": {
+    "description": "Generic failure."
+  },
+  "cardsTabSwap": "Swap",
+  "@cardsTabSwap": {
+    "description": "Tab."
+  },
+  "cardsTabLeague": "League",
+  "@cardsTabLeague": {
+    "description": "Tab."
+  },
+  "cardsTabFriends": "Friends",
+  "@cardsTabFriends": {
+    "description": "Tab."
+  },
+  "cardsCodeLabel": "League code",
+  "@cardsCodeLabel": {
+    "description": "Field."
+  },
+  "cardsLeagueName": "League name",
+  "@cardsLeagueName": {
+    "description": "Field."
+  },
+  "cardsMyName": "Your name in the league",
+  "@cardsMyName": {
+    "description": "Field."
+  },
+  "cardsOfferSent": "Offer sent. You'll see it here when they answer.",
+  "@cardsOfferSent": {
+    "description": "Offer sent."
+  },
+  "cardsIncoming": "{name} gives you {give} for your {want}",
+  "@cardsIncoming": {
+    "description": "Incoming swap.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "give": {
+        "type": "String"
+      },
+      "want": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsDecline": "No, thanks",
+  "@cardsDecline": {
+    "description": "Decline."
+  },
+  "cardsAccept": "Swap",
+  "@cardsAccept": {
+    "description": "Accept."
+  },
+  "cardsOutgoing": "Waiting for {name}: your {give} for {want}",
+  "@cardsOutgoing": {
+    "description": "Outgoing swap.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "give": {
+        "type": "String"
+      },
+      "want": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsProposeTitle": "Propose a swap",
+  "@cardsProposeTitle": {
+    "description": "Propose title."
+  },
+  "cardsSwapRule": "You both get a copy: your cards stay yours. Copies don't give league points, so nobody wins by swapping.",
+  "@cardsSwapRule": {
+    "description": "Swap rule."
+  },
+  "cardsInviteFirst": "Invite your friends with the code {code}.",
+  "@cardsInviteFirst": {
+    "description": "Alone in league.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsYouWant": "Cards of theirs you are missing",
+  "@cardsYouWant": {
+    "description": "Their cards."
+  },
+  "cardsNothingToWant": "You already have all of theirs.",
+  "@cardsNothingToWant": {
+    "description": "None."
+  },
+  "cardsYouGive": "What you give in return",
+  "@cardsYouGive": {
+    "description": "My cards."
+  },
+  "cardsNothingToGive": "They already have all of yours. Get new stamps with the camera.",
+  "@cardsNothingToGive": {
+    "description": "None."
+  },
+  "cardsSendOffer": "Send the offer",
+  "@cardsSendOffer": {
+    "description": "Send offer."
+  },
+  "cardsReceived": "Copies you got in swaps",
+  "@cardsReceived": {
+    "description": "Copies."
+  },
+  "cardsRarity": "{rarity} · {points} points",
+  "@cardsRarity": {
+    "description": "Rarity and points.",
+    "placeholders": {
+      "rarity": {
+        "type": "String"
+      },
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "cardsCopyCode": "Copy the league code",
+  "@cardsCopyCode": {
+    "description": "Copy code."
+  },
+  "cardsPosition": "You're #{pos} of {total}",
+  "@cardsPosition": {
+    "description": "Position.",
+    "placeholders": {
+      "pos": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "cardsBehind": "{points} points behind {name}",
+  "@cardsBehind": {
+    "description": "Points behind.",
+    "placeholders": {
+      "points": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsPointsRule": "Points this month: common card 10, rare 40, epic 80, legendary 150. The rarity is the age of the monument.",
+  "@cardsPointsRule": {
+    "description": "Points rule."
+  },
+  "cardsInviteCode": "League code: {code}",
+  "@cardsInviteCode": {
+    "description": "Invite code.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsYou": "You",
+  "@cardsYou": {
+    "description": "You."
+  },
+  "cardsMeta": "{countries, plural, =1{1 country} other{{countries} countries}} · {legendary, plural, =1{1 legendary} other{{legendary} legendary}}",
+  "@cardsMeta": {
+    "description": "Countries and legendary.",
+    "placeholders": {
+      "countries": {
+        "type": "int"
+      },
+      "legendary": {
+        "type": "int"
+      }
+    }
+  },
+  "cardsPoints": "{points} pts",
+  "@cardsPoints": {
+    "description": "Points.",
+    "placeholders": {
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "cardsNoCity": "We couldn't tell your city (no GPS or too far from everything).",
+  "@cardsNoCity": {
+    "description": "No city found."
+  },
+  "cardsAgoMinutes": "{n, plural, =1{1 min ago} other{{n} min ago}}",
+  "@cardsAgoMinutes": {
+    "description": "Minutes ago.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "cardsAgoHours": "{n, plural, =1{1 h ago} other{{n} h ago}}",
+  "@cardsAgoHours": {
+    "description": "Hours ago.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "cardsAgoDays": "{n, plural, =1{1 day ago} other{{n} days ago}}",
+  "@cardsAgoDays": {
+    "description": "Days ago.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "cardsShareCity": "Tell the league which city I'm in",
+  "@cardsShareCity": {
+    "description": "Share city switch."
+  },
+  "cardsSharingCity": "They see: {city}. Only the city, never the exact spot.",
+  "@cardsSharingCity": {
+    "description": "Sharing city.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "cardsShareCityWhy": "Only the city of the nearest airport, and it is updated when you turn it on. Turn it off and it disappears.",
+  "@cardsShareCityWhy": {
+    "description": "Why share city."
+  },
+  "cardsNoShare": "Doesn't share where they are",
+  "@cardsNoShare": {
+    "description": "Friend not sharing."
+  },
+  "cardsFriendsPrivacy": "You only see those who share with you, and only their city.",
+  "@cardsFriendsPrivacy": {
+    "description": "Friends privacy."
+  },
+  "cardsLegendary": "Legendary",
+  "@cardsLegendary": {
+    "description": "Card rarity name."
+  },
+  "cardsEpic": "Epic",
+  "@cardsEpic": {
+    "description": "Card rarity name."
+  },
+  "cardsRare": "Rare",
+  "@cardsRare": {
+    "description": "Card rarity name."
+  },
+  "cardsCommon": "Common",
+  "@cardsCommon": {
+    "description": "Card rarity name."
   }
 }

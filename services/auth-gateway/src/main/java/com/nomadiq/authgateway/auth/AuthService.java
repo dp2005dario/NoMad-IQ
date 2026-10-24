@@ -159,6 +159,32 @@ public class AuthService {
         revokeAllSessions(userId);
     }
 
+    /**
+     * "Borrar mi cuenta" (lo exige Google Play y el RGPD). Pasos:
+     * <ol>
+     *   <li>los mismos frenos que el login (por IP y por cuenta): nadie puede
+     *       probar contraseñas a millones por esta puerta;</li>
+     *   <li>se comprueba la contraseña otra vez (un móvil prestado no basta);</li>
+     *   <li>se expulsan todas las sesiones, en todos los móviles;</li>
+     *   <li>se borra la fila del usuario (y con ella sus tokens de refresco).</li>
+     * </ol>
+     * Los datos de los demás servicios (botes, alertas...) los borra la app
+     * ANTES de llamar aquí, con el mismo pase (ver docs/guia-ajustes.md).
+     */
+    public void deleteAccount(UUID userId, String password, String clientIp) {
+        rateLimiter.acquire(BUCKET_LOGIN_IP, clientIp, props.rateLimits().loginPerIp());
+        UserAccount user = users.findById(userId).orElseThrow(InvalidCredentialsException::new);
+        rateLimiter.ensureNotBlocked(BUCKET_LOGIN_FAILURES, user.email(), props.rateLimits().loginFailuresPerAccount());
+        if (!passwords.matches(password, user.passwordHash())) {
+            rateLimiter.record(BUCKET_LOGIN_FAILURES, user.email(), props.rateLimits().loginFailuresPerAccount());
+            throw new InvalidCredentialsException();
+        }
+        revokeAllSessions(userId);
+        users.delete(userId);
+        // Solo el id (un número al azar): ni el email ni nada que identifique.
+        log.warn("Cuenta {} borrada a petición de su dueño", userId);
+    }
+
     /** "Ana@Mail.com " y "ana@mail.com" son la misma cuenta. */
     static String normalizeEmail(String email) {
         return email == null ? "" : email.trim().toLowerCase(Locale.ROOT);

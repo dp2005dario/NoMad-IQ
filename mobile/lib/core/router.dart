@@ -5,21 +5,43 @@ import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../auth/session.dart';
+import '../features/vault/vault_screen.dart';
 import '../features/audioguide/audioguide_screen.dart';
+import '../features/camera/camera_screen.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/coming_soon/coming_soon_screen.dart';
+import '../features/flights/explore_screen.dart';
 import '../features/flights/fare_alerts_screen.dart';
 import '../features/flights/fare_route_screen.dart';
 import '../features/flights/flight_search_screen.dart';
 import '../features/route/flight_route_screen.dart';
 import '../features/flights/fares_api.dart';
 import '../features/flights/flights_screen.dart';
+import '../features/flyra/flyra_chat_screen.dart';
 import '../features/group/group_screen.dart';
 import '../features/group/trip_create_screen.dart';
 import '../features/group/trip_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/map/map_screen.dart';
+import '../features/money/expense_group_screen.dart';
+import '../features/money/money_screen.dart';
 import '../features/settings/language_screen.dart';
+import '../features/offline/offline_screen.dart';
+import '../features/easy/easy_home_screen.dart';
+import '../features/cards/cards_screen.dart';
+import '../features/copy_trip/copy_trip_screen.dart';
+import '../features/copy_trip/share_trip_screen.dart';
+import '../features/family/family_screen.dart';
+import '../features/help/help_screen.dart';
+import '../features/papers/papers_screen.dart';
+import '../features/travel_with/travel_with_screen.dart';
+import '../features/passport/passport_screen.dart';
+import '../features/menu/menu_screen.dart';
+import '../features/trip/before_screen.dart';
+import '../features/push/notices_screen.dart';
+import '../features/settings/privacy_screen.dart';
+import '../features/settings/settings_screen.dart';
+import '../features/sos/sos_screen.dart';
 import '../features/shell/app_shell.dart';
 import '../features/welcome/welcome_screen.dart';
 import 'services.dart';
@@ -34,6 +56,33 @@ abstract final class Routes {
   static const String group = '/group';
   static const String language = '/settings/language';
   static const String signIn = '/signin';
+  static const String vault = '/vault';
+  static const String settings = '/settings';
+  static const String sos = '/sos';
+  static const String papers = '/papers';
+  static const String passport = '/passport';
+  static const String notices = '/notices';
+  static const String menu = '/menu';
+  static const String before = '/before';
+  static const String offline = '/offline';
+  static const String travelWith = '/travel-with';
+  static const String help = '/help';
+  static const String family = '/family';
+  static const String shareTrip = '/copy-trip/share';
+  static const String cards = '/cards';
+
+  /// "Copia este viaje"; con [code] abre directamente ese viaje.
+  static String copyTrip({String? code}) => Uri(
+    path: '/copy-trip',
+    queryParameters: code == null ? null : <String, String>{'code': code},
+  ).toString();
+
+  /// Explorar: precio por meses y clima. `from` = aeropuerto de salida.
+  static String explore({String? origin}) => Uri(
+    path: '/explore',
+    queryParameters: origin == null ? null : <String, String>{'from': origin},
+  ).toString();
+  static const String privacy = '/settings/privacy';
 
   /// La audioguía de una zona. El nombre va en la dirección para poder
   /// enseñarlo en el título mientras se carga el resto.
@@ -82,6 +131,22 @@ abstract final class Routes {
   static String groupTrip(String id) =>
       '/group/trip/${Uri.encodeComponent(id)}';
 
+  /// El chat con Flyra. Con `question`, la escribe ya en la caja.
+  static String flyra({String? question}) => Uri(
+    path: '/flyra',
+    queryParameters: question == null ? null : <String, String>{'q': question},
+  ).toString();
+
+  /// Dinero (gastos, divisas...). [tab] abre una pestaña concreta.
+  static String money({MoneyTab? tab}) => Uri(
+    path: '/money',
+    queryParameters: tab == null ? null : <String, String>{'tab': tab.name},
+  ).toString();
+
+  /// Un bote de gastos compartidos por dentro.
+  static String expenseGroup(String id) =>
+      '/money/group/${Uri.encodeComponent(id)}';
+
   /// Pantalla "Muy pronto" de una función aún sin construir.
   static String soon(Feature feature) => '/soon/${feature.name}';
 }
@@ -124,12 +189,9 @@ GoRouter buildRouter({
         StatefulNavigationShell shell,
       ) => AppShell(shell: shell),
       branches: <StatefulShellBranch>[
-        _tab(Routes.home, (_) => const HomeScreen()),
+        _tab(Routes.home, (_) => const HomeOrEasy()),
         _tab(Routes.map, (_) => const MapScreen()),
-        _tab(
-          Routes.camera,
-          (_) => const ComingSoonScreen(feature: Feature.camera),
-        ),
+        _tab(Routes.camera, (_) => const CameraScreen()),
         _tab(Routes.flights, (_) => const FlightsScreen()),
         _tab(Routes.group, (_) => const GroupScreen()),
       ],
@@ -189,6 +251,24 @@ GoRouter buildRouter({
       ),
     ),
     GoRoute(
+      path: '/flyra',
+      builder: (BuildContext context, GoRouterState state) =>
+          FlyraChatScreen(draft: state.uri.queryParameters['q']),
+    ),
+    GoRoute(
+      path: '/money',
+      builder: (BuildContext context, GoRouterState state) => MoneyScreen(
+        tab:
+            MoneyTab.values.asNameMap()[state.uri.queryParameters['tab']] ??
+            MoneyTab.expenses,
+      ),
+    ),
+    GoRoute(
+      path: '/money/group/:id',
+      builder: (BuildContext context, GoRouterState state) =>
+          ExpenseGroupScreen(groupId: state.pathParameters['id'] ?? ''),
+    ),
+    GoRoute(
       path: Routes.groupNew,
       builder: (BuildContext context, GoRouterState state) =>
           const TripCreateScreen(),
@@ -197,6 +277,90 @@ GoRouter buildRouter({
       path: '/group/trip/:id',
       builder: (BuildContext context, GoRouterState state) =>
           TripScreen(tripId: state.pathParameters['id'] ?? ''),
+    ),
+    GoRoute(
+      path: Routes.settings,
+      builder: (BuildContext context, GoRouterState state) =>
+          const SettingsScreen(),
+    ),
+    GoRoute(
+      path: Routes.privacy,
+      builder: (BuildContext context, GoRouterState state) =>
+          const PrivacyScreen(),
+    ),
+    GoRoute(
+      path: Routes.papers,
+      builder: (BuildContext context, GoRouterState state) =>
+          const PapersScreen(),
+    ),
+    GoRoute(
+      path: '/explore',
+      builder: (BuildContext context, GoRouterState state) =>
+          ExploreScreen(origin: state.uri.queryParameters['from'] ?? ''),
+    ),
+    GoRoute(
+      path: Routes.before,
+      builder: (BuildContext context, GoRouterState state) =>
+          const BeforeTripScreen(),
+    ),
+    GoRoute(
+      path: Routes.menu,
+      builder: (BuildContext context, GoRouterState state) =>
+          const MenuScreen(),
+    ),
+    GoRoute(
+      path: Routes.notices,
+      builder: (BuildContext context, GoRouterState state) =>
+          const NoticesScreen(),
+    ),
+    GoRoute(
+      path: Routes.passport,
+      builder: (BuildContext context, GoRouterState state) =>
+          const PassportScreen(),
+    ),
+    GoRoute(
+      path: Routes.help,
+      builder: (BuildContext context, GoRouterState state) =>
+          const HelpScreen(),
+    ),
+    GoRoute(
+      path: Routes.cards,
+      builder: (BuildContext context, GoRouterState state) =>
+          const CardsScreen(),
+    ),
+    GoRoute(
+      path: '/copy-trip',
+      builder: (BuildContext context, GoRouterState state) =>
+          CopyTripScreen(code: state.uri.queryParameters['code']),
+    ),
+    GoRoute(
+      path: Routes.shareTrip,
+      builder: (BuildContext context, GoRouterState state) =>
+          const ShareTripScreen(),
+    ),
+    GoRoute(
+      path: Routes.family,
+      builder: (BuildContext context, GoRouterState state) =>
+          const FamilyScreen(),
+    ),
+    GoRoute(
+      path: Routes.travelWith,
+      builder: (BuildContext context, GoRouterState state) =>
+          const TravelWithScreen(),
+    ),
+    GoRoute(
+      path: Routes.offline,
+      builder: (BuildContext context, GoRouterState state) =>
+          const OfflineScreen(),
+    ),
+    GoRoute(
+      path: Routes.sos,
+      builder: (BuildContext context, GoRouterState state) => const SosScreen(),
+    ),
+    GoRoute(
+      path: Routes.vault,
+      builder: (BuildContext context, GoRouterState state) =>
+          const VaultScreen(),
     ),
     GoRoute(
       path: '/soon/:feature',

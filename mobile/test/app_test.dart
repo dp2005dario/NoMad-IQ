@@ -57,7 +57,11 @@ void main() {
 
     await tester.tap(find.byTooltip('Cámara'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Cámara está en camino'), findsOneWidget);
+    // El modo cámara necesita cuenta (cada una tiene sus escaneos diarios).
+    expect(
+      find.textContaining('Inicia sesión para usar el modo cámara'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('Inicio'));
     await tester.pumpAndSettle();
@@ -70,7 +74,7 @@ void main() {
     await pumpApp(tester, locale: 'es', initialLocation: Routes.home);
     await tester.tap(find.text('Bóveda'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Bóveda está en camino'), findsOneWidget);
+    expect(find.text('Toca para abrir con tu huella'), findsOneWidget);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.text('Hola, viajero'), findsOneWidget);

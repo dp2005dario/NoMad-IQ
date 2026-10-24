@@ -16,6 +16,7 @@ import 'dart:convert';
 import 'package:uuid/uuid.dart';
 
 import '../../auth/session.dart';
+import '../../core/settings.dart';
 import '../../core/api_client.dart';
 import 'hpke.dart';
 import 'push_state.dart';
@@ -62,6 +63,7 @@ class PushRegistrar {
     required this._store,
     required this._transport,
     required this._session,
+    this._prefs,
     DateTime Function()? clock,
     String Function()? newDeviceId,
   }) : _now = clock ?? DateTime.now,
@@ -71,6 +73,7 @@ class PushRegistrar {
   final PushStateStore _store;
   final PushTransport _transport;
   final SessionController _session;
+  final SettingsStore? _prefs;
   final DateTime Function() _now;
   final String Function() _newDeviceId;
 
@@ -118,6 +121,20 @@ class PushRegistrar {
     await _forget();
   }
 
+  /// true = "Olvidar este teléfono": sin registro ni claves hasta que lo
+  /// vuelvas a activar.
+  bool get paused => _prefs?.readData(LocalData.pushOff) == '1';
+
+  /// Privacidad → "Olvidar este teléfono" (true) o "Volver a activar" (false).
+  Future<void> setPaused(bool off) async {
+    await _prefs?.writeData(LocalData.pushOff, off ? '1' : null);
+    if (off) {
+      await unregister();
+    } else {
+      await sync();
+    }
+  }
+
   // ---------------------------------------------------------------------------
 
   void _onSession() {
@@ -134,7 +151,7 @@ class PushRegistrar {
   }
 
   Future<void> _sync() async {
-    if (_session.status != SessionStatus.signedIn) return;
+    if (_session.status != SessionStatus.signedIn || paused) return;
     final String? token;
     try {
       token = await _transport.token();

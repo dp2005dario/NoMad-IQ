@@ -33,3 +33,10 @@ type Searcher interface {
 	// proveedor pide frenar (la app dirá "inténtalo en unos segundos").
 	Search(ctx context.Context, spec domain.SearchSpec, limit int) ([]domain.Offer, error)
 }
+
+// MonthlySearcher da el billete más barato de cada mes para una ruta (ida
+// y vuelta, turista), del mes actual en adelante. Lo usa Explorar.
+type MonthlySearcher interface {
+	Name() string
+	Monthly(ctx context.Context, route domain.Route) ([]domain.MonthFare, error)
+}

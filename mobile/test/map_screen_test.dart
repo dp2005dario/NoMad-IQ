@@ -126,6 +126,12 @@ void main() {
       'http://gateway.test/v1/audio/puerta-del-sol/es/v3/abc/parte-1.opus',
       'http://gateway.test/v1/audio/puerta-del-sol/es/v3/abc/parte-2.opus',
     ]);
+    // Lo que se ve con el móvil bloqueado.
+    expect(players.single.info?.album, 'Puerta del Sol');
+    expect(players.single.info?.titles, <String>[
+      'Parte 1 de 2 · El corazón de Madrid',
+      'Parte 2 de 2 · El corazón de Madrid',
+    ]);
 
     await tester.tap(find.byIcon(Icons.play_arrow_rounded));
     await tester.pumpAndSettle();

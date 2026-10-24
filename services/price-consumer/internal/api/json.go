@@ -82,6 +82,24 @@ type searchJSON struct {
 	Offers     []offerJSON `json:"offers"`
 }
 
+type monthJSON struct {
+	Month         string    `json:"month"` // "2027-03"
+	PricePerAdult moneyJSON `json:"price_per_adult"`
+	Carrier       string    `json:"carrier,omitempty"`
+	DepartureAt   string    `json:"departure_at"`
+	ReturnAt      string    `json:"return_at,omitempty"`
+	Transfers     int       `json:"transfers"`
+	BookingURL    string    `json:"booking_url"`
+}
+
+type monthsJSON struct {
+	Origin      string      `json:"origin"`
+	Destination string      `json:"destination"`
+	Provider    string      `json:"provider"`
+	ObservedAt  time.Time   `json:"observed_at"`
+	Months      []monthJSON `json:"months"`
+}
+
 func toRoute(s domain.RouteSpec) routeJSON {
 	r := routeJSON{
 		RouteKey:      s.Key(),

@@ -11,6 +11,8 @@ import 'package:nomadiq/auth/session.dart';
 import 'package:nomadiq/core/api_client.dart';
 import 'package:nomadiq/core/money.dart';
 import 'package:nomadiq/core/router.dart';
+import 'package:nomadiq/core/settings.dart';
+import 'package:nomadiq/features/push/notice_prefs.dart';
 import 'package:nomadiq/features/push/hpke.dart';
 import 'package:nomadiq/features/push/notices.dart' show noticeTexts;
 import 'package:nomadiq/features/push/push_notice.dart';
@@ -287,6 +289,7 @@ void main() {
     late SessionController session;
     late DateTime now;
     late List<String> ids;
+    late MemorySettingsStore prefs;
 
     PushRegistrar registrar() => PushRegistrar(
       devices: DevicesApi(
@@ -299,6 +302,7 @@ void main() {
       store: store,
       transport: fcm,
       session: session,
+      prefs: prefs,
       clock: () => now,
       newDeviceId: () => ids.removeAt(0),
     );
@@ -308,6 +312,7 @@ void main() {
       notifier = FakeNotifier(g);
       fcm = FakeTransport();
       store = MemoryPushStateStore();
+      prefs = MemorySettingsStore();
       now = DateTime.utc(2026, 10, 23, 10);
       ids = <String>[
         '11111111-1111-4111-8111-111111111111',
@@ -318,6 +323,40 @@ void main() {
     });
 
     int puts() => g.calls.where((String c) => c.startsWith('PUT')).length;
+
+    test(
+      '"Olvidar este teléfono": baja, sin claves y no se registra solo',
+      () async {
+        final PushRegistrar r = registrar()..start();
+        await r.sync();
+        expect(store.state, isNotNull);
+        await r.setPaused(true);
+        expect(r.paused, isTrue);
+        expect(store.state, isNull);
+        expect(notifier.devices, isEmpty);
+        await r.sync(); // al volver a la app no se registra
+        expect(store.state, isNull);
+        fcm.current = 'fcm-token-2'; // Firebase da un token nuevo
+        await r.setPaused(false);
+        expect(store.state?.confirmed, isTrue);
+      },
+    );
+
+    test(
+      'los avisos apagados se recuerdan; los de seguridad no se apagan',
+      () async {
+        await setMuted(prefs, <PushKind>{
+          PushKind.fareAlert,
+          PushKind.zoneSafety,
+        }, true);
+        expect(mutedKinds(prefs), <PushKind>{PushKind.fareAlert});
+        await setMuted(prefs, <PushKind>{PushKind.fareAlert}, false);
+        expect(mutedKinds(prefs), isEmpty);
+        expect(prefs.readData(LocalData.mutedNotices), isNull);
+        await prefs.writeData(LocalData.mutedNotices, 'roto');
+        expect(mutedKinds(prefs), isEmpty);
+      },
+    );
 
     test('se registra una vez, con su clave pública, y no repite', () async {
       final PushRegistrar r = registrar()..start();

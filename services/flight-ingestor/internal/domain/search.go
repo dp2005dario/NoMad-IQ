@@ -67,3 +67,19 @@ type Offer struct {
 func (o Offer) Total(adults int) Money {
 	return Money{Currency: o.PricePerAdult.Currency, AmountMinor: o.PricePerAdult.AmountMinor * int64(adults)}
 }
+
+// MonthFare es el billete de ida y vuelta más barato visto para salir en
+// un mes concreto (pantalla Explorar: "¿qué mes sale más barato?").
+type MonthFare struct {
+	Year          int
+	Month         time.Month
+	PricePerAdult Money
+	CarrierIATA   string // "" si no se sabe
+	DepartureAt   string // "AAAA-MM-DD" o RFC 3339
+	ReturnAt      string
+	Transfers     int
+	DeepLink      string // enlace https de reserva, con el código de afiliado
+}
+
+// MaxMonths: como mucho un año de meses (lo que venden las aerolíneas).
+const MaxMonths = 12
