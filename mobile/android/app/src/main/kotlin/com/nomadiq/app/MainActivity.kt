@@ -1,13 +1,14 @@
 package com.nomadiq.app
 
 import android.view.WindowManager
-import io.flutter.embedding.android.FlutterFragmentActivity
+import com.ryanheise.audioservice.AudioServiceFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
-// FlutterFragmentActivity (y no FlutterActivity): la ventana de la huella
-// (local_auth) necesita una actividad con "fragments".
-class MainActivity : FlutterFragmentActivity() {
+// AudioServiceFragmentActivity = FlutterFragmentActivity (la ventana de la
+// huella de local_auth necesita "fragments") + lo que necesita el audio con
+// el móvil bloqueado (just_audio_background) para hablar con la app.
+class MainActivity : AudioServiceFragmentActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         // La Bóveda pide "ventana segura" mientras se ve: Android no deja

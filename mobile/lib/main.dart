@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
 import 'app.dart';
 import 'auth/auth_api.dart';
@@ -32,6 +33,18 @@ Future<void> main() async {
   // Necesario antes de usar plugins (como el almacenamiento) en main().
   WidgetsFlutterBinding.ensureInitialized();
   registerDataLicenses();
+  // Audioguías con el móvil bloqueado (maqueta "Bloqueo"): play/pausa y
+  // partes en la pantalla de bloqueo, la notificación, el reloj y el coche.
+  // Android pide un "servicio en primer plano" de tipo multimedia mientras
+  // suena; la notificación se puede quitar al pausar.
+  if (defaultTargetPlatform == TargetPlatform.android) {
+    await JustAudioBackground.init(
+      androidNotificationChannelId: 'com.nomadiq.app.audioguide',
+      androidNotificationChannelName: 'Audioguías · Audio guides',
+      androidNotificationIcon: 'mipmap/ic_launcher',
+      androidStopForegroundOnPause: true,
+    );
+  }
   final SettingsStore store = await PreferencesSettingsStore.open();
   final SessionController session = SessionController(
     api: AuthApi(baseUrl: AppConfig.apiBaseUrl),

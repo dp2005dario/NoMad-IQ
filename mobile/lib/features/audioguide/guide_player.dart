@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
 /// Una foto del reproductor en este instante.
 @immutable
@@ -49,11 +50,29 @@ class Playback {
   );
 }
 
+/// Lo que se ve en la pantalla de bloqueo y en la notificación mientras
+/// suena (maqueta "Bloqueo"): la zona y el título de cada parte.
+class NowPlaying {
+  const NowPlaying({required this.album, required this.titles});
+
+  /// La zona ("Barrio de las Letras").
+  final String album;
+
+  /// Un título por parte ("Parte 1 de 4 · Cervantes y Lope").
+  final List<String> titles;
+}
+
 abstract interface class GuidePlayer {
   ValueListenable<Playback> get playback;
 
   /// Prepara la lista de partes (una URL por parte), sin empezar a sonar.
-  Future<void> load(List<Uri> parts, {int part = 0, Duration? position});
+  /// [info] es lo que sale con el móvil bloqueado.
+  Future<void> load(
+    List<Uri> parts, {
+    int part = 0,
+    Duration? position,
+    NowPlaying? info,
+  });
   Future<void> play();
   Future<void> pause();
   Future<void> seek(Duration position, {int? part});
@@ -114,11 +133,32 @@ class JustAudioGuidePlayer implements GuidePlayer {
   ValueListenable<Playback> get playback => _state;
 
   @override
-  Future<void> load(List<Uri> parts, {int part = 0, Duration? position}) async {
+  Future<void> load(
+    List<Uri> parts, {
+    int part = 0,
+    Duration? position,
+    NowPlaying? info,
+  }) async {
     _update(Playback(part: part, position: position ?? Duration.zero));
     try {
       await _player.setAudioSources(
-        <AudioSource>[for (final Uri url in parts) AudioSource.uri(url)],
+        <AudioSource>[
+          for (int i = 0; i < parts.length; i++)
+            AudioSource.uri(
+              parts[i],
+              // La "etiqueta" de cada parte: just_audio_background la usa
+              // para la pantalla de bloqueo, el reloj y el coche (Bluetooth).
+              // Es obligatoria en cada parte.
+              tag: MediaItem(
+                id: parts[i].toString(),
+                album: info?.album ?? 'NomadIQ',
+                title: i < (info?.titles.length ?? 0)
+                    ? info!.titles[i]
+                    : 'NomadIQ',
+                artist: 'NomadIQ · Flyra',
+              ),
+            ),
+        ],
         initialIndex: part,
         initialPosition: position,
       );

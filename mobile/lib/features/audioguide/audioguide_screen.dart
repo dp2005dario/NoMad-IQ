@@ -133,11 +133,24 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
       }
       _audio = audio;
       setState(() {});
+      final AppLocalizations t = AppLocalizations.of(context);
+      final int n = audio.parts.length;
+      final String? guideTitle = _script?.title;
       // Si es una recarga (el audio viejo se retiró), se sigue donde ibas.
       await player.load(
         <Uri>[for (final AudioPart p in audio.parts) p.url],
-        part: before == null ? 0 : before.part.clamp(0, audio.parts.length - 1),
+        part: before == null ? 0 : before.part.clamp(0, n - 1),
         position: before?.position,
+        info: NowPlaying(
+          album: _script?.zoneName ?? widget.zoneName,
+          titles: <String>[
+            for (int i = 0; i < n; i++)
+              <String?>[
+                t.guidePartOf(i + 1, n),
+                guideTitle,
+              ].whereType<String>().join(' · '),
+          ],
+        ),
       );
       await player.setSpeed(_speeds[_speed]);
     } on ApiException {

@@ -307,8 +307,16 @@ class FakePlayer implements GuidePlayer {
   @override
   ValueListenable<Playback> get playback => state;
 
+  NowPlaying? info;
+
   @override
-  Future<void> load(List<Uri> parts, {int part = 0, Duration? position}) async {
+  Future<void> load(
+    List<Uri> parts, {
+    int part = 0,
+    Duration? position,
+    NowPlaying? info,
+  }) async {
+    this.info = info;
     loaded = parts;
     state.value = Playback(part: part, position: position ?? Duration.zero);
   }

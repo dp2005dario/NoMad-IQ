@@ -13,6 +13,11 @@
          (que exige un formulario aparte en Google Play). -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <!-- Audioguías con el móvil bloqueado: otro servicio en primer plano, de
+         tipo "reproducción multimedia", y que la CPU no se duerma mientras
+         suena (WAKE_LOCK). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Android 13+: permiso para enseñar notificaciones (avisos push y la
          notificación fija del modo viaje). Se pide al encender el modo viaje. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -54,6 +59,25 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- El servicio de audio de just_audio_background (paquete
+             audio_service) y quien recibe los botones de los auriculares. -->
+        <service
+            android:name="com.ryanheise.audioservice.AudioService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="true"
+            tools:ignore="Instantiatable">
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
+        <receiver
+            android:name="com.ryanheise.audioservice.MediaButtonReceiver"
+            android:exported="true"
+            tools:ignore="Instantiatable">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
