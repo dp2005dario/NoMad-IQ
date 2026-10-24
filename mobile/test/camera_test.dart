@@ -180,8 +180,9 @@ void main() {
     test('un sello por monumento', () async {
       final MemorySettingsStore prefs = MemorySettingsStore();
       final StampBook book = StampBook(prefs);
-      expect(await book.add('Q1', 'Uno', DateTime.utc(2026)), isTrue);
-      expect(await book.add('Q1', 'Uno', DateTime.utc(2026)), isFalse);
+      final Stamp one = Stamp(qid: 'Q1', name: 'Uno', date: DateTime.utc(2026));
+      expect(await book.add(one), isTrue);
+      expect(await book.add(one), isFalse);
       expect(book.all().single.name, 'Uno');
     });
   });
@@ -229,6 +230,8 @@ void main() {
     await settle(tester);
     expect(find.text('Sello guardado'), findsOneWidget);
     expect(StampBook(prefs).has('Q1503138'), isTrue);
+    // El sello guarda dónde está, para su página del Pasaporte.
+    expect(StampBook(prefs).all().single.lat, isNotNull);
 
     // "¿No es este?": se elige el Oso y se ve su ficha.
     await tester.tap(find.textContaining('El Oso y el Madroño'));

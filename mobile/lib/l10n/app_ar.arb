@@ -820,5 +820,21 @@
   "papersSendEmail": "افتح البريد مع الرسالة",
   "papersClaimNote": "بلا عمولة: المال كله لك. الرسالة بالإنجليزية التي تفهمها كل الشركات.",
   "papersNoEmailApp": "لا يوجد تطبيق بريد على هذا الهاتف.",
-  "papersFillAll": "املأ كل الحقول"
+  "papersFillAll": "املأ كل الحقول",
+  "passportTitle": "جواز سفري",
+  "passportCoverTitle": "جواز السفر",
+  "passportTapToOpen": "اضغط للفتح",
+  "passportStamps": "{count, plural, =1{ختم واحد} other{{count} أختام}}",
+  "passportCountries": "{count, plural, =1{بلد واحد} other{{count} بلدان}}",
+  "passportElsewhere": "أماكن أخرى",
+  "passportEmpty": "لا أختام بعد. وجّه الكاميرا إلى معلم واحفظ ختمه.",
+  "passportOpenCamera": "افتح الكاميرا",
+  "passportHint": "كل معلم تزوره يمنحك بطاقته. اضغط على بطاقة لتعرف قصتها.",
+  "passportRarityLegendary": "أسطورية",
+  "passportRarityEpic": "ملحمية",
+  "passportRarityRare": "نادرة",
+  "passportRarityCommon": "عادية",
+  "passportRarityWhy": "كلما كان المعلم أقدم كانت بطاقته أندر.",
+  "passportStampedOn": "خُتم في {date}",
+  "passportSeeOnMap": "عرض على الخريطة"
 }

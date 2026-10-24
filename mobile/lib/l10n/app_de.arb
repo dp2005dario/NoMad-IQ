@@ -820,5 +820,21 @@
   "papersSendEmail": "E-Mail mit dem Brief öffnen",
   "papersClaimNote": "Ohne Provision: Das ganze Geld bekommst du. Der Brief ist auf Englisch, das jede Airline versteht.",
   "papersNoEmailApp": "Auf diesem Handy gibt es keine E-Mail-App.",
-  "papersFillAll": "Fülle alle Felder aus"
+  "papersFillAll": "Fülle alle Felder aus",
+  "passportTitle": "Mein Reisepass",
+  "passportCoverTitle": "REISEPASS",
+  "passportTapToOpen": "Tippen zum Öffnen",
+  "passportStamps": "{count, plural, =1{1 Stempel} other{{count} Stempel}}",
+  "passportCountries": "{count, plural, =1{1 Land} other{{count} Länder}}",
+  "passportElsewhere": "Andere Orte",
+  "passportEmpty": "Noch keine Stempel. Richte die Kamera auf ein Denkmal und speichere seinen Stempel.",
+  "passportOpenCamera": "Kamera öffnen",
+  "passportHint": "Jedes besuchte Denkmal gibt dir seine Karte. Tippe auf eine Karte für ihre Geschichte.",
+  "passportRarityLegendary": "Legendär",
+  "passportRarityEpic": "Episch",
+  "passportRarityRare": "Selten",
+  "passportRarityCommon": "Gewöhnlich",
+  "passportRarityWhy": "Je älter das Denkmal, desto seltener die Karte.",
+  "passportStampedOn": "Gestempelt am {date}",
+  "passportSeeOnMap": "Auf der Karte ansehen"
 }

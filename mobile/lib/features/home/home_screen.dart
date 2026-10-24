@@ -81,6 +81,13 @@ class HomeScreen extends StatelessWidget {
                     label: Feature.expenses.label(t),
                     onTap: () => context.push(Routes.money()),
                   ),
+                  // Los sellos de los monumentos que reconoce la cámara.
+                  _Shortcut(
+                    icon: Icons.approval_rounded,
+                    color: const Color(0xFFE9C46A),
+                    label: t.passportTitle,
+                    onTap: () => context.push(Routes.passport),
+                  ),
                   // Las audioguías viven en el Mapa: se abren al tocar una zona.
                   _Shortcut(
                     icon: Feature.audioguides.icon,

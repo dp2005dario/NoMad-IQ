@@ -278,7 +278,17 @@ class _CameraScreenState extends State<CameraScreen>
   }
 
   Future<void> _stamp(Landmark l) async {
-    await StampBook(_services.prefs).add(l.qid, l.name, DateTime.now());
+    await StampBook(_services.prefs).add(
+      Stamp(
+        qid: l.qid,
+        name: l.name,
+        date: DateTime.now(),
+        lat: l.lat,
+        lon: l.lon,
+        year: l.year,
+        description: l.description,
+      ),
+    );
     if (mounted) setState(() {});
   }
 

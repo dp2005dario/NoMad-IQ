@@ -820,5 +820,21 @@
   "papersSendEmail": "Abrir el correo con la carta",
   "papersClaimNote": "Sin comisión: el dinero va entero a ti. La carta va en inglés, que entienden todas las aerolíneas.",
   "papersNoEmailApp": "No hay ninguna app de correo en este móvil.",
-  "papersFillAll": "Rellena todos los campos"
+  "papersFillAll": "Rellena todos los campos",
+  "passportTitle": "Mi pasaporte",
+  "passportCoverTitle": "PASAPORTE DE VIAJE",
+  "passportTapToOpen": "Toca para abrir",
+  "passportStamps": "{count, plural, =1{1 sello} other{{count} sellos}}",
+  "passportCountries": "{count, plural, =1{1 país} other{{count} países}}",
+  "passportElsewhere": "Otros lugares",
+  "passportEmpty": "Aún no tienes sellos. Apunta la cámara a un monumento y guarda su sello.",
+  "passportOpenCamera": "Abrir la cámara",
+  "passportHint": "Cada monumento que visitas te da su cromo. Toca un cromo para saber su historia.",
+  "passportRarityLegendary": "Legendaria",
+  "passportRarityEpic": "Épica",
+  "passportRarityRare": "Rara",
+  "passportRarityCommon": "Común",
+  "passportRarityWhy": "Cuanto más antiguo el monumento, más rara su carta.",
+  "passportStampedOn": "Sellado el {date}",
+  "passportSeeOnMap": "Ver en el mapa"
 }

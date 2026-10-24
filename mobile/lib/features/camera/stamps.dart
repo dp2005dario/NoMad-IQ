@@ -5,16 +5,39 @@ import 'dart:convert';
 import '../../core/settings.dart';
 
 class Stamp {
-  const Stamp({required this.qid, required this.name, required this.date});
+  const Stamp({
+    required this.qid,
+    required this.name,
+    required this.date,
+    this.lat,
+    this.lon,
+    this.year,
+    this.description,
+  });
 
   final String qid;
   final String name;
   final DateTime date;
 
+  /// Dónde está el monumento (para la página del país y "Ver en el mapa").
+  /// Los sellos antiguos no lo tienen: van a "Otros lugares".
+  final double? lat;
+  final double? lon;
+
+  /// Año de construcción: decide lo rara que es la carta.
+  final int? year;
+
+  /// Una frase sobre el monumento ("catedral gótica de Burgos").
+  final String? description;
+
   Map<String, Object?> toJson() => <String, Object?>{
     'qid': qid,
     'name': name,
     'date': date.toUtc().toIso8601String(),
+    if (lat != null) 'lat': lat,
+    if (lon != null) 'lon': lon,
+    if (year != null) 'year': year,
+    if (description != null) 'description': description,
   };
 
   static Stamp? tryParse(Object? json) {
@@ -23,7 +46,20 @@ class Stamp {
     final Object? name = json['name'];
     final DateTime? date = DateTime.tryParse('${json['date']}');
     if (qid is! String || name is! String || date == null) return null;
-    return Stamp(qid: qid, name: name, date: date);
+    // Los extras son opcionales: si faltan o vienen raros, se ignoran.
+    final Object? lat = json['lat'];
+    final Object? lon = json['lon'];
+    final Object? year = json['year'];
+    final Object? description = json['description'];
+    return Stamp(
+      qid: qid,
+      name: name,
+      date: date,
+      lat: lat is num ? lat.toDouble() : null,
+      lon: lon is num ? lon.toDouble() : null,
+      year: year is int ? year : null,
+      description: description is String ? description : null,
+    );
   }
 }
 
@@ -46,10 +82,10 @@ class StampBook {
   bool has(String qid) => all().any((Stamp s) => s.qid == qid);
 
   /// Añade el sello si no lo tenías. Devuelve false si ya estaba.
-  Future<bool> add(String qid, String name, DateTime when) async {
+  Future<bool> add(Stamp stamp) async {
     final List<Stamp> stamps = all();
-    if (stamps.any((Stamp s) => s.qid == qid)) return false;
-    stamps.add(Stamp(qid: qid, name: name, date: when));
+    if (stamps.any((Stamp s) => s.qid == stamp.qid)) return false;
+    stamps.add(stamp);
     await _store.writeStamps(
       jsonEncode(stamps.map((Stamp s) => s.toJson()).toList()),
     );

@@ -88,3 +88,25 @@ al cambiar de pestaña o salir de la app, y nunca se pide el micrófono.
   GPS en ciudad puede fallar 20-50 m.
 - Solo reconoce lugares que están en Wikidata con coordenadas (casi todos
   los monumentos conocidos del mundo lo están).
+
+## Mi pasaporte (los sellos como cromos)
+
+Cada vez que tocas **Mi sello** en la ficha de un monumento, la app guarda
+un sello **solo en tu móvil** (nombre, fecha, dónde está, año y una frase).
+El atajo **Mi pasaporte** de Inicio los enseña como un librito:
+
+1. **La tapa** azul con letras doradas y tu nombre. Tócala para abrirla.
+2. **Una página por país.** El país se adivina sin Internet con el
+   aeropuerto más cercano al monumento (los mismos datos que usa el SOS). La
+   bandera es un emoji: dos "letras regionales" que el móvil junta y dibuja
+   como bandera, sin ninguna imagen. Los sellos guardados antes de esta
+   versión no tienen lugar y salen en **Otros lugares**.
+3. **Cada sello es un cromo** con rareza según la edad del monumento:
+   antes del año 1000 → **Legendaria** (oro), antes de 1600 → **Épica**
+   (violeta), antes de 1900 → **Rara** (azul), el resto → **Común**.
+4. Al tocar un cromo: su historia, **Escuchar** (la voz del móvil) y **Ver
+   en el mapa** (abre OpenStreetMap en el navegador).
+
+Ficheros: `mobile/lib/features/passport/passport.dart` (las cuentas: rareza,
+páginas, bandera) y `passport_screen.dart` (la pantalla). Para probarlo en VS
+Code: `cd mobile` y `flutter test test/passport_test.dart`.

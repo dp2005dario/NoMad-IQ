@@ -820,5 +820,21 @@
   "papersSendEmail": "手紙入りのメールを開く",
   "papersClaimNote": "手数料なし。お金は全額あなたに。手紙はどの航空会社にも通じる英語です。",
   "papersNoEmailApp": "このスマホにはメールアプリがありません。",
-  "papersFillAll": "すべて入力してください"
+  "papersFillAll": "すべて入力してください",
+  "passportTitle": "わたしのパスポート",
+  "passportCoverTitle": "トラベルパスポート",
+  "passportTapToOpen": "タップして開く",
+  "passportStamps": "{count, plural, other{スタンプ {count} 個}}",
+  "passportCountries": "{count, plural, other{{count} か国}}",
+  "passportElsewhere": "その他の場所",
+  "passportEmpty": "まだスタンプがありません。カメラを名所に向けてスタンプを保存しよう。",
+  "passportOpenCamera": "カメラを開く",
+  "passportHint": "訪れた名所ごとにカードがもらえます。カードをタップして物語を知ろう。",
+  "passportRarityLegendary": "レジェンド",
+  "passportRarityEpic": "エピック",
+  "passportRarityRare": "レア",
+  "passportRarityCommon": "コモン",
+  "passportRarityWhy": "古い名所ほどカードはレアになります。",
+  "passportStampedOn": "{date} にスタンプ",
+  "passportSeeOnMap": "地図で見る"
 }

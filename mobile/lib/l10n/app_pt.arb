@@ -820,5 +820,21 @@
   "papersSendEmail": "Abrir o e-mail com a carta",
   "papersClaimNote": "Sem comissão: o dinheiro vai todo para ti. A carta vai em inglês, que todas as companhias entendem.",
   "papersNoEmailApp": "Não há nenhuma app de e-mail neste telemóvel.",
-  "papersFillAll": "Preenche todos os campos"
+  "papersFillAll": "Preenche todos os campos",
+  "passportTitle": "O meu passaporte",
+  "passportCoverTitle": "PASSAPORTE DE VIAGEM",
+  "passportTapToOpen": "Toca para abrir",
+  "passportStamps": "{count, plural, =1{1 carimbo} other{{count} carimbos}}",
+  "passportCountries": "{count, plural, =1{1 país} other{{count} países}}",
+  "passportElsewhere": "Outros lugares",
+  "passportEmpty": "Ainda não tens carimbos. Aponta a câmara a um monumento e guarda o carimbo.",
+  "passportOpenCamera": "Abrir a câmara",
+  "passportHint": "Cada monumento que visitas dá-te o seu cromo. Toca num cromo para saber a sua história.",
+  "passportRarityLegendary": "Lendária",
+  "passportRarityEpic": "Épica",
+  "passportRarityRare": "Rara",
+  "passportRarityCommon": "Comum",
+  "passportRarityWhy": "Quanto mais antigo o monumento, mais raro o cromo.",
+  "passportStampedOn": "Carimbado a {date}",
+  "passportSeeOnMap": "Ver no mapa"
 }

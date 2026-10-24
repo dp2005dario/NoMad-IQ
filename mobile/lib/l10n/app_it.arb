@@ -820,5 +820,21 @@
   "papersSendEmail": "Apri l'email con la lettera",
   "papersClaimNote": "Senza commissioni: tutti i soldi vanno a te. La lettera è in inglese, che ogni compagnia capisce.",
   "papersNoEmailApp": "Nessuna app email su questo telefono.",
-  "papersFillAll": "Compila tutti i campi"
+  "papersFillAll": "Compila tutti i campi",
+  "passportTitle": "Il mio passaporto",
+  "passportCoverTitle": "PASSAPORTO DI VIAGGIO",
+  "passportTapToOpen": "Tocca per aprire",
+  "passportStamps": "{count, plural, =1{1 timbro} other{{count} timbri}}",
+  "passportCountries": "{count, plural, =1{1 paese} other{{count} paesi}}",
+  "passportElsewhere": "Altri luoghi",
+  "passportEmpty": "Ancora nessun timbro. Inquadra un monumento con la fotocamera e salva il suo timbro.",
+  "passportOpenCamera": "Apri la fotocamera",
+  "passportHint": "Ogni monumento che visiti ti dà la sua figurina. Toccala per scoprirne la storia.",
+  "passportRarityLegendary": "Leggendaria",
+  "passportRarityEpic": "Epica",
+  "passportRarityRare": "Rara",
+  "passportRarityCommon": "Comune",
+  "passportRarityWhy": "Più antico è il monumento, più rara è la figurina.",
+  "passportStampedOn": "Timbrato il {date}",
+  "passportSeeOnMap": "Vedi sulla mappa"
 }

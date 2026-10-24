@@ -820,5 +820,21 @@
   "papersSendEmail": "打开带信件的邮件",
   "papersClaimNote": "零佣金：钱全部归你。信件用英文写，所有航空公司都看得懂。",
   "papersNoEmailApp": "这部手机上没有邮件应用。",
-  "papersFillAll": "请填写所有字段"
+  "papersFillAll": "请填写所有字段",
+  "passportTitle": "我的护照",
+  "passportCoverTitle": "旅行护照",
+  "passportTapToOpen": "点击打开",
+  "passportStamps": "{count, plural, other{{count} 个印章}}",
+  "passportCountries": "{count, plural, other{{count} 个国家}}",
+  "passportElsewhere": "其他地方",
+  "passportEmpty": "还没有印章。用相机对准一座古迹，保存它的印章。",
+  "passportOpenCamera": "打开相机",
+  "passportHint": "每参观一座古迹就得到它的卡片。点卡片了解它的故事。",
+  "passportRarityLegendary": "传奇",
+  "passportRarityEpic": "史诗",
+  "passportRarityRare": "稀有",
+  "passportRarityCommon": "普通",
+  "passportRarityWhy": "古迹越古老，卡片越稀有。",
+  "passportStampedOn": "{date} 盖章",
+  "passportSeeOnMap": "在地图上查看"
 }

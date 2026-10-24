@@ -3580,5 +3580,84 @@
   "papersFillAll": "Fill in every field",
   "@papersFillAll": {
     "description": "Validation."
+  },
+  "passportTitle": "My passport",
+  "@passportTitle": {
+    "description": "Passport screen title and Home shortcut."
+  },
+  "passportCoverTitle": "TRAVEL PASSPORT",
+  "@passportCoverTitle": {
+    "description": "Big text on the passport cover."
+  },
+  "passportTapToOpen": "Tap to open",
+  "@passportTapToOpen": {
+    "description": "Hint on the cover."
+  },
+  "passportStamps": "{count, plural, =1{1 stamp} other{{count} stamps}}",
+  "@passportStamps": {
+    "description": "Number of stamps.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "passportCountries": "{count, plural, =1{1 country} other{{count} countries}}",
+  "@passportCountries": {
+    "description": "Number of countries.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "passportElsewhere": "Other places",
+  "@passportElsewhere": {
+    "description": "Page for stamps whose place is unknown."
+  },
+  "passportEmpty": "No stamps yet. Point the camera at a monument and save its stamp.",
+  "@passportEmpty": {
+    "description": "Empty passport."
+  },
+  "passportOpenCamera": "Open the camera",
+  "@passportOpenCamera": {
+    "description": "Button to open the camera."
+  },
+  "passportHint": "Every monument you visit gives you its card. Tap a card to learn its story.",
+  "@passportHint": {
+    "description": "Footer hint."
+  },
+  "passportRarityLegendary": "Legendary",
+  "@passportRarityLegendary": {
+    "description": "Card rarity: built before year 1000."
+  },
+  "passportRarityEpic": "Epic",
+  "@passportRarityEpic": {
+    "description": "Card rarity: built before 1600."
+  },
+  "passportRarityRare": "Rare",
+  "@passportRarityRare": {
+    "description": "Card rarity: built before 1900."
+  },
+  "passportRarityCommon": "Common",
+  "@passportRarityCommon": {
+    "description": "Card rarity: modern or unknown age."
+  },
+  "passportRarityWhy": "The older the monument, the rarer its card.",
+  "@passportRarityWhy": {
+    "description": "Explains rarity."
+  },
+  "passportStampedOn": "Stamped on {date}",
+  "@passportStampedOn": {
+    "description": "When the stamp was saved.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "passportSeeOnMap": "See on the map",
+  "@passportSeeOnMap": {
+    "description": "Opens the place in OpenStreetMap."
   }
 }

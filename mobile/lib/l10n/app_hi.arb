@@ -820,5 +820,21 @@
   "papersSendEmail": "पत्र के साथ ईमेल खोलें",
   "papersClaimNote": "कोई कमीशन नहीं: पूरा पैसा आपका। पत्र अंग्रेज़ी में है, जो हर एयरलाइन समझती है।",
   "papersNoEmailApp": "इस फ़ोन में कोई ईमेल ऐप नहीं है।",
-  "papersFillAll": "सभी फ़ील्ड भरें"
+  "papersFillAll": "सभी फ़ील्ड भरें",
+  "passportTitle": "मेरा पासपोर्ट",
+  "passportCoverTitle": "यात्रा पासपोर्ट",
+  "passportTapToOpen": "खोलने के लिए छुएँ",
+  "passportStamps": "{count, plural, =1{1 मुहर} other{{count} मुहरें}}",
+  "passportCountries": "{count, plural, =1{1 देश} other{{count} देश}}",
+  "passportElsewhere": "अन्य स्थान",
+  "passportEmpty": "अभी कोई मुहर नहीं। कैमरा किसी स्मारक की ओर करें और उसकी मुहर सहेजें।",
+  "passportOpenCamera": "कैमरा खोलें",
+  "passportHint": "हर स्मारक जहाँ आप जाते हैं, आपको उसका कार्ड देता है। कहानी जानने के लिए कार्ड छुएँ।",
+  "passportRarityLegendary": "पौराणिक",
+  "passportRarityEpic": "महाकाव्य",
+  "passportRarityRare": "दुर्लभ",
+  "passportRarityCommon": "सामान्य",
+  "passportRarityWhy": "स्मारक जितना पुराना, उसका कार्ड उतना दुर्लभ।",
+  "passportStampedOn": "{date} को मुहर लगी",
+  "passportSeeOnMap": "मानचित्र पर देखें"
 }
