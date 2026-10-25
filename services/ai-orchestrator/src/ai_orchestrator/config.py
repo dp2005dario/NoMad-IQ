@@ -204,6 +204,9 @@ class Settings(BaseSettings):
     # --- Cromos con amigos (ver el paquete leagues/): solo PostgreSQL
     leagues_enabled: bool = True
 
+    # --- Quedadas con otros viajeros (ver el paquete meetups/): solo PostgreSQL
+    meetups_enabled: bool = True
+
     # --- Copia este viaje (ver el paquete shared_trips/): PostgreSQL; adaptar necesita Ollama y Redis
     shared_trips_enabled: bool = True
     # Adaptaciones por persona y día (las que salen de la caché no cuentan).

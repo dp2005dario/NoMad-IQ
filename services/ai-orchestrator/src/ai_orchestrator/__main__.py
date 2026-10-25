@@ -88,6 +88,8 @@ from ai_orchestrator.leagues.api import league_router
 from ai_orchestrator.leagues.store import PostgresLeagues
 from ai_orchestrator.llm.client import LLMClient, OllamaClient
 from ai_orchestrator.logs import setup_logging
+from ai_orchestrator.meetups.api import meetup_router
+from ai_orchestrator.meetups.store import PostgresMeetups
 from ai_orchestrator.menu.service import QUOTA_PREFIX as MENU_QUOTA_PREFIX
 from ai_orchestrator.menu.service import MenuService, MenuSettings
 from ai_orchestrator.nearby.overpass import NearbyOverpass
@@ -677,6 +679,11 @@ async def run(settings: Settings) -> int:
         # --- Elegid planes (los viajes en grupo; solo PostgreSQL) ------------------------
         plans = plan_router(PostgresPlans(pool)) if settings.negotiations_enabled else None
 
+        # --- Quedadas con otros viajeros (solo PostgreSQL) -------------------------------
+        meetups = (
+            meetup_router(PostgresMeetups(pool), Airports.bundled()) if settings.meetups_enabled else None
+        )
+
         # --- Negociación de grupo (tercer consumidor + relé del outbox) -----------------
         negotiations: APIRouter | None = None
         negotiation_consumer: NegotiationRequestConsumer | None = None
@@ -708,6 +715,7 @@ async def run(settings: Settings) -> int:
                 shared_trips=shared_trips,
                 leagues=leagues,
                 plans=plans,
+                meetups=meetups,
                 places=places,
                 streetview=streetview,
                 flyra=flyra,

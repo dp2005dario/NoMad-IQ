@@ -14,6 +14,9 @@ Qué pasa con cada cosa:
   compartir (se borran), y se olvida qué viajes copiaste tú.
 - **Ligas de cromos**: sales de todas (tus cromos, tu ciudad y tus cambios
   se borran; si eras la última persona, la liga entera).
+- **Quedadas**: las que propusiste se cancelan; de las demás sales, y
+  tus denuncias se olvidan (el contador de la quedada no baja: la
+  denuncia ya se hizo).
 - **Negociaciones de grupo**: igual. Tu asiento queda anónimo y tus
   preferencias privadas (presupuesto, gustos) se borran. Tus votos de
   "Elegid planes" van por asiento, así que también quedan anónimos, y tu
@@ -57,6 +60,7 @@ class ErasureReport:
     negotiation_seats_anonymized: int
     shared_trips_deleted: int = 0
     leagues_left: int = 0
+    meetups_cancelled: int = 0
 
 
 class UserDataEraser(Protocol):
@@ -105,6 +109,9 @@ class PostgresEraser:
                     "DELETE FROM ai.leagues l WHERE NOT EXISTS"
                     " (SELECT 1 FROM ai.league_members m WHERE m.league_id = l.league_id)"
                 )
+                meetups = await conn.execute("DELETE FROM ai.meetups WHERE creator_id = $1", user_id)
+                await conn.execute("DELETE FROM ai.meetup_members WHERE user_id = $1", user_id)
+                await conn.execute("DELETE FROM ai.meetup_reports WHERE user_id = $1", user_id)
                 negotiation_seats = await conn.execute(
                     "UPDATE ai.group_negotiation_members SET user_id = $2, preferences = NULL"
                     " WHERE user_id = $1",
@@ -125,6 +132,7 @@ class PostgresEraser:
             negotiation_seats_anonymized=_count(negotiation_seats),
             shared_trips_deleted=_count(shared),
             leagues_left=_count(left),
+            meetups_cancelled=_count(meetups),
         )
         # Solo números: ni el user_id ni el id anónimo (unirlos en un log
         # desharía el anonimato).
@@ -137,6 +145,7 @@ class PostgresEraser:
                 "negotiation_seats_anonymized": report.negotiation_seats_anonymized,
                 "shared_trips_deleted": report.shared_trips_deleted,
                 "leagues_left": report.leagues_left,
+                "meetups_cancelled": report.meetups_cancelled,
             },
         )
         return report
