@@ -5611,5 +5611,340 @@
         "type": "int"
       }
     }
+  },
+  "widgetNextFlight": "NEXT FLIGHT",
+  "@widgetNextFlight": {
+    "description": "Widget tag."
+  },
+  "widgetDepartsAt": "Departs at {time}",
+  "@widgetDepartsAt": {
+    "description": "Departure time.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetDepartsIn": "DEPARTS IN {h} H",
+  "@widgetDepartsIn": {
+    "description": "Hours to departure.",
+    "placeholders": {
+      "h": {
+        "type": "int"
+      }
+    }
+  },
+  "widgetLeaveAt": "Leave home at {time}",
+  "@widgetLeaveAt": {
+    "description": "Leave home time.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetLeaveNow": "TIME TO GO TO THE AIRPORT",
+  "@widgetLeaveNow": {
+    "description": "Widget tag."
+  },
+  "widgetBoardingIn": "BOARDING IN {min} MIN",
+  "@widgetBoardingIn": {
+    "description": "Minutes to boarding.",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "widgetBoardingAt": "Boarding at {time}",
+  "@widgetBoardingAt": {
+    "description": "Boarding time.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetGate": "Gate {gate}",
+  "@widgetGate": {
+    "description": "Gate.",
+    "placeholders": {
+      "gate": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetBoardingNow": "BOARDING NOW",
+  "@widgetBoardingNow": {
+    "description": "Widget tag."
+  },
+  "widgetHoursMinutes": "{h} h {m}",
+  "@widgetHoursMinutes": {
+    "description": "Remaining time.",
+    "placeholders": {
+      "h": {
+        "type": "int"
+      },
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetInFlight": "IN FLIGHT · {pct} %",
+  "@widgetInFlight": {
+    "description": "Widget tag.",
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "widgetLandsAt": "Lands in {city} at {time} local time",
+  "@widgetLandsAt": {
+    "description": "Arrival.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetArrived": "YOU HAVE ARRIVED IN {city}",
+  "@widgetArrived": {
+    "description": "Widget tag.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetWelcome": "Tap to open your trip",
+  "@widgetWelcome": {
+    "description": "Arrival hint."
+  },
+  "widgetHotel": "Your hotel: {name}",
+  "@widgetHotel": {
+    "description": "Hotel.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetDealTag": "DEAL OF THE DAY",
+  "@widgetDealTag": {
+    "description": "Widget tag."
+  },
+  "widgetDealDrop": "-{pct} % · usually {usual}",
+  "@widgetDealDrop": {
+    "description": "Deal drop.",
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      },
+      "usual": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetDealCheck": "Check the price in NomadIQ",
+  "@widgetDealCheck": {
+    "description": "Deal hint."
+  },
+  "widgetBudgetTag": "BUDGET",
+  "@widgetBudgetTag": {
+    "description": "Widget tag."
+  },
+  "widgetBudgetDay": "Day {day} of {days}",
+  "@widgetBudgetDay": {
+    "description": "Budget day.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "widgetBudgetLeftToday": "left for today",
+  "@widgetBudgetLeftToday": {
+    "description": "Budget hint."
+  },
+  "widgetBudgetOver": "{amount} over budget",
+  "@widgetBudgetOver": {
+    "description": "Over budget.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetFlightEmpty": "Add your next flight in NomadIQ",
+  "@widgetFlightEmpty": {
+    "description": "Empty flight widget."
+  },
+  "widgetDealEmpty": "Open NomadIQ to see today's deal",
+  "@widgetDealEmpty": {
+    "description": "Empty deal widget."
+  },
+  "widgetBudgetEmpty": "Set a trip budget in NomadIQ, in Money",
+  "@widgetBudgetEmpty": {
+    "description": "Empty budget widget."
+  },
+  "widgetLiveChannel": "Your flight live",
+  "@widgetLiveChannel": {
+    "description": "Notification channel name."
+  },
+  "widgetLiveLeave": "Time to go to the airport · {route}",
+  "@widgetLiveLeave": {
+    "description": "Live title.",
+    "placeholders": {
+      "route": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetLiveLeaveBody": "Boarding at {boarding}, departure at {departure}",
+  "@widgetLiveLeaveBody": {
+    "description": "Live body.",
+    "placeholders": {
+      "boarding": {
+        "type": "String"
+      },
+      "departure": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetLiveBoarding": "Boarding now · {route}",
+  "@widgetLiveBoarding": {
+    "description": "Live title.",
+    "placeholders": {
+      "route": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetLiveBoardingGate": "Boarding now · gate {gate}",
+  "@widgetLiveBoardingGate": {
+    "description": "Live title.",
+    "placeholders": {
+      "gate": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetLiveInFlight": "In flight · {route}",
+  "@widgetLiveInFlight": {
+    "description": "Live title.",
+    "placeholders": {
+      "route": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetLiveArrived": "Welcome to {city}!",
+  "@widgetLiveArrived": {
+    "description": "Live title.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetsTitle": "Widgets",
+  "@widgetsTitle": {
+    "description": "Widgets screen title."
+  },
+  "widgetsIntro": "NomadIQ outside the app: on your home screen, in notifications and on your watch.",
+  "@widgetsIntro": {
+    "description": "Intro."
+  },
+  "widgetsYourFlight": "Your next flight",
+  "@widgetsYourFlight": {
+    "description": "Section."
+  },
+  "widgetsNoFlight": "Add your flight: the widget counts down to boarding, follows the flight and welcomes you on arrival.",
+  "@widgetsNoFlight": {
+    "description": "No flight."
+  },
+  "widgetsAddFlight": "Add flight",
+  "@widgetsAddFlight": {
+    "description": "Add flight."
+  },
+  "widgetsEditFlight": "Change flight",
+  "@widgetsEditFlight": {
+    "description": "Edit flight."
+  },
+  "widgetsSameAsEasy": "It is the same flight as in Easy mode, and it stays only on this phone.",
+  "@widgetsSameAsEasy": {
+    "description": "Hint."
+  },
+  "widgetsUnknownAirport": "We do not know one of those airports. Check the 3-letter codes.",
+  "@widgetsUnknownAirport": {
+    "description": "Airport not found."
+  },
+  "widgetsHome": "Home screen",
+  "@widgetsHome": {
+    "description": "Section."
+  },
+  "widgetsFlightName": "Your flight",
+  "@widgetsFlightName": {
+    "description": "Widget name."
+  },
+  "widgetsDealName": "Deal of the day",
+  "@widgetsDealName": {
+    "description": "Widget name."
+  },
+  "widgetsBudgetName": "Budget",
+  "@widgetsBudgetName": {
+    "description": "Widget name."
+  },
+  "widgetsAdd": "Add to home screen",
+  "@widgetsAdd": {
+    "description": "Pin widget."
+  },
+  "widgetsHowTo": "Touch and hold an empty spot on your home screen, tap Widgets and look for NomadIQ.",
+  "@widgetsHowTo": {
+    "description": "Manual instructions."
+  },
+  "widgetsUpdates": "They change by themselves at the right moment, even without internet.",
+  "@widgetsUpdates": {
+    "description": "Hint."
+  },
+  "widgetsLive": "Live notification on flight day",
+  "@widgetsLive": {
+    "description": "Live switch."
+  },
+  "widgetsLiveHint": "It appears when it is time to leave, at boarding, during the flight and on arrival. It is scheduled on your phone, so it works in airplane mode.",
+  "@widgetsLiveHint": {
+    "description": "Live hint."
+  },
+  "widgetsWatch": "Watch",
+  "@widgetsWatch": {
+    "description": "Section."
+  },
+  "widgetsWatchHint": "If you wear a Wear OS watch, these notifications appear on it too and it vibrates when something changes. No extra app needed.",
+  "@widgetsWatchHint": {
+    "description": "Watch hint."
+  },
+  "widgetsPhaseBefore": "Before",
+  "@widgetsPhaseBefore": {
+    "description": "Preview phase."
+  },
+  "widgetsPhaseFlight": "In flight",
+  "@widgetsPhaseFlight": {
+    "description": "Preview phase."
+  },
+  "widgetsPhaseLanded": "Landed",
+  "@widgetsPhaseLanded": {
+    "description": "Preview phase."
+  },
+  "widgetsPreviewHint": "Preview: what you will see at each moment of the trip.",
+  "@widgetsPreviewHint": {
+    "description": "Preview hint."
   }
 }

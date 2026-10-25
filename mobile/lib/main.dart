@@ -21,6 +21,7 @@ import 'features/camera/speaker.dart';
 import 'core/settings.dart';
 import 'features/audioguide/guide_player.dart';
 import 'features/family/family.dart';
+import 'features/widgets/home_widgets.dart';
 import 'features/memories/memories.dart';
 import 'features/memories/travel_camera.dart';
 import 'features/map/location.dart';
@@ -85,6 +86,9 @@ Future<void> main() async {
     newCamera: DeviceCamera.new,
     newTravelCamera: DeviceTravelCamera.new,
     memoryFiles: AppMemoryFiles(),
+    homeWidgets: DeviceHomeWidgets(),
+    liveFlight: DeviceLiveFlight(),
+    syncWidgetsOnStart: true,
     speaker: DeviceSpeaker(),
     receipts: DeviceReceiptScanner(),
     docSource: DeviceDocSource(),

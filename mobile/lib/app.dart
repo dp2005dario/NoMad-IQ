@@ -11,6 +11,7 @@ import 'core/services.dart';
 import 'core/settings.dart';
 import 'core/theme.dart';
 import 'features/map/location.dart';
+import 'features/widgets/widget_sync.dart';
 import 'l10n/generated/app_localizations.dart';
 
 class NomadIqApp extends StatefulWidget {
@@ -42,6 +43,12 @@ class _NomadIqAppState extends State<NomadIqApp> {
   AppLifecycleListener? _lifecycle;
   StreamSubscription<String>? _taps;
 
+  // Para poner al día los widgets del escritorio hacen falta los textos en
+  // el idioma de la app; se guardan aquí al dibujar (ver builder).
+  AppLocalizations? _t;
+  String? _locale;
+  DateTime? _widgetsAt;
+
   @override
   void initState() {
     super.initState();
@@ -50,13 +57,17 @@ class _NomadIqAppState extends State<NomadIqApp> {
     // entrar. Se decide aquí, para toda la app, y no en cada pantalla.
     _lifecycle = AppLifecycleListener(
       onPause: () => unawaited(services.tracker.paused()),
-      onResume: () => unawaited(services.tracker.appResumed()),
+      onResume: () {
+        unawaited(services.tracker.appResumed());
+        unawaited(_syncWidgets());
+      },
     );
     // Si el modo viaje quedó encendido, sigue al abrir la app. Tras el
     // primer dibujado: así su notificación fija ya sale traducida.
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => unawaited(services.tracker.appResumed()),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(services.tracker.appResumed());
+      unawaited(_syncWidgets());
+    });
     // Tocar una notificación abre su pantalla (audioguía, mapa...).
     _taps = services.notices.taps.listen(_open);
     unawaited(services.notices.launchRoute().then(_openLater));
@@ -73,8 +84,34 @@ class _NomadIqAppState extends State<NomadIqApp> {
     unawaited(_router.push(route));
   }
 
+  /// Widgets del escritorio y aviso del vuelo al día. Como mucho cada 10
+  /// minutos (abrir y cerrar la app no debe llenar el servidor de
+  /// peticiones), y otra vez si cambias de idioma.
+  Future<void> _syncWidgets() async {
+    final AppLocalizations? t = _t;
+    final String? locale = _locale;
+    final DateTime now = DateTime.now();
+    final DateTime? last = _widgetsAt;
+    if (!widget.services.syncWidgetsOnStart || t == null || locale == null) {
+      return;
+    }
+    if (last != null && now.difference(last) < const Duration(minutes: 10)) {
+      return;
+    }
+    _widgetsAt = now;
+    try {
+      await syncWidgets(widget.services, t, locale);
+    } on Object {
+      // Un widget sin actualizar nunca debe romper la app.
+    }
+  }
+
   void _localizeTracker(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
+    final String locale = Localizations.localeOf(context).toLanguageTag();
+    if (locale != _locale) _widgetsAt = null;
+    _t = t;
+    _locale = locale;
     widget.services.tracker
       ..language = Localizations.localeOf(context).languageCode
       ..notice = TrackingNotice(

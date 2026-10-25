@@ -18,6 +18,8 @@ import '../features/flights/climate_api.dart';
 import '../features/flights/fares_api.dart';
 import '../features/easy/easy_mode.dart';
 import '../features/family/family.dart';
+import '../features/route/world_data.dart';
+import '../features/widgets/home_widgets.dart';
 import '../features/memories/memories.dart';
 import '../features/memories/travel_camera.dart';
 import '../features/flyra/flyra_api.dart';
@@ -72,6 +74,10 @@ class AppServices {
     this.share = shareFiles,
     this.sticker = stickerPhoto,
     MemoryFiles? memoryFiles,
+    HomeWidgets? homeWidgets,
+    LiveFlight? liveFlight,
+    this.loadAirports = worldAirports,
+    this.syncWidgetsOnStart = false,
     FamilyStore? family,
     OfflineFiles? offlineFiles,
     OfflineMaps? offlineMaps,
@@ -94,6 +100,8 @@ class AppServices {
        net = net ?? const AlwaysWifi(),
        family = family ?? MemoryFamilyStore(),
        memoryFiles = memoryFiles ?? MemoryMemoryFiles(),
+       homeWidgets = homeWidgets ?? MemoryHomeWidgets(),
+       liveFlight = liveFlight ?? MemoryLiveFlight(),
        vault =
            vault ??
            Vault(
@@ -213,6 +221,18 @@ class AppServices {
 
   /// Dónde se guardan las fotos y vídeos de Recuerdos (solo en el móvil).
   final MemoryFiles memoryFiles;
+
+  /// Los widgets del escritorio de Android.
+  final HomeWidgets homeWidgets;
+
+  /// El aviso "en directo" del día del vuelo (programado en el móvil).
+  final LiveFlight liveFlight;
+
+  /// ¿Poner al día los widgets al abrir la app? (en los tests, no).
+  final bool syncWidgetsOnStart;
+
+  /// Los aeropuertos (van dentro de la app). En los tests, unos pocos.
+  final Future<Airports> Function() loadAirports;
 
   /// Tus recuerdos del viaje.
   late final MemoryBook memories = MemoryBook(prefs, memoryFiles);

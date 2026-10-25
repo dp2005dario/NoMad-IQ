@@ -122,6 +122,13 @@ class HomeScreen extends StatelessWidget {
                     label: t.memTitle,
                     onTap: () => context.push(Routes.memories),
                   ),
+                  // Tu vuelo, el chollo y el presupuesto en el escritorio.
+                  _Shortcut(
+                    icon: Icons.widgets_rounded,
+                    color: NomadColors.flights,
+                    label: t.widgetsTitle,
+                    onTap: () => context.push(Routes.widgets),
+                  ),
                   // Liga y cambios de cromos con tus amigos.
                   _Shortcut(
                     icon: Icons.style_rounded,

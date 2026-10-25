@@ -21,6 +21,10 @@
     <!-- Android 13+: permiso para enseñar notificaciones (avisos push y la
          notificación fija del modo viaje). Se pide al encender el modo viaje. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Para volver a programar los widgets y el aviso del vuelo tras
+         reiniciar el móvil (Android borra las alarmas al apagarse). Sin
+         alarmas exactas: unos minutos de margen bastan y no piden permiso. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Cámara: fotos de monumentos y la cámara de viaje de Recuerdos. El
          micrófono solo hace falta para el sonido de los vídeos de Recuerdos y
          Android lo pregunta la primera vez que pasas a VÍDEO. Escribir en la
@@ -78,6 +82,47 @@
             tools:ignore="Instantiatable">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
+        <!-- Widgets del escritorio (NomadWidgets.kt). -->
+        <receiver android:name=".FlightWidget" android:label="@string/widget_flight_name" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/nomad_widget_flight" />
+        </receiver>
+        <receiver android:name=".DealWidget" android:label="@string/widget_deal_name" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/nomad_widget_deal" />
+        </receiver>
+        <receiver android:name=".BudgetWidget" android:label="@string/widget_budget_name" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/nomad_widget_budget" />
+        </receiver>
+        <!-- Despierta los widgets a las horas que dejó la app (embarque,
+             despegue, llegada...) y vuelve a armar esas horas al reiniciar. -->
+        <receiver
+            android:name="es.antonborri.home_widget.HomeWidgetScheduledUpdateReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+        <!-- El aviso "en directo" del día del vuelo: se programa en el móvil
+             (sin servidor) y estos dos lo enseñan a su hora y tras reiniciar. -->
+        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
             </intent-filter>
         </receiver>
         <!-- Don't delete the meta-data below.

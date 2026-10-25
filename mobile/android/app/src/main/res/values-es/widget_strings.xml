@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos de los widgets que Android enseña antes de abrir la app (la
+     lista de widgets del escritorio). El resto los traduce la app. -->
+<resources>
+    <string name="widget_flight_name">NomadIQ: tu vuelo</string>
+    <string name="widget_flight_desc">Salida, embarque, el vuelo en directo y tu llegada</string>
+    <string name="widget_deal_name">NomadIQ: chollo de hoy</string>
+    <string name="widget_deal_desc">El vuelo más barato de hoy desde tu aeropuerto</string>
+    <string name="widget_budget_name">NomadIQ: presupuesto</string>
+    <string name="widget_budget_desc">Cuánto te queda hoy en tu viaje</string>
+    <string name="widget_empty">Abre NomadIQ para rellenar este widget</string>
+</resources>

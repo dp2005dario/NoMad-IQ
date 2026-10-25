@@ -57,6 +57,9 @@ enum LocalData {
 
   /// La lista de Recuerdos (fotos y vídeos del viaje) y el día que empezó.
   memories,
+
+  /// "0" = sin el aviso "en directo" el día del vuelo (por defecto, con él).
+  liveFlight,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real

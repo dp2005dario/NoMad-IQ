@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:nomadiq/features/route/world_data.dart';
+import 'package:nomadiq/features/widgets/home_widgets.dart';
 import 'package:nomadiq/app.dart';
 import 'package:nomadiq/auth/auth_api.dart';
 import 'package:nomadiq/auth/session.dart';
@@ -149,6 +151,13 @@ class FakeGateway {
       AuthApi(baseUrl: Uri.parse('http://gateway.test'), client: client);
 }
 
+/// Unos pocos aeropuertos para las pruebas (los de verdad van en assets).
+final Airports testAirports = Airports.parse(
+  'MAD|40.472|-3.563|Madrid|Spain|Europe/Madrid\n'
+  'HND|35.552|139.780|Tokio|Japan|Asia/Tokyo\n'
+  'LIS|38.781|-9.136|Lisboa|Portugal|Europe/Lisbon',
+);
+
 /// La caja de herramientas de la app, con piezas falsas: el servidor es el
 /// [gateway], el GPS es [location], el mapa no dibuja nada y el reproductor
 /// no suena.
@@ -175,6 +184,8 @@ AppServices fakeServices(
   TravelCameraFactory? newTravelCamera,
   ShareFiles? share,
   MemoryFiles? memoryFiles,
+  HomeWidgets? homeWidgets,
+  LiveFlight? liveFlight,
   DocSource? docSource,
   DocTextReader? docReader,
 }) {
@@ -213,6 +224,9 @@ AppServices fakeServices(
     share: share ?? (List<String> _, {String? text}) async {},
     sticker: (Uint8List jpeg, List<String> _) async => jpeg,
     memoryFiles: memoryFiles,
+    homeWidgets: homeWidgets,
+    liveFlight: liveFlight,
+    loadAirports: () async => testAirports,
     docSource: docSource ?? const NoDocSource(),
     docReader: docReader ?? const NoDocTextReader(),
   );
