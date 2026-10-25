@@ -2,6 +2,7 @@
 // ni la red (el "servidor" es un MockClient que responde lo que le digamos).
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
@@ -11,6 +12,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:nomadiq/features/route/world_data.dart';
 import 'package:nomadiq/features/widgets/home_widgets.dart';
+import 'package:nomadiq/features/visa/visa_data.dart';
 import 'package:nomadiq/app.dart';
 import 'package:nomadiq/auth/auth_api.dart';
 import 'package:nomadiq/auth/session.dart';
@@ -187,6 +189,7 @@ AppServices fakeServices(
   HomeWidgets? homeWidgets,
   LiveFlight? liveFlight,
   Future<Airports> Function()? loadAirports,
+  Future<VisaData> Function()? loadVisaData,
   Stream<double?> Function()? compass,
   DocSource? docSource,
   DocTextReader? docReader,
@@ -229,6 +232,16 @@ AppServices fakeServices(
     homeWidgets: homeWidgets,
     liveFlight: liveFlight,
     loadAirports: loadAirports ?? () async => testAirports,
+    // Los archivos de verdad, leídos de golpe (en los tests no hay assets
+    // grandes: Flutter los leería en otro hilo que el test no espera).
+    loadVisaData:
+        loadVisaData ??
+        () async => VisaData(
+          VisaTable.parse(File('assets/geo/visas.txt').readAsStringSync()),
+          CountryNames.parse(
+            File('assets/geo/country_names.txt').readAsStringSync(),
+          ),
+        ),
     compass: compass ?? () => Stream<double?>.value(0),
     docSource: docSource ?? const NoDocSource(),
     docReader: docReader ?? const NoDocTextReader(),

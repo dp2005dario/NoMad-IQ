@@ -4,8 +4,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/router.dart';
 import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -231,6 +233,13 @@ class _BeforeYouGoState extends State<_BeforeYouGo> {
                     onPressed: () => widget.openLink(Uri.parse(permit.$2)),
                     child: Text(t.papersOfficialSite),
                   ),
+                ),
+              // Lo que pide ese país a TU pasaporte (pantalla Visado).
+              if (_country != null)
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.verified_user_rounded),
+                  label: Text(t.visaCheck),
+                  onPressed: () => context.push(Routes.visa(to: _country)),
                 ),
             ],
           ],

@@ -90,6 +90,8 @@ flutter:
     - assets/geo/world.bin
     - assets/geo/airports.txt
     - assets/geo/countries.txt
+    - assets/geo/country_names.txt
+    - assets/geo/visas.txt
     # El Vuelo 3D: una página con three.js ya empaquetado (ver tool/flight3d/).
     - assets/flight3d/vuelo.html
   # Genera el código de traducciones a partir de lib/l10n/*.arb (ver l10n.yaml).

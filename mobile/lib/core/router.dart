@@ -39,6 +39,7 @@ import '../features/copy_trip/share_trip_screen.dart';
 import '../features/family/family_screen.dart';
 import '../features/help/help_screen.dart';
 import '../features/papers/papers_screen.dart';
+import '../features/visa/visa_screen.dart';
 import '../features/travel_with/travel_with_screen.dart';
 import '../features/passport/passport_screen.dart';
 import '../features/menu/menu_screen.dart';
@@ -126,6 +127,12 @@ abstract final class Routes {
   static String airport({String? iata, String? gate}) => Uri(
     path: '/airport',
     queryParameters: <String, String>{'iata': ?iata, 'gate': ?gate},
+  ).toString();
+
+  /// Visado: qué te piden para entrar en [to] (código de país, "US").
+  static String visa({String? to}) => Uri(
+    path: '/visa',
+    queryParameters: <String, String>{'to': ?to},
   ).toString();
 
   /// Escala de regalo: dónde parar unos días de camino a [to].
@@ -349,6 +356,11 @@ GoRouter buildRouter({
         iata: state.uri.queryParameters['iata'],
         gate: state.uri.queryParameters['gate'],
       ),
+    ),
+    GoRoute(
+      path: '/visa',
+      builder: (BuildContext context, GoRouterState state) =>
+          VisaScreen(to: state.uri.queryParameters['to']),
     ),
     GoRoute(
       path: '/stopover',

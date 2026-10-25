@@ -6292,5 +6292,279 @@
   "airportChange": "Change airport",
   "@airportChange": {
     "description": "Change airport."
+  },
+  "visaTitle": "Visa",
+  "@visaTitle": {
+    "description": "Visa screen title."
+  },
+  "visaSubtitle": "What you need to enter another country with your passport, and how to apply on the official website.",
+  "@visaSubtitle": {
+    "description": "Visa subtitle."
+  },
+  "visaNoData": "Could not load the visa data. Restart the app.",
+  "@visaNoData": {
+    "description": "Data failed to load."
+  },
+  "visaPassport": "Your passport",
+  "@visaPassport": {
+    "description": "Passport country field."
+  },
+  "visaDestination": "Destination",
+  "@visaDestination": {
+    "description": "Destination field."
+  },
+  "visaPickCountry": "Choose a country",
+  "@visaPickCountry": {
+    "description": "Hint."
+  },
+  "visaSearch": "Search country",
+  "@visaSearch": {
+    "description": "Search field."
+  },
+  "visaSameCountry": "It's your own country: you don't need anything.",
+  "@visaSameCountry": {
+    "description": "Same country."
+  },
+  "visaFree": "No visa needed",
+  "@visaFree": {
+    "description": "Verdict."
+  },
+  "visaFreeMore": "Bring a valid passport. Some places ask for a return ticket or an online arrival form.",
+  "@visaFreeMore": {
+    "description": "Explanation."
+  },
+  "visaOnArrival": "Visa on arrival",
+  "@visaOnArrival": {
+    "description": "Verdict."
+  },
+  "visaOnArrivalMore": "You get it at the airport when you land. Sometimes you pay a fee there, often in cash.",
+  "@visaOnArrivalMore": {
+    "description": "Explanation."
+  },
+  "visaEta": "You need an electronic travel authorisation",
+  "@visaEta": {
+    "description": "Verdict."
+  },
+  "visaEtaNamed": "You need the {scheme}",
+  "@visaEtaNamed": {
+    "description": "Verdict with scheme name.",
+    "placeholders": {
+      "scheme": {
+        "type": "String"
+      }
+    }
+  },
+  "visaEtaMore": "You apply online in minutes and it usually arrives within 72 hours. Apply at least 3 days before you fly.",
+  "@visaEtaMore": {
+    "description": "Explanation."
+  },
+  "visaEVisa": "You need an e-visa",
+  "@visaEVisa": {
+    "description": "Verdict."
+  },
+  "visaEVisaMore": "You apply online, with more documents, and it can take several days. Do it well in advance.",
+  "@visaEVisaMore": {
+    "description": "Explanation."
+  },
+  "visaEmbassy": "You need a visa from the embassy",
+  "@visaEmbassy": {
+    "description": "Verdict."
+  },
+  "visaEmbassyMore": "You need an appointment at the embassy or consulate. Start weeks ahead.",
+  "@visaEmbassyMore": {
+    "description": "Explanation."
+  },
+  "visaRefused": "Entry is not allowed with this passport right now",
+  "@visaRefused": {
+    "description": "Verdict."
+  },
+  "visaRefusedMore": "Check the official website or the embassy before you buy anything.",
+  "@visaRefusedMore": {
+    "description": "Explanation."
+  },
+  "visaUnknown": "We don't have data for this country",
+  "@visaUnknown": {
+    "description": "Verdict."
+  },
+  "visaUnknownMore": "Check the website of its government or embassy.",
+  "@visaUnknownMore": {
+    "description": "Explanation."
+  },
+  "visaDays": "Up to {days} days",
+  "@visaDays": {
+    "description": "Days allowed.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "visaSource": "Data from passportindex.org ({date}). Rules change: always check the official website.",
+  "@visaSource": {
+    "description": "Data source and date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "visaGenericScheme": "visa",
+  "@visaGenericScheme": {
+    "description": "Generic name of the permit."
+  },
+  "visaApplyTitle": "Apply for the {scheme}",
+  "@visaApplyTitle": {
+    "description": "Apply card title.",
+    "placeholders": {
+      "scheme": {
+        "type": "String"
+      }
+    }
+  },
+  "visaStepPassport": "Passport",
+  "@visaStepPassport": {
+    "description": "Step."
+  },
+  "visaStepReview": "Review",
+  "@visaStepReview": {
+    "description": "Step."
+  },
+  "visaStepSend": "Send",
+  "@visaStepSend": {
+    "description": "Step."
+  },
+  "visaReadTitle": "Use the photo of your passport in the Vault",
+  "@visaReadTitle": {
+    "description": "Read passport title."
+  },
+  "visaReadBody": "We read the two lines at the bottom of the photo page (the ones with <<<<) on your phone. Your data stays here until you paste it on the official website.",
+  "@visaReadBody": {
+    "description": "Explanation of MRZ reading."
+  },
+  "visaRead": "Read my passport",
+  "@visaRead": {
+    "description": "Button."
+  },
+  "visaManual": "I'll fill it in by hand",
+  "@visaManual": {
+    "description": "Button."
+  },
+  "visaNoPassport": "There is no passport photo in the Vault that we can read. Add a sharp photo of the photo page, with the two bottom lines visible.",
+  "@visaNoPassport": {
+    "description": "No MRZ found."
+  },
+  "visaAddToVault": "Add it to the Vault",
+  "@visaAddToVault": {
+    "description": "Button."
+  },
+  "visaFieldSurname": "SURNAME",
+  "@visaFieldSurname": {
+    "description": "Field label."
+  },
+  "visaFieldName": "GIVEN NAMES",
+  "@visaFieldName": {
+    "description": "Field label."
+  },
+  "visaFieldNumber": "PASSPORT NUMBER",
+  "@visaFieldNumber": {
+    "description": "Field label."
+  },
+  "visaFieldBirth": "DATE OF BIRTH",
+  "@visaFieldBirth": {
+    "description": "Field label."
+  },
+  "visaFieldNationality": "NATIONALITY",
+  "@visaFieldNationality": {
+    "description": "Field label."
+  },
+  "visaFieldExpiry": "EXPIRY DATE",
+  "@visaFieldExpiry": {
+    "description": "Field label."
+  },
+  "visaFieldAddress": "ADDRESS THERE (HOTEL)",
+  "@visaFieldAddress": {
+    "description": "Field label."
+  },
+  "visaFieldEmergency": "EMERGENCY CONTACT",
+  "@visaFieldEmergency": {
+    "description": "Field label."
+  },
+  "visaFieldJob": "EMPLOYMENT",
+  "@visaFieldJob": {
+    "description": "Field label."
+  },
+  "visaFromPassport": "Passport",
+  "@visaFromPassport": {
+    "description": "Source chip."
+  },
+  "visaYours": "You fill it",
+  "@visaYours": {
+    "description": "Source chip: you fill it."
+  },
+  "visaCopy": "Copy",
+  "@visaCopy": {
+    "description": "Tooltip."
+  },
+  "visaCopied": "Copied. It will be removed from the clipboard in 1 minute.",
+  "@visaCopied": {
+    "description": "Snackbar."
+  },
+  "visaExpiresSoon": "Your passport expires on {date}: many countries ask for 6 months of validity.",
+  "@visaExpiresSoon": {
+    "description": "Short passport validity.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "visaYouAnswer": "Questions about health, criminal record and past trips can only be answered by you.",
+  "@visaYouAnswer": {
+    "description": "Questions only you can answer."
+  },
+  "visaAllGood": "All correct, continue",
+  "@visaAllGood": {
+    "description": "Button."
+  },
+  "visaReadyTitle": "Ready to send",
+  "@visaReadyTitle": {
+    "description": "Ready title."
+  },
+  "visaReadyBody": "Open the official {scheme} website, paste your details, pay the fee there and submit it.",
+  "@visaReadyBody": {
+    "description": "Ready explanation.",
+    "placeholders": {
+      "scheme": {
+        "type": "String"
+      }
+    }
+  },
+  "visaNoOfficial": "We don't have the official website for this country: look for it on its government or embassy site (they usually end in .gov or .gob).",
+  "@visaNoOfficial": {
+    "description": "No official link known."
+  },
+  "visaTipOfficial": "Never use websites that charge extra: only the official one.",
+  "@visaTipOfficial": {
+    "description": "Tip."
+  },
+  "visaTipWait": "It usually arrives by email within 72 hours.",
+  "@visaTipWait": {
+    "description": "Tip."
+  },
+  "visaTipSave": "When it arrives, save it in the Vault as a Visa.",
+  "@visaTipSave": {
+    "description": "Tip."
+  },
+  "visaOpenOfficial": "Open the official website",
+  "@visaOpenOfficial": {
+    "description": "Button."
+  },
+  "visaSaveApproval": "Save the approval",
+  "@visaSaveApproval": {
+    "description": "Button."
+  },
+  "visaCheck": "What do I need to enter?",
+  "@visaCheck": {
+    "description": "Link from Papers to the Visa screen."
   }
 }

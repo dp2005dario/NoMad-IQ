@@ -18,6 +18,7 @@ import '../features/flights/climate_api.dart';
 import '../features/flights/fares_api.dart';
 import '../features/easy/easy_mode.dart';
 import '../features/family/family.dart';
+import '../features/visa/visa_data.dart';
 import '../features/airport/airport_guide.dart';
 import '../features/airport/compass.dart';
 import '../features/route/world_data.dart';
@@ -79,6 +80,7 @@ class AppServices {
     HomeWidgets? homeWidgets,
     LiveFlight? liveFlight,
     this.loadAirports = worldAirports,
+    this.loadVisaData = bundledVisaData,
     this.syncWidgetsOnStart = false,
     this.compass = deviceCompass,
     FamilyStore? family,
@@ -242,6 +244,9 @@ class AppServices {
 
   /// Los aeropuertos (van dentro de la app). En los tests, unos pocos.
   final Future<Airports> Function() loadAirports;
+
+  /// La tabla de visados y los nombres de países (van dentro de la app).
+  final Future<VisaData> Function() loadVisaData;
 
   /// Tus recuerdos del viaje.
   late final MemoryBook memories = MemoryBook(prefs, memoryFiles);

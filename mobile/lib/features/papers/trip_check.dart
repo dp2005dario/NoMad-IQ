@@ -92,4 +92,13 @@ const Map<String, (String, String)> entryPermits = <String, (String, String)>{
   'KR': ('K-ETA', 'https://www.k-eta.go.kr/'),
   'IN': ('e-Visa', 'https://indianvisaonline.gov.in/evisa/'),
   'LK': ('ETA', 'https://www.eta.gov.lk/'),
+  'TR': ('e-Visa', 'https://www.evisa.gov.tr/'),
+  'EG': ('e-Visa', 'https://visa2egypt.gov.eg/'),
+  'VN': ('e-Visa', 'https://evisa.gov.vn/'),
+  'KH': ('e-Visa', 'https://www.evisa.gov.kh/'),
+  'KE': ('eTA', 'https://www.etakenya.go.ke/'),
+  'IL': ('ETA-IL', 'https://www.gov.il/en/departments/topics/eta-il'),
+  'SA': ('eVisa', 'https://visa.mofa.gov.sa/'),
+  'TH': ('e-Visa', 'https://www.thaievisa.go.th/'),
+  'ID': ('e-VOA', 'https://evisa.imigrasi.go.id/'),
 };

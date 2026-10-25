@@ -129,6 +129,13 @@ class HomeScreen extends StatelessWidget {
                     label: t.airportTitle,
                     onTap: () => context.push(Routes.airport()),
                   ),
+                  // Qué te piden para entrar en otro país (ESTA, eTA...).
+                  _Shortcut(
+                    icon: Icons.verified_user_rounded,
+                    color: NomadColors.flights,
+                    label: t.visaTitle,
+                    onTap: () => context.push(Routes.visa()),
+                  ),
                   // Tu vuelo, el chollo y el presupuesto en el escritorio.
                   _Shortcut(
                     icon: Icons.widgets_rounded,

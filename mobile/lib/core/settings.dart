@@ -60,6 +60,10 @@ enum LocalData {
 
   /// "0" = sin el aviso "en directo" el día del vuelo (por defecto, con él).
   liveFlight,
+
+  /// El país de tu pasaporte ("ES"), para la pantalla Visado. Solo el país:
+  /// el número y lo demás nunca se guardan.
+  visaPassport,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real
