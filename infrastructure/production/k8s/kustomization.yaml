@@ -1,0 +1,14 @@
+# Lista de piezas de producción, en orden. deploy.sh las aplica con
+#   kubectl apply -k infrastructure/production/k8s
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - 00-namespace.yaml
+  - 01-pki.yaml
+  - 10-data.yaml
+  - 20-services.yaml
+  - 30-edge.yaml
+  - 40-network.yaml
+  - 50-backup.yaml
+  - 60-monitoring.yaml
+  - 70-maintenance.yaml

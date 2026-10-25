@@ -1,0 +1,443 @@
+# Las bases de datos y el bus de eventos, con TLS y memoria limitada.
+#
+# Todo en UNA máquina Oracle Always Free (2 núcleos ARM, 12 GB): cada pieza
+# tiene un techo de memoria y CPU ("limits") para que ninguna deje sin
+# recursos al resto. Si se llena, se degrada (colas, cachés que expulsan
+# lo viejo), nunca se compran más recursos: no hay nada que facturar.
+
+# --- PostgreSQL 17 + PostGIS ---------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: nomadiq
+spec:
+  selector: {app: postgres}
+  ports: [{name: pg, port: 5432}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: nomadiq
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels: {app: postgres}
+  template:
+    metadata:
+      labels: {app: postgres}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: postgres
+          # Imagen propia (postgres.Dockerfile): la oficial de PostGIS solo
+          # existe para Intel/AMD y el servidor gratis de Oracle es ARM.
+          image: nomadiq/postgres:prod
+          imagePullPolicy: Never
+          args:
+            # Solo conexiones cifradas con TLS 1.3 (ver pg_hba más abajo).
+            - -c
+            - ssl=on
+            - -c
+            - ssl_cert_file=/certs/tls.crt
+            - -c
+            - ssl_key_file=/certs/tls.key
+            - -c
+            - ssl_min_protocol_version=TLSv1.3
+            - -c
+            - hba_file=/etc/postgresql/pg_hba.conf
+            # Pocas conexiones y poca memoria: cabe en la máquina gratis.
+            - -c
+            - max_connections=100
+            - -c
+            - shared_buffers=512MB
+          env:
+            - {name: POSTGRES_USER, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_USER}}}
+            - {name: POSTGRES_PASSWORD, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_PASSWORD}}}
+            - {name: POSTGRES_DB, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_DB}}}
+            - {name: POSTGRES_INITDB_ARGS, value: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"}
+            - {name: PGDATA, value: /var/lib/postgresql/data/pgdata}
+          ports: [{containerPort: 5432}]
+          readinessProbe:
+            exec: {command: ["sh", "-c", "pg_isready -h 127.0.0.1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]}
+            periodSeconds: 10
+          livenessProbe:
+            exec: {command: ["sh", "-c", "pg_isready -h 127.0.0.1 -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]}
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 150m, memory: 512Mi}
+            limits: {cpu: "1", memory: 1536Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/postgresql/data}
+            - {name: certs, mountPath: /certs, readOnly: true}
+            - {name: hba, mountPath: /etc/postgresql, readOnly: true}
+            - {name: init, mountPath: /docker-entrypoint-initdb.d, readOnly: true}
+            - {name: run, mountPath: /var/run/postgresql}
+      volumes:
+        # 0640: PostgreSQL acepta una clave de root solo si nadie más la lee.
+        - {name: certs, secret: {secretName: tls-postgres, defaultMode: 0640}}
+        - {name: hba, configMap: {name: postgres-hba}}
+        - {name: init, configMap: {name: postgres-init}}
+        - {name: run, emptyDir: {}}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests: {storage: 40Gi}
+---
+# Quién puede entrar en PostgreSQL: solo con TLS ("hostssl") y contraseña
+# fuerte (scram). Una conexión sin cifrar se rechaza aunque la clave sea buena.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-hba
+  namespace: nomadiq
+data:
+  pg_hba.conf: |
+    local   all  all                 scram-sha-256
+    host    all  all  127.0.0.1/32   scram-sha-256
+    hostssl all  all  0.0.0.0/0      scram-sha-256
+    hostnossl all all 0.0.0.0/0      reject
+---
+# --- Redis (caché) -------------------------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: nomadiq
+spec:
+  selector: {app: redis}
+  ports: [{name: redis, port: 6379}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: nomadiq
+spec:
+  serviceName: redis
+  replicas: 1
+  selector:
+    matchLabels: {app: redis}
+  template:
+    metadata:
+      labels: {app: redis}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: redis
+          image: redis:7.4-alpine
+          env:
+            - {name: REDIS_PASSWORD, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: REDIS_PASSWORD}}}
+            - {name: REDISCLI_AUTH, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: REDIS_PASSWORD}}}
+          # Solo TLS (port 0 = sin puerto en claro). 384 MB como mucho: si se
+          # llena, Redis borra lo menos usado (es una caché, no se pierde nada).
+          command:
+            - sh
+            - -c
+            - >-
+              exec redis-server --requirepass "$REDIS_PASSWORD"
+              --port 0 --tls-port 6379
+              --tls-cert-file /certs/tls.crt --tls-key-file /certs/tls.key
+              --tls-ca-cert-file /certs/ca.crt --tls-auth-clients no
+              --tls-protocols TLSv1.3
+              --appendonly yes --maxmemory 384mb --maxmemory-policy allkeys-lru
+          ports: [{containerPort: 6379}]
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "redis-cli --tls --cacert /certs/ca.crt -h 127.0.0.1 ping | grep -q PONG"]
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 50m, memory: 192Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+            - {name: certs, mountPath: /certs, readOnly: true}
+      volumes:
+        - {name: certs, secret: {secretName: tls-redis}}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests: {storage: 2Gi}
+---
+# --- Kafka (KRaft, un nodo) ----------------------------------------------------
+# Los clientes hablan con TLS (cifrado y comprobando que es nuestro Kafka).
+# Los clientes aún no traen certificado propio para Kafka, así que quién
+# puede conectarse lo decide la NetworkPolicy (solo nuestros servicios).
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: nomadiq
+spec:
+  selector: {app: kafka}
+  ports: [{name: kafka, port: 9092}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+  namespace: nomadiq
+spec:
+  serviceName: kafka
+  replicas: 1
+  selector:
+    matchLabels: {app: kafka}
+  template:
+    metadata:
+      labels: {app: kafka}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+        # Kafka quiere la clave y el certificado en UN fichero PEM.
+        - name: pem
+          image: busybox:1.37
+          command: ["sh", "-c", "cat /certs/tls.key /certs/tls.crt > /pem/keystore.pem && chmod 600 /pem/keystore.pem"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: certs, mountPath: /certs, readOnly: true}
+            - {name: pem, mountPath: /pem}
+      containers:
+        - name: kafka
+          image: apache/kafka:3.9.1
+          env:
+            - {name: CLUSTER_ID, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: KAFKA_CLUSTER_ID}}}
+            - {name: KAFKA_NODE_ID, value: "1"}
+            - {name: KAFKA_PROCESS_ROLES, value: "broker,controller"}
+            - {name: KAFKA_CONTROLLER_QUORUM_VOTERS, value: "1@localhost:9093"}
+            - {name: KAFKA_LISTENERS, value: "INTERNAL://:9092,CONTROLLER://localhost:9093"}
+            - {name: KAFKA_ADVERTISED_LISTENERS, value: "INTERNAL://kafka:9092"}
+            - {name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP, value: "INTERNAL:SSL,CONTROLLER:PLAINTEXT"}
+            - {name: KAFKA_INTER_BROKER_LISTENER_NAME, value: INTERNAL}
+            - {name: KAFKA_CONTROLLER_LISTENER_NAMES, value: CONTROLLER}
+            - {name: KAFKA_SSL_KEYSTORE_TYPE, value: PEM}
+            - {name: KAFKA_SSL_KEYSTORE_LOCATION, value: /pem/keystore.pem}
+            - {name: KAFKA_SSL_TRUSTSTORE_TYPE, value: PEM}
+            - {name: KAFKA_SSL_TRUSTSTORE_LOCATION, value: /certs/ca.crt}
+            - {name: KAFKA_SSL_ENABLED_PROTOCOLS, value: TLSv1.3}
+            - {name: KAFKA_SSL_PROTOCOL, value: TLSv1.3}
+            - {name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR, value: "1"}
+            - {name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR, value: "1"}
+            - {name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR, value: "1"}
+            - {name: KAFKA_AUTO_CREATE_TOPICS_ENABLE, value: "false"}
+            - {name: KAFKA_LOG_DIRS, value: /var/lib/kafka/data}
+            # Disco con techo: como mucho 2 GB por partición; lo viejo se borra.
+            - {name: KAFKA_LOG_RETENTION_BYTES, value: "2147483648"}
+            - {name: KAFKA_HEAP_OPTS, value: "-Xms256m -Xmx512m"}
+          ports: [{containerPort: 9092}]
+          readinessProbe:
+            tcpSocket: {port: 9092}
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 150m, memory: 768Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/kafka/data}
+            - {name: certs, mountPath: /certs, readOnly: true}
+            - {name: pem, mountPath: /pem, readOnly: true}
+      volumes:
+        - {name: certs, secret: {secretName: tls-kafka}}
+        - {name: pem, emptyDir: {medium: Memory}}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests: {storage: 20Gi}
+---
+# Crea los topics (una vez por despliegue; si ya existen, no hace nada).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-topics
+  namespace: nomadiq
+spec:
+  backoffLimit: 10
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels: {app: kafka-topics, kafka-client: "true"}
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: topics
+          image: apache/kafka:3.9.1
+          command: ["/bin/bash", "/scripts/create-topics.sh"]
+          env:
+            - {name: KAFKA_BOOTSTRAP, value: "kafka:9092"}
+            - {name: KAFKA_COMMAND_CONFIG, value: /scripts/client-ssl.properties}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: scripts, mountPath: /scripts, readOnly: true}
+            - {name: certs, mountPath: /certs, readOnly: true}
+      volumes:
+        - {name: scripts, configMap: {name: kafka-topics}}
+        # Solo necesita la CA (ca.crt) para comprobar a Kafka.
+        - {name: certs, secret: {secretName: tls-kafka, items: [{key: ca.crt, path: ca.crt}]}}
+---
+# --- Ollama (el modelo de IA) con su "portero" mTLS ---------------------------
+# Ollama no sabe de certificados: escucha solo dentro del pod (127.0.0.1) y
+# un nginx a su lado exige el carné (mTLS) a quien llama desde fuera.
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: nomadiq
+spec:
+  selector: {app: ollama}
+  ports: [{name: https, port: 11434}]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ollama-proxy
+  namespace: nomadiq
+data:
+  default.conf: |
+    server {
+      listen 11434 ssl;
+      ssl_protocols TLSv1.3;
+      ssl_certificate     /certs/tls.crt;
+      ssl_certificate_key /certs/tls.key;
+      ssl_client_certificate /certs/ca.crt;
+      ssl_verify_client on;
+      client_max_body_size 2m;
+      location / {
+        proxy_pass http://127.0.0.1:11435;
+        proxy_read_timeout 300s;
+        proxy_buffering off;
+      }
+    }
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ollama
+  namespace: nomadiq
+spec:
+  serviceName: ollama
+  replicas: 1
+  selector:
+    matchLabels: {app: ollama}
+  template:
+    metadata:
+      labels: {app: ollama}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+        # Descarga el modelo una vez (si ya está en el disco, tarda segundos).
+        - name: pull
+          image: ollama/ollama:0.12.6
+          command:
+            - sh
+            - -c
+            - ollama serve & P=$!; sleep 5; ollama pull "$OLLAMA_MODEL"; R=$?; kill $P; exit $R
+          env:
+            - {name: OLLAMA_HOST, value: "127.0.0.1:11435"}
+            - {name: OLLAMA_MODELS, value: /models}
+            - {name: HOME, value: /models}
+            - {name: OLLAMA_MODEL, valueFrom: {configMapKeyRef: {name: nomadiq-config, key: OLLAMA_MODEL}}}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: models, mountPath: /models}
+      containers:
+        - name: ollama
+          image: ollama/ollama:0.12.6
+          env:
+            - {name: OLLAMA_HOST, value: "127.0.0.1:11435"}
+            - {name: OLLAMA_MODELS, value: /models}
+            - {name: HOME, value: /models}
+            # Una respuesta a la vez: el ai-orchestrator ya hace cola y pone topes.
+            - {name: OLLAMA_NUM_PARALLEL, value: "1"}
+            - {name: OLLAMA_MAX_LOADED_MODELS, value: "1"}
+          resources:
+            requests: {cpu: 500m, memory: 2560Mi}
+            limits: {cpu: "2", memory: 4Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: models, mountPath: /models}
+        - name: mtls
+          image: nginxinc/nginx-unprivileged:1.27-alpine
+          ports: [{containerPort: 11434}]
+          readinessProbe:
+            tcpSocket: {port: 11434}
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 20m, memory: 32Mi}
+            limits: {cpu: 250m, memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: proxy, mountPath: /etc/nginx/conf.d, readOnly: true}
+            - {name: certs, mountPath: /certs, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - {name: proxy, configMap: {name: ollama-proxy}}
+        - {name: certs, secret: {secretName: tls-ollama}}
+        - {name: tmp, emptyDir: {}}
+  volumeClaimTemplates:
+    - metadata:
+        name: models
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests: {storage: 15Gi}

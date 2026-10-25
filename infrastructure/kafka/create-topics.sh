@@ -8,6 +8,12 @@ set -euo pipefail
 # Dirección del broker; si no se define KAFKA_BOOTSTRAP se usa kafka:9092.
 BOOTSTRAP="${KAFKA_BOOTSTRAP:-kafka:9092}"
 KAFKA_BIN=/opt/kafka/bin
+# En producción Kafka va con TLS: KAFKA_COMMAND_CONFIG apunta al fichero con
+# la configuración del cliente (security.protocol=SSL y la CA). En local, vacío.
+EXTRA=()
+if [ -n "${KAFKA_COMMAND_CONFIG:-}" ]; then
+  EXTRA=(--command-config "${KAFKA_COMMAND_CONFIG}")
+fi
 
 # nombre | particiones | retención en ms | política de limpieza
 TOPICS=(
@@ -63,7 +69,7 @@ TOPICS=(
 for entry in "${TOPICS[@]}"; do
   IFS='|' read -r name partitions retention cleanup <<<"${entry}"
   echo "Asegurando topic ${name} (${partitions} particiones)"
-  "${KAFKA_BIN}/kafka-topics.sh" --bootstrap-server "${BOOTSTRAP}" \
+  "${KAFKA_BIN}/kafka-topics.sh" --bootstrap-server "${BOOTSTRAP}" "${EXTRA[@]}" \
     --create --if-not-exists \
     --topic "${name}" \
     --partitions "${partitions}" \
@@ -74,4 +80,4 @@ for entry in "${TOPICS[@]}"; do
 done
 
 # Muestra los topics existentes para comprobarlo en los logs.
-"${KAFKA_BIN}/kafka-topics.sh" --bootstrap-server "${BOOTSTRAP}" --list
+"${KAFKA_BIN}/kafka-topics.sh" --bootstrap-server "${BOOTSTRAP}" "${EXTRA[@]}" --list

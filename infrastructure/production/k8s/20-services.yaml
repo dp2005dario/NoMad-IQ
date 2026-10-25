@@ -1,0 +1,628 @@
+# GENERADO por gen_services.py: no lo edites a mano (cambia la tabla de allí).
+#
+# Los 7 microservicios de NomadIQ. Todos:
+#   - hablan entre sí con mTLS (cada uno con su certificado de 01-pki.yaml);
+#   - van a PostgreSQL con verify-full, a Redis y Kafka con TLS;
+#   - corren sin root, con el disco del contenedor en solo lectura y un techo
+#     de memoria y CPU (si alguno se pasa, Kubernetes lo reinicia: no hay
+#     "más máquinas" que pagar).
+---
+# Las audioguías en .opus: las graba el audio-worker y las lee la API.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: audio-data
+  namespace: nomadiq
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests: {storage: 10Gi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flight-ingestor
+  namespace: nomadiq
+spec:
+  selector: {app: flight-ingestor}
+  ports:
+    - {name: grpc, port: 50051}
+    - {name: health, port: 8081}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flight-ingestor
+  namespace: nomadiq
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app: flight-ingestor}
+  template:
+    metadata:
+      labels: {app: flight-ingestor, kafka-client: "true"}
+      annotations:
+        prometheus.io/scrape: "false"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: flight-ingestor
+          image: nomadiq/flight-ingestor:prod
+          # La imagen se construye en la propia máquina (deploy.sh): gratis,
+          # sin registro de imágenes de pago.
+          imagePullPolicy: Never
+          env:
+            - {name: KAFKA_BROKERS, value: "kafka:9092"}
+            - {name: KAFKA_TLS_CA_FILE, value: "/certs/ca.crt"}
+            - {name: GRPC_TLS_CERT_FILE, value: "/certs/tls.crt"}
+            - {name: GRPC_TLS_KEY_FILE, value: "/certs/tls.key"}
+            - {name: GRPC_TLS_CLIENT_CA_FILE, value: "/certs/ca.crt"}
+            - {name: FARE_PROVIDER, value: "travelpayouts"}
+            - {name: TRAVELPAYOUTS_TOKEN, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: TRAVELPAYOUTS_TOKEN}}}
+            - {name: TRAVELPAYOUTS_MARKER, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: TRAVELPAYOUTS_MARKER}}}
+            - {name: TRAVELPAYOUTS_CURRENCY, value: "EUR"}
+            - {name: POLL_INTERVAL, value: "15m"}
+            - {name: LOG_LEVEL, value: "info"}
+          ports:
+            - {name: grpc, containerPort: 50051}
+            - {name: health, containerPort: 8081}
+          readinessProbe:
+            httpGet: {path: /readyz, port: health}
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: {path: /healthz, port: health}
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: "1", memory: 256Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: certs, mountPath: /certs, readOnly: true}
+      volumes:
+        - {name: certs, secret: {secretName: tls-flight-ingestor}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: price-consumer
+  namespace: nomadiq
+spec:
+  selector: {app: price-consumer}
+  ports:
+    - {name: api, port: 8092}
+    - {name: health, port: 8082}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: price-consumer
+  namespace: nomadiq
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app: price-consumer}
+  template:
+    metadata:
+      labels: {app: price-consumer, kafka-client: "true"}
+      annotations:
+        prometheus.io/scrape: "false"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: price-consumer
+          image: nomadiq/price-consumer:prod
+          # La imagen se construye en la propia máquina (deploy.sh): gratis,
+          # sin registro de imágenes de pago.
+          imagePullPolicy: Never
+          env:
+            - {name: KAFKA_BROKERS, value: "kafka:9092"}
+            - {name: KAFKA_TLS_CA_FILE, value: "/certs/ca.crt"}
+            - {name: PGHOST, value: "postgres"}
+            - {name: PGUSER, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_USER}}}
+            - {name: PGPASSWORD, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_PASSWORD}}}
+            - {name: PGDATABASE, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_DB}}}
+            - {name: PGSSLMODE, value: "verify-full"}
+            - {name: PGSSLROOTCERT, value: "/certs/ca.crt"}
+            - {name: TLS_CERT_FILE, value: "/certs/tls.crt"}
+            - {name: TLS_KEY_FILE, value: "/certs/tls.key"}
+            - {name: TLS_CLIENT_CA_FILE, value: "/certs/ca.crt"}
+            - {name: INGESTOR_GRPC_ADDR, value: "flight-ingestor:50051"}
+            - {name: INGESTOR_TLS_CA_FILE, value: "/certs/ca.crt"}
+            - {name: INGESTOR_TLS_CERT_FILE, value: "/certs/tls.crt"}
+            - {name: INGESTOR_TLS_KEY_FILE, value: "/certs/tls.key"}
+            - {name: POPULAR_ROUTES, valueFrom: {configMapKeyRef: {name: nomadiq-config, key: POPULAR_ROUTES}}}
+            - {name: LOG_LEVEL, value: "info"}
+          ports:
+            - {name: api, containerPort: 8092}
+            - {name: health, containerPort: 8082}
+          readinessProbe:
+            httpGet: {path: /readyz, port: health}
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: {path: /healthz, port: health}
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: "1", memory: 384Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: certs, mountPath: /certs, readOnly: true}
+      volumes:
+        - {name: certs, secret: {secretName: tls-price-consumer}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-gateway
+  namespace: nomadiq
+spec:
+  selector: {app: auth-gateway}
+  ports:
+    - {name: api, port: 8083}
+    - {name: health, port: 8084}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-gateway
+  namespace: nomadiq
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app: auth-gateway}
+  template:
+    metadata:
+      labels: {app: auth-gateway, kafka-client: "true"}
+      annotations:
+        prometheus.io/scrape: "false"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: auth-gateway
+          image: nomadiq/auth-gateway:prod
+          # La imagen se construye en la propia máquina (deploy.sh): gratis,
+          # sin registro de imágenes de pago.
+          imagePullPolicy: Never
+          env:
+            - {name: PGHOST, value: "postgres"}
+            - {name: PGUSER, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_USER}}}
+            - {name: PGPASSWORD, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_PASSWORD}}}
+            - {name: PGDATABASE, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_DB}}}
+            - {name: PGSSLMODE, value: "verify-full"}
+            - {name: PGSSLROOTCERT, value: "/certs/ca.crt"}
+            - {name: REDIS_HOST, value: "redis"}
+            - {name: REDIS_PASSWORD, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: REDIS_PASSWORD}}}
+            - {name: REDIS_TLS, value: "true"}
+            - {name: TLS_CERT_FILE, value: "/certs/tls.crt"}
+            - {name: TLS_KEY_FILE, value: "/certs/tls.key"}
+            - {name: TLS_CLIENT_CA_FILE, value: "/certs/ca.crt"}
+            - {name: JWT_ACTIVE_KEY_FILE, value: "/jwt/jwt-active.pem"}
+            - {name: FORWARD_HEADERS_STRATEGY, value: "native"}
+            - {name: JAVA_TRUSTSTORE_PASSWORD, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: JAVA_TRUSTSTORE_PASSWORD}}}
+            - {name: JAVA_TOOL_OPTIONS, value: "-XX:MaxRAMPercentage=70 -Djavax.net.ssl.trustStore=/certs/truststore.p12 -Djavax.net.ssl.trustStoreType=PKCS12 -Djavax.net.ssl.trustStorePassword=$(JAVA_TRUSTSTORE_PASSWORD)"}
+            - {name: LOG_LEVEL, value: "info"}
+          ports:
+            - {name: api, containerPort: 8083}
+            - {name: health, containerPort: 8084}
+          readinessProbe:
+            httpGet: {path: /readyz, port: health}
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: {path: /livez, port: health}
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 50m, memory: 384Mi}
+            limits: {cpu: "1", memory: 768Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: certs, mountPath: /certs, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+            - {name: jwt, mountPath: /jwt, readOnly: true}
+      volumes:
+        - {name: certs, secret: {secretName: tls-auth-gateway}}
+        - {name: tmp, emptyDir: {}}
+        - {name: jwt, secret: {secretName: nomadiq-jwt}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-orchestrator
+  namespace: nomadiq
+spec:
+  selector: {app: ai-orchestrator}
+  ports:
+    - {name: api, port: 8085}
+    - {name: health, port: 8086}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-orchestrator
+  namespace: nomadiq
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app: ai-orchestrator}
+  template:
+    metadata:
+      labels: {app: ai-orchestrator, kafka-client: "true"}
+      annotations:
+        prometheus.io/scrape: "false"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: ai-orchestrator
+          image: nomadiq/ai-orchestrator:prod
+          # La imagen se construye en la propia máquina (deploy.sh): gratis,
+          # sin registro de imágenes de pago.
+          imagePullPolicy: Never
+          env:
+            - {name: KAFKA_BROKERS, value: "kafka:9092"}
+            - {name: KAFKA_TLS_CA_FILE, value: "/certs/ca.crt"}
+            - {name: PGHOST, value: "postgres"}
+            - {name: PGUSER, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_USER}}}
+            - {name: PGPASSWORD, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_PASSWORD}}}
+            - {name: PGDATABASE, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_DB}}}
+            - {name: PGSSLMODE, value: "verify-full"}
+            - {name: PGSSLROOTCERT, value: "/certs/ca.crt"}
+            - {name: REDIS_HOST, value: "redis"}
+            - {name: REDIS_PASSWORD, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: REDIS_PASSWORD}}}
+            - {name: REDIS_TLS, value: "true"}
+            - {name: REDIS_TLS_CA_FILE, value: "/certs/ca.crt"}
+            - {name: TLS_CERT_FILE, value: "/certs/tls.crt"}
+            - {name: TLS_KEY_FILE, value: "/certs/tls.key"}
+            - {name: TLS_CLIENT_CA_FILE, value: "/certs/ca.crt"}
+            - {name: OLLAMA_URL, value: "https://ollama:11434"}
+            - {name: OLLAMA_TLS_CA_FILE, value: "/certs/ca.crt"}
+            - {name: OLLAMA_TLS_CERT_FILE, value: "/certs/tls.crt"}
+            - {name: OLLAMA_TLS_KEY_FILE, value: "/certs/tls.key"}
+            - {name: OLLAMA_MODEL, valueFrom: {configMapKeyRef: {name: nomadiq-config, key: OLLAMA_MODEL}}}
+            - {name: LLM_ENABLED, value: "true"}
+            - {name: OLLAMA_TIMEOUT_SECONDS, value: "120"}
+            - {name: FLYRA_TIMEOUT_SECONDS, value: "120"}
+            - {name: MENU_TIMEOUT_SECONDS, value: "120"}
+            - {name: TRIP_ADAPT_TIMEOUT_SECONDS, value: "120"}
+            - {name: AUDIO_DIR, value: "/var/lib/nomadiq/audio"}
+            - {name: AUDIOGUIDE_DEFAULT_LANGUAGE, value: "en"}
+            - {name: NOTIFY_PSEUDONYM_KEY, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: NOTIFY_PSEUDONYM_KEY}}}
+            - {name: MAPILLARY_TOKEN, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: MAPILLARY_TOKEN}}}
+            - {name: TICKETMASTER_API_KEY, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: TICKETMASTER_API_KEY}}}
+            - {name: EXPOSE_API_DOCS, value: "false"}
+            - {name: LOG_LEVEL, value: "info"}
+          ports:
+            - {name: api, containerPort: 8085}
+            - {name: health, containerPort: 8086}
+          readinessProbe:
+            httpGet: {path: /readyz, port: health}
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: {path: /healthz, port: health}
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 50m, memory: 512Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: certs, mountPath: /certs, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+            - {name: audio, mountPath: /var/lib/nomadiq/audio, readOnly: true}
+      volumes:
+        - {name: certs, secret: {secretName: tls-ai-orchestrator}}
+        - {name: tmp, emptyDir: {}}
+        - {name: audio, persistentVolumeClaim: {claimName: audio-data}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audio-worker
+  namespace: nomadiq
+spec:
+  selector: {app: audio-worker}
+  ports:
+    - {name: health, port: 8086}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audio-worker
+  namespace: nomadiq
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app: audio-worker}
+  template:
+    metadata:
+      labels: {app: audio-worker, kafka-client: "true"}
+      annotations:
+        prometheus.io/scrape: "false"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: audio-worker
+          image: nomadiq/audio-worker:prod
+          # La imagen se construye en la propia máquina (deploy.sh): gratis,
+          # sin registro de imágenes de pago.
+          imagePullPolicy: Never
+          env:
+            - {name: KAFKA_BROKERS, value: "kafka:9092"}
+            - {name: KAFKA_TLS_CA_FILE, value: "/certs/ca.crt"}
+            - {name: PGHOST, value: "postgres"}
+            - {name: PGUSER, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_USER}}}
+            - {name: PGPASSWORD, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_PASSWORD}}}
+            - {name: PGDATABASE, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_DB}}}
+            - {name: PGSSLMODE, value: "verify-full"}
+            - {name: PGSSLROOTCERT, value: "/certs/ca.crt"}
+            - {name: REDIS_HOST, value: "redis"}
+            - {name: REDIS_PASSWORD, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: REDIS_PASSWORD}}}
+            - {name: REDIS_TLS, value: "true"}
+            - {name: REDIS_TLS_CA_FILE, value: "/certs/ca.crt"}
+            - {name: TLS_CERT_FILE, value: "/certs/tls.crt"}
+            - {name: TLS_KEY_FILE, value: "/certs/tls.key"}
+            - {name: TLS_CLIENT_CA_FILE, value: "/certs/ca.crt"}
+            - {name: OLLAMA_URL, value: "https://ollama:11434"}
+            - {name: OLLAMA_TLS_CA_FILE, value: "/certs/ca.crt"}
+            - {name: OLLAMA_TLS_CERT_FILE, value: "/certs/tls.crt"}
+            - {name: OLLAMA_TLS_KEY_FILE, value: "/certs/tls.key"}
+            - {name: OLLAMA_MODEL, valueFrom: {configMapKeyRef: {name: nomadiq-config, key: OLLAMA_MODEL}}}
+            - {name: LLM_ENABLED, value: "true"}
+            - {name: AUDIOGUIDE_DEFAULT_LANGUAGE, value: "en"}
+            - {name: AUDIO_POLL_SECONDS, value: "30"}
+            - {name: LOG_LEVEL, value: "info"}
+          ports:
+            - {name: health, containerPort: 8086}
+          readinessProbe:
+            httpGet: {path: /readyz, port: health}
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: {path: /healthz, port: health}
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 50m, memory: 512Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: certs, mountPath: /certs, readOnly: true}
+            - {name: tmp, mountPath: /tmp}
+            - {name: audio, mountPath: /var/lib/nomadiq/audio, readOnly: false}
+      volumes:
+        - {name: certs, secret: {secretName: tls-audio-worker}}
+        - {name: tmp, emptyDir: {}}
+        - {name: audio, persistentVolumeClaim: {claimName: audio-data}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: geo-engine
+  namespace: nomadiq
+spec:
+  selector: {app: geo-engine}
+  ports:
+    - {name: grpc, port: 50052}
+    - {name: health, port: 8087}
+    - {name: api, port: 8090}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geo-engine
+  namespace: nomadiq
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app: geo-engine}
+  template:
+    metadata:
+      labels: {app: geo-engine, kafka-client: "true"}
+      annotations:
+        prometheus.io/scrape: "false"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: geo-engine
+          image: nomadiq/geo-engine:prod
+          # La imagen se construye en la propia máquina (deploy.sh): gratis,
+          # sin registro de imágenes de pago.
+          imagePullPolicy: Never
+          env:
+            - {name: KAFKA_BROKERS, value: "kafka:9092"}
+            - {name: KAFKA_TLS_CA_FILE, value: "/certs/ca.crt"}
+            - {name: PGHOST, value: "postgres"}
+            - {name: PGUSER, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_USER}}}
+            - {name: PGPASSWORD, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_PASSWORD}}}
+            - {name: PGDATABASE, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_DB}}}
+            - {name: PGSSLMODE, value: "verify-full"}
+            - {name: PGSSLROOTCERT, value: "/certs/ca.crt"}
+            - {name: REDIS_HOST, value: "redis"}
+            - {name: REDIS_PASSWORD, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: REDIS_PASSWORD}}}
+            - {name: REDIS_TLS, value: "true"}
+            - {name: REDIS_TLS_CA_FILE, value: "/certs/ca.crt"}
+            - {name: GRPC_TLS_CERT_FILE, value: "/certs/tls.crt"}
+            - {name: GRPC_TLS_KEY_FILE, value: "/certs/tls.key"}
+            - {name: GRPC_TLS_CLIENT_CA_FILE, value: "/certs/ca.crt"}
+            - {name: API_ALLOWED_CLIENTS, value: "edge"}
+            - {name: SEED_DEMO_ZONES, value: "false"}
+            - {name: NOTIFY_PSEUDONYM_KEY, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: NOTIFY_PSEUDONYM_KEY}}}
+            - {name: LOG_LEVEL, value: "info"}
+          ports:
+            - {name: grpc, containerPort: 50052}
+            - {name: health, containerPort: 8087}
+            - {name: api, containerPort: 8090}
+          readinessProbe:
+            httpGet: {path: /readyz, port: health}
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: {path: /healthz, port: health}
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 50m, memory: 256Mi}
+            limits: {cpu: "1", memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: certs, mountPath: /certs, readOnly: true}
+      volumes:
+        - {name: certs, secret: {secretName: tls-geo-engine}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notifier
+  namespace: nomadiq
+spec:
+  selector: {app: notifier}
+  ports:
+    - {name: api, port: 8089}
+    - {name: health, port: 8090}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notifier
+  namespace: nomadiq
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {app: notifier}
+  template:
+    metadata:
+      labels: {app: notifier, kafka-client: "true"}
+      annotations:
+        prometheus.io/scrape: "false"
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: notifier
+          image: nomadiq/notifier:prod
+          # La imagen se construye en la propia máquina (deploy.sh): gratis,
+          # sin registro de imágenes de pago.
+          imagePullPolicy: Never
+          env:
+            - {name: KAFKA_BROKERS, value: "kafka:9092"}
+            - {name: KAFKA_TLS_CA_FILE, value: "/certs/ca.crt"}
+            - {name: PGHOST, value: "postgres"}
+            - {name: PGUSER, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_USER}}}
+            - {name: PGPASSWORD, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_PASSWORD}}}
+            - {name: PGDATABASE, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_DB}}}
+            - {name: PGSSLMODE, value: "verify-full"}
+            - {name: PGSSLROOTCERT, value: "/certs/ca.crt"}
+            - {name: REDIS_HOST, value: "redis"}
+            - {name: REDIS_PASSWORD, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: REDIS_PASSWORD}}}
+            - {name: REDIS_TLS, value: "true"}
+            - {name: REDIS_TLS_CA_FILE, value: "/certs/ca.crt"}
+            - {name: TLS_CERT_FILE, value: "/certs/tls.crt"}
+            - {name: TLS_KEY_FILE, value: "/certs/tls.key"}
+            - {name: TLS_CLIENT_CA_FILE, value: "/certs/ca.crt"}
+            - {name: NOTIFY_PSEUDONYM_KEY, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: NOTIFY_PSEUDONYM_KEY}}}
+            - {name: NOTIFY_TOKEN_KEY, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: NOTIFY_TOKEN_KEY}}}
+            - {name: FCM_PROJECT_ID, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: FCM_PROJECT_ID}}}
+            - {name: FCM_CREDENTIALS_FILE, value: "/fcm/fcm.json"}
+            - {name: LOG_LEVEL, value: "info"}
+          ports:
+            - {name: api, containerPort: 8089}
+            - {name: health, containerPort: 8090}
+          readinessProbe:
+            httpGet: {path: /readyz, port: health}
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: {path: /healthz, port: health}
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: "1", memory: 256Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: certs, mountPath: /certs, readOnly: true}
+            - {name: fcm, mountPath: /fcm, readOnly: true}
+      volumes:
+        - {name: certs, secret: {secretName: tls-notifier}}
+        - {name: fcm, secret: {secretName: nomadiq-fcm}}

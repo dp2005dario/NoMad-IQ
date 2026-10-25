@@ -1,0 +1,375 @@
+# Certificados INTERNOS (mTLS) con cert-manager, gratis y automáticos.
+#
+# Analogía: es la oficina de carnés de la empresa. Hay un sello oficial (la
+# CA interna, que solo existe dentro del clúster) y cada servicio recibe su
+# carné firmado con ese sello. Cuando dos servicios hablan, se enseñan el
+# carné mutuamente (mTLS): si no lo firmó nuestra CA, no hay conversación.
+#
+# Los carnés duran 90 días y cert-manager los renueva solo 30 días antes.
+# Un CronJob (restart-weekly) reinicia los servicios cada domingo para que
+# lean el carné nuevo.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned
+  namespace: nomadiq
+spec:
+  selfSigned: {}
+---
+# El sello: la CA raíz interna (10 años). Su clave nunca sale del clúster.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nomadiq-internal-ca
+  namespace: nomadiq
+spec:
+  isCA: true
+  commonName: nomadiq-internal-ca
+  secretName: nomadiq-internal-ca
+  duration: 87600h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: selfsigned
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: internal-ca
+  namespace: nomadiq
+spec:
+  ca:
+    secretName: nomadiq-internal-ca
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: edge
+  namespace: nomadiq
+spec:
+  secretName: tls-edge
+  commonName: edge
+  dnsNames:
+    - edge
+    - edge.nomadiq.svc
+    - edge.nomadiq.svc.cluster.local
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    # PKCS#8: el formato que entienden todos (Kafka lo exige).
+    encoding: PKCS8
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - client auth
+  issuerRef:
+    name: internal-ca
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: auth-gateway
+  namespace: nomadiq
+spec:
+  secretName: tls-auth-gateway
+  commonName: auth-gateway
+  dnsNames:
+    - auth-gateway
+    - auth-gateway.nomadiq.svc
+    - auth-gateway.nomadiq.svc.cluster.local
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    # PKCS#8: el formato que entienden todos (Kafka lo exige).
+    encoding: PKCS8
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - client auth
+  # Java (auth-gateway) lee la CA desde un almacén PKCS#12.
+  keystores:
+    pkcs12:
+      create: true
+      passwordSecretRef:
+        name: nomadiq-secrets
+        key: JAVA_TRUSTSTORE_PASSWORD
+  issuerRef:
+    name: internal-ca
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ai-orchestrator
+  namespace: nomadiq
+spec:
+  secretName: tls-ai-orchestrator
+  commonName: ai-orchestrator
+  dnsNames:
+    - ai-orchestrator
+    - ai-orchestrator.nomadiq.svc
+    - ai-orchestrator.nomadiq.svc.cluster.local
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    # PKCS#8: el formato que entienden todos (Kafka lo exige).
+    encoding: PKCS8
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - client auth
+  issuerRef:
+    name: internal-ca
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: audio-worker
+  namespace: nomadiq
+spec:
+  secretName: tls-audio-worker
+  commonName: audio-worker
+  dnsNames:
+    - audio-worker
+    - audio-worker.nomadiq.svc
+    - audio-worker.nomadiq.svc.cluster.local
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    # PKCS#8: el formato que entienden todos (Kafka lo exige).
+    encoding: PKCS8
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - client auth
+  issuerRef:
+    name: internal-ca
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: price-consumer
+  namespace: nomadiq
+spec:
+  secretName: tls-price-consumer
+  commonName: price-consumer
+  dnsNames:
+    - price-consumer
+    - price-consumer.nomadiq.svc
+    - price-consumer.nomadiq.svc.cluster.local
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    # PKCS#8: el formato que entienden todos (Kafka lo exige).
+    encoding: PKCS8
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - client auth
+  issuerRef:
+    name: internal-ca
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: flight-ingestor
+  namespace: nomadiq
+spec:
+  secretName: tls-flight-ingestor
+  commonName: flight-ingestor
+  dnsNames:
+    - flight-ingestor
+    - flight-ingestor.nomadiq.svc
+    - flight-ingestor.nomadiq.svc.cluster.local
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    # PKCS#8: el formato que entienden todos (Kafka lo exige).
+    encoding: PKCS8
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - client auth
+  issuerRef:
+    name: internal-ca
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: geo-engine
+  namespace: nomadiq
+spec:
+  secretName: tls-geo-engine
+  commonName: geo-engine
+  dnsNames:
+    - geo-engine
+    - geo-engine.nomadiq.svc
+    - geo-engine.nomadiq.svc.cluster.local
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    # PKCS#8: el formato que entienden todos (Kafka lo exige).
+    encoding: PKCS8
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - client auth
+  issuerRef:
+    name: internal-ca
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: notifier
+  namespace: nomadiq
+spec:
+  secretName: tls-notifier
+  commonName: notifier
+  dnsNames:
+    - notifier
+    - notifier.nomadiq.svc
+    - notifier.nomadiq.svc.cluster.local
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    # PKCS#8: el formato que entienden todos (Kafka lo exige).
+    encoding: PKCS8
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - client auth
+  issuerRef:
+    name: internal-ca
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: postgres
+  namespace: nomadiq
+spec:
+  secretName: tls-postgres
+  commonName: postgres
+  dnsNames:
+    - postgres
+    - postgres.nomadiq.svc
+    - postgres.nomadiq.svc.cluster.local
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    # PKCS#8: el formato que entienden todos (Kafka lo exige).
+    encoding: PKCS8
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - client auth
+  issuerRef:
+    name: internal-ca
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: redis
+  namespace: nomadiq
+spec:
+  secretName: tls-redis
+  commonName: redis
+  dnsNames:
+    - redis
+    - redis.nomadiq.svc
+    - redis.nomadiq.svc.cluster.local
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    # PKCS#8: el formato que entienden todos (Kafka lo exige).
+    encoding: PKCS8
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - client auth
+  issuerRef:
+    name: internal-ca
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kafka
+  namespace: nomadiq
+spec:
+  secretName: tls-kafka
+  commonName: kafka
+  dnsNames:
+    - kafka
+    - kafka.nomadiq.svc
+    - kafka.nomadiq.svc.cluster.local
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    # PKCS#8: el formato que entienden todos (Kafka lo exige).
+    encoding: PKCS8
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - client auth
+  issuerRef:
+    name: internal-ca
+    kind: Issuer
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ollama
+  namespace: nomadiq
+spec:
+  secretName: tls-ollama
+  commonName: ollama
+  dnsNames:
+    - ollama
+    - ollama.nomadiq.svc
+    - ollama.nomadiq.svc.cluster.local
+  duration: 2160h
+  renewBefore: 720h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    # PKCS#8: el formato que entienden todos (Kafka lo exige).
+    encoding: PKCS8
+    rotationPolicy: Always
+  usages:
+    - server auth
+    - client auth
+  issuerRef:
+    name: internal-ca
+    kind: Issuer
