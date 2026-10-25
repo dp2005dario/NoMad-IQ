@@ -1,0 +1,55 @@
+# Publica las páginas legales (site/) en GitHub Pages, gratis.
+# Google Play exige dos direcciones web públicas: la política de privacidad
+# y la página para borrar la cuenta. Quedan en:
+#   https://<usuario>.github.io/<repositorio>/privacidad.html (y privacy.html)
+#   https://<usuario>.github.io/<repositorio>/borrar-cuenta.html (y delete-account.html)
+#
+# Antes de la primera vez (ver docs/guia-play-store.md):
+#   1. Settings → Pages → Source: "GitHub Actions".
+#   2. Settings → Secrets and variables → Actions → Variables → New variable:
+#      NOMADIQ_SUPPORT_EMAIL = tu correo de soporte (sale en las páginas).
+name: pages
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", ".github/workflows/pages.yml"]
+  workflow_dispatch: {}
+
+# Mínimo privilegio: leer el código y publicar en Pages, nada más.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Poner el correo de soporte
+        env:
+          SUPPORT_EMAIL: ${{ vars.NOMADIQ_SUPPORT_EMAIL }}
+        run: |
+          # Sin correo, las páginas no sirven (Play pide un contacto): se para.
+          if ! printf '%s' "$SUPPORT_EMAIL" | grep -Eq '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$'; then
+            echo "::error::Define la variable NOMADIQ_SUPPORT_EMAIL (Settings → Variables)."
+            exit 1
+          fi
+          mkdir -p _site
+          cp site/* _site/
+          sed -i "s|__SUPPORT_EMAIL__|${SUPPORT_EMAIL}|g" _site/*.html
+          ! grep -l "__SUPPORT_EMAIL__" _site/*.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4

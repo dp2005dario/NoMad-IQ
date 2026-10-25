@@ -91,6 +91,14 @@ spec:
             - --log.format=json
             - --accessLog.format=json
             - --accessLog.fields.headers.defaultMode=drop
+            # Ni la IP de quien llama ni la ruta (la ruta puede llevar
+            # coordenadas, p. ej. /v1/nearby?lat=...). Solo qué servicio,
+            # código de respuesta y tiempo: lo justo para ver si algo falla.
+            - --accessLog.fields.names.ClientAddr=drop
+            - --accessLog.fields.names.ClientHost=drop
+            - --accessLog.fields.names.ClientPort=drop
+            - --accessLog.fields.names.ClientUsername=drop
+            - --accessLog.fields.names.RequestPath=drop
             - --global.checkNewVersion=false
             - --global.sendAnonymousUsage=false
           ports:
