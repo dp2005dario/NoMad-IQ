@@ -153,9 +153,12 @@ class PostgresPlans:
                     raise PlanLimitError(negotiation_id)
                 for p in fresh:
                     await conn.execute(
+                        # clock_timestamp() y no now(): now() es la MISMA hora para
+                        # toda la transacción, y los planes añadidos de golpe
+                        # saldrían en orden al azar. Así salen en el orden enviado.
                         "INSERT INTO ai.group_plans (plan_id, negotiation_id, added_by_seat, title, note,"
-                        " wikidata_id, photo_url, article_url)"
-                        " VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8)",
+                        " wikidata_id, photo_url, article_url, created_at)"
+                        " VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, clock_timestamp())",
                         str(uuid.uuid4()),
                         negotiation_id,
                         seat,
