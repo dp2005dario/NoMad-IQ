@@ -854,7 +854,12 @@ class _MapShortcuts extends StatelessWidget {
                 label: Text(f.label(t)),
                 backgroundColor: NomadColors.surface.withValues(alpha: 0.94),
                 side: const BorderSide(color: NomadColors.outline),
-                onPressed: () => unawaited(context.push(Routes.soon(f))),
+                onPressed: () => unawaited(
+                  context.push(switch (f) {
+                    Feature.nearby => Routes.nearby,
+                    _ => Routes.soon(f),
+                  }),
+                ),
               ),
             ),
         ],

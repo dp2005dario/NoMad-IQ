@@ -6695,5 +6695,120 @@
   "plansTooMany": "This trip already has too many plans. Remove some first.",
   "@plansTooMany": {
     "description": "Limit reached."
+  },
+  "nearbyTitle": "Near you",
+  "@nearbyTitle": {
+    "description": "Nearby screen title."
+  },
+  "nearbyFree": "Free",
+  "@nearbyFree": {
+    "description": "Tab."
+  },
+  "nearbyWalk": "I have time",
+  "@nearbyWalk": {
+    "description": "Tab."
+  },
+  "nearbyWater": "Drinking water",
+  "@nearbyWater": {
+    "description": "Kind."
+  },
+  "nearbyToilets": "Toilets",
+  "@nearbyToilets": {
+    "description": "Kind."
+  },
+  "nearbyWifi": "Free wifi",
+  "@nearbyWifi": {
+    "description": "Kind."
+  },
+  "nearbyCharging": "Phone charging",
+  "@nearbyCharging": {
+    "description": "Kind."
+  },
+  "nearbyNone": "Nothing of this kind on the map around here. Volunteers draw it on OpenStreetMap: maybe soon!",
+  "@nearbyNone": {
+    "description": "Nothing found."
+  },
+  "nearbyMeters": "{m} m",
+  "@nearbyMeters": {
+    "description": "Distance.",
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "nearbyPaid": "paid",
+  "@nearbyPaid": {
+    "description": "Costs money."
+  },
+  "nearbyNoFee": "free",
+  "@nearbyNoFee": {
+    "description": "Free of charge."
+  },
+  "nearbyGo": "Go",
+  "@nearbyGo": {
+    "description": "Button."
+  },
+  "nearbyWalkIntro": "A walk that starts here, passes by things to see and brings you back on time.",
+  "@nearbyWalkIntro": {
+    "description": "Walk intro."
+  },
+  "nearbyHours": "{h} h",
+  "@nearbyHours": {
+    "description": "Hours chip.",
+    "placeholders": {
+      "h": {
+        "type": "int"
+      }
+    }
+  },
+  "nearbyWalkNone": "There are no well-known sights close enough for that time. Try with more time.",
+  "@nearbyWalkNone": {
+    "description": "No sights."
+  },
+  "nearbyWalkTotal": "{stops} stops · {min} min in total",
+  "@nearbyWalkTotal": {
+    "description": "Walk summary.",
+    "placeholders": {
+      "stops": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "nearbyStartEnd": "START AND FINISH",
+  "@nearbyStartEnd": {
+    "description": "Start and end."
+  },
+  "nearbyYou": "You are here",
+  "@nearbyYou": {
+    "description": "You are here."
+  },
+  "nearbyStopDetail": "{walk} min walking · {stay} min there",
+  "@nearbyStopDetail": {
+    "description": "Stop detail.",
+    "placeholders": {
+      "walk": {
+        "type": "int"
+      },
+      "stay": {
+        "type": "int"
+      }
+    }
+  },
+  "nearbyBack": "{min} min walking back",
+  "@nearbyBack": {
+    "description": "Back to start.",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "nearbyOpenWalk": "Open the walk in the map",
+  "@nearbyOpenWalk": {
+    "description": "Button."
   }
 }

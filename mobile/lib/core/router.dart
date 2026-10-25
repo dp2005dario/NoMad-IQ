@@ -39,6 +39,7 @@ import '../features/copy_trip/copy_trip_screen.dart';
 import '../features/copy_trip/share_trip_screen.dart';
 import '../features/family/family_screen.dart';
 import '../features/help/help_screen.dart';
+import '../features/nearby/nearby_screen.dart';
 import '../features/papers/papers_screen.dart';
 import '../features/visa/visa_screen.dart';
 import '../features/travel_with/travel_with_screen.dart';
@@ -80,6 +81,7 @@ abstract final class Routes {
   static const String memories = '/memories';
   static const String travelCamera = '/memories/camera';
   static const String widgets = '/widgets';
+  static const String nearby = '/nearby';
 
   /// "Copia este viaje"; con [code] abre directamente ese viaje.
   static String copyTrip({String? code}) => Uri(
@@ -370,6 +372,11 @@ GoRouter buildRouter({
         iata: state.uri.queryParameters['iata'],
         gate: state.uri.queryParameters['gate'],
       ),
+    ),
+    GoRoute(
+      path: Routes.nearby,
+      builder: (BuildContext context, GoRouterState state) =>
+          const NearbyScreen(),
     ),
     GoRoute(
       path: '/visa',
