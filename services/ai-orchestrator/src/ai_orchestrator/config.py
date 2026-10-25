@@ -196,6 +196,10 @@ class Settings(BaseSettings):
     nearby_enabled: bool = True
     nearby_ttl_seconds: int = Field(default=7 * 24 * 3600, ge=24 * 3600, le=30 * 24 * 3600)
 
+    # --- Modo coche (ver el paquete drive/): el mismo Overpass, casillas de ~5 km
+    drive_enabled: bool = True
+    drive_ttl_seconds: int = Field(default=7 * 24 * 3600, ge=24 * 3600, le=30 * 24 * 3600)
+
     # --- Guía del aeropuerto (ver el paquete airport_guide/): el mismo Overpass ------
     airport_guide_enabled: bool = True
     # Un aeropuerto casi no cambia: un mes de caché por aeropuerto.

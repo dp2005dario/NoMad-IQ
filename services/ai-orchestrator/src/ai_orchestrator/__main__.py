@@ -74,6 +74,8 @@ from ai_orchestrator.climate.nasa import NasaBusyError, NasaClient
 from ai_orchestrator.climate.service import ClimateService, ClimateSettings, RedisClimateCache
 from ai_orchestrator.config import Settings
 from ai_orchestrator.consumer import AlertProcessor, FareAlertConsumer
+from ai_orchestrator.drive.overpass import DriveOverpass
+from ai_orchestrator.drive.service import DriveService, DriveSettings, RedisDriveCache
 from ai_orchestrator.erasure import PostgresEraser
 from ai_orchestrator.expenses.api import expense_router
 from ai_orchestrator.expenses.store import PostgresExpenses
@@ -349,6 +351,16 @@ def _nearby(
     )
 
 
+def _drive(settings: Settings, redis: Redis, overpass: tuple[httpx.AsyncClient, RateLimiter]) -> DriveService:
+    """Modo coche: gasolineras, aparcamientos, cargadores y zonas ZTL/ZBE (una semana de caché)."""
+    http, limiter = overpass
+    return DriveService(
+        source=DriveOverpass(http, url=settings.overpass_url, limiter=limiter),
+        cache=RedisDriveCache(redis),
+        settings=DriveSettings(ttl_seconds=settings.drive_ttl_seconds),
+    )
+
+
 def _airport_guide(
     settings: Settings, redis: Redis, overpass: tuple[httpx.AsyncClient, RateLimiter]
 ) -> AirportGuideService:
@@ -591,6 +603,7 @@ async def run(settings: Settings) -> int:
             or settings.atms_enabled
             or settings.airport_guide_enabled
             or settings.nearby_enabled
+            or settings.drive_enabled
             or settings.climate_enabled
             else None
         )
@@ -614,7 +627,10 @@ async def run(settings: Settings) -> int:
         # --- OpenStreetMap (Overpass): cajeros, guía del aeropuerto y "cerca de ti" ------
         overpass = (
             _overpass(settings, stack)
-            if settings.atms_enabled or settings.airport_guide_enabled or settings.nearby_enabled
+            if settings.atms_enabled
+            or settings.airport_guide_enabled
+            or settings.nearby_enabled
+            or settings.drive_enabled
             else None
         )
         atms: AtmService | None = None
@@ -626,6 +642,9 @@ async def run(settings: Settings) -> int:
         nearby: NearbyService | None = None
         if settings.nearby_enabled and public_redis is not None and overpass is not None:
             nearby = _nearby(settings, public_redis, overpass)
+        drive: DriveService | None = None
+        if settings.drive_enabled and public_redis is not None and overpass is not None:
+            drive = _drive(settings, public_redis, overpass)
 
         # --- Traductor de cartas (Ollama + cupo diario en Redis) ------------------------
         menu: MenuService | None = None
@@ -723,6 +742,7 @@ async def run(settings: Settings) -> int:
                 fx=fx,
                 atms=atms,
                 nearby=nearby,
+                drive=drive,
                 airport_guide=airport_guide,
                 climate=climate,
                 menu=menu,

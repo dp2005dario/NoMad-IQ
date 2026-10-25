@@ -112,6 +112,14 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 
+    # Modo coche (OpenStreetMap): gasolineras, aparcamientos, cargadores y
+    # zonas ZTL/ZBE. Público; la app manda una casilla de ~5 km.
+    drive:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/drive`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
     # Guía del aeropuerto (OpenStreetMap): pública como los cajeros. Solo GET
     # y solo /v1/airports/<código>/spots.
     airport-guide:

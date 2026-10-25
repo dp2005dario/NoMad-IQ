@@ -64,6 +64,8 @@ from ai_orchestrator.audioguides.service import AudioguideService
 from ai_orchestrator.climate.domain import Climate
 from ai_orchestrator.climate.service import ClimateBusyError, ClimateService, ClimateUnavailableError
 from ai_orchestrator.domain import Recommendation, Verdict
+from ai_orchestrator.drive.domain import DriveArea
+from ai_orchestrator.drive.service import DriveBusyError, DriveService, DriveUnavailableError
 from ai_orchestrator.erasure import UserDataEraser
 from ai_orchestrator.flyra.domain import ChatReply, ChatRequest
 from ai_orchestrator.flyra.service import FlyraBusyError, FlyraService
@@ -217,6 +219,7 @@ FX_CACHE = "public, max-age=3600"
 ATM_CACHE = "public, max-age=21600"
 # "Cerca de ti": lo gratis de una ciudad casi no cambia (un día en el móvil).
 NEARBY_CACHE = "public, max-age=86400"
+DRIVE_CACHE = "public, max-age=86400"
 # La guía de un aeropuerto: un día en el móvil (en el servidor, un mes).
 AIRPORT_CACHE = "public, max-age=86400"
 # El clima medio no cambia: el móvil puede guardarlo una semana.
@@ -244,6 +247,7 @@ def create_api(
     fx: FxService | None = None,
     atms: AtmService | None = None,
     nearby: NearbyService | None = None,
+    drive: DriveService | None = None,
     airport_guide: AirportGuideService | None = None,
     climate: ClimateService | None = None,
     eraser: UserDataEraser | None = None,
@@ -423,6 +427,21 @@ def create_api(
                 return resp
             # Sin sitios también es 200 (lista vacía): la app lo explica.
             return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": NEARBY_CACHE})
+
+    if drive is not None:
+
+        @app.get("/v1/drive", response_model=DriveArea)
+        async def get_drive(
+            lat: Annotated[float, Query(ge=-85, le=85)],
+            lon: Annotated[float, Query(ge=-180, le=180)],
+        ) -> JSONResponse:
+            try:
+                found = await drive.around(lat, lon)
+            except (DriveBusyError, DriveUnavailableError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "modo coche ocupado")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": DRIVE_CACHE})
 
     if airport_guide is not None:
 
