@@ -238,6 +238,7 @@ def create_api(
     shared_trips: APIRouter | None = None,
     leagues: APIRouter | None = None,
     plans: APIRouter | None = None,
+    group_chat: APIRouter | None = None,
     meetups: APIRouter | None = None,
     places: PlaceService | None = None,
     streetview: StreetViewService | None = None,
@@ -597,6 +598,10 @@ def create_api(
     if plans is not None:
         # "Elegid planes" (/v1/group-negotiations/{id}/plans) vive en plans/api.py.
         app.include_router(plans)
+
+    if group_chat is not None:
+        # El chat del viaje (/v1/group-negotiations/{id}/chat) vive en group_chat/api.py.
+        app.include_router(group_chat)
 
     if meetups is not None:
         # Las quedadas (/v1/meetups) viven en meetups/api.py.

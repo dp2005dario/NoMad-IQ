@@ -83,6 +83,8 @@ from ai_orchestrator.flyra.service import KEY_PREFIX as FLYRA_QUOTA_PREFIX
 from ai_orchestrator.flyra.service import FlyraService, FlyraSettings
 from ai_orchestrator.fx.ecb import EcbClient
 from ai_orchestrator.fx.service import FxService, RedisRatesCache
+from ai_orchestrator.group_chat.api import chat_router
+from ai_orchestrator.group_chat.store import PostgresChat
 from ai_orchestrator.landmarks.service import QUOTA_PREFIX as LANDMARK_QUOTA_PREFIX
 from ai_orchestrator.landmarks.service import LandmarkService, LandmarkSettings, RedisLandmarkCache
 from ai_orchestrator.landmarks.wikidata import LandmarkSource
@@ -698,6 +700,9 @@ async def run(settings: Settings) -> int:
         # --- Elegid planes (los viajes en grupo; solo PostgreSQL) ------------------------
         plans = plan_router(PostgresPlans(pool)) if settings.negotiations_enabled else None
 
+        # --- Chat del viaje (PostgreSQL; Flyra contesta si está el modelo) ---------------
+        group_chat = chat_router(PostgresChat(pool), flyra) if settings.negotiations_enabled else None
+
         # --- Quedadas con otros viajeros (solo PostgreSQL) -------------------------------
         meetups = (
             meetup_router(PostgresMeetups(pool), Airports.bundled()) if settings.meetups_enabled else None
@@ -734,6 +739,7 @@ async def run(settings: Settings) -> int:
                 shared_trips=shared_trips,
                 leagues=leagues,
                 plans=plans,
+                group_chat=group_chat,
                 meetups=meetups,
                 places=places,
                 streetview=streetview,

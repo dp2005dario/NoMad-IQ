@@ -112,9 +112,16 @@ class PostgresEraser:
                 meetups = await conn.execute("DELETE FROM ai.meetups WHERE creator_id = $1", user_id)
                 await conn.execute("DELETE FROM ai.meetup_members WHERE user_id = $1", user_id)
                 await conn.execute("DELETE FROM ai.meetup_reports WHERE user_id = $1", user_id)
+                # Sus mensajes del chat del viaje se borran (pueden llevar datos
+                # personales); los de los demás se quedan.
+                await conn.execute(
+                    "DELETE FROM ai.group_chat_messages c USING ai.group_negotiation_members m"
+                    " WHERE m.user_id = $1 AND c.negotiation_id = m.negotiation_id AND c.seat = m.seat",
+                    user_id,
+                )
                 negotiation_seats = await conn.execute(
-                    "UPDATE ai.group_negotiation_members SET user_id = $2, preferences = NULL"
-                    " WHERE user_id = $1",
+                    "UPDATE ai.group_negotiation_members SET user_id = $2, preferences = NULL,"
+                    " chat_name = NULL WHERE user_id = $1",
                     user_id,
                     anon,
                 )

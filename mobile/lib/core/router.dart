@@ -22,6 +22,7 @@ import '../features/group/group_screen.dart';
 import '../features/group/trip_create_screen.dart';
 import '../features/group/trip_screen.dart';
 import '../features/plans/plans_screen.dart';
+import '../features/group_chat/chat_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/map/map_screen.dart';
 import '../features/money/expense_group_screen.dart';
@@ -173,6 +174,10 @@ abstract final class Routes {
   /// Un viaje en grupo por dentro (también al tocar el aviso del resultado).
   static String groupTrip(String id) =>
       '/group/trip/${Uri.encodeComponent(id)}';
+
+  /// El chat del viaje [id] (con Flyra dentro).
+  static String groupChat(String id) =>
+      '/group/trip/${Uri.encodeComponent(id)}/chat';
 
   /// Elegid planes del viaje [id]; [city] es el destino elegido ("Lisboa").
   static String groupPlans(String id, {String? city}) => Uri(
@@ -326,6 +331,11 @@ GoRouter buildRouter({
       path: '/group/trip/:id',
       builder: (BuildContext context, GoRouterState state) =>
           TripScreen(tripId: state.pathParameters['id'] ?? ''),
+    ),
+    GoRoute(
+      path: '/group/trip/:id/chat',
+      builder: (BuildContext context, GoRouterState state) =>
+          GroupChatScreen(tripId: state.pathParameters['id'] ?? ''),
     ),
     GoRoute(
       path: '/group/trip/:id/plans',

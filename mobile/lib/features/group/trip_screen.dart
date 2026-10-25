@@ -101,7 +101,18 @@ class _TripScreenState extends State<TripScreen> {
     final GroupTrip? trip = _trip;
     final ApiError? error = _error;
     return Scaffold(
-      appBar: AppBar(title: Text(trip?.title ?? t.groupTitle)),
+      appBar: AppBar(
+        title: Text(trip?.title ?? t.groupTitle),
+        actions: <Widget>[
+          // El chat del viaje está abierto desde el principio (también
+          // mientras se decide el destino).
+          IconButton(
+            tooltip: t.chatTitle,
+            icon: const Icon(Icons.forum_rounded),
+            onPressed: () => context.push(Routes.groupChat(widget.tripId)),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: trip == null
             ? Center(

@@ -7583,5 +7583,223 @@
   "voiceAskFlyra": "Ask Flyra in the chat",
   "@voiceAskFlyra": {
     "description": "Button: ask in chat."
+  },
+  "chatTitle": "Trip chat",
+  "@chatTitle": {
+    "description": "Group chat title."
+  },
+  "chatYou": "You",
+  "@chatYou": {
+    "description": "You (member list)."
+  },
+  "chatFlyraProfile": "Flyra's profile",
+  "@chatFlyraProfile": {
+    "description": "Tooltip: Flyra profile."
+  },
+  "chatInviteTitle": "Add to the chat",
+  "@chatInviteTitle": {
+    "description": "Menu: add someone."
+  },
+  "chatInviteText": "They type it in NomadIQ, in Group → Join with a code.",
+  "@chatInviteText": {
+    "description": "Invite explanation."
+  },
+  "chatInviteCopy": "Copy code",
+  "@chatInviteCopy": {
+    "description": "Copy invite code."
+  },
+  "chatInviteAskOrganizer": "Ask whoever created the trip for the code.",
+  "@chatInviteAskOrganizer": {
+    "description": "No code available."
+  },
+  "chatMyName": "Your name in the chat",
+  "@chatMyName": {
+    "description": "Menu: my chat name."
+  },
+  "chatMyNameHelp": "This is how the others see you (empty = your alias).",
+  "@chatMyNameHelp": {
+    "description": "Name helper."
+  },
+  "chatKindTitle": "Who are you going with?",
+  "@chatKindTitle": {
+    "description": "Trip type sheet title."
+  },
+  "chatKindIntro": "Flyra adapts: plans, pace and how you split the costs.",
+  "@chatKindIntro": {
+    "description": "Trip type intro."
+  },
+  "chatKindSolo": "Solo",
+  "@chatKindSolo": {
+    "description": "Kind: solo."
+  },
+  "chatKindSoloText": "You and Flyra, in a private chat",
+  "@chatKindSoloText": {
+    "description": "Kind: solo description."
+  },
+  "chatKindFriends": "Friends",
+  "@chatKindFriends": {
+    "description": "Kind: friends."
+  },
+  "chatKindFriendsText": "Shared kitty and voting on plans",
+  "@chatKindFriendsText": {
+    "description": "Kind: friends description."
+  },
+  "chatKindCouple": "Couple",
+  "@chatKindCouple": {
+    "description": "Kind: couple."
+  },
+  "chatKindCoupleText": "Plans for two and costs split in half",
+  "@chatKindCoupleText": {
+    "description": "Kind: couple description."
+  },
+  "chatKindFamily": "Family",
+  "@chatKindFamily": {
+    "description": "Kind: family."
+  },
+  "chatKindFamilyText": "Relaxed pace and no steep climbs",
+  "@chatKindFamilyText": {
+    "description": "Kind: family description."
+  },
+  "chatEndTrip": "End trip",
+  "@chatEndTrip": {
+    "description": "Menu: end trip."
+  },
+  "chatLoadFailed": "Couldn't open the chat. Check your connection.",
+  "@chatLoadFailed": {
+    "description": "Load error."
+  },
+  "chatRetry": "Try again",
+  "@chatRetry": {
+    "description": "Retry."
+  },
+  "chatEmpty": "No messages yet. Say hi to the group or ask @Flyra.",
+  "@chatEmpty": {
+    "description": "Empty chat."
+  },
+  "chatFlyraTyping": "Flyra is typing…",
+  "@chatFlyraTyping": {
+    "description": "Flyra typing."
+  },
+  "chatQuickDinner": "@Flyra where shall we have dinner?",
+  "@chatQuickDinner": {
+    "description": "Quick question."
+  },
+  "chatQuickTomorrow": "@Flyra plan for tomorrow",
+  "@chatQuickTomorrow": {
+    "description": "Quick question."
+  },
+  "chatQuickRain": "@Flyra plan if it rains",
+  "@chatQuickRain": {
+    "description": "Quick question."
+  },
+  "chatMentionFlyra": "Ask Flyra",
+  "@chatMentionFlyra": {
+    "description": "Tooltip: mention Flyra."
+  },
+  "chatHint": "Write to the group…",
+  "@chatHint": {
+    "description": "Input hint."
+  },
+  "chatSend": "Send",
+  "@chatSend": {
+    "description": "Tooltip: send."
+  },
+  "chatFlyraQuota": "Flyra can't answer you any more today (daily limit). Come back tomorrow.",
+  "@chatFlyraQuota": {
+    "description": "Flyra quota used."
+  },
+  "chatFlyraBusy": "Flyra is busy right now. Try again in a while.",
+  "@chatFlyraBusy": {
+    "description": "Flyra busy."
+  },
+  "chatTooMany": "You've written a lot of messages today in this trip. Carry on tomorrow.",
+  "@chatTooMany": {
+    "description": "Daily message limit."
+  },
+  "chatSendFailed": "Couldn't send. Check your connection.",
+  "@chatSendFailed": {
+    "description": "Send error."
+  },
+  "chatFlyraRole": "Your NomadIQ travel agent",
+  "@chatFlyraRole": {
+    "description": "Flyra role."
+  },
+  "chatFlyraLanguages": "Understands you in your language",
+  "@chatFlyraLanguages": {
+    "description": "Flyra feature."
+  },
+  "chatFlyraKnowsTrip": "Knows what kind of trip it is and reads the latest messages",
+  "@chatFlyraKnowsTrip": {
+    "description": "Flyra feature."
+  },
+  "chatFlyraNoSelling": "Doesn't sell your data",
+  "@chatFlyraNoSelling": {
+    "description": "Flyra feature."
+  },
+  "chatFlyraHint": "Write @Flyra in the chat. She can make mistakes: check prices and times before paying.",
+  "@chatFlyraHint": {
+    "description": "Flyra hint."
+  },
+  "chatTripOver": "TRIP OVER",
+  "@chatTripOver": {
+    "description": "End banner."
+  },
+  "chatWhatATrip": "{trip}, what a trip!",
+  "@chatWhatATrip": {
+    "description": "End title.",
+    "placeholders": {
+      "trip": {
+        "type": "String"
+      }
+    }
+  },
+  "chatStatPeople": "people",
+  "@chatStatPeople": {
+    "description": "Stat label."
+  },
+  "chatStatMessages": "messages",
+  "@chatStatMessages": {
+    "description": "Stat label."
+  },
+  "chatStatFlyra": "Flyra answers",
+  "@chatStatFlyra": {
+    "description": "Stat label."
+  },
+  "chatHowWasIt": "How was your experience?",
+  "@chatHowWasIt": {
+    "description": "Rating question."
+  },
+  "chatStarsLabel": "Rating: {n} out of 5",
+  "@chatStarsLabel": {
+    "description": "Star tooltip.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "chatStarsTap": "Tap the stars",
+  "@chatStarsTap": {
+    "description": "Rating hint."
+  },
+  "chatStarsBad": "We're sorry it didn't go well",
+  "@chatStarsBad": {
+    "description": "Low rating reply."
+  },
+  "chatStarsOk": "Thanks, it helps us improve",
+  "@chatStarsOk": {
+    "description": "Mid rating reply."
+  },
+  "chatStarsGreat": "Great! Will you say so on Google Play?",
+  "@chatStarsGreat": {
+    "description": "Top rating reply."
+  },
+  "chatRatePlay": "Rate on Google Play",
+  "@chatRatePlay": {
+    "description": "Rate on Play button."
+  },
+  "chatSeeVideo": "See the trip summary video",
+  "@chatSeeVideo": {
+    "description": "Video link."
   }
 }
