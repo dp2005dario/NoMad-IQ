@@ -39,7 +39,7 @@ from __future__ import annotations
 import logging
 import uuid
 from collections.abc import Awaitable, Callable
-from datetime import datetime
+from datetime import UTC, date, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Query, Request, Response
@@ -61,6 +61,9 @@ from ai_orchestrator.audioguides.audio_catalog import AudioCatalog, AudioLookup
 from ai_orchestrator.audioguides.cache import CacheError
 from ai_orchestrator.audioguides.domain import AudioguideScript
 from ai_orchestrator.audioguides.service import AudioguideService
+from ai_orchestrator.city_events.domain import CityEvents
+from ai_orchestrator.city_events.service import BadDatesError, CityEventService
+from ai_orchestrator.city_events.service import UnknownAirportError as UnknownEventAirportError
 from ai_orchestrator.climate.domain import Climate
 from ai_orchestrator.climate.service import ClimateBusyError, ClimateService, ClimateUnavailableError
 from ai_orchestrator.domain import Recommendation, Verdict
@@ -223,6 +226,8 @@ ATM_CACHE = "public, max-age=21600"
 NEARBY_CACHE = "public, max-age=86400"
 DRIVE_CACHE = "public, max-age=86400"
 STAYS_CACHE = "public, max-age=86400"
+# Eventos: una hora (Ticketmaster añade eventos durante el día).
+EVENTS_CACHE = "public, max-age=3600"
 # La guía de un aeropuerto: un día en el móvil (en el servidor, un mes).
 AIRPORT_CACHE = "public, max-age=86400"
 # El clima medio no cambia: el móvil puede guardarlo una semana.
@@ -255,6 +260,7 @@ def create_api(
     stays: StayService | None = None,
     airport_guide: AirportGuideService | None = None,
     climate: ClimateService | None = None,
+    city_events: CityEventService | None = None,
     eraser: UserDataEraser | None = None,
     expose_docs: bool = False,
 ) -> FastAPI:
@@ -498,6 +504,24 @@ def create_api(
                 resp.headers["Retry-After"] = "60"
                 return resp
             return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": CLIMATE_CACHE})
+
+    if city_events is not None:
+
+        @app.get("/v1/events", response_model=CityEvents)
+        async def get_events(
+            iata: Annotated[str, Query(pattern="^[A-Za-z]{3}$")],
+            start: Annotated[date, Query(alias="from")],
+            end: Annotated[date, Query(alias="to")],
+        ) -> JSONResponse:
+            # Pública (también para invitados): festivos y eventos de una
+            # ciudad, iguales para todos. No dice nada de quién pregunta.
+            try:
+                found = await city_events.between(iata.upper(), start, end, today=datetime.now(UTC).date())
+            except UnknownEventAirportError:
+                return _problem(404, "No encontrado", "ese aeropuerto no está en la lista")
+            except BadDatesError as exc:
+                return _problem(400, "Fechas no válidas", str(exc))
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": EVENTS_CACHE})
 
     if fx is not None:
 

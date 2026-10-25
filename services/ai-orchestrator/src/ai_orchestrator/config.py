@@ -238,6 +238,18 @@ class Settings(BaseSettings):
     nasa_timeout_seconds: float = Field(default=25.0, gt=0, le=60)
     climate_ttl_seconds: int = Field(default=30 * 24 * 3600, ge=24 * 3600, le=90 * 24 * 3600)
 
+    # --- Qué pasa en tus fechas (ver el paquete city_events/) --------------------------
+    # Festivos de Nager.Date (gratis, sin clave) y, si hay clave, eventos de
+    # Ticketmaster (clave gratis con cupo diario). La clave es un secreto:
+    # en producción, desde un gestor de secretos, nunca en git.
+    events_enabled: bool = True
+    nager_url: str = "https://date.nager.at/api/v3/PublicHolidays"
+    ticketmaster_api_key: SecretStr | None = None
+    ticketmaster_url: str = "https://app.ticketmaster.com/discovery/v2/events.json"
+    ticketmaster_daily_limit: int = Field(default=4000, ge=1, le=5000)
+    events_rate_per_second: float = Field(default=2.0, gt=0, le=5)
+    events_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
+
     # --- Chat libre con Flyra (ver el paquete flyra/) --------------------------------
     # Necesita Ollama (LLM_ENABLED) y Redis (el contador de preguntas diarias).
     flyra_enabled: bool = True
@@ -318,7 +330,7 @@ class Settings(BaseSettings):
     # --- Registros (logs) ---------------------------------------------------------
     log_level: Literal["debug", "info", "warning", "error"] = "info"
 
-    @field_validator("notify_pseudonym_key", "mapillary_token", mode="before")
+    @field_validator("notify_pseudonym_key", "mapillary_token", "ticketmaster_api_key", mode="before")
     @classmethod
     def _empty_is_none(cls, value: object) -> object:
         # docker compose pasa "NOTIFY_PSEUDONYM_KEY=" o "MAPILLARY_TOKEN="

@@ -70,6 +70,8 @@ from ai_orchestrator.audioguides.service import AudioguideService, ServiceSettin
 from ai_orchestrator.audioguides.speech import PiperOpusSynthesizer, SpeechError, discover_voices
 from ai_orchestrator.audioguides.versions import ZoneVersionCache
 from ai_orchestrator.audioguides.writer import AudioguideWriter, WriterSettings
+from ai_orchestrator.city_events.service import CityEventService, EventSettings, RedisEventCache
+from ai_orchestrator.city_events.sources import NagerClient, SourceBusyError, TicketmasterClient
 from ai_orchestrator.climate.nasa import NasaBusyError, NasaClient
 from ai_orchestrator.climate.service import ClimateService, ClimateSettings, RedisClimateCache
 from ai_orchestrator.config import Settings
@@ -106,6 +108,7 @@ from ai_orchestrator.negotiation.service import NegotiationService, NegotiationS
 from ai_orchestrator.negotiation.store import PostgresNegotiations, SweepReport
 from ai_orchestrator.outbox import OutboxRelay
 from ai_orchestrator.places.airports import Airports
+from ai_orchestrator.places.countries import bundled_countries
 from ai_orchestrator.places.service import PlaceService, PlaceSettings, RedisPlaceCache
 from ai_orchestrator.places.wikimedia import RateLimiter, WikimediaClient
 from ai_orchestrator.plans.api import plan_router
@@ -423,6 +426,36 @@ def _climate(settings: Settings, redis: Redis, stack: AsyncExitStack) -> Climate
     )
 
 
+def _city_events(settings: Settings, redis: Redis, stack: AsyncExitStack) -> CityEventService:
+    """Qué pasa en tus fechas: festivos (Nager.Date) y eventos (Ticketmaster, si hay clave)."""
+    http = httpx.AsyncClient(
+        timeout=httpx.Timeout(settings.events_timeout_seconds, connect=5.0),
+        follow_redirects=False,
+    )
+    stack.push_async_callback(http.aclose)
+
+    def limiter() -> RateLimiter:
+        return RateLimiter(
+            settings.events_rate_per_second,
+            4,
+            busy=lambda: SourceBusyError("límite de peticiones de eventos"),
+        )
+
+    key = settings.ticketmaster_api_key
+    return CityEventService(
+        airports=Airports.bundled(),
+        countries=bundled_countries(),
+        holidays=NagerClient(http, limiter=limiter(), url=settings.nager_url),
+        tickets=None
+        if key is None
+        else TicketmasterClient(
+            http, api_key=key.get_secret_value(), limiter=limiter(), url=settings.ticketmaster_url
+        ),
+        cache=RedisEventCache(redis),
+        settings=EventSettings(ticketmaster_daily_limit=settings.ticketmaster_daily_limit),
+    )
+
+
 class _NoRatesCache:
     """Sin Redis: los tipos se guardan solo en la memoria del proceso."""
 
@@ -621,6 +654,7 @@ async def run(settings: Settings) -> int:
             or settings.drive_enabled
             or settings.stays_enabled
             or settings.climate_enabled
+            or settings.events_enabled
             else None
         )
         wikimedia = (
@@ -675,6 +709,11 @@ async def run(settings: Settings) -> int:
         climate: ClimateService | None = None
         if settings.climate_enabled and public_redis is not None:
             climate = _climate(settings, public_redis, stack)
+
+        # --- Qué pasa en tus fechas (festivos + eventos con caché en Redis) -------------
+        city_events: CityEventService | None = None
+        if settings.events_enabled and public_redis is not None:
+            city_events = _city_events(settings, public_redis, stack)
 
         # --- Chat libre con Flyra (Ollama + cupo diario en Redis) ------------------------
         # Sin LLM no hay chat: la ruta no existe y la app lo explica.
@@ -781,6 +820,7 @@ async def run(settings: Settings) -> int:
                 stays=stays,
                 airport_guide=airport_guide,
                 climate=climate,
+                city_events=city_events,
                 menu=menu,
                 eraser=PostgresEraser(pool),
                 expose_docs=settings.expose_api_docs,

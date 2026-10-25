@@ -334,6 +334,7 @@ services:
       # Fotos reales de la calle (Mapillary, gratis). Vacía = el botón "Ver
       # la calle de verdad" no aparece. Ver docs/guia-app-movil.md.
       MAPILLARY_TOKEN: ${MAPILLARY_TOKEN:-}
+      TICKETMASTER_API_KEY: ${TICKETMASTER_API_KEY:-}
       EXPOSE_API_DOCS: "true"
       LOG_LEVEL: ${LOG_LEVEL:-info}
     volumes:
