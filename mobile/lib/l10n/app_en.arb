@@ -7158,5 +7158,197 @@
         "type": "String"
       }
     }
+  },
+  "troubleShort": "If something goes wrong",
+  "@troubleShort": {
+    "description": "Home shortcut."
+  },
+  "troubleTitle": "If something goes wrong",
+  "@troubleTitle": {
+    "description": "Screen title."
+  },
+  "troubleBagTab": "My bag",
+  "@troubleBagTab": {
+    "description": "Tab: my bag."
+  },
+  "troubleConnTab": "Missed connection",
+  "@troubleConnTab": {
+    "description": "Tab: missed connection."
+  },
+  "troubleBagDelayed": "It didn't arrive",
+  "@troubleBagDelayed": {
+    "description": "Bag did not arrive."
+  },
+  "troubleBagDamaged": "It arrived damaged",
+  "@troubleBagDamaged": {
+    "description": "Bag arrived damaged."
+  },
+  "troubleNeedDate": "Add the day you landed to work out your deadline.",
+  "@troubleNeedDate": {
+    "description": "Ask for landing date."
+  },
+  "troubleDeadlineDamaged": "Claim in writing before {date}",
+  "@troubleDeadlineDamaged": {
+    "description": "Deadline for damaged bags.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "troubleDeadlineDelayed": "Claim your expenses before {date}",
+  "@troubleDeadlineDelayed": {
+    "description": "Deadline for delayed bags.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "troubleDeadlineLost": "If it hasn't turned up by {date}, it counts as lost",
+  "@troubleDeadlineLost": {
+    "description": "When it counts as lost.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "troubleDaysLeft": "Days left: {count}",
+  "@troubleDaysLeft": {
+    "description": "Days left (number).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "troubleDaysPast": "That day has passed: claim now.",
+  "@troubleDaysPast": {
+    "description": "Deadline passed."
+  },
+  "troubleLimit": "The airline is liable up to 1,519 SDR (about €1,800) per passenger (Montreal Convention).",
+  "@troubleLimit": {
+    "description": "Liability limit."
+  },
+  "troubleStepPir": "Before leaving the baggage hall, go to the baggage desk and ask for the report (PIR).",
+  "@troubleStepPir": {
+    "description": "Checklist step."
+  },
+  "troubleStepSave": "Write down the report reference and the bag tag number here.",
+  "@troubleStepSave": {
+    "description": "Checklist step."
+  },
+  "troubleStepReceipts": "Keep the receipts for basics you buy (toothbrush, clothes...).",
+  "@troubleStepReceipts": {
+    "description": "Checklist step."
+  },
+  "troubleStepClaim": "Send the written claim before the deadline.",
+  "@troubleStepClaim": {
+    "description": "Checklist step."
+  },
+  "troubleArrived": "I landed",
+  "@troubleArrived": {
+    "description": "Chip: landing day."
+  },
+  "troubleDelivered": "I got it back",
+  "@troubleDelivered": {
+    "description": "Chip: bag delivered day."
+  },
+  "troubleAirline": "Airline",
+  "@troubleAirline": {
+    "description": "Field."
+  },
+  "troubleFlight": "Flight (e.g. IB3170)",
+  "@troubleFlight": {
+    "description": "Field."
+  },
+  "troubleReference": "Report reference (PIR)",
+  "@troubleReference": {
+    "description": "Field."
+  },
+  "troubleTag": "Bag tag number",
+  "@troubleTag": {
+    "description": "Field."
+  },
+  "troubleTracker": "Link from your AirTag / SmartTag / Tile",
+  "@troubleTracker": {
+    "description": "Field."
+  },
+  "troubleTrackerHelp": "In its app, \"Share item location\". Many airlines accept it.",
+  "@troubleTrackerHelp": {
+    "description": "Field help."
+  },
+  "troubleSpent": "What you've spent so far",
+  "@troubleSpent": {
+    "description": "Field."
+  },
+  "troubleSpentHelp": "For example \"€85\". Attach the receipts to the email.",
+  "@troubleSpentHelp": {
+    "description": "Field help."
+  },
+  "troubleWriteClaim": "Write the claim",
+  "@troubleWriteClaim": {
+    "description": "Button."
+  },
+  "troubleLogExpenses": "Log expenses in Money",
+  "@troubleLogExpenses": {
+    "description": "Button."
+  },
+  "troubleConnIntro": "Your first flight was late and you missed the next one. What happens depends on how you bought the tickets.",
+  "@troubleConnIntro": {
+    "description": "Missed connection intro."
+  },
+  "troubleOneBooking": "All on one booking",
+  "@troubleOneBooking": {
+    "description": "Switch."
+  },
+  "troubleOneBookingHelp": "One booking code for both flights.",
+  "@troubleOneBookingHelp": {
+    "description": "Switch help."
+  },
+  "troubleRebookTitle": "Don't buy another ticket",
+  "@troubleRebookTitle": {
+    "description": "Card title."
+  },
+  "troubleRebookBody": "The airline must take you to your destination on the next flight at no cost. Go to the transfer desk or use its app.",
+  "@troubleRebookBody": {
+    "description": "Card body."
+  },
+  "troubleSelfTitle": "Nobody has to rebook you",
+  "@troubleSelfTitle": {
+    "description": "Card title."
+  },
+  "troubleSelfBody": "With separate tickets, the second flight knows nothing about the first. Look for the next flight now: the sooner, the cheaper.",
+  "@troubleSelfBody": {
+    "description": "Card body."
+  },
+  "troubleRightsTitle": "Your rights right now",
+  "@troubleRightsTitle": {
+    "description": "Card title."
+  },
+  "troubleRightsBody": "If you depart from the EU or fly a European airline, you are owed food and drink while you wait, and a hotel with transfer if you stay overnight. If you reach your destination more than 3 h late, you can claim €250 to €600.",
+  "@troubleRightsBody": {
+    "description": "Card body."
+  },
+  "troubleSayTitle": "What to say at the desk (in English)",
+  "@troubleSayTitle": {
+    "description": "Heading."
+  },
+  "troubleWhereNow": "Where you are (airport)",
+  "@troubleWhereNow": {
+    "description": "Field: current airport."
+  },
+  "troubleFinal": "Final destination",
+  "@troubleFinal": {
+    "description": "Field: final destination."
+  },
+  "troubleSearchNext": "Search today's flights",
+  "@troubleSearchNext": {
+    "description": "Button."
+  },
+  "troubleClaimDelay": "Claim for the delay (Papers)",
+  "@troubleClaimDelay": {
+    "description": "Button."
   }
 }

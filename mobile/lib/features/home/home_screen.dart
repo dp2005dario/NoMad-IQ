@@ -136,6 +136,13 @@ class HomeScreen extends StatelessWidget {
                     label: t.visaTitle,
                     onTap: () => context.push(Routes.visa()),
                   ),
+                  // Maleta perdida o escala perdida: qué hacer y la reclamación.
+                  _Shortcut(
+                    icon: Icons.report_problem_rounded,
+                    color: NomadColors.safety,
+                    label: t.troubleShort,
+                    onTap: () => context.push(Routes.trouble),
+                  ),
                   // Gasolineras, aparcamientos y zonas ZTL mientras conduces.
                   _Shortcut(
                     icon: Icons.directions_car_rounded,

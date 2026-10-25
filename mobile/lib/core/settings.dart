@@ -67,6 +67,9 @@ enum LocalData {
 
   /// "1" = en las quedadas, los demás no ven tu nombre (sale "Alguien").
   meetupHidden,
+
+  /// "Si algo falla": tu reclamación de maleta (solo en el móvil).
+  bagClaim,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real
