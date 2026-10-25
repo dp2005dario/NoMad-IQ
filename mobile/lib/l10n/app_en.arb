@@ -6566,5 +6566,134 @@
   "visaCheck": "What do I need to enter?",
   "@visaCheck": {
     "description": "Link from Papers to the Visa screen."
+  },
+  "plansTitle": "Choose plans",
+  "@plansTitle": {
+    "description": "Plans screen title."
+  },
+  "plansOpen": "Choose plans together",
+  "@plansOpen": {
+    "description": "Button in group trip."
+  },
+  "plansSwipeHint": "swipe: right yes, left no",
+  "@plansSwipeHint": {
+    "description": "Swipe hint."
+  },
+  "plansProgress": "Plan {n} of {total}",
+  "@plansProgress": {
+    "description": "Card progress.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "plansYes": "YES",
+  "@plansYes": {
+    "description": "Yes stamp."
+  },
+  "plansNo": "NO",
+  "@plansNo": {
+    "description": "No stamp."
+  },
+  "plansEmpty": "No plans yet. Add yours or the city's ideas.",
+  "@plansEmpty": {
+    "description": "No plans yet."
+  },
+  "plansMatch": "It's a match!",
+  "@plansMatch": {
+    "description": "Match title."
+  },
+  "plansMatchBody": "All {n} of you like these plans.",
+  "@plansMatchBody": {
+    "description": "Match body.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "plansAllVoted": "You've voted on everything",
+  "@plansAllVoted": {
+    "description": "You voted everything."
+  },
+  "plansWaiting": "No plan has a yes from all {n} yet. When the others vote, matches will appear here.",
+  "@plansWaiting": {
+    "description": "No matches yet.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "plansRestart": "Start again",
+  "@plansRestart": {
+    "description": "Revote."
+  },
+  "plansAddTitle": "Add plans",
+  "@plansAddTitle": {
+    "description": "Add section."
+  },
+  "plansAddMine": "My plan",
+  "@plansAddMine": {
+    "description": "Add own plan."
+  },
+  "plansAddIdeas": "City ideas",
+  "@plansAddIdeas": {
+    "description": "Add city ideas."
+  },
+  "plansAirport": "Destination airport code (e.g. LIS)",
+  "@plansAirport": {
+    "description": "Airport field."
+  },
+  "plansNoIdeas": "We have no ideas for that city yet.",
+  "@plansNoIdeas": {
+    "description": "No attractions found."
+  },
+  "plansFieldTitle": "What?",
+  "@plansFieldTitle": {
+    "description": "Field."
+  },
+  "plansFieldNote": "When, how much... (optional)",
+  "@plansFieldNote": {
+    "description": "Field."
+  },
+  "plansFieldNoteHint": "Tonight · 21:30 · about 25 €",
+  "@plansFieldNoteHint": {
+    "description": "Hint."
+  },
+  "plansAdd": "Add",
+  "@plansAdd": {
+    "description": "Button."
+  },
+  "plansAll": "All plans",
+  "@plansAll": {
+    "description": "All plans section."
+  },
+  "plansVotes": "{yes} yes · {voted} of {members} voted",
+  "@plansVotes": {
+    "description": "Vote counts.",
+    "placeholders": {
+      "yes": {
+        "type": "int"
+      },
+      "voted": {
+        "type": "int"
+      },
+      "members": {
+        "type": "int"
+      }
+    }
+  },
+  "plansRemove": "Remove my plan",
+  "@plansRemove": {
+    "description": "Tooltip."
+  },
+  "plansTooMany": "This trip already has too many plans. Remove some first.",
+  "@plansTooMany": {
+    "description": "Limit reached."
   }
 }

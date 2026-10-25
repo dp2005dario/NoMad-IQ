@@ -34,6 +34,9 @@ class Attraction(BaseModel):
     description: str | None = None
     photo: Photo | None = None
     article_url: str | None = None
+    # "Q193208": sirve para no repetir la misma atracción (p. ej. en los
+    # planes del grupo). Las fichas guardadas antes en caché no lo traen.
+    wikidata_id: str | None = None
 
 
 class CountryFacts(BaseModel):

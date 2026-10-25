@@ -13,10 +13,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' show DateFormat;
 
 import '../../core/api_client.dart';
 import '../../core/money.dart';
+import '../../core/router.dart';
 import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -162,6 +164,18 @@ class _TripScreenState extends State<TripScreen> {
     ],
     TripStatus.concluded => <Widget>[
       if (trip.result != null) _ResultCard(trip: trip, result: trip.result!),
+      const SizedBox(height: 12),
+      // Con el destino elegido, toca decidir qué hacer allí (todos votan).
+      FilledButton.icon(
+        icon: const Icon(Icons.swipe_rounded),
+        label: Text(t.plansOpen),
+        onPressed: () => context.push(
+          Routes.groupPlans(
+            trip.id,
+            city: trip.option(trip.result?.chosenOptionId)?.label,
+          ),
+        ),
+      ),
       const SizedBox(height: 20),
       if (trip.result != null) _AgentsSaid(trip: trip, result: trip.result!),
       const SizedBox(height: 20),

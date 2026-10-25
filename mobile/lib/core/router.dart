@@ -21,6 +21,7 @@ import '../features/flyra/flyra_chat_screen.dart';
 import '../features/group/group_screen.dart';
 import '../features/group/trip_create_screen.dart';
 import '../features/group/trip_screen.dart';
+import '../features/plans/plans_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/map/map_screen.dart';
 import '../features/money/expense_group_screen.dart';
@@ -157,6 +158,12 @@ abstract final class Routes {
   /// Un viaje en grupo por dentro (también al tocar el aviso del resultado).
   static String groupTrip(String id) =>
       '/group/trip/${Uri.encodeComponent(id)}';
+
+  /// Elegid planes del viaje [id]; [city] es el destino elegido ("Lisboa").
+  static String groupPlans(String id, {String? city}) => Uri(
+    path: '/group/trip/${Uri.encodeComponent(id)}/plans',
+    queryParameters: <String, String>{'city': ?city},
+  ).toString();
 
   /// El chat con Flyra. Con `question`, la escribe ya en la caja.
   static String flyra({String? question}) => Uri(
@@ -304,6 +311,13 @@ GoRouter buildRouter({
       path: '/group/trip/:id',
       builder: (BuildContext context, GoRouterState state) =>
           TripScreen(tripId: state.pathParameters['id'] ?? ''),
+    ),
+    GoRoute(
+      path: '/group/trip/:id/plans',
+      builder: (BuildContext context, GoRouterState state) => PlansScreen(
+        tripId: state.pathParameters['id'] ?? '',
+        city: state.uri.queryParameters['city'],
+      ),
     ),
     GoRoute(
       path: Routes.settings,

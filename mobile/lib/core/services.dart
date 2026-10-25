@@ -27,6 +27,7 @@ import '../features/memories/memories.dart';
 import '../features/memories/travel_camera.dart';
 import '../features/flyra/flyra_api.dart';
 import '../features/group/group_api.dart';
+import '../features/plans/plans_api.dart';
 import '../features/help/help_contacts.dart';
 import '../features/map/geo_api.dart';
 import '../features/map/location.dart';
@@ -95,6 +96,7 @@ class AppServices {
        flyra = FlyraApi(api),
        landmarks = LandmarksApi(api),
        group = GroupApi(api),
+       plans = PlansApi(api),
        expenses = ExpensesApi(api),
        atms = AtmsApi(api),
        places = PlacesApi(api),
@@ -154,6 +156,9 @@ class AppServices {
 
   /// Viajes en grupo: invitar, preferencias y la negociación de los agentes.
   final GroupApi group;
+
+  /// Elegid planes (los votos del grupo).
+  final PlansApi plans;
 
   /// Gastos compartidos: botes, tickets y "¿cuánto le debo a Álex?".
   final ExpensesApi expenses;

@@ -29,12 +29,16 @@ class Attraction {
     this.description,
     this.photo,
     this.articleUrl,
+    this.wikidataId,
   });
 
   final String name;
   final String? description;
   final PlacePhoto? photo;
   final Uri? articleUrl;
+
+  /// "Q193208" (las fichas antiguas de la caché no lo traen).
+  final String? wikidataId;
 }
 
 class CountryFacts {
@@ -124,6 +128,11 @@ class PlaceCard {
                 description: _text(a['description']),
                 photo: PlacePhoto.parse(a['photo']),
                 articleUrl: _https(a['article_url']),
+                wikidataId: switch (_text(a['wikidata_id'])) {
+                  final String q when RegExp(r'^Q[1-9]\d{0,11}$').hasMatch(q) =>
+                    q,
+                  _ => null,
+                },
               ),
       ],
     );
