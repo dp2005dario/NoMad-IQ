@@ -31,6 +31,7 @@ import '../features/easy/easy_home_screen.dart';
 import '../features/cards/cards_screen.dart';
 import '../features/memories/memories_screen.dart';
 import '../features/memories/travel_camera_screen.dart';
+import '../features/airport/airport_screen.dart';
 import '../features/stopover/stopover_screen.dart';
 import '../features/widgets/widgets_screen.dart';
 import '../features/copy_trip/copy_trip_screen.dart';
@@ -120,6 +121,12 @@ abstract final class Routes {
       queryParameters: q.isEmpty ? null : q,
     ).toString();
   }
+
+  /// Aeropuerto: flecha a tu puerta, al baño o a un café.
+  static String airport({String? iata, String? gate}) => Uri(
+    path: '/airport',
+    queryParameters: <String, String>{'iata': ?iata, 'gate': ?gate},
+  ).toString();
 
   /// Escala de regalo: dónde parar unos días de camino a [to].
   static String stopover({String? from, String? to}) => Uri(
@@ -335,6 +342,13 @@ GoRouter buildRouter({
       path: Routes.help,
       builder: (BuildContext context, GoRouterState state) =>
           const HelpScreen(),
+    ),
+    GoRoute(
+      path: '/airport',
+      builder: (BuildContext context, GoRouterState state) => AirportScreen(
+        iata: state.uri.queryParameters['iata'],
+        gate: state.uri.queryParameters['gate'],
+      ),
     ),
     GoRoute(
       path: '/stopover',

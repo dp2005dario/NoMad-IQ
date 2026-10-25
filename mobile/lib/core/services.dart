@@ -18,6 +18,8 @@ import '../features/flights/climate_api.dart';
 import '../features/flights/fares_api.dart';
 import '../features/easy/easy_mode.dart';
 import '../features/family/family.dart';
+import '../features/airport/airport_guide.dart';
+import '../features/airport/compass.dart';
 import '../features/route/world_data.dart';
 import '../features/widgets/home_widgets.dart';
 import '../features/memories/memories.dart';
@@ -78,6 +80,7 @@ class AppServices {
     LiveFlight? liveFlight,
     this.loadAirports = worldAirports,
     this.syncWidgetsOnStart = false,
+    this.compass = deviceCompass,
     FamilyStore? family,
     OfflineFiles? offlineFiles,
     OfflineMaps? offlineMaps,
@@ -227,6 +230,12 @@ class AppServices {
 
   /// El aviso "en directo" del día del vuelo (programado en el móvil).
   final LiveFlight liveFlight;
+
+  /// La brújula (hacia dónde miras). En los tests, una de mentira.
+  final Stream<double?> Function() compass;
+
+  /// Guía del aeropuerto (puertas, baños, cafés de OpenStreetMap).
+  late final AirportGuideApi airportGuide = AirportGuideApi(api);
 
   /// ¿Poner al día los widgets al abrir la app? (en los tests, no).
   final bool syncWidgetsOnStart;

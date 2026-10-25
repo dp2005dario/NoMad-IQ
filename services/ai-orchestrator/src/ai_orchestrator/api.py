@@ -48,6 +48,13 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from ai_orchestrator.airport_guide.domain import AirportGuide
+from ai_orchestrator.airport_guide.service import (
+    AirportGuideService,
+    GuideBusyError,
+    GuideUnavailableError,
+    UnknownAirportError,
+)
 from ai_orchestrator.atms.domain import Atms
 from ai_orchestrator.atms.service import AtmBusyError, AtmService, AtmUnavailableError
 from ai_orchestrator.audioguides.audio_catalog import AudioCatalog, AudioLookup
@@ -206,6 +213,8 @@ STREET_CACHE = "public, max-age=3600"
 FX_CACHE = "public, max-age=3600"
 # Los cajeros casi nunca cambian: seis horas en el móvil y en la CDN.
 ATM_CACHE = "public, max-age=21600"
+# La guía de un aeropuerto: un día en el móvil (en el servidor, un mes).
+AIRPORT_CACHE = "public, max-age=86400"
 # El clima medio no cambia: el móvil puede guardarlo una semana.
 CLIMATE_CACHE = "public, max-age=604800"
 # "Esta ciudad no tiene ficha" se recuerda menos (por si aparece).
@@ -228,6 +237,7 @@ def create_api(
     landmarks: LandmarkService | None = None,
     fx: FxService | None = None,
     atms: AtmService | None = None,
+    airport_guide: AirportGuideService | None = None,
     climate: ClimateService | None = None,
     eraser: UserDataEraser | None = None,
     expose_docs: bool = False,
@@ -390,6 +400,23 @@ def create_api(
                 return resp
             # Sin cajeros también es 200 (lista vacía): la app lo explica.
             return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": ATM_CACHE})
+
+    if airport_guide is not None:
+
+        @app.get("/v1/airports/{iata}/spots", response_model=AirportGuide)
+        async def get_airport_spots(
+            iata: Annotated[str, Path(pattern="^[A-Za-z]{3}$")],
+        ) -> JSONResponse:
+            try:
+                guide = await airport_guide.guide(iata)
+            except UnknownAirportError:
+                return _problem(404, "No encontrado", "ese aeropuerto no está en la lista")
+            except (GuideBusyError, GuideUnavailableError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "guía del aeropuerto ocupada")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            # Sin sitios también es 200 (lista vacía): la app lo explica.
+            return JSONResponse(guide.model_dump(mode="json"), headers={"Cache-Control": AIRPORT_CACHE})
 
     if climate is not None:
 

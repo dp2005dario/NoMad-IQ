@@ -192,6 +192,11 @@ class Settings(BaseSettings):
     overpass_timeout_seconds: float = Field(default=25.0, gt=0, le=60)
     atm_ttl_seconds: int = Field(default=24 * 3600, ge=3600, le=7 * 24 * 3600)
 
+    # --- Guía del aeropuerto (ver el paquete airport_guide/): el mismo Overpass ------
+    airport_guide_enabled: bool = True
+    # Un aeropuerto casi no cambia: un mes de caché por aeropuerto.
+    airport_guide_ttl_seconds: int = Field(default=30 * 24 * 3600, ge=24 * 3600, le=90 * 24 * 3600)
+
     # --- Cromos con amigos (ver el paquete leagues/): solo PostgreSQL
     leagues_enabled: bool = True
 

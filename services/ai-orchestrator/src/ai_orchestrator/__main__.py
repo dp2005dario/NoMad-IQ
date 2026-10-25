@@ -53,6 +53,8 @@ from fastapi import APIRouter
 from pydantic import SecretStr, ValidationError
 from redis.asyncio import Redis
 
+from ai_orchestrator.airport_guide.overpass import AirportOverpass
+from ai_orchestrator.airport_guide.service import AirportGuideService, GuideSettings, RedisGuideCache
 from ai_orchestrator.api import create_api, create_management_api
 from ai_orchestrator.atms.overpass import OverpassBusyError, OverpassClient
 from ai_orchestrator.atms.service import AtmService, AtmSettings, RedisAtmCache
@@ -324,6 +326,30 @@ def _atms(settings: Settings, redis: Redis, stack: AsyncExitStack) -> AtmService
     )
 
 
+def _airport_guide(settings: Settings, redis: Redis, stack: AsyncExitStack) -> AirportGuideService:
+    """Guía del aeropuerto: el mismo Overpass que los cajeros, con su propio
+    límite de ritmo y un mes de caché por aeropuerto."""
+    http = httpx.AsyncClient(
+        timeout=httpx.Timeout(settings.overpass_timeout_seconds, connect=5.0),
+        follow_redirects=False,
+    )
+    stack.push_async_callback(http.aclose)
+    return AirportGuideService(
+        source=AirportOverpass(
+            http,
+            url=settings.overpass_url,
+            limiter=RateLimiter(
+                settings.overpass_rate_per_second,
+                settings.overpass_burst,
+                busy=lambda: OverpassBusyError("límite de peticiones a Overpass"),
+            ),
+        ),
+        cache=RedisGuideCache(redis),
+        airports=Airports.bundled(),
+        settings=GuideSettings(ttl_seconds=settings.airport_guide_ttl_seconds),
+    )
+
+
 def _menu(settings: Settings, llm: LLMClient, redis: Redis) -> MenuService:
     """Traductor de cartas: el mismo modelo que Flyra + cupo diario en Redis."""
     return MenuService(
@@ -551,6 +577,7 @@ async def run(settings: Settings) -> int:
             or (settings.menu_enabled and llm is not None)
             or (settings.shared_trips_enabled and llm is not None)
             or settings.atms_enabled
+            or settings.airport_guide_enabled
             or settings.climate_enabled
             else None
         )
@@ -575,6 +602,11 @@ async def run(settings: Settings) -> int:
         atms: AtmService | None = None
         if settings.atms_enabled and public_redis is not None:
             atms = _atms(settings, public_redis, stack)
+
+        # --- Guía del aeropuerto (OpenStreetMap con un mes de caché) ---------------------
+        airport_guide: AirportGuideService | None = None
+        if settings.airport_guide_enabled and public_redis is not None:
+            airport_guide = _airport_guide(settings, public_redis, stack)
 
         # --- Traductor de cartas (Ollama + cupo diario en Redis) ------------------------
         menu: MenuService | None = None
@@ -661,6 +693,7 @@ async def run(settings: Settings) -> int:
                 landmarks=landmarks,
                 fx=fx,
                 atms=atms,
+                airport_guide=airport_guide,
                 climate=climate,
                 menu=menu,
                 eraser=PostgresEraser(pool),

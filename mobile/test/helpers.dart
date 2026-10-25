@@ -187,6 +187,7 @@ AppServices fakeServices(
   HomeWidgets? homeWidgets,
   LiveFlight? liveFlight,
   Future<Airports> Function()? loadAirports,
+  Stream<double?> Function()? compass,
   DocSource? docSource,
   DocTextReader? docReader,
 }) {
@@ -228,6 +229,7 @@ AppServices fakeServices(
     homeWidgets: homeWidgets,
     liveFlight: liveFlight,
     loadAirports: loadAirports ?? () async => testAirports,
+    compass: compass ?? () => Stream<double?>.value(0),
     docSource: docSource ?? const NoDocSource(),
     docReader: docReader ?? const NoDocTextReader(),
   );

@@ -104,6 +104,14 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 
+    # Guía del aeropuerto (OpenStreetMap): pública como los cajeros. Solo GET
+    # y solo /v1/airports/<código>/spots.
+    airport-guide:
+      entryPoints: [web]
+      rule: Method(`GET`) && PathRegexp(`^/v1/airports/[A-Za-z]{3}/spots$`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
     # Tipos de cambio del BCE (pestaña Divisas): públicos y gratis, iguales
     # para todos. Solo GET y esa ruta exacta.
     fx:

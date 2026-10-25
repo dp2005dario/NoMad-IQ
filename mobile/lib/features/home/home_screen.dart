@@ -122,6 +122,13 @@ class HomeScreen extends StatelessWidget {
                     label: t.memTitle,
                     onTap: () => context.push(Routes.memories),
                   ),
+                  // Flecha a tu puerta, al baño o a un café en el aeropuerto.
+                  _Shortcut(
+                    icon: Icons.local_airport_rounded,
+                    color: NomadColors.flights,
+                    label: t.airportTitle,
+                    onTap: () => context.push(Routes.airport()),
+                  ),
                   // Tu vuelo, el chollo y el presupuesto en el escritorio.
                   _Shortcut(
                     icon: Icons.widgets_rounded,

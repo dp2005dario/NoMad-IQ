@@ -64,8 +64,7 @@ void main() {
   testWidgets('escala en Estambul: precio con Turkish y reservar en su web', (
     WidgetTester tester,
   ) async {
-    final FakeGateway g = FakeGateway()
-      ..publicPrefixes.add('/v1/fares/search');
+    final FakeGateway g = FakeGateway()..publicPrefixes.add('/v1/fares/search');
     final List<Uri> opened = <Uri>[];
     g.services['/v1/fares/search'] = (http.Request r) {
       final Map<String, String> q = r.url.queryParameters;
@@ -136,8 +135,7 @@ void main() {
   testWidgets('con los hubs: elegir Estambul, ver precio y reservar', (
     WidgetTester tester,
   ) async {
-    final FakeGateway g = FakeGateway()
-      ..publicPrefixes.add('/v1/fares/search');
+    final FakeGateway g = FakeGateway()..publicPrefixes.add('/v1/fares/search');
     final List<Uri> opened = <Uri>[];
     g.services['/v1/fares/search'] = (http.Request r) {
       final Map<String, String> q = r.url.queryParameters;

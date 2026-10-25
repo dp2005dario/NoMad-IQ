@@ -6128,5 +6128,169 @@
   "stopBusy": "Many people are searching right now. Try again in a few seconds.",
   "@stopBusy": {
     "description": "Search rate-limited."
+  },
+  "airportTitle": "Airport",
+  "@airportTitle": {
+    "description": "Airport guide title."
+  },
+  "airportPick": "Which airport are you at?",
+  "@airportPick": {
+    "description": "Choose airport."
+  },
+  "airportCode": "Airport code (MAD, LHR...)",
+  "@airportCode": {
+    "description": "Airport code field."
+  },
+  "airportOpen": "Open",
+  "@airportOpen": {
+    "description": "Open guide."
+  },
+  "airportEmpty": "The inside of this airport is not drawn on OpenStreetMap yet. Follow the airport signs.",
+  "@airportEmpty": {
+    "description": "No data."
+  },
+  "airportBusy": "Too many people asking right now. Try again in a minute.",
+  "@airportBusy": {
+    "description": "Busy."
+  },
+  "airportUnknown": "We do not know that airport. Check the 3-letter code.",
+  "@airportUnknown": {
+    "description": "Unknown airport."
+  },
+  "airportGateField": "Your gate (e.g. K42)",
+  "@airportGateField": {
+    "description": "Gate field."
+  },
+  "airportGateNotFound": "Gate {gate} is not on the map of this airport. Follow the signs to it.",
+  "@airportGateNotFound": {
+    "description": "Gate missing.",
+    "placeholders": {
+      "gate": {
+        "type": "String"
+      }
+    }
+  },
+  "airportKindGate": "Gate",
+  "@airportKindGate": {
+    "description": "Spot kind."
+  },
+  "airportKindToilets": "Toilets",
+  "@airportKindToilets": {
+    "description": "Spot kind."
+  },
+  "airportKindCafe": "Café",
+  "@airportKindCafe": {
+    "description": "Spot kind."
+  },
+  "airportKindFood": "Food",
+  "@airportKindFood": {
+    "description": "Spot kind."
+  },
+  "airportKindPharmacy": "Pharmacy",
+  "@airportKindPharmacy": {
+    "description": "Spot kind."
+  },
+  "airportKindAtm": "ATM",
+  "@airportKindAtm": {
+    "description": "Spot kind."
+  },
+  "airportKindWater": "Water",
+  "@airportKindWater": {
+    "description": "Spot kind."
+  },
+  "airportKindInfo": "Information",
+  "@airportKindInfo": {
+    "description": "Spot kind."
+  },
+  "airportKindCharging": "Charging",
+  "@airportKindCharging": {
+    "description": "Spot kind."
+  },
+  "airportKindLounge": "Lounge",
+  "@airportKindLounge": {
+    "description": "Spot kind."
+  },
+  "airportStraight": "Go straight {m} m",
+  "@airportStraight": {
+    "description": "Instruction.",
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "airportLeft": "Turn left",
+  "@airportLeft": {
+    "description": "Instruction."
+  },
+  "airportRight": "Turn right",
+  "@airportRight": {
+    "description": "Instruction."
+  },
+  "airportBack": "Turn around",
+  "@airportBack": {
+    "description": "Instruction."
+  },
+  "airportArrived": "You are there",
+  "@airportArrived": {
+    "description": "Instruction."
+  },
+  "airportDistance": "{min} min · {m} m",
+  "@airportDistance": {
+    "description": "Distance.",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "airportLevel": "Floor {level}",
+  "@airportLevel": {
+    "description": "Floor.",
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "airportBoarding": "Boarding {time}",
+  "@airportBoarding": {
+    "description": "Boarding time.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "airportInTime": "You have time",
+  "@airportInTime": {
+    "description": "Enough time."
+  },
+  "airportHurry": "Hurry: boarding soon",
+  "@airportHurry": {
+    "description": "Not much time."
+  },
+  "airportNoGps": "Turn on location to see the arrow and the distance.",
+  "@airportNoGps": {
+    "description": "No location."
+  },
+  "airportAllowGps": "Turn on location",
+  "@airportAllowGps": {
+    "description": "Allow location."
+  },
+  "airportGpsNote": "Inside buildings the GPS can be off by a few dozen meters: follow the airport signs too.",
+  "@airportGpsNote": {
+    "description": "Accuracy note."
+  },
+  "airportNone": "There is none on the map of this airport.",
+  "@airportNone": {
+    "description": "No spot of kind."
+  },
+  "airportChange": "Change airport",
+  "@airportChange": {
+    "description": "Change airport."
   }
 }
