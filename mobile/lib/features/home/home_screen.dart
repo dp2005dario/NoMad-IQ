@@ -136,6 +136,13 @@ class HomeScreen extends StatelessWidget {
                     label: t.visaTitle,
                     onTap: () => context.push(Routes.visa()),
                   ),
+                  // Gasolineras, aparcamientos y zonas ZTL mientras conduces.
+                  _Shortcut(
+                    icon: Icons.directions_car_rounded,
+                    color: NomadColors.money,
+                    label: t.driveShort,
+                    onTap: () => context.push(Routes.drive),
+                  ),
                   // Planes abiertos con otros viajeros de la misma ciudad.
                   _Shortcut(
                     icon: Icons.diversity_3_rounded,

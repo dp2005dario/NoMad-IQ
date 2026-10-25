@@ -7014,5 +7014,149 @@
   "meetupsReported": "Thanks. We won't show it to you anymore.",
   "@meetupsReported": {
     "description": "Snack after reporting."
+  },
+  "driveShort": "Car",
+  "@driveShort": {
+    "description": "Home shortcut to car mode."
+  },
+  "driveTitle": "Car mode",
+  "@driveTitle": {
+    "description": "Car mode title."
+  },
+  "driveVoiceOn": "Read aloud",
+  "@driveVoiceOn": {
+    "description": "Tooltip: turn voice on."
+  },
+  "driveVoiceOff": "Mute voice",
+  "@driveVoiceOff": {
+    "description": "Tooltip: turn voice off."
+  },
+  "driveGuide": "Audio guide",
+  "@driveGuide": {
+    "description": "Mode: audioguide."
+  },
+  "driveFuel": "Fuel",
+  "@driveFuel": {
+    "description": "Mode: fuel."
+  },
+  "drivePark": "Park",
+  "@drivePark": {
+    "description": "Mode: parking."
+  },
+  "driveLez": "ZTL zone",
+  "@driveLez": {
+    "description": "Mode: restricted traffic zones."
+  },
+  "driveElectric": "Electric",
+  "@driveElectric": {
+    "description": "Chip: EV chargers."
+  },
+  "driveGuideTitle": "Audio guides while you drive",
+  "@driveGuideTitle": {
+    "description": "Audioguide mode heading."
+  },
+  "driveGuideBody": "With travel mode on, we let you know each time you pass a place with an audio guide. It plays through the car speakers (Bluetooth or Android Auto).",
+  "@driveGuideBody": {
+    "description": "Audioguide mode explanation."
+  },
+  "driveGuideSwitch": "Notifies you on entering each zone",
+  "@driveGuideSwitch": {
+    "description": "Subtitle of the travel mode switch."
+  },
+  "driveAndroidAuto": "In Android Auto, NomadIQ appears among the audio apps: the guide you are listening to is controlled from the car screen. For directions we open Google Maps.",
+  "@driveAndroidAuto": {
+    "description": "Android Auto note."
+  },
+  "driveNone": "None nearby.",
+  "@driveNone": {
+    "description": "Nothing of this kind nearby."
+  },
+  "driveLezNone": "We see no restricted traffic zones nearby. OpenStreetMap doesn't have them all: watch the signs.",
+  "@driveLezNone": {
+    "description": "No restricted zones nearby."
+  },
+  "driveFuelAt": "Fuel station {km} away",
+  "@driveFuelAt": {
+    "description": "Nearest fuel station.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "driveEvAt": "Charger {km} away",
+  "@driveEvAt": {
+    "description": "Nearest EV charger.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "driveParkAt": "{name} · {km} away",
+  "@driveParkAt": {
+    "description": "Nearest car park.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "driveLezAt": "{name} · {km} away",
+  "@driveLezAt": {
+    "description": "Nearest restricted zone.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "driveParking": "Car park",
+  "@driveParking": {
+    "description": "Generic car park name."
+  },
+  "driveGo": "Go",
+  "@driveGo": {
+    "description": "Navigate button."
+  },
+  "driveLezWeb": "Official website",
+  "@driveLezWeb": {
+    "description": "Open official zone website."
+  },
+  "driveLezWarning": "Driving in without a permit can mean a fine (often around €100) that reaches the rental company weeks later. If your hotel is inside, ask them to register your number plate.",
+  "@driveLezWarning": {
+    "description": "Restricted zone warning."
+  },
+  "driveLezEurope": "See zones across Europe",
+  "@driveLezEurope": {
+    "description": "Link to the European zones website."
+  },
+  "driveCapacity": "{count} spaces",
+  "@driveCapacity": {
+    "description": "Total spaces.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "driveAlwaysOpen": "Open 24 h",
+  "@driveAlwaysOpen": {
+    "description": "Open 24 hours."
+  },
+  "driveKm": "{km} km",
+  "@driveKm": {
+    "description": "A distance in km.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
   }
 }

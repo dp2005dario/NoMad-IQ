@@ -65,6 +65,10 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- Android Auto: somos una app de audio (ver res/xml/automotive_app_desc.xml). -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
         <!-- El servicio de audio de just_audio_background (paquete
              audio_service) y quien recibe los botones de los auriculares. -->
         <service

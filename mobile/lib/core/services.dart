@@ -37,6 +37,7 @@ import '../features/map/street_photos_api.dart';
 import '../features/money/atms_api.dart';
 import '../features/nearby/nearby_api.dart';
 import '../features/meetups/meetups_api.dart';
+import '../features/drive/drive_api.dart';
 import '../features/money/expenses_api.dart';
 import '../features/money/fx_api.dart';
 import '../features/cards/league_api.dart';
@@ -103,6 +104,7 @@ class AppServices {
        atms = AtmsApi(api),
        nearby = NearbyApi(api),
        meetups = MeetupsApi(api),
+       drive = DriveApi(api),
        places = PlacesApi(api),
        streetPhotos = StreetPhotosApi(api),
        prefs = prefs ?? MemorySettingsStore(),
@@ -173,6 +175,7 @@ class AppServices {
   /// Cerca de ti: agua, baños, wifi, enchufes y sitios que ver.
   final NearbyApi nearby;
   final MeetupsApi meetups;
+  final DriveApi drive;
 
   /// Tipos de cambio del BCE (con copia en el móvil para usarlos sin red).
   late final FxApi fx = FxApi(api, prefs);
