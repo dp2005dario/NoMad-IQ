@@ -244,6 +244,9 @@ class Settings(BaseSettings):
     met_rate_per_second: float = Field(default=5.0, gt=0, le=20)
     rain_ttl_seconds: int = Field(default=15 * 60, ge=5 * 60, le=3 * 3600)
 
+    # --- Sin colas (ver el paquete queues/): esperas que avisan los viajeros ------------
+    queues_enabled: bool = True
+
     # --- Qué pasa en tus fechas (ver el paquete city_events/) --------------------------
     # Festivos de Nager.Date (gratis, sin clave) y, si hay clave, eventos de
     # Ticketmaster (clave gratis con cupo diario). La clave es un secreto:

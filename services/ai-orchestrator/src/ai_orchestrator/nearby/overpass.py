@@ -16,6 +16,9 @@ from ai_orchestrator.places.wikimedia import RateLimiter
 # fuentes y bancos: con esto la respuesta nunca pesa demasiado).
 MAX_RESULTS = 400
 _QID = re.compile(r"^Q[1-9][0-9]{0,11}$")
+# Un teléfono: solo dígitos, espacios, +, -, paréntesis y puntos.
+_PHONE = re.compile(r"^\+?[0-9 ()./-]{6,24}$")
+_RESERVATION = ("yes", "required", "recommended")
 
 
 def build_query(south: float, west: float, north: float, east: float) -> str:
@@ -30,6 +33,11 @@ def build_query(south: float, west: float, north: float, east: float) -> str:
         # Sitios que ver: solo los que tienen Wikidata (los conocidos).
         f'nwr["tourism"~"^(attraction|viewpoint|museum|gallery|artwork)$"]["wikidata"]({box});'
         f'nwr["historic"~"^(monument|castle|memorial|ruins|archaeological_site)$"]["wikidata"]({box});'
+        # Restaurantes que aceptan reserva y dicen cómo (web o teléfono).
+        f'nwr["amenity"="restaurant"]["reservation"~"^(yes|required|recommended)$"]["name"]'
+        f'["website"]({box});'
+        f'nwr["amenity"="restaurant"]["reservation"~"^(yes|required|recommended)$"]["name"]'
+        f'["phone"]({box});'
         f");out center {MAX_RESULTS};"
     )
 
@@ -42,8 +50,29 @@ def _text(tags: dict[str, Any], key: str, limit: int = 80) -> str | None:
     return value[:limit] or None
 
 
+def _https(tags: dict[str, Any]) -> str | None:
+    """La web, solo si es https (nada de enlaces raros en la app)."""
+    for key in ("website", "contact:website"):
+        url = _text(tags, key, 300)
+        if url is not None and url.startswith("https://") and " " not in url:
+            return url
+    return None
+
+
+def _phone(tags: dict[str, Any]) -> str | None:
+    for key in ("phone", "contact:phone"):
+        # A veces hay varios separados por ";": nos quedamos con el primero.
+        raw = _text(tags, key, 120)
+        first = raw.split(";")[0].strip() if raw else None
+        if first and _PHONE.match(first):
+            return first
+    return None
+
+
 def _kind(tags: dict[str, Any]) -> SpotKind | None:
     amenity = tags.get("amenity")
+    if amenity == "restaurant":
+        return "table" if tags.get("reservation") in _RESERVATION else None
     if amenity == "drinking_water":
         return "water"
     if amenity == "toilets":
@@ -84,6 +113,22 @@ def parse_spot(row: Any) -> NearbySpot | None:
     name = _text(tags, "name")
     if kind == "sight" and (name is None or not isinstance(qid, str) or not _QID.match(qid)):
         return None  # un "sitio que ver" sin nombre ni Wikidata no sirve
+    if kind == "table":
+        website, phone = _https(tags), _phone(tags)
+        if name is None or (website is None and phone is None):
+            return None  # sin nombre o sin forma de reservar, no sirve
+        return NearbySpot(
+            id=f"{kind_raw[0]}{oid}",
+            kind=kind,
+            lat=float(lat),
+            lon=float(lon),
+            name=name,
+            opening_hours=_text(tags, "opening_hours"),
+            website=website,
+            phone=phone,
+            cuisine=_text(tags, "cuisine", 40),
+            reservation=tags.get("reservation"),
+        )
     fee = tags.get("fee")
     return NearbySpot(
         id=f"{kind_raw[0]}{oid}",

@@ -114,6 +114,8 @@ from ai_orchestrator.places.wikimedia import RateLimiter, WikimediaClient
 from ai_orchestrator.plans.api import plan_router
 from ai_orchestrator.plans.store import PostgresPlans
 from ai_orchestrator.pseudonym import Pseudonymizer
+from ai_orchestrator.queues.api import queues_router
+from ai_orchestrator.queues.store import PostgresQueues
 from ai_orchestrator.quota import RedisQuota
 from ai_orchestrator.radar.api import radar_router
 from ai_orchestrator.radar.rain import MetClient, RainBusyError, RainService, RedisRainCache
@@ -851,6 +853,7 @@ async def run(settings: Settings) -> int:
                 radar=radar_router(PostgresRadar(pool), Airports.bundled())
                 if settings.radar_enabled
                 else None,
+                queues=queues_router(PostgresQueues(pool)) if settings.queues_enabled else None,
                 menu=menu,
                 eraser=PostgresEraser(pool),
                 expose_docs=settings.expose_api_docs,

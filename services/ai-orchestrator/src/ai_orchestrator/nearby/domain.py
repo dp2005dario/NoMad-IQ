@@ -11,8 +11,9 @@ from ai_orchestrator.atms.domain import ATTRIBUTION, CELL_DEGREES, LICENSE_URL, 
 __all__ = ["ATTRIBUTION", "CELL_DEGREES", "LICENSE_URL", "Nearby", "NearbySpot", "SpotKind", "cell_of"]
 
 # water: agua potable · toilets: baños · wifi: wifi gratis · charging: cargar
-# el móvil · sight: algo que ver (monumento, mirador, museo...).
-SpotKind = Literal["water", "toilets", "wifi", "charging", "sight"]
+# el móvil · sight: algo que ver (monumento, mirador, museo...) · table:
+# restaurante que según OSM acepta reservas (para "Colas": mesa para cenar).
+SpotKind = Literal["water", "toilets", "wifi", "charging", "sight", "table"]
 
 
 class NearbySpot(BaseModel):
@@ -30,6 +31,12 @@ class NearbySpot(BaseModel):
     fee: bool | None = None
     # Para los sitios que ver: su Wikidata (así la app enseña la ficha).
     wikidata_id: str | None = None
+    # Solo restaurantes ("table"): su web (https) y teléfono para reservar,
+    # el tipo de cocina y si la reserva es "yes", "recommended" o "required".
+    website: str | None = None
+    phone: str | None = None
+    cuisine: str | None = None
+    reservation: str | None = None
 
 
 class Nearby(BaseModel):

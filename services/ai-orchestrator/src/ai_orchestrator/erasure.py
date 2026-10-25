@@ -115,6 +115,8 @@ class PostgresEraser:
                 # Radar: sus avisos y precios (los resúmenes se recalculan solos).
                 await conn.execute("DELETE FROM ai.radar_scam_reports WHERE user_id = $1", user_id)
                 await conn.execute("DELETE FROM ai.radar_prices WHERE user_id = $1", user_id)
+                # Sin colas: sus avisos de espera.
+                await conn.execute("DELETE FROM ai.queue_reports WHERE user_id = $1", user_id)
                 # Sus mensajes del chat del viaje se borran (pueden llevar datos
                 # personales); los de los demás se quedan.
                 await conn.execute(

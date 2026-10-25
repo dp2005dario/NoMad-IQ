@@ -266,6 +266,7 @@ def create_api(
     city_events: CityEventService | None = None,
     rain: RainService | None = None,
     radar: APIRouter | None = None,
+    queues: APIRouter | None = None,
     eraser: UserDataEraser | None = None,
     expose_docs: bool = False,
 ) -> FastAPI:
@@ -529,6 +530,9 @@ def create_api(
     if radar is not None:
         # Avisos de timos y precios de viajeros (/v1/radar) en radar/api.py.
         app.include_router(radar)
+    if queues is not None:
+        # Esperas que avisan los viajeros (/v1/queues) en queues/api.py.
+        app.include_router(queues)
 
     if city_events is not None:
 

@@ -80,6 +80,36 @@ def test_parse_spot_kinds() -> None:
     assert parse_spot(node(5, historic="castle", name="Castillo", wikidata="nope")) is None
 
 
+def test_parse_restaurant_with_reservation() -> None:
+    table = parse_spot(
+        node(
+            7,
+            amenity="restaurant",
+            reservation="required",
+            name="Casa Lucio",
+            website="https://casalucio.es",
+            phone="+34 913 65 32 52;+34 600 000 000",
+            cuisine="spanish",
+        )
+    )
+    assert table is not None and table.kind == "table"
+    assert (table.website, table.phone, table.reservation) == (
+        "https://casalucio.es",
+        "+34 913 65 32 52",
+        "required",
+    )
+    # Sin reserva, sin forma de reservar o con enlaces raros: fuera.
+    assert parse_spot(node(8, amenity="restaurant", name="X", website="https://x.es")) is None
+    assert parse_spot(node(8, amenity="restaurant", reservation="no", name="X", phone="+3491")) is None
+    assert (
+        parse_spot(node(8, amenity="restaurant", reservation="yes", name="X", website="javascript:1")) is None
+    )
+    weird = parse_spot(
+        node(8, amenity="restaurant", reservation="yes", name="X", website="http://x.es", phone="9 1 2 3 4 5")
+    )
+    assert weird is not None and weird.website is None and weird.phone == "9 1 2 3 4 5"
+
+
 async def test_one_overpass_call_per_cell_for_a_week() -> None:
     fake = FakeOverpass()
     svc, cache = service(fake)

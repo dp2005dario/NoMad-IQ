@@ -20,7 +20,8 @@ from ai_orchestrator.nearby.domain import CELL_DEGREES, Nearby, NearbySpot, cell
 
 log = logging.getLogger(__name__)
 
-KEY_PREFIX = "ai:nearby:v1"
+# v2: ahora también trae restaurantes con reserva (las fichas v1 no).
+KEY_PREFIX = "ai:nearby:v2"
 
 
 class NearbySource(Protocol):
