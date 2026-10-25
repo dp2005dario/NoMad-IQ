@@ -136,6 +136,13 @@ class HomeScreen extends StatelessWidget {
                     label: t.visaTitle,
                     onTap: () => context.push(Routes.visa()),
                   ),
+                  // Planes abiertos con otros viajeros de la misma ciudad.
+                  _Shortcut(
+                    icon: Icons.diversity_3_rounded,
+                    color: NomadColors.group,
+                    label: t.meetupsShort,
+                    onTap: () => context.push(Routes.meetups()),
+                  ),
                   // Tu vuelo, el chollo y el presupuesto en el escritorio.
                   _Shortcut(
                     icon: Icons.widgets_rounded,

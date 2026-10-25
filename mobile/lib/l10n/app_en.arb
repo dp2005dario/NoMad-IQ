@@ -6810,5 +6810,209 @@
   "nearbyOpenWalk": "Open the walk in the map",
   "@nearbyOpenWalk": {
     "description": "Button."
+  },
+  "meetupsShort": "Meetups",
+  "@meetupsShort": {
+    "description": "Home shortcut to traveller meetups."
+  },
+  "meetupsTitle": "Traveller meetups",
+  "@meetupsTitle": {
+    "description": "Meetups screen title."
+  },
+  "meetupsSolo": "Travelling solo · {city}",
+  "@meetupsSolo": {
+    "description": "Header with the city name.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "meetupsChangeCity": "Change city",
+  "@meetupsChangeCity": {
+    "description": "Button to change the city."
+  },
+  "meetupsSafety": "Only people with an account, always in public places, and your exact location is never shared.",
+  "@meetupsSafety": {
+    "description": "Safety note."
+  },
+  "meetupsPickCity": "Which city are you in? Type its airport code (LIS, KIX...).",
+  "@meetupsPickCity": {
+    "description": "Asks for the city."
+  },
+  "meetupsSignIn": "Sign in with your account to see and propose meetups.",
+  "@meetupsSignIn": {
+    "description": "Guest message."
+  },
+  "meetupsUnknownCity": "We don't know that city. Try its airport code.",
+  "@meetupsUnknownCity": {
+    "description": "Unknown airport code."
+  },
+  "meetupsAll": "All",
+  "@meetupsAll": {
+    "description": "Filter: all."
+  },
+  "meetupsFood": "Eat",
+  "@meetupsFood": {
+    "description": "Kind: food."
+  },
+  "meetupsWalk": "Walk",
+  "@meetupsWalk": {
+    "description": "Kind: walk."
+  },
+  "meetupsDrinks": "Drinks",
+  "@meetupsDrinks": {
+    "description": "Kind: drinks."
+  },
+  "meetupsCulture": "Culture",
+  "@meetupsCulture": {
+    "description": "Kind: culture."
+  },
+  "meetupsOther": "Other",
+  "@meetupsOther": {
+    "description": "Kind: other."
+  },
+  "meetupsNone": "No meetups here yet. Propose the first one!",
+  "@meetupsNone": {
+    "description": "Empty list."
+  },
+  "meetupsPropose": "Propose a meetup",
+  "@meetupsPropose": {
+    "description": "Button / dialog title."
+  },
+  "meetupsVisible": "Visible to others",
+  "@meetupsVisible": {
+    "description": "Visibility toggle: visible."
+  },
+  "meetupsHidden": "I'm hidden",
+  "@meetupsHidden": {
+    "description": "Visibility toggle: hidden."
+  },
+  "meetupsToday": "Today {time}",
+  "@meetupsToday": {
+    "description": "Time today.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "meetupsTomorrow": "Tomorrow {time}",
+  "@meetupsTomorrow": {
+    "description": "Time tomorrow.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "meetupsSeats": "{going} of {capacity} places",
+  "@meetupsSeats": {
+    "description": "Seats taken.",
+    "placeholders": {
+      "going": {
+        "type": "int"
+      },
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
+  "meetupsSomeone": "Someone",
+  "@meetupsSomeone": {
+    "description": "Name shown for hidden people."
+  },
+  "meetupsMore": "More options",
+  "@meetupsMore": {
+    "description": "Menu tooltip."
+  },
+  "meetupsDirections": "How to get there",
+  "@meetupsDirections": {
+    "description": "Open maps."
+  },
+  "meetupsCancel": "Cancel meetup",
+  "@meetupsCancel": {
+    "description": "Cancel my meetup."
+  },
+  "meetupsReport": "Report",
+  "@meetupsReport": {
+    "description": "Report a meetup."
+  },
+  "meetupsYours": "Yours",
+  "@meetupsYours": {
+    "description": "Badge: my meetup."
+  },
+  "meetupsGoing": "Going",
+  "@meetupsGoing": {
+    "description": "Button when joined."
+  },
+  "meetupsJoin": "Join",
+  "@meetupsJoin": {
+    "description": "Join button."
+  },
+  "meetupsFull": "Full",
+  "@meetupsFull": {
+    "description": "Meetup is full."
+  },
+  "meetupsYourName": "Your name for others",
+  "@meetupsYourName": {
+    "description": "Ask the user's display name."
+  },
+  "meetupsWhat": "What (e.g. ramen dinner)",
+  "@meetupsWhat": {
+    "description": "Title field."
+  },
+  "meetupsWhere": "Where you meet",
+  "@meetupsWhere": {
+    "description": "Place field."
+  },
+  "meetupsPublicPlace": "Always a public place: a square, a station, a museum entrance.",
+  "@meetupsPublicPlace": {
+    "description": "Safety hint under the place field."
+  },
+  "meetupsCapacity": "Places: {count}",
+  "@meetupsCapacity": {
+    "description": "Places slider label.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "meetupsPublish": "Publish",
+  "@meetupsPublish": {
+    "description": "Publish button."
+  },
+  "meetupsProposed": "Meetup published.",
+  "@meetupsProposed": {
+    "description": "Snack after publishing."
+  },
+  "meetupsConflict": "It's full, or you already have too many meetups at once.",
+  "@meetupsConflict": {
+    "description": "409 error."
+  },
+  "meetupsGone": "That meetup no longer exists.",
+  "@meetupsGone": {
+    "description": "404 on an action."
+  },
+  "meetupsCancelTitle": "Cancel the meetup?",
+  "@meetupsCancelTitle": {
+    "description": "Cancel confirm title."
+  },
+  "meetupsCancelBody": "It disappears for everyone who had joined.",
+  "@meetupsCancelBody": {
+    "description": "Cancel confirm body."
+  },
+  "meetupsReportTitle": "Report this meetup?",
+  "@meetupsReportTitle": {
+    "description": "Report confirm title."
+  },
+  "meetupsReportBody": "If it looks dangerous, fake or like an ad. With three reports it is hidden for everyone.",
+  "@meetupsReportBody": {
+    "description": "Report confirm body."
+  },
+  "meetupsReported": "Thanks. We won't show it to you anymore.",
+  "@meetupsReported": {
+    "description": "Snack after reporting."
   }
 }

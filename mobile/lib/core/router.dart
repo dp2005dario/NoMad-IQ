@@ -40,6 +40,7 @@ import '../features/copy_trip/share_trip_screen.dart';
 import '../features/family/family_screen.dart';
 import '../features/help/help_screen.dart';
 import '../features/nearby/nearby_screen.dart';
+import '../features/meetups/meetups_screen.dart';
 import '../features/papers/papers_screen.dart';
 import '../features/visa/visa_screen.dart';
 import '../features/travel_with/travel_with_screen.dart';
@@ -82,6 +83,10 @@ abstract final class Routes {
   static const String travelCamera = '/memories/camera';
   static const String widgets = '/widgets';
   static const String nearby = '/nearby';
+  static String meetups({String? city}) => Uri(
+    path: '/meetups',
+    queryParameters: <String, String>{'city': ?city},
+  ).toString();
 
   /// "Copia este viaje"; con [code] abre directamente ese viaje.
   static String copyTrip({String? code}) => Uri(
@@ -377,6 +382,11 @@ GoRouter buildRouter({
       path: Routes.nearby,
       builder: (BuildContext context, GoRouterState state) =>
           const NearbyScreen(),
+    ),
+    GoRoute(
+      path: '/meetups',
+      builder: (BuildContext context, GoRouterState state) =>
+          MeetupsScreen(city: state.uri.queryParameters['city']),
     ),
     GoRoute(
       path: '/visa',

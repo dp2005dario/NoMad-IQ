@@ -64,6 +64,9 @@ enum LocalData {
   /// El país de tu pasaporte ("ES"), para la pantalla Visado. Solo el país:
   /// el número y lo demás nunca se guardan.
   visaPassport,
+
+  /// "1" = en las quedadas, los demás no ven tu nombre (sale "Alguien").
+  meetupHidden,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real
