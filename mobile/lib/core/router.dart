@@ -43,6 +43,8 @@ import '../features/help/help_screen.dart';
 import '../features/nearby/nearby_screen.dart';
 import '../features/meetups/meetups_screen.dart';
 import '../features/drive/drive_screen.dart';
+import '../features/map/geo.dart';
+import '../features/stays/stays_screen.dart';
 import '../features/trouble/trouble_screen.dart';
 import '../features/assistant/assistant_screen.dart';
 import '../features/voice/voice_screen.dart';
@@ -92,6 +94,18 @@ abstract final class Routes {
   static const String trouble = '/trouble';
   static const String assistant = '/assistant';
   static const String voice = '/voice';
+
+  /// Dormir barato: zonas para dormir cerca de un punto (o de ti, sin punto).
+  static String stays({double? lat, double? lon, String? name}) => Uri(
+    path: '/stays',
+    queryParameters: <String, String>{
+      if (lat != null && lon != null) ...<String, String>{
+        'lat': lat.toStringAsFixed(5),
+        'lon': lon.toStringAsFixed(5),
+      },
+      'name': ?name,
+    },
+  ).toString();
   static String meetups({String? city}) => Uri(
     path: '/meetups',
     queryParameters: <String, String>{'city': ?city},
@@ -420,6 +434,18 @@ GoRouter buildRouter({
       path: Routes.drive,
       builder: (BuildContext context, GoRouterState state) =>
           const DriveScreen(),
+    ),
+    GoRoute(
+      path: '/stays',
+      builder: (BuildContext context, GoRouterState state) {
+        final Map<String, String> q = state.uri.queryParameters;
+        final double? lat = double.tryParse(q['lat'] ?? '');
+        final double? lon = double.tryParse(q['lon'] ?? '');
+        return StaysScreen(
+          target: lat == null || lon == null ? null : GeoPoint(lat, lon),
+          name: q['name'],
+        );
+      },
     ),
     GoRoute(
       path: '/meetups',

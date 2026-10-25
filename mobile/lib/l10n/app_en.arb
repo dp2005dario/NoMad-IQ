@@ -7829,5 +7829,255 @@
   "privacyGroupSub": "New chat messages and the chosen destination.",
   "@privacyGroupSub": {
     "description": "Privacy toggle subtitle."
+  },
+  "staysTitle": "Sleep for less",
+  "@staysTitle": {
+    "description": "Cheap sleep title."
+  },
+  "staysSubtitle": "Flyra looks further out if it pays off",
+  "@staysSubtitle": {
+    "description": "Subtitle."
+  },
+  "staysWhere": "Where are you going? Choose the place",
+  "@staysWhere": {
+    "description": "No target yet."
+  },
+  "staysPoint": "Chosen point ({lat}, {lon})",
+  "@staysPoint": {
+    "description": "Chosen point.",
+    "placeholders": {
+      "lat": {
+        "type": "String"
+      },
+      "lon": {
+        "type": "String"
+      }
+    }
+  },
+  "staysNearMe": "Near me",
+  "@staysNearMe": {
+    "description": "Button: near me."
+  },
+  "staysOnMap": "On the map",
+  "@staysOnMap": {
+    "description": "Button: pick on map."
+  },
+  "staysNoLocation": "No location: choose the place on the map.",
+  "@staysNoLocation": {
+    "description": "No GPS."
+  },
+  "staysNights": "{count, plural, =1{1 night} other{{count} nights}}",
+  "@staysNights": {
+    "description": "Nights count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "staysFewer": "One person fewer",
+  "@staysFewer": {
+    "description": "Tooltip: one person fewer."
+  },
+  "staysMore": "One more person",
+  "@staysMore": {
+    "description": "Tooltip: one more person."
+  },
+  "staysAdults": "{count, plural, =1{1 adult} other{{count} adults}}",
+  "@staysAdults": {
+    "description": "Adults count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "staysRadiusNear": "Near only",
+  "@staysRadiusNear": {
+    "description": "Radius: near only."
+  },
+  "staysRadiusKm": "Up to {km} km",
+  "@staysRadiusKm": {
+    "description": "Radius in km.",
+    "placeholders": {
+      "km": {
+        "type": "int"
+      }
+    }
+  },
+  "staysOffline": "No internet. Try again when you're connected.",
+  "@staysOffline": {
+    "description": "No internet."
+  },
+  "staysUnavailable": "Can't search right now. Try again in a minute.",
+  "@staysUnavailable": {
+    "description": "Server busy."
+  },
+  "staysNone": "No areas with accommodation within this radius.",
+  "@staysNone": {
+    "description": "No zones."
+  },
+  "staysNearSite": "Next to the place",
+  "@staysNearSite": {
+    "description": "Zone: next to the place."
+  },
+  "staysWalkMeta": "On foot · ~{min} min",
+  "@staysWalkMeta": {
+    "description": "Walk zone meta.",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "staysTrainMeta": "{km} km · ~{min} min by train or metro",
+  "@staysTrainMeta": {
+    "description": "Train zone meta.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "staysLodgings": "{n} places to stay · {budget} budget (hostels, guesthouses)",
+  "@staysLodgings": {
+    "description": "Lodgings count.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "budget": {
+        "type": "int"
+      }
+    }
+  },
+  "staysSeePrices": "See prices",
+  "@staysSeePrices": {
+    "description": "Button: see prices."
+  },
+  "staysOnGoogleMaps": "See on Google Maps",
+  "@staysOnGoogleMaps": {
+    "description": "Tooltip: Google Maps."
+  },
+  "staysCalcTitle": "Work out the real total",
+  "@staysCalcTitle": {
+    "description": "Calculator title."
+  },
+  "staysNightPrice": "Price per night",
+  "@staysNightPrice": {
+    "description": "Field: price per night."
+  },
+  "staysFare": "Ticket per trip",
+  "@staysFare": {
+    "description": "Field: fare per trip."
+  },
+  "staysTotal": "Real total: {total}",
+  "@staysTotal": {
+    "description": "Real total.",
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "staysTotalParts": "Stay {hotel} + trains {transport} ({trips} trips)",
+  "@staysTotalParts": {
+    "description": "Total breakdown.",
+    "placeholders": {
+      "hotel": {
+        "type": "String"
+      },
+      "transport": {
+        "type": "String"
+      },
+      "trips": {
+        "type": "int"
+      }
+    }
+  },
+  "staysSave": "You save {amount} compared with sleeping next to it",
+  "@staysSave": {
+    "description": "Savings.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "staysNoSave": "Here it doesn't pay off compared with sleeping next to it",
+  "@staysNoSave": {
+    "description": "No savings."
+  },
+  "staysTipWiden": "There are {n} places to stay next to it. Widen the radius: a few train stops away there's usually more choice and lower prices.",
+  "@staysTipWiden": {
+    "description": "Tip: widen radius.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "staysTipOnlyNear": "There are no stations with accommodation nearby: your best bet is next to the place ({n} places to stay).",
+  "@staysTipOnlyNear": {
+    "description": "Tip: no stations.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "staysTipBest": "Most choice: {name}, with {n} places to stay ~{min} min away by train. Check prices there and compare the real total.",
+  "@staysTipBest": {
+    "description": "Tip: best zone.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "staysFactorsTitle": "Flyra takes into account",
+  "@staysFactorsTitle": {
+    "description": "Factors header."
+  },
+  "staysFactorTime": "Distance and minutes to the place",
+  "@staysFactorTime": {
+    "description": "Factor."
+  },
+  "staysFactorOffer": "How many places to stay there are (more supply, better prices)",
+  "@staysFactorOffer": {
+    "description": "Factor."
+  },
+  "staysFactorBudget": "Hostels and guesthouses nearby",
+  "@staysFactorBudget": {
+    "description": "Factor."
+  },
+  "staysFactorTotal": "The total with the train tickets you enter",
+  "@staysFactorTotal": {
+    "description": "Factor."
+  },
+  "staysEstimateNote": "Minutes are estimates; check timetables and the last train back.",
+  "@staysEstimateNote": {
+    "description": "Estimate note."
+  },
+  "staysPickTitle": "Where are you going?",
+  "@staysPickTitle": {
+    "description": "Picker title."
+  },
+  "staysPickHint": "Move the map until the pin is over the place.",
+  "@staysPickHint": {
+    "description": "Picker hint."
+  },
+  "staysPickUse": "Search around here",
+  "@staysPickUse": {
+    "description": "Picker button."
   }
 }

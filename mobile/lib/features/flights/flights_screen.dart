@@ -515,6 +515,7 @@ class _PlanShortcuts extends StatelessWidget {
               Feature.explore => Routes.explore(origin: origin),
               Feature.stopover => Routes.stopover(from: origin),
               Feature.copyTrip => Routes.copyTrip(),
+              Feature.cheapSleep => Routes.stays(),
               _ => Routes.soon(f),
             }),
           ),

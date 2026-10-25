@@ -29,6 +29,7 @@ import '../features/flyra/flyra_api.dart';
 import '../features/group/group_api.dart';
 import '../features/group_chat/chat_api.dart';
 import '../features/plans/plans_api.dart';
+import '../features/stays/stays_api.dart';
 import '../features/help/help_contacts.dart';
 import '../features/map/geo_api.dart';
 import '../features/map/location.dart';
@@ -110,6 +111,7 @@ class AppServices {
        nearby = NearbyApi(api),
        meetups = MeetupsApi(api),
        drive = DriveApi(api),
+       stays = StaysApi(api),
        places = PlacesApi(api),
        streetPhotos = StreetPhotosApi(api),
        prefs = prefs ?? MemorySettingsStore(),
@@ -177,6 +179,9 @@ class AppServices {
 
   /// El chat del viaje en grupo (con Flyra dentro).
   final GroupChatApi groupChat;
+
+  /// "Dormir barato": zonas con alojamiento a un tren del sitio.
+  final StaysApi stays;
 
   /// Gastos compartidos: botes, tickets y "¿cuánto le debo a Álex?".
   final ExpensesApi expenses;
