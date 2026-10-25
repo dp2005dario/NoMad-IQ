@@ -90,6 +90,8 @@ from ai_orchestrator.llm.client import LLMClient, OllamaClient
 from ai_orchestrator.logs import setup_logging
 from ai_orchestrator.menu.service import QUOTA_PREFIX as MENU_QUOTA_PREFIX
 from ai_orchestrator.menu.service import MenuService, MenuSettings
+from ai_orchestrator.nearby.overpass import NearbyOverpass
+from ai_orchestrator.nearby.service import NearbyService, NearbySettings, RedisNearbyCache
 from ai_orchestrator.negotiation.agents import AgentSettings
 from ai_orchestrator.negotiation.api import ApiSettings, negotiation_router
 from ai_orchestrator.negotiation.consumer import NegotiationRequestConsumer
@@ -306,46 +308,52 @@ def _streetview(
     )
 
 
-def _atms(settings: Settings, redis: Redis, stack: AsyncExitStack) -> AtmService:
-    """Cajeros: Overpass (OpenStreetMap) con límite de ritmo + caché en Redis."""
+def _overpass(settings: Settings, stack: AsyncExitStack) -> tuple[httpx.AsyncClient, RateLimiter]:
+    """Una conexión y UN límite de ritmo para todo lo que pregunta a Overpass
+    (cajeros, guía del aeropuerto y "cerca de ti"): su norma de uso justo es
+    por quien pregunta, no por pantalla, así que el límite se comparte."""
     http = httpx.AsyncClient(
         timeout=httpx.Timeout(settings.overpass_timeout_seconds, connect=5.0),
         follow_redirects=False,
     )
     stack.push_async_callback(http.aclose)
+    limiter = RateLimiter(
+        settings.overpass_rate_per_second,
+        settings.overpass_burst,
+        busy=lambda: OverpassBusyError("límite de peticiones a Overpass"),
+    )
+    return http, limiter
+
+
+def _atms(settings: Settings, redis: Redis, overpass: tuple[httpx.AsyncClient, RateLimiter]) -> AtmService:
+    """Cajeros: Overpass (OpenStreetMap) con límite de ritmo + caché en Redis."""
+    http, limiter = overpass
     return AtmService(
-        overpass=OverpassClient(
-            http,
-            url=settings.overpass_url,
-            limiter=RateLimiter(
-                settings.overpass_rate_per_second,
-                settings.overpass_burst,
-                busy=lambda: OverpassBusyError("límite de peticiones a Overpass"),
-            ),
-        ),
+        overpass=OverpassClient(http, url=settings.overpass_url, limiter=limiter),
         cache=RedisAtmCache(redis),
         settings=AtmSettings(ttl_seconds=settings.atm_ttl_seconds),
     )
 
 
-def _airport_guide(settings: Settings, redis: Redis, stack: AsyncExitStack) -> AirportGuideService:
-    """Guía del aeropuerto: el mismo Overpass que los cajeros, con su propio
-    límite de ritmo y un mes de caché por aeropuerto."""
-    http = httpx.AsyncClient(
-        timeout=httpx.Timeout(settings.overpass_timeout_seconds, connect=5.0),
-        follow_redirects=False,
+def _nearby(
+    settings: Settings, redis: Redis, overpass: tuple[httpx.AsyncClient, RateLimiter]
+) -> NearbyService:
+    """Cerca de ti: agua, baños, wifi, enchufes y sitios que ver (una semana de caché)."""
+    http, limiter = overpass
+    return NearbyService(
+        source=NearbyOverpass(http, url=settings.overpass_url, limiter=limiter),
+        cache=RedisNearbyCache(redis),
+        settings=NearbySettings(ttl_seconds=settings.nearby_ttl_seconds),
     )
-    stack.push_async_callback(http.aclose)
+
+
+def _airport_guide(
+    settings: Settings, redis: Redis, overpass: tuple[httpx.AsyncClient, RateLimiter]
+) -> AirportGuideService:
+    """Guía del aeropuerto: el mismo Overpass que los cajeros y un mes de caché por aeropuerto."""
+    http, limiter = overpass
     return AirportGuideService(
-        source=AirportOverpass(
-            http,
-            url=settings.overpass_url,
-            limiter=RateLimiter(
-                settings.overpass_rate_per_second,
-                settings.overpass_burst,
-                busy=lambda: OverpassBusyError("límite de peticiones a Overpass"),
-            ),
-        ),
+        source=AirportOverpass(http, url=settings.overpass_url, limiter=limiter),
         cache=RedisGuideCache(redis),
         airports=Airports.bundled(),
         settings=GuideSettings(ttl_seconds=settings.airport_guide_ttl_seconds),
@@ -580,6 +588,7 @@ async def run(settings: Settings) -> int:
             or (settings.shared_trips_enabled and llm is not None)
             or settings.atms_enabled
             or settings.airport_guide_enabled
+            or settings.nearby_enabled
             or settings.climate_enabled
             else None
         )
@@ -600,15 +609,21 @@ async def run(settings: Settings) -> int:
         if settings.mapillary_token is not None and public_redis is not None:
             streetview = _streetview(settings, settings.mapillary_token, public_redis, stack)
 
-        # --- Cajeros cercanos (OpenStreetMap con caché en Redis) ------------------------
+        # --- OpenStreetMap (Overpass): cajeros, guía del aeropuerto y "cerca de ti" ------
+        overpass = (
+            _overpass(settings, stack)
+            if settings.atms_enabled or settings.airport_guide_enabled or settings.nearby_enabled
+            else None
+        )
         atms: AtmService | None = None
-        if settings.atms_enabled and public_redis is not None:
-            atms = _atms(settings, public_redis, stack)
-
-        # --- Guía del aeropuerto (OpenStreetMap con un mes de caché) ---------------------
+        if settings.atms_enabled and public_redis is not None and overpass is not None:
+            atms = _atms(settings, public_redis, overpass)
         airport_guide: AirportGuideService | None = None
-        if settings.airport_guide_enabled and public_redis is not None:
-            airport_guide = _airport_guide(settings, public_redis, stack)
+        if settings.airport_guide_enabled and public_redis is not None and overpass is not None:
+            airport_guide = _airport_guide(settings, public_redis, overpass)
+        nearby: NearbyService | None = None
+        if settings.nearby_enabled and public_redis is not None and overpass is not None:
+            nearby = _nearby(settings, public_redis, overpass)
 
         # --- Traductor de cartas (Ollama + cupo diario en Redis) ------------------------
         menu: MenuService | None = None
@@ -699,6 +714,7 @@ async def run(settings: Settings) -> int:
                 landmarks=landmarks,
                 fx=fx,
                 atms=atms,
+                nearby=nearby,
                 airport_guide=airport_guide,
                 climate=climate,
                 menu=menu,

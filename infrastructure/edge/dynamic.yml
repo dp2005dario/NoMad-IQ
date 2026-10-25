@@ -104,6 +104,14 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 
+    # Cerca de ti (OpenStreetMap): agua, baños, wifi, enchufes y sitios que
+    # ver. Público como los cajeros; la app manda la casilla de ~1 km.
+    nearby:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/nearby`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
     # Guía del aeropuerto (OpenStreetMap): pública como los cajeros. Solo GET
     # y solo /v1/airports/<código>/spots.
     airport-guide:

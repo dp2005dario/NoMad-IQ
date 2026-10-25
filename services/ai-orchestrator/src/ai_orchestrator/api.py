@@ -73,6 +73,8 @@ from ai_orchestrator.landmarks.domain import Landmark, Recognition, RecognizeReq
 from ai_orchestrator.landmarks.service import LandmarkBusyError, LandmarkService
 from ai_orchestrator.menu.domain import MenuReply, MenuRequest
 from ai_orchestrator.menu.service import MenuBusyError, MenuService
+from ai_orchestrator.nearby.domain import Nearby
+from ai_orchestrator.nearby.service import NearbyBusyError, NearbyService, NearbyUnavailableError
 from ai_orchestrator.places.domain import PlaceCard
 from ai_orchestrator.places.service import PlaceBusyError, PlaceService, PlaceUnavailableError
 from ai_orchestrator.quota import QuotaExceededError
@@ -213,6 +215,8 @@ STREET_CACHE = "public, max-age=3600"
 FX_CACHE = "public, max-age=3600"
 # Los cajeros casi nunca cambian: seis horas en el móvil y en la CDN.
 ATM_CACHE = "public, max-age=21600"
+# "Cerca de ti": lo gratis de una ciudad casi no cambia (un día en el móvil).
+NEARBY_CACHE = "public, max-age=86400"
 # La guía de un aeropuerto: un día en el móvil (en el servidor, un mes).
 AIRPORT_CACHE = "public, max-age=86400"
 # El clima medio no cambia: el móvil puede guardarlo una semana.
@@ -238,6 +242,7 @@ def create_api(
     landmarks: LandmarkService | None = None,
     fx: FxService | None = None,
     atms: AtmService | None = None,
+    nearby: NearbyService | None = None,
     airport_guide: AirportGuideService | None = None,
     climate: ClimateService | None = None,
     eraser: UserDataEraser | None = None,
@@ -401,6 +406,22 @@ def create_api(
                 return resp
             # Sin cajeros también es 200 (lista vacía): la app lo explica.
             return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": ATM_CACHE})
+
+    if nearby is not None:
+
+        @app.get("/v1/nearby", response_model=Nearby)
+        async def get_nearby(
+            lat: Annotated[float, Query(ge=-85, le=85)],
+            lon: Annotated[float, Query(ge=-180, le=180)],
+        ) -> JSONResponse:
+            try:
+                found = await nearby.near(lat, lon)
+            except (NearbyBusyError, NearbyUnavailableError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "cerca de ti ocupado")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            # Sin sitios también es 200 (lista vacía): la app lo explica.
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": NEARBY_CACHE})
 
     if airport_guide is not None:
 
