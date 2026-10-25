@@ -509,10 +509,12 @@ class _PlanShortcuts extends StatelessWidget {
           ActionChip(
             avatar: Icon(f.icon, size: 18, color: f.color),
             label: Text(f.label(t)),
-            // La Ruta del vuelo y Explorar ya existen; el resto, "muy pronto".
+            // Las que ya existen abren su pantalla; el resto, "muy pronto".
             onPressed: () => context.push(switch (f) {
               Feature.flightRoute => Routes.flightRoute(from: origin),
               Feature.explore => Routes.explore(origin: origin),
+              Feature.stopover => Routes.stopover(from: origin),
+              Feature.copyTrip => Routes.copyTrip(),
               _ => Routes.soon(f),
             }),
           ),

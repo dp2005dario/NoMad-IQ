@@ -82,6 +82,21 @@ def write_world(rings, out):
             f.write(struct.pack("<%dh" % len(flat), *flat))
 
 
+# OpenFlights ya no se actualiza: le faltan aeropuertos abiertos después de
+# 2018 (el nuevo de Estambul, Hamad en Doha, Berlín-Brandeburgo...). Se
+# añaden aquí a mano, con la misma forma que una línea de airports.txt.
+NEW_AIRPORTS = [
+    "BER|52.367|13.503|Berlin|Germany|Europe/Berlin",
+    "DOH|25.273|51.608|Doha|Qatar|Asia/Qatar",
+    "GOX|15.739|73.861|Goa|India|Asia/Kolkata",
+    "IST|41.275|28.752|Istanbul|Turkey|Europe/Istanbul",
+    "NLU|19.737|-99.016|Mexico City|Mexico|America/Mexico_City",
+    "NQZ|51.022|71.467|Astana|Kazakhstan|Asia/Almaty",
+    "PKX|39.509|116.411|Beijing|China|Asia/Shanghai",
+    "TFU|30.312|104.441|Chengdu|China|Asia/Shanghai",
+]
+
+
 def write_airports(src, out):
     """Filtra airports.dat: solo aeropuertos con código IATA y zona horaria."""
     rows, seen = [], set()
@@ -98,6 +113,10 @@ def write_airports(src, out):
         city = r[2].replace("|", " ").strip() or r[1]
         country = r[3].replace("|", " ")
         rows.append("|".join([iata, "%.3f" % float(r[6]), "%.3f" % float(r[7]), city, country, tz]))
+    for line in NEW_AIRPORTS:
+        if line[:3] not in seen:
+            seen.add(line[:3])
+            rows.append(line)
     rows.sort()
     with open(out, "w", encoding="utf-8") as f:
         f.write("\n".join(rows) + "\n")

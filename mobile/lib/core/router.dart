@@ -31,6 +31,7 @@ import '../features/easy/easy_home_screen.dart';
 import '../features/cards/cards_screen.dart';
 import '../features/memories/memories_screen.dart';
 import '../features/memories/travel_camera_screen.dart';
+import '../features/stopover/stopover_screen.dart';
 import '../features/widgets/widgets_screen.dart';
 import '../features/copy_trip/copy_trip_screen.dart';
 import '../features/copy_trip/share_trip_screen.dart';
@@ -119,6 +120,12 @@ abstract final class Routes {
       queryParameters: q.isEmpty ? null : q,
     ).toString();
   }
+
+  /// Escala de regalo: dónde parar unos días de camino a [to].
+  static String stopover({String? from, String? to}) => Uri(
+    path: '/stopover',
+    queryParameters: <String, String>{'from': ?from, 'to': ?to},
+  ).toString();
 
   /// La Ruta del vuelo en el mapamundi (sin destino, se pregunta).
   static String flightRoute({required String from, String? to}) => Uri(
@@ -328,6 +335,13 @@ GoRouter buildRouter({
       path: Routes.help,
       builder: (BuildContext context, GoRouterState state) =>
           const HelpScreen(),
+    ),
+    GoRoute(
+      path: '/stopover',
+      builder: (BuildContext context, GoRouterState state) => StopoverScreen(
+        from: state.uri.queryParameters['from'],
+        to: state.uri.queryParameters['to'],
+      ),
     ),
     GoRoute(
       path: Routes.widgets,

@@ -5946,5 +5946,187 @@
   "widgetsPreviewHint": "Preview: what you will see at each moment of the trip.",
   "@widgetsPreviewHint": {
     "description": "Preview hint."
+  },
+  "stopTitle": "Free stopover",
+  "@stopTitle": {
+    "description": "Stopover screen title."
+  },
+  "stopTagline": "Two trips for the price of one",
+  "@stopTagline": {
+    "description": "Tagline."
+  },
+  "stopHow": "Some airlines let you stay a few days in their home city on the way to your destination, without raising the ticket price or with hotels for free or discounted.",
+  "@stopHow": {
+    "description": "How it works."
+  },
+  "stopFrom": "From",
+  "@stopFrom": {
+    "description": "Origin field."
+  },
+  "stopTo": "To",
+  "@stopTo": {
+    "description": "Destination field."
+  },
+  "stopCodeHint": "3-letter code, e.g. HND",
+  "@stopCodeHint": {
+    "description": "IATA hint."
+  },
+  "stopFind": "Find stopovers",
+  "@stopFind": {
+    "description": "Find stopovers."
+  },
+  "stopUnknown": "We do not know one of those airports. Check the 3-letter codes.",
+  "@stopUnknown": {
+    "description": "Unknown airport."
+  },
+  "stopNone": "No stopover program is on the way for this trip without a big detour.",
+  "@stopNone": {
+    "description": "No stopover fits."
+  },
+  "stopDetour": "+{km} km compared with flying direct",
+  "@stopDetour": {
+    "description": "Extra distance.",
+    "placeholders": {
+      "km": {
+        "type": "int"
+      }
+    }
+  },
+  "stopNightsTitle": "Stopover nights",
+  "@stopNightsTitle": {
+    "description": "Nights selector."
+  },
+  "stopNoNights": "No",
+  "@stopNoNights": {
+    "description": "Zero nights."
+  },
+  "stopNights": "{n, plural, =0{a short layover} =1{1 night} other{{n} nights}}",
+  "@stopNights": {
+    "description": "Nights label.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "stopMaxNights": "Up to {n} nights",
+  "@stopMaxNights": {
+    "description": "Max nights.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "stopRuleSameFare": "On most fares the ticket costs the same if you stop in its city. The hotel is on you.",
+  "@stopRuleSameFare": {
+    "description": "Rule."
+  },
+  "stopRuleFreeHotel": "The airline may give you the hotel for free (usually 1 or 2 nights, depending on the fare and layover hours).",
+  "@stopRuleFreeHotel": {
+    "description": "Rule."
+  },
+  "stopRuleHotelDeal": "Stopover program of the airline: same flight price and hotels with a discount.",
+  "@stopRuleHotelDeal": {
+    "description": "Rule."
+  },
+  "stopRuleSmallFee": "Many fares let you stop in its city; some charge a small extra fee.",
+  "@stopRuleSmallFee": {
+    "description": "Rule."
+  },
+  "stopCheck": "Conditions change: check them on the airline's page before booking.",
+  "@stopCheck": {
+    "description": "Disclaimer."
+  },
+  "stopDate": "Departure {date}",
+  "@stopDate": {
+    "description": "Date chip.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "stopSeePrice": "See price",
+  "@stopSeePrice": {
+    "description": "See price."
+  },
+  "stopCheapest": "Cheapest flight that day: {price}",
+  "@stopCheapest": {
+    "description": "Cheapest offer.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "stopWithAirline": "With {airline}, with a short layover: {price}",
+  "@stopWithAirline": {
+    "description": "Airline offer.",
+    "placeholders": {
+      "airline": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "stopNoAirline": "No {airline} flight found that day. Try another date or check its website.",
+  "@stopNoAirline": {
+    "description": "No airline offer.",
+    "placeholders": {
+      "airline": {
+        "type": "String"
+      }
+    }
+  },
+  "stopSamePrice": "With {nights} in {city}: usually the same price",
+  "@stopSamePrice": {
+    "description": "Stopover price note.",
+    "placeholders": {
+      "nights": {
+        "type": "String"
+      },
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "stopSmallFeeNote": "With {nights} in {city}: the same or a little more",
+  "@stopSmallFeeNote": {
+    "description": "Stopover price note.",
+    "placeholders": {
+      "nights": {
+        "type": "String"
+      },
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "stopBookDirect": "Book without stopping",
+  "@stopBookDirect": {
+    "description": "CTA."
+  },
+  "stopBookWith": "Book with {nights} in {city}",
+  "@stopBookWith": {
+    "description": "CTA.",
+    "placeholders": {
+      "nights": {
+        "type": "String"
+      },
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "stopBookHint": "A flight with a stop of several days is booked on the airline's page (multi-city).",
+  "@stopBookHint": {
+    "description": "Booking hint."
+  },
+  "stopBusy": "Many people are searching right now. Try again in a few seconds.",
+  "@stopBusy": {
+    "description": "Search rate-limited."
   }
 }

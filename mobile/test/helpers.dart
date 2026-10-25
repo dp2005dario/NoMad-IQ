@@ -186,6 +186,7 @@ AppServices fakeServices(
   MemoryFiles? memoryFiles,
   HomeWidgets? homeWidgets,
   LiveFlight? liveFlight,
+  Future<Airports> Function()? loadAirports,
   DocSource? docSource,
   DocTextReader? docReader,
 }) {
@@ -226,7 +227,7 @@ AppServices fakeServices(
     memoryFiles: memoryFiles,
     homeWidgets: homeWidgets,
     liveFlight: liveFlight,
-    loadAirports: () async => testAirports,
+    loadAirports: loadAirports ?? () async => testAirports,
     docSource: docSource ?? const NoDocSource(),
     docReader: docReader ?? const NoDocTextReader(),
   );
