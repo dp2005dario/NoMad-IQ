@@ -76,6 +76,9 @@ enum LocalData {
 
   /// Moverte: tus bonos y tarjetas de transporte (solo en el móvil).
   transitTickets,
+
+  /// Qué pasa en tus fechas: los eventos que guardaste (con la estrella).
+  savedEvents,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real

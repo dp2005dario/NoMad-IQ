@@ -29,6 +29,7 @@ import '../features/flyra/flyra_api.dart';
 import '../features/group/group_api.dart';
 import '../features/group_chat/chat_api.dart';
 import '../features/plans/plans_api.dart';
+import '../features/events/events_api.dart';
 import '../features/stays/stays_api.dart';
 import '../features/help/help_contacts.dart';
 import '../features/map/geo_api.dart';
@@ -271,6 +272,9 @@ class AppServices {
 
   /// Guía del aeropuerto (puertas, baños, cafés de OpenStreetMap).
   late final AirportGuideApi airportGuide = AirportGuideApi(api);
+
+  /// Festivos y eventos de una ciudad en unas fechas (público).
+  late final EventsApi events = EventsApi(api);
 
   /// ¿Poner al día los widgets al abrir la app? (en los tests, no).
   final bool syncWidgetsOnStart;

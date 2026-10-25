@@ -8382,5 +8382,110 @@
   "transportHowManyHours": "How many hours is your pass? It starts counting now.",
   "@transportHowManyHours": {
     "description": "Dialog: how many hours."
+  },
+  "eventsTitle": "What's on in your dates",
+  "@eventsTitle": {
+    "description": "Events title."
+  },
+  "eventsPickCity": "Choose city",
+  "@eventsPickCity": {
+    "description": "Choose city button."
+  },
+  "eventsNoCity": "Choose the city (its airport) to see holidays and events on your dates.",
+  "@eventsNoCity": {
+    "description": "No city."
+  },
+  "eventsOffline": "No internet. Try again when you're connected.",
+  "@eventsOffline": {
+    "description": "No internet."
+  },
+  "eventsUnavailable": "Can't load the events right now. Try again in a minute.",
+  "@eventsUnavailable": {
+    "description": "Server problem."
+  },
+  "eventsNone": "No holidays or published events on these dates.",
+  "@eventsNone": {
+    "description": "Nothing found."
+  },
+  "eventsSummary": "On your dates: {holidays} and {events}. Tap a day to see only that day.",
+  "@eventsSummary": {
+    "description": "Summary.",
+    "placeholders": {
+      "holidays": {
+        "type": "String"
+      },
+      "events": {
+        "type": "String"
+      }
+    }
+  },
+  "eventsHolidaysCount": "{count, plural, =0{no holidays} =1{1 holiday} other{{count} holidays}}",
+  "@eventsHolidaysCount": {
+    "description": "Holiday count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eventsEventsCount": "{count, plural, =0{no events} =1{1 event} other{{count} events}}",
+  "@eventsEventsCount": {
+    "description": "Event count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eventsOnlyHolidays": "Showing official holidays only: concerts and matches aren't available right now.",
+  "@eventsOnlyHolidays": {
+    "description": "Only holidays available."
+  },
+  "eventsSaved": "Saved ({count})",
+  "@eventsSaved": {
+    "description": "Saved filter.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eventsSources": "Sources: {names}",
+  "@eventsSources": {
+    "description": "Data sources.",
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "eventsFrom": "From {price} (organizer's price)",
+  "@eventsFrom": {
+    "description": "Price from organizer.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "eventsHoliday": "Public holiday: some shops and museums may close",
+  "@eventsHoliday": {
+    "description": "Holiday label."
+  },
+  "eventsHolidayRegional": "Holiday in part of the country only",
+  "@eventsHolidayRegional": {
+    "description": "Regional holiday."
+  },
+  "eventsTickets": "Tickets",
+  "@eventsTickets": {
+    "description": "Tickets button."
+  },
+  "eventsSave": "Save",
+  "@eventsSave": {
+    "description": "Save tooltip."
+  },
+  "eventsUnsave": "Remove from saved",
+  "@eventsUnsave": {
+    "description": "Unsave tooltip."
   }
 }
