@@ -7435,5 +7435,153 @@
   "assistantChipMore": "Tell me more",
   "@assistantChipMore": {
     "description": "Suggested question."
+  },
+  "voiceTitle": "Talk to Flyra",
+  "@voiceTitle": {
+    "description": "Voice screen title."
+  },
+  "voiceSubtitle": "Ask anything about your trip or the app",
+  "@voiceSubtitle": {
+    "description": "Voice screen subtitle."
+  },
+  "voiceTapToAsk": "Tap the mic and ask",
+  "@voiceTapToAsk": {
+    "description": "Mic idle hint."
+  },
+  "voiceListening": "I'm listening…",
+  "@voiceListening": {
+    "description": "Mic listening."
+  },
+  "voiceNotHeard": "I didn't catch that. Try again or type it below.",
+  "@voiceNotHeard": {
+    "description": "Nothing recognized."
+  },
+  "voiceTypeHint": "Or type your question",
+  "@voiceTypeHint": {
+    "description": "Text field hint."
+  },
+  "voiceTryAsking": "Try asking",
+  "@voiceTryAsking": {
+    "description": "Examples header."
+  },
+  "voiceExFlight": "What time does my plane leave?",
+  "@voiceExFlight": {
+    "description": "Example question."
+  },
+  "voiceExMoney": "How much have we spent?",
+  "@voiceExMoney": {
+    "description": "Example question."
+  },
+  "voiceExHotel": "Take me to the hotel",
+  "@voiceExHotel": {
+    "description": "Example question."
+  },
+  "voiceExVisa": "Do I need a visa for the US?",
+  "@voiceExVisa": {
+    "description": "Example question."
+  },
+  "voiceExLanguage": "How do I change the language?",
+  "@voiceExLanguage": {
+    "description": "Example question."
+  },
+  "voiceFlightAt": "Your flight {from} → {to} leaves on {date} at {time}.",
+  "@voiceFlightAt": {
+    "description": "Flight answer.",
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceGate": "Gate {gate}.",
+  "@voiceGate": {
+    "description": "Gate suffix.",
+    "placeholders": {
+      "gate": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceNoFlight": "You haven't told me your flight yet. Add it and I'll remind you.",
+  "@voiceNoFlight": {
+    "description": "No flight saved."
+  },
+  "voiceNoHotel": "I don't have your hotel's address yet. Add it and I'll take you there.",
+  "@voiceNoHotel": {
+    "description": "No hotel saved."
+  },
+  "voiceAddTrip": "Add my trip",
+  "@voiceAddTrip": {
+    "description": "Button: add flight/hotel."
+  },
+  "voiceHotel": "Let's go to {hotel}. I'll open the route in Maps.",
+  "@voiceHotel": {
+    "description": "Hotel answer.",
+    "placeholders": {
+      "hotel": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceTakeMe": "Take me",
+  "@voiceTakeMe": {
+    "description": "Button: open directions."
+  },
+  "voiceOpen": "Open",
+  "@voiceOpen": {
+    "description": "Generic open button."
+  },
+  "voiceMoney": "Here's what you've spent and who owes whom.",
+  "@voiceMoney": {
+    "description": "Money answer."
+  },
+  "voiceVisa": "Let's check what they ask you for to enter (visa, ESTA, eTA…).",
+  "@voiceVisa": {
+    "description": "Visa answer."
+  },
+  "voiceLanguage": "You can change the app's language here.",
+  "@voiceLanguage": {
+    "description": "Language answer."
+  },
+  "voiceSos": "Opening emergencies: the local number, your location and your medical card.",
+  "@voiceSos": {
+    "description": "SOS answer."
+  },
+  "voiceNearby": "Here's the nearest water, toilets, wifi and places to charge.",
+  "@voiceNearby": {
+    "description": "Nearby answer."
+  },
+  "voiceTranslate": "Open the interpreter: each person speaks in their language, even without internet.",
+  "@voiceTranslate": {
+    "description": "Translate answer."
+  },
+  "voiceMeetups": "Here are open plans with other travellers in your city.",
+  "@voiceMeetups": {
+    "description": "Meetups answer."
+  },
+  "voiceDrive": "Car mode: fuel, parking and low-emission zones around you.",
+  "@voiceDrive": {
+    "description": "Drive answer."
+  },
+  "voiceTrouble": "Don't worry: here's what to do and the claim, step by step.",
+  "@voiceTrouble": {
+    "description": "Trouble answer."
+  },
+  "voiceUnknown": "I can't do that from here, but I'll answer you in the chat.",
+  "@voiceUnknown": {
+    "description": "Unknown question answer."
+  },
+  "voiceAskFlyra": "Ask Flyra in the chat",
+  "@voiceAskFlyra": {
+    "description": "Button: ask in chat."
   }
 }

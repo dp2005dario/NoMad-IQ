@@ -136,6 +136,13 @@ class HomeScreen extends StatelessWidget {
                     label: t.visaTitle,
                     onTap: () => context.push(Routes.visa()),
                   ),
+                  // Preguntarle a Flyra en voz alta (o escrito).
+                  _Shortcut(
+                    icon: Icons.mic_rounded,
+                    color: NomadColors.group,
+                    label: t.voiceTitle,
+                    onTap: () => context.push(Routes.voice),
+                  ),
                   // Intérprete cara a cara (sin internet) y "¿qué es esto?".
                   _Shortcut(
                     icon: Feature.assistant.icon,
