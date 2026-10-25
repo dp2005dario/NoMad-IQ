@@ -7801,5 +7801,33 @@
   "chatSeeVideo": "See the trip summary video",
   "@chatSeeVideo": {
     "description": "Video link."
+  },
+  "pushChannelGroup": "Group trips",
+  "@pushChannelGroup": {
+    "description": "Notification channel name."
+  },
+  "pushGroupChatTitle": "New messages in your trip",
+  "@pushGroupChatTitle": {
+    "description": "Push title: new chat messages."
+  },
+  "pushGroupChatBody": "Open the chat to read them.",
+  "@pushGroupChatBody": {
+    "description": "Push body: new chat messages."
+  },
+  "pushGroupResultTitle": "Your group has a destination!",
+  "@pushGroupResultTitle": {
+    "description": "Push title: destination chosen."
+  },
+  "pushGroupResultBody": "The group's agents reached an agreement. Tap to see it.",
+  "@pushGroupResultBody": {
+    "description": "Push body: destination chosen."
+  },
+  "privacyGroup": "Group trips",
+  "@privacyGroup": {
+    "description": "Privacy toggle: group trips."
+  },
+  "privacyGroupSub": "New chat messages and the chosen destination.",
+  "@privacyGroupSub": {
+    "description": "Privacy toggle subtitle."
   }
 }

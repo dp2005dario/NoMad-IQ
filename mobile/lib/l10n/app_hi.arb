@@ -1671,5 +1671,12 @@
   "chatStarsOk": "धन्यवाद, इससे हमें बेहतर होने में मदद मिलती है",
   "chatStarsGreat": "बढ़िया! क्या Google Play पर बताएँगे?",
   "chatRatePlay": "Google Play पर रेटिंग दें",
-  "chatSeeVideo": "यात्रा का सारांश वीडियो देखें"
+  "chatSeeVideo": "यात्रा का सारांश वीडियो देखें",
+  "pushChannelGroup": "समूह यात्राएँ",
+  "pushGroupChatTitle": "आपकी यात्रा में नए संदेश",
+  "pushGroupChatBody": "पढ़ने के लिए चैट खोलें।",
+  "pushGroupResultTitle": "आपकी मंज़िल तय हो गई!",
+  "pushGroupResultBody": "ग्रुप के एजेंट सहमत हो गए। देखने के लिए टैप करें।",
+  "privacyGroup": "समूह यात्राएँ",
+  "privacyGroupSub": "चैट के नए संदेश और चुनी गई मंज़िल।"
 }

@@ -174,6 +174,24 @@ void main() {
       expect(PushNotice.fromJson('hola'), isNull);
     });
 
+    test('avisos de grupo: abren el chat o el viaje, y nada más', () {
+      Map<String, Object?> json(String type, Object? trip) => <String, Object?>{
+        'v': 1,
+        'type': type,
+        'negotiation_id': trip,
+        'at': '2026-10-23T10:00:00Z',
+      };
+      final PushNotice? chat = PushNotice.fromJson(json('group_chat', zoneId));
+      expect(chat?.kind, PushKind.groupChat);
+      expect(chat?.route, Routes.groupChat(zoneId));
+      expect(
+        PushNotice.fromJson(json('group_result', zoneId))?.route,
+        Routes.groupTrip(zoneId),
+      );
+      expect(PushNotice.fromJson(json('group_chat', '../signin')), isNull);
+      expect(PushNotice.fromJson(json('group_chat', null)), isNull);
+    });
+
     test('las claves guardadas se leen igual; si están rotas, se ignoran', () {
       final PushState s = stateWith(
         sk,

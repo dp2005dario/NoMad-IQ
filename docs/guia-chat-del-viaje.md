@@ -31,6 +31,21 @@ Una conexión abierta (WebSocket) por persona serían miles de conexiones
 vivas en un servidor gratis. Preguntar cada pocos segundos es una consulta
 mínima por índice: el servidor ni se entera.
 
+## Avisos en el móvil (push)
+
+Con la app cerrada, te llega **"Mensajes nuevos en tu viaje"** (y, cuando
+los agentes eligen destino, **"¡Ya tenéis destino!"**). Al tocarlo se abre
+ese chat o ese viaje.
+
+- Como mucho **un aviso por viaje cada 2 minutos**: si el grupo está
+  charlando, no te llena el móvil.
+- El aviso va **cifrado** para tu teléfono y no lleva el texto de ningún
+  mensaje ni nombres: solo el viaje. El texto lo pone la app en tu idioma.
+- Se apagan en **Ajustes → Privacidad → Viajes en grupo**.
+
+Camino: ai-orchestrator (buzón `ai.outbox`) → Kafka
+`ai.group-chat-activity.v1` → notifier → Firebase → tu móvil.
+
 ## Privacidad
 
 - Solo los miembros del viaje leen el chat. A quien no lo es, el servidor

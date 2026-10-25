@@ -209,3 +209,64 @@ def test_flyra_request_starts_with_a_person_and_fits() -> None:
     assert request.messages[0].role == "user"
     assert sum(len(m.text) for m in request.messages) <= 12000
     assert "couple" in context
+
+
+class _Conn:
+    def __init__(self) -> None:
+        self.inserts: list[tuple[object, ...]] = []
+
+    async def execute(self, sql: str, *args: object) -> str:
+        self.inserts.append(args)
+        return "INSERT 0 1"
+
+
+class _Pool:
+    def __init__(self) -> None:
+        self.conn = _Conn()
+
+    def acquire(self) -> _Pool:
+        return self
+
+    async def __aenter__(self) -> _Conn:
+        return self.conn
+
+    async def __aexit__(self, *_: object) -> None:
+        return None
+
+
+async def test_push_is_pseudonymous_and_throttled() -> None:
+    from ai_orchestrator.group_chat.push import ChatPusher, PushThrottle
+    from ai_orchestrator.pseudonym import Pseudonymizer
+    from nomadiq.ai.v1 import negotiation_pb2
+
+    clock = [100.0]
+    pool = _Pool()
+    kicks: list[int] = []
+    ps = Pseudonymizer(b"k" * 32)
+    pusher = ChatPusher(
+        pool=pool,  # type: ignore[arg-type]
+        pseudonymizer=ps,
+        topic="ai.group-chat-activity.v1",
+        throttle=PushThrottle(None, 120, clock=lambda: clock[0]),
+        on_outbox=lambda: kicks.append(1),
+        clock=lambda: NOW,
+    )
+    await pusher(TRIP, [MAMA])
+    # En los 2 minutos siguientes, nada más (el grupo está charlando).
+    clock[0] += 60
+    await pusher(TRIP, [MAMA])
+    # Nadie a quien avisar: nada.
+    clock[0] += 200
+    await pusher(TRIP, [])
+    assert len(pool.conn.inserts) == 1 and kicks == [1]
+    topic, key, payload, _headers = pool.conn.inserts[0]
+    assert topic == "ai.group-chat-activity.v1" and key == TRIP.encode()
+    evt = negotiation_pb2.GroupChatActivity()
+    evt.ParseFromString(payload)  # type: ignore[arg-type]
+    assert evt.negotiation_id == TRIP
+    # Seudónimo, nunca el user_id real.
+    assert list(evt.recipients) == [ps.recipient(MAMA)]
+    assert MAMA.encode() not in payload  # type: ignore[operator]
+    # Pasado el freno, otro aviso.
+    await pusher(TRIP, [MAMA])
+    assert len(pool.conn.inserts) == 2

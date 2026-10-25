@@ -84,6 +84,7 @@ from ai_orchestrator.flyra.service import FlyraService, FlyraSettings
 from ai_orchestrator.fx.ecb import EcbClient
 from ai_orchestrator.fx.service import FxService, RedisRatesCache
 from ai_orchestrator.group_chat.api import chat_router
+from ai_orchestrator.group_chat.push import ChatPusher, PushThrottle
 from ai_orchestrator.group_chat.store import PostgresChat
 from ai_orchestrator.landmarks.service import QUOTA_PREFIX as LANDMARK_QUOTA_PREFIX
 from ai_orchestrator.landmarks.service import LandmarkService, LandmarkSettings, RedisLandmarkCache
@@ -700,9 +701,6 @@ async def run(settings: Settings) -> int:
         # --- Elegid planes (los viajes en grupo; solo PostgreSQL) ------------------------
         plans = plan_router(PostgresPlans(pool)) if settings.negotiations_enabled else None
 
-        # --- Chat del viaje (PostgreSQL; Flyra contesta si está el modelo) ---------------
-        group_chat = chat_router(PostgresChat(pool), flyra) if settings.negotiations_enabled else None
-
         # --- Quedadas con otros viajeros (solo PostgreSQL) -------------------------------
         meetups = (
             meetup_router(PostgresMeetups(pool), Airports.bundled()) if settings.meetups_enabled else None
@@ -716,6 +714,20 @@ async def run(settings: Settings) -> int:
             negotiations, negotiation_consumer, relay = await _negotiations(
                 settings, pool, llm, producer, kafka_common, stack
             )
+
+        # --- Chat del viaje (PostgreSQL; Flyra contesta si está el modelo) ---------------
+        group_chat: APIRouter | None = None
+        if settings.negotiations_enabled and relay is not None:
+            pusher: ChatPusher | None = None
+            if settings.notify_pseudonym_key is not None:
+                pusher = ChatPusher(
+                    pool=pool,
+                    pseudonymizer=Pseudonymizer.from_hex(settings.notify_pseudonym_key.get_secret_value()),
+                    topic=settings.kafka_topic_group_chat_activity,
+                    throttle=PushThrottle(public_redis, settings.group_chat_push_seconds),
+                    on_outbox=relay.kick.set,
+                )
+            group_chat = chat_router(PostgresChat(pool), flyra, pusher)
 
         # --- Servidores HTTP --------------------------------------------------------------
         async def readiness() -> dict[str, bool]:

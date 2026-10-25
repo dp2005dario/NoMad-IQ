@@ -1671,5 +1671,12 @@
   "chatStarsOk": "Gracias, nos ayuda a mejorar",
   "chatStarsGreat": "¡Genial! ¿Lo cuentas en Google Play?",
   "chatRatePlay": "Valorar en Google Play",
-  "chatSeeVideo": "Ver el vídeo resumen del viaje"
+  "chatSeeVideo": "Ver el vídeo resumen del viaje",
+  "pushChannelGroup": "Viajes en grupo",
+  "pushGroupChatTitle": "Mensajes nuevos en tu viaje",
+  "pushGroupChatBody": "Abre el chat para leerlos.",
+  "pushGroupResultTitle": "¡Ya tenéis destino!",
+  "pushGroupResultBody": "Los agentes del grupo han llegado a un acuerdo. Toca para verlo.",
+  "privacyGroup": "Viajes en grupo",
+  "privacyGroupSub": "Mensajes nuevos del chat y el destino elegido."
 }

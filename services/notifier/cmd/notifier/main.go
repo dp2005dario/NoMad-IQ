@@ -146,7 +146,7 @@ func run() error {
 	}
 	kc, err := kafka.New(kafka.Config{
 		Brokers: cfg.KafkaBrokers, ClientID: cfg.KafkaClientID, GroupID: cfg.KafkaGroupID,
-		Topics: []string{cfg.TopicRequests, cfg.TopicFareAlerts}, TLS: kafkaTLS, MaxPollRecords: cfg.KafkaMaxPollRecords,
+		Topics: []string{cfg.TopicRequests, cfg.TopicFareAlerts, cfg.TopicGroupChat, cfg.TopicGroupResults}, TLS: kafkaTLS, MaxPollRecords: cfg.KafkaMaxPollRecords,
 	}, log.With(slog.String("component", "kafka")))
 	if err != nil {
 		return err
@@ -185,6 +185,12 @@ func run() error {
 		return err
 	}
 
+	groups, err := intake.NewGroup(intake.GroupConfig{DLQTopic: cfg.TopicGroupDLQ, MaxAge: cfg.GroupMaxAge, DeliveryTTL: cfg.GroupDeliveryTTL},
+		db, db, gate, kc, snd.Wake, log.With(slog.String("component", "groups")))
+	if err != nil {
+		return err
+	}
+
 	var consumerHealthy atomic.Bool
 	consumerHealthy.Store(true)
 	handle := func(ctx context.Context, rec events.Record) error {
@@ -193,9 +199,14 @@ func run() error {
 			outcome intake.Outcome
 			err     error
 		)
-		if rec.Topic == cfg.TopicFareAlerts {
+		switch rec.Topic {
+		case cfg.TopicFareAlerts:
 			outcome, err = fares.Handle(ctx, rec)
-		} else {
+		case cfg.TopicGroupChat:
+			outcome, err = groups.Handle(ctx, rec, events.GroupChat)
+		case cfg.TopicGroupResults:
+			outcome, err = groups.Handle(ctx, rec, events.GroupResult)
+		default:
 			outcome, err = proc.Handle(ctx, rec)
 		}
 		consumerHealthy.Store(err == nil)

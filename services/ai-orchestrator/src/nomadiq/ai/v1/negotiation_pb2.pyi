@@ -44,3 +44,13 @@ class GroupNegotiationConcluded(_message.Message):
     recipients: _containers.RepeatedScalarFieldContainer[str]
     llm_used: bool
     def __init__(self, metadata: _Optional[_Union[_common_pb2.EventMetadata, _Mapping]] = ..., negotiation_id: _Optional[str] = ..., outcome: _Optional[_Union[NegotiationOutcome, str]] = ..., chosen_option_id: _Optional[str] = ..., rounds: _Optional[int] = ..., recipients: _Optional[_Iterable[str]] = ..., llm_used: _Optional[bool] = ...) -> None: ...
+
+class GroupChatActivity(_message.Message):
+    __slots__ = ("metadata", "negotiation_id", "recipients")
+    METADATA_FIELD_NUMBER: _ClassVar[int]
+    NEGOTIATION_ID_FIELD_NUMBER: _ClassVar[int]
+    RECIPIENTS_FIELD_NUMBER: _ClassVar[int]
+    metadata: _common_pb2.EventMetadata
+    negotiation_id: str
+    recipients: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, metadata: _Optional[_Union[_common_pb2.EventMetadata, _Mapping]] = ..., negotiation_id: _Optional[str] = ..., recipients: _Optional[_Iterable[str]] = ...) -> None: ...

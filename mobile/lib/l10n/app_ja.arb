@@ -1671,5 +1671,12 @@
   "chatStarsOk": "ありがとう、改善に役立ちます",
   "chatStarsGreat": "やった!Google Playで教えてくれる?",
   "chatRatePlay": "Google Playで評価",
-  "chatSeeVideo": "旅のまとめ動画を見る"
+  "chatSeeVideo": "旅のまとめ動画を見る",
+  "pushChannelGroup": "グループ旅行",
+  "pushGroupChatTitle": "旅に新しいメッセージ",
+  "pushGroupChatBody": "チャットを開いて読もう。",
+  "pushGroupResultTitle": "行き先が決まったよ!",
+  "pushGroupResultBody": "グループのエージェントが合意しました。タップして確認。",
+  "privacyGroup": "グループ旅行",
+  "privacyGroupSub": "チャットの新着と決まった行き先。"
 }

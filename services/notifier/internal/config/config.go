@@ -36,6 +36,9 @@ type Config struct {
 	TopicDLQ             string
 	TopicFareAlerts      string
 	TopicFareDLQ         string
+	TopicGroupChat       string
+	TopicGroupResults    string
+	TopicGroupDLQ        string
 	KafkaTLSCAFile       string
 	KafkaMaxPollRecords  int
 	PseudonymKey         []byte // la MISMA clave que usa el geo-engine
@@ -44,6 +47,8 @@ type Config struct {
 	DeliveryTTL          time.Duration
 	FareMaxAlertAge      time.Duration
 	FareDeliveryTTL      time.Duration
+	GroupMaxAge          time.Duration
+	GroupDeliveryTTL     time.Duration
 	CooldownPeriod       time.Duration
 	ZoneRepeatWindow     time.Duration
 	MaxDevicesPerPerson  int
@@ -250,8 +255,12 @@ func Load(lookup LookupFunc, readFile ReadFileFunc) (Config, error) {
 		TopicRequests: r.str("KAFKA_TOPIC_NOTIFY_REQUESTS", "notify.zone-requests.v1"),
 		TopicDLQ:      r.str("KAFKA_TOPIC_NOTIFY_REQUESTS_DLQ", "notify.zone-requests-dlq.v1"),
 		// Alertas de precio del price-consumer (vuelos que vigila cada usuario).
-		TopicFareAlerts:     r.str("KAFKA_TOPIC_FARE_ALERTS", "flights.fare-alerts.v1"),
-		TopicFareDLQ:        r.str("KAFKA_TOPIC_FARE_ALERTS_DLQ", "notify.fare-alerts-dlq.v1"),
+		TopicFareAlerts: r.str("KAFKA_TOPIC_FARE_ALERTS", "flights.fare-alerts.v1"),
+		TopicFareDLQ:    r.str("KAFKA_TOPIC_FARE_ALERTS_DLQ", "notify.fare-alerts-dlq.v1"),
+		// Viajes en grupo (ai-orchestrator): chat y destino elegido.
+		TopicGroupChat:      r.str("KAFKA_TOPIC_GROUP_CHAT", "ai.group-chat-activity.v1"),
+		TopicGroupResults:   r.str("KAFKA_TOPIC_GROUP_RESULTS", "ai.group-negotiations.v1"),
+		TopicGroupDLQ:       r.str("KAFKA_TOPIC_GROUP_DLQ", "notify.group-dlq.v1"),
 		KafkaTLSCAFile:      r.str("KAFKA_TLS_CA_FILE", ""),
 		KafkaMaxPollRecords: r.integer("KAFKA_MAX_POLL_RECORDS", 500, 1, 10_000),
 		PseudonymKey:        r.key("NOTIFY_PSEUDONYM_KEY"),
@@ -265,6 +274,10 @@ func Load(lookup LookupFunc, readFile ReadFileFunc) (Config, error) {
 		// con el teléfono apagado: una tarifa error merece esperar un poco.
 		FareMaxAlertAge: r.duration("NOTIFY_FARE_MAX_ALERT_AGE", 6*time.Hour, time.Minute, 48*time.Hour),
 		FareDeliveryTTL: r.duration("NOTIFY_FARE_DELIVERY_TTL", 6*time.Hour, time.Minute, 48*time.Hour),
+		// Un "mensajes nuevos" de hace horas ya no sirve; un "ya tenéis
+		// destino" sí, aunque enciendas el móvil más tarde.
+		GroupMaxAge:      r.duration("NOTIFY_GROUP_MAX_AGE", 6*time.Hour, time.Minute, 48*time.Hour),
+		GroupDeliveryTTL: r.duration("NOTIFY_GROUP_DELIVERY_TTL", 6*time.Hour, time.Minute, 48*time.Hour),
 		// Anti-spam: como mucho un aviso cada 45 minutos por persona...
 		CooldownPeriod: r.duration("NOTIFY_COOLDOWN", 45*time.Minute, 0, 24*time.Hour),
 		// ...y nunca dos veces la misma zona en el mismo día.
@@ -331,6 +344,13 @@ func Load(lookup LookupFunc, readFile ReadFileFunc) (Config, error) {
 	// las alertas de precio se leerían como órdenes de zona (y al revés).
 	if cfg.TopicFareAlerts == cfg.TopicRequests {
 		r.errs = append(r.errs, errors.New("KAFKA_TOPIC_FARE_ALERTS y KAFKA_TOPIC_NOTIFY_REQUESTS deben ser distintos"))
+	}
+	inputs := map[string]bool{}
+	for _, t := range []string{cfg.TopicRequests, cfg.TopicFareAlerts, cfg.TopicGroupChat, cfg.TopicGroupResults} {
+		if inputs[t] {
+			r.errs = append(r.errs, fmt.Errorf("el topic %q está repetido: cada topic de entrada debe ser distinto", t))
+		}
+		inputs[t] = true
 	}
 
 	// --- Zero Trust: sin cifrado solo en local, y siempre a propósito ---

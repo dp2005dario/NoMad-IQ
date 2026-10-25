@@ -51,6 +51,11 @@ TOPICS=(
   "ai.group-negotiation-requests-dlq.v1|3|259200000|delete"
   # Resultados de las negociaciones (con seudónimos, sin user_id): 7 días.
   "ai.group-negotiations.v1|6|604800000|delete"
+  # "Hay mensajes nuevos en el chat del viaje" (seudónimos, sin texto). Un
+  # aviso de chat de hace horas ya no sirve: 1 día.
+  "ai.group-chat-activity.v1|6|86400000|delete"
+  # Avisos de grupo que el notifier no pudo leer (DLQ): 3 días.
+  "notify.group-dlq.v1|3|259200000|delete"
 )
 
 # Recorre la lista y separa cada entrada por el carácter | en cuatro variables.

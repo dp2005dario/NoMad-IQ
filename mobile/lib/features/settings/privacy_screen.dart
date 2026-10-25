@@ -28,6 +28,10 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
     PushKind.airportArrival,
   };
   static const Set<PushKind> _deals = <PushKind>{PushKind.fareAlert};
+  static const Set<PushKind> _group = <PushKind>{
+    PushKind.groupChat,
+    PushKind.groupResult,
+  };
 
   void _say(String text) => ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
@@ -129,6 +133,17 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   subtitle: Text(t.privacyDealsSub),
                   value: !muted.containsAll(_deals),
                   onChanged: (bool on) => _mute(_deals, on),
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  secondary: const Icon(
+                    Icons.forum_rounded,
+                    color: NomadColors.group,
+                  ),
+                  title: Text(t.privacyGroup),
+                  subtitle: Text(t.privacyGroupSub),
+                  value: !muted.containsAll(_group),
+                  onChanged: (bool on) => _mute(_group, on),
                 ),
                 const Divider(height: 1),
                 // Siempre encendido: se ve, pero no se puede tocar.

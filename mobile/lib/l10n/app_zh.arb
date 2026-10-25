@@ -1671,5 +1671,12 @@
   "chatStarsOk": "谢谢,这能帮助我们改进",
   "chatStarsGreat": "太好了!去 Google Play 说说吧?",
   "chatRatePlay": "在 Google Play 评分",
-  "chatSeeVideo": "查看旅行回顾视频"
+  "chatSeeVideo": "查看旅行回顾视频",
+  "pushChannelGroup": "团体旅行",
+  "pushGroupChatTitle": "你的旅行有新消息",
+  "pushGroupChatBody": "打开群聊查看。",
+  "pushGroupResultTitle": "你们的目的地定了!",
+  "pushGroupResultBody": "小组的代理已达成一致。点按查看。",
+  "privacyGroup": "团体旅行",
+  "privacyGroupSub": "群聊新消息和选定的目的地。"
 }

@@ -28,6 +28,10 @@ const (
 	// TemplateFareAlert: un vuelo que vigilas ha bajado de precio (no es de
 	// zona: lo decide el price-consumer, ver intake/fares.go).
 	TemplateFareAlert Template = "fare_alert"
+	// TemplateGroupChat: mensajes nuevos en el chat de un viaje en grupo.
+	TemplateGroupChat Template = "group_chat"
+	// TemplateGroupResult: el viaje en grupo ya tiene destino.
+	TemplateGroupResult Template = "group_result"
 )
 
 // Decision es lo que hay que hacer con una entrada a zona.

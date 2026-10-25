@@ -1671,5 +1671,12 @@
   "chatStarsOk": "شكرًا، هذا يساعدنا على التحسّن",
   "chatStarsGreat": "رائع! هل تخبر بذلك على Google Play؟",
   "chatRatePlay": "قيّم على Google Play",
-  "chatSeeVideo": "شاهد فيديو ملخّص الرحلة"
+  "chatSeeVideo": "شاهد فيديو ملخّص الرحلة",
+  "pushChannelGroup": "رحلات جماعية",
+  "pushGroupChatTitle": "رسائل جديدة في رحلتك",
+  "pushGroupChatBody": "افتح الدردشة لقراءتها.",
+  "pushGroupResultTitle": "أصبح لديكم وجهة!",
+  "pushGroupResultBody": "توصّل وكلاء المجموعة إلى اتفاق. اضغط لرؤيته.",
+  "privacyGroup": "رحلات جماعية",
+  "privacyGroupSub": "رسائل الدردشة الجديدة والوجهة المختارة."
 }

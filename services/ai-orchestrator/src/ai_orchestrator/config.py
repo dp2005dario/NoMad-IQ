@@ -127,8 +127,12 @@ class Settings(BaseSettings):
     # Órdenes de trabajo (las publica nuestro propio outbox) y su DLQ.
     kafka_topic_negotiation_requests: str = "ai.group-negotiation-requests.v1"
     kafka_topic_negotiation_requests_dlq: str = "ai.group-negotiation-requests-dlq.v1"
-    # Resultados, para quien quiera enterarse (el notifier, en el futuro).
+    # Resultados: el notifier avisa "ya tenéis destino".
     kafka_topic_negotiation_results: str = "ai.group-negotiations.v1"
+    # "Mensajes nuevos en el chat del viaje" (el notifier manda el push).
+    kafka_topic_group_chat_activity: str = "ai.group-chat-activity.v1"
+    # Como mucho un aviso de chat por viaje cada tantos segundos.
+    group_chat_push_seconds: int = Field(default=120, ge=10, le=3600)
     # Grupo de consumidores PROPIO: una negociación larga no frena las alertas.
     kafka_negotiations_group_id: str = "ai-orchestrator-negotiations"
     # Rondas si el organizador no dice otra cosa (el techo absoluto es 10).
