@@ -13,6 +13,7 @@ import '../../auth/session.dart';
 import '../../core/api_client.dart';
 import '../../core/settings.dart';
 import '../family/family.dart';
+import '../memories/memories.dart';
 import '../vault/vault.dart';
 
 /// Dónde se guarda la copia (en el móvil: el selector "Guardar como" de
@@ -168,12 +169,16 @@ class AccountEraser {
     required this.vault,
     required this.prefs,
     this.family,
+    this.memories,
   });
 
   final SessionController session;
 
   /// Los perfiles de familia (cifrados aparte, en el Keystore).
   final FamilyStore? family;
+
+  /// Las fotos y vídeos de Recuerdos (solo en el móvil): también fuera.
+  final MemoryBook? memories;
   final ApiClient api;
   final Vault vault;
   final SettingsStore prefs;
@@ -206,5 +211,6 @@ class AccountEraser {
     await vault.forget();
     await prefs.wipePersonal();
     await family?.save(<FamilyMember>[]);
+    await memories?.clear();
   }
 }

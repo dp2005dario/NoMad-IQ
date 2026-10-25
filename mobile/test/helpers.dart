@@ -15,8 +15,11 @@ import 'package:nomadiq/auth/session.dart';
 import 'package:nomadiq/auth/token_store.dart';
 import 'package:nomadiq/core/api_client.dart';
 import 'package:nomadiq/core/router.dart';
+import 'package:nomadiq/core/launch.dart';
 import 'package:nomadiq/core/services.dart';
 import 'package:nomadiq/features/family/family.dart';
+import 'package:nomadiq/features/memories/memories.dart';
+import 'package:nomadiq/features/memories/travel_camera.dart';
 import 'package:nomadiq/features/help/help_contacts.dart';
 import 'package:nomadiq/features/offline/city_downloader.dart';
 import 'package:nomadiq/features/offline/saved_guides.dart';
@@ -169,6 +172,9 @@ AppServices fakeServices(
   SavedGuides? saved,
   HelpContacts help = const HelpContacts(),
   FamilyStore? family,
+  TravelCameraFactory? newTravelCamera,
+  ShareFiles? share,
+  MemoryFiles? memoryFiles,
   DocSource? docSource,
   DocTextReader? docReader,
 }) {
@@ -203,6 +209,10 @@ AppServices fakeServices(
     saved: saved ?? const NoSavedGuides(),
     help: help,
     family: family,
+    newTravelCamera: newTravelCamera,
+    share: share ?? (List<String> _, {String? text}) async {},
+    sticker: (Uint8List jpeg, List<String> _) async => jpeg,
+    memoryFiles: memoryFiles,
     docSource: docSource ?? const NoDocSource(),
     docReader: docReader ?? const NoDocTextReader(),
   );

@@ -21,6 +21,8 @@ import 'features/camera/speaker.dart';
 import 'core/settings.dart';
 import 'features/audioguide/guide_player.dart';
 import 'features/family/family.dart';
+import 'features/memories/memories.dart';
+import 'features/memories/travel_camera.dart';
 import 'features/map/location.dart';
 import 'features/map/map_style.dart';
 import 'features/map/map_surface.dart';
@@ -81,6 +83,8 @@ Future<void> main() async {
         WebScene(html: html, onMessage: onMessage),
     newPlayer: JustAudioGuidePlayer.new,
     newCamera: DeviceCamera.new,
+    newTravelCamera: DeviceTravelCamera.new,
+    memoryFiles: AppMemoryFiles(),
     speaker: DeviceSpeaker(),
     receipts: DeviceReceiptScanner(),
     docSource: DeviceDocSource(),

@@ -5364,5 +5364,252 @@
   "cardsCommon": "Common",
   "@cardsCommon": {
     "description": "Card rarity name."
+  },
+  "memTitle": "Memories",
+  "@memTitle": {
+    "description": "Memories screen title."
+  },
+  "memSubtitle": "Photos, videos and your trip story",
+  "@memSubtitle": {
+    "description": "Home shortcut subtitle."
+  },
+  "memMorning": "morning",
+  "@memMorning": {
+    "description": "Part of day."
+  },
+  "memAfternoon": "afternoon",
+  "@memAfternoon": {
+    "description": "Part of day."
+  },
+  "memSunset": "sunset",
+  "@memSunset": {
+    "description": "Part of day."
+  },
+  "memNight": "night",
+  "@memNight": {
+    "description": "Part of day."
+  },
+  "memStickerDay": "NOMADIQ · DAY {day}",
+  "@memStickerDay": {
+    "description": "Sticker first line.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "memDayN": "DAY {day}",
+  "@memDayN": {
+    "description": "Story caption.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "memCameraTitle": "Travel camera",
+  "@memCameraTitle": {
+    "description": "Travel camera title."
+  },
+  "memFlip": "Switch camera",
+  "@memFlip": {
+    "description": "Switch camera."
+  },
+  "memFull": "You have 300 memories. Delete some to make room.",
+  "@memFull": {
+    "description": "Too many memories."
+  },
+  "memFailed": "Could not save it. Try again.",
+  "@memFailed": {
+    "description": "Save failed."
+  },
+  "memDenied": "NomadIQ has no permission to use the camera. Allow it in your phone settings.",
+  "@memDenied": {
+    "description": "No camera permission."
+  },
+  "memNoCamera": "The camera of this phone is not available.",
+  "@memNoCamera": {
+    "description": "Camera missing."
+  },
+  "memRetry": "Try again",
+  "@memRetry": {
+    "description": "Retry."
+  },
+  "memSticker": "Trip sticker",
+  "@memSticker": {
+    "description": "Sticker toggle."
+  },
+  "memVideoNoSticker": "Videos are saved without the sticker.",
+  "@memVideoNoSticker": {
+    "description": "Video hint."
+  },
+  "memPhoto": "Photo",
+  "@memPhoto": {
+    "description": "Photo mode."
+  },
+  "memVideo": "Video",
+  "@memVideo": {
+    "description": "Video mode."
+  },
+  "memStop": "Stop recording",
+  "@memStop": {
+    "description": "Stop recording."
+  },
+  "memRecord": "Record video",
+  "@memRecord": {
+    "description": "Start recording."
+  },
+  "memShoot": "Take photo",
+  "@memShoot": {
+    "description": "Take photo."
+  },
+  "memVideoSaved": "Video saved ({time})",
+  "@memVideoSaved": {
+    "description": "Video saved.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "memSavedHint": "Saved in your Memories, only on this phone.",
+  "@memSavedHint": {
+    "description": "Saved hint."
+  },
+  "memShare": "Share",
+  "@memShare": {
+    "description": "Share."
+  },
+  "memRetake": "Retake",
+  "@memRetake": {
+    "description": "Retake."
+  },
+  "memAnother": "Take another",
+  "@memAnother": {
+    "description": "Take another."
+  },
+  "memInstagramNote": "For an Instagram story, choose Instagram in the menu. Music and stickers are added there.",
+  "@memInstagramNote": {
+    "description": "Instagram hint."
+  },
+  "memEmpty": "Nothing yet. Photos and videos you make with the travel camera appear here.",
+  "@memEmpty": {
+    "description": "No memories yet."
+  },
+  "memOnlyHere": "Your memories stay only on this phone. Nothing is uploaded unless you share it.",
+  "@memOnlyHere": {
+    "description": "Privacy note."
+  },
+  "memTripStart": "Trip started {date}",
+  "@memTripStart": {
+    "description": "Trip start chip.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "memStory": "Your trip story",
+  "@memStory": {
+    "description": "Story card title."
+  },
+  "memStoryHint": "Made by itself with your photos, your route and your stamps.",
+  "@memStoryHint": {
+    "description": "Story card hint."
+  },
+  "memPlay": "Watch story",
+  "@memPlay": {
+    "description": "Play story."
+  },
+  "memNoPhotos": "Take some photos on the trip to make your story.",
+  "@memNoPhotos": {
+    "description": "Story needs photos."
+  },
+  "memStyleCinema": "Cinema",
+  "@memStyleCinema": {
+    "description": "Story style."
+  },
+  "memStyleComic": "Comic strip",
+  "@memStyleComic": {
+    "description": "Story style."
+  },
+  "memStyleFast": "Fast",
+  "@memStyleFast": {
+    "description": "Story style."
+  },
+  "memMyTrip": "My trip",
+  "@memMyTrip": {
+    "description": "Cover title without cities."
+  },
+  "memDays": "days",
+  "@memDays": {
+    "description": "Stat label."
+  },
+  "memCities": "cities",
+  "@memCities": {
+    "description": "Stat label."
+  },
+  "memMedia": "photos and videos",
+  "@memMedia": {
+    "description": "Stat label."
+  },
+  "memStamps": "new stamps",
+  "@memStamps": {
+    "description": "Stat label."
+  },
+  "memShareStory": "Share story",
+  "@memShareStory": {
+    "description": "Share story."
+  },
+  "memShareText": "{title}: {days} days, {media} photos and videos. Made with NomadIQ.",
+  "@memShareText": {
+    "description": "Text shared with the story photos.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      },
+      "media": {
+        "type": "int"
+      }
+    }
+  },
+  "memPause": "Pause",
+  "@memPause": {
+    "description": "Pause story."
+  },
+  "memResume": "Play",
+  "@memResume": {
+    "description": "Resume story."
+  },
+  "memClose": "Close",
+  "@memClose": {
+    "description": "Close story."
+  },
+  "memDelete": "Delete",
+  "@memDelete": {
+    "description": "Delete memory."
+  },
+  "memDeleteConfirm": "Delete this memory from your phone? It cannot be undone.",
+  "@memDeleteConfirm": {
+    "description": "Delete confirm."
+  },
+  "memCancel": "Cancel",
+  "@memCancel": {
+    "description": "Cancel."
+  },
+  "memCount": "{n} of {max}",
+  "@memCount": {
+    "description": "Counter.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
   }
 }

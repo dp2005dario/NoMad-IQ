@@ -29,6 +29,8 @@ import '../features/settings/language_screen.dart';
 import '../features/offline/offline_screen.dart';
 import '../features/easy/easy_home_screen.dart';
 import '../features/cards/cards_screen.dart';
+import '../features/memories/memories_screen.dart';
+import '../features/memories/travel_camera_screen.dart';
 import '../features/copy_trip/copy_trip_screen.dart';
 import '../features/copy_trip/share_trip_screen.dart';
 import '../features/family/family_screen.dart';
@@ -70,6 +72,8 @@ abstract final class Routes {
   static const String family = '/family';
   static const String shareTrip = '/copy-trip/share';
   static const String cards = '/cards';
+  static const String memories = '/memories';
+  static const String travelCamera = '/memories/camera';
 
   /// "Copia este viaje"; con [code] abre directamente ese viaje.
   static String copyTrip({String? code}) => Uri(
@@ -322,6 +326,16 @@ GoRouter buildRouter({
       path: Routes.help,
       builder: (BuildContext context, GoRouterState state) =>
           const HelpScreen(),
+    ),
+    GoRoute(
+      path: Routes.memories,
+      builder: (BuildContext context, GoRouterState state) =>
+          const MemoriesScreen(),
+    ),
+    GoRoute(
+      path: Routes.travelCamera,
+      builder: (BuildContext context, GoRouterState state) =>
+          const TravelCameraScreen(),
     ),
     GoRoute(
       path: Routes.cards,

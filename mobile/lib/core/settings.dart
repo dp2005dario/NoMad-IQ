@@ -54,6 +54,9 @@ enum LocalData {
 
   /// Los viajes que has copiado de otros (ya adaptados a tu presupuesto).
   copiedTrips,
+
+  /// La lista de Recuerdos (fotos y vídeos del viaje) y el día que empezó.
+  memories,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real

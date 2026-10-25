@@ -115,6 +115,13 @@ class HomeScreen extends StatelessWidget {
                     label: t.copyTitle,
                     onTap: () => context.push(Routes.copyTrip()),
                   ),
+                  // Tus fotos y vídeos del viaje y la historia automática.
+                  _Shortcut(
+                    icon: Icons.photo_library_rounded,
+                    color: NomadColors.mint,
+                    label: t.memTitle,
+                    onTap: () => context.push(Routes.memories),
+                  ),
                   // Liga y cambios de cromos con tus amigos.
                   _Shortcut(
                     icon: Icons.style_rounded,

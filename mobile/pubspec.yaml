@@ -70,6 +70,9 @@ dependencies:
   # Dice si el móvil está en wifi o con datos: así "Sin conexión" no gasta
   # tu tarifa descargando una ciudad en el extranjero sin querer.
   connectivity_plus: ^7.3.1
+  # "Compartir": abre el menú del móvil (Instagram, WhatsApp, Guardar en
+  # Fotos...) con tus recuerdos. Gratis y sin cuentas.
+  share_plus: ^13.3.1
 
 dev_dependencies:
   flutter_test:

@@ -4,6 +4,8 @@
 //
 // En los tests se monta la misma caja con piezas falsas: así las pantallas
 // se prueban sin red, sin GPS y sin tarjeta gráfica.
+import 'dart:typed_data';
+
 import 'package:flutter/widgets.dart';
 
 import '../features/audioguide/audioguide_api.dart';
@@ -16,6 +18,8 @@ import '../features/flights/climate_api.dart';
 import '../features/flights/fares_api.dart';
 import '../features/easy/easy_mode.dart';
 import '../features/family/family.dart';
+import '../features/memories/memories.dart';
+import '../features/memories/travel_camera.dart';
 import '../features/flyra/flyra_api.dart';
 import '../features/group/group_api.dart';
 import '../features/help/help_contacts.dart';
@@ -64,6 +68,10 @@ class AppServices {
     this.docReader = const NoDocTextReader(),
     this.saved = const NoSavedGuides(),
     this.help = const HelpContacts(),
+    this.newTravelCamera,
+    this.share = shareFiles,
+    this.sticker = stickerPhoto,
+    MemoryFiles? memoryFiles,
     FamilyStore? family,
     OfflineFiles? offlineFiles,
     OfflineMaps? offlineMaps,
@@ -85,6 +93,7 @@ class AppServices {
        offlineMaps = offlineMaps ?? const NoOfflineMaps(),
        net = net ?? const AlwaysWifi(),
        family = family ?? MemoryFamilyStore(),
+       memoryFiles = memoryFiles ?? MemoryMemoryFiles(),
        vault =
            vault ??
            Vault(
@@ -192,6 +201,21 @@ class AppServices {
 
   /// Los perfiles de familia (cifrados en el Keystore del móvil).
   final FamilyStore family;
+
+  /// La cámara de viaje (fotos con pegatina y vídeos); null = no hay.
+  final TravelCameraFactory? newTravelCamera;
+
+  /// Abre el menú "Compartir" del móvil.
+  final ShareFiles share;
+
+  /// Pinta la pegatina del viaje sobre una foto (en los tests, una falsa).
+  final Future<Uint8List> Function(Uint8List jpeg, List<String> lines) sticker;
+
+  /// Dónde se guardan las fotos y vídeos de Recuerdos (solo en el móvil).
+  final MemoryFiles memoryFiles;
+
+  /// Tus recuerdos del viaje.
+  late final MemoryBook memories = MemoryBook(prefs, memoryFiles);
 
   /// ¿Inicio en Modo fácil? (letras grandes y solo lo importante)
   late final EasyMode easyMode = EasyMode(prefs);

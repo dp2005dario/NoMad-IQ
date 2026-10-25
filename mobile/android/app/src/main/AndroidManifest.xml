@@ -21,12 +21,14 @@
     <!-- Android 13+: permiso para enseñar notificaciones (avisos push y la
          notificación fija del modo viaje). Se pide al encender el modo viaje. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- Modo cámara: solo fotos para reconocer monumentos. El paquete de la
-         cámara también pide micrófono y escribir en la memoria (para vídeo);
-         como no los usamos, los quitamos (tools:node="remove"). Y la cámara
-         no es obligatoria: la app se instala también en aparatos sin ella. -->
+    <!-- Cámara: fotos de monumentos y la cámara de viaje de Recuerdos. El
+         micrófono solo hace falta para el sonido de los vídeos de Recuerdos y
+         Android lo pregunta la primera vez que pasas a VÍDEO. Escribir en la
+         memoria compartida no lo usamos (los recuerdos van a la carpeta
+         privada de la app), así que se quita (tools:node="remove"). Y la
+         cámara no es obligatoria: la app se instala en aparatos sin ella. -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
     <!-- allowBackup="false": la sesión cifrada no debe copiarse a la nube ni a
