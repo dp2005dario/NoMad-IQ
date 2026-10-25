@@ -15,7 +15,9 @@ Qué pasa con cada cosa:
 - **Ligas de cromos**: sales de todas (tus cromos, tu ciudad y tus cambios
   se borran; si eras la última persona, la liga entera).
 - **Negociaciones de grupo**: igual. Tu asiento queda anónimo y tus
-  preferencias privadas (presupuesto, gustos) se borran.
+  preferencias privadas (presupuesto, gustos) se borran. Tus votos de
+  "Elegid planes" van por asiento, así que también quedan anónimos, y tu
+  asiento deja de contar para los "match".
 
 El "anónimo" es `erased:` + 32 letras al azar: no se puede volver a unir a
 nadie (el auth-gateway solo emite UUID) y es distinto en cada borrado.
@@ -36,11 +38,13 @@ log = logging.getLogger(__name__)
 
 # Lo que se enseña a los demás en vez de tu nombre.
 ERASED_NAME = "—"
+# Así empiezan los ids anónimos (los planes del grupo no cuentan esos asientos).
+ERASED_PREFIX = "erased:"
 
 
 def anonymous_id() -> str:
     """Un id nuevo que no es de nadie (cabe en los 128 caracteres de user_id)."""
-    return "erased:" + secrets.token_hex(16)
+    return ERASED_PREFIX + secrets.token_hex(16)
 
 
 @dataclass(frozen=True, slots=True)

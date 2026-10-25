@@ -99,6 +99,8 @@ from ai_orchestrator.outbox import OutboxRelay
 from ai_orchestrator.places.airports import Airports
 from ai_orchestrator.places.service import PlaceService, PlaceSettings, RedisPlaceCache
 from ai_orchestrator.places.wikimedia import RateLimiter, WikimediaClient
+from ai_orchestrator.plans.api import plan_router
+from ai_orchestrator.plans.store import PostgresPlans
 from ai_orchestrator.pseudonym import Pseudonymizer
 from ai_orchestrator.quota import RedisQuota
 from ai_orchestrator.recommender import FareRecommender, RecommenderSettings
@@ -657,6 +659,9 @@ async def run(settings: Settings) -> int:
         # --- Cromos con amigos (solo PostgreSQL) -----------------------------------------
         leagues = league_router(PostgresLeagues(pool)) if settings.leagues_enabled else None
 
+        # --- Elegid planes (los viajes en grupo; solo PostgreSQL) ------------------------
+        plans = plan_router(PostgresPlans(pool)) if settings.negotiations_enabled else None
+
         # --- Negociación de grupo (tercer consumidor + relé del outbox) -----------------
         negotiations: APIRouter | None = None
         negotiation_consumer: NegotiationRequestConsumer | None = None
@@ -687,6 +692,7 @@ async def run(settings: Settings) -> int:
                 expenses=expenses,
                 shared_trips=shared_trips,
                 leagues=leagues,
+                plans=plans,
                 places=places,
                 streetview=streetview,
                 flyra=flyra,
