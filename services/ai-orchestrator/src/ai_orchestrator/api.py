@@ -80,6 +80,8 @@ from ai_orchestrator.nearby.service import NearbyBusyError, NearbyService, Nearb
 from ai_orchestrator.places.domain import PlaceCard
 from ai_orchestrator.places.service import PlaceBusyError, PlaceService, PlaceUnavailableError
 from ai_orchestrator.quota import QuotaExceededError
+from ai_orchestrator.stays.domain import StayArea
+from ai_orchestrator.stays.service import StayBusyError, StayService, StayUnavailableError
 from ai_orchestrator.store import RecommendationStore, StoreError
 from ai_orchestrator.streetview.domain import StreetPhotos
 from ai_orchestrator.streetview.service import StreetBusyError, StreetUnavailableError, StreetViewService
@@ -220,6 +222,7 @@ ATM_CACHE = "public, max-age=21600"
 # "Cerca de ti": lo gratis de una ciudad casi no cambia (un día en el móvil).
 NEARBY_CACHE = "public, max-age=86400"
 DRIVE_CACHE = "public, max-age=86400"
+STAYS_CACHE = "public, max-age=86400"
 # La guía de un aeropuerto: un día en el móvil (en el servidor, un mes).
 AIRPORT_CACHE = "public, max-age=86400"
 # El clima medio no cambia: el móvil puede guardarlo una semana.
@@ -249,6 +252,7 @@ def create_api(
     atms: AtmService | None = None,
     nearby: NearbyService | None = None,
     drive: DriveService | None = None,
+    stays: StayService | None = None,
     airport_guide: AirportGuideService | None = None,
     climate: ClimateService | None = None,
     eraser: UserDataEraser | None = None,
@@ -443,6 +447,23 @@ def create_api(
                 resp.headers["Retry-After"] = "60"
                 return resp
             return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": DRIVE_CACHE})
+
+    if stays is not None:
+
+        @app.get("/v1/stays", response_model=StayArea)
+        async def get_stays(
+            lat: Annotated[float, Query(ge=-85, le=85)],
+            lon: Annotated[float, Query(ge=-180, le=180)],
+        ) -> JSONResponse:
+            # Público (también para invitados): es el sitio al que vas, no
+            # dónde estás, y va en casillas de ~2 km.
+            try:
+                found = await stays.around(lat, lon)
+            except (StayBusyError, StayUnavailableError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "dormir barato ocupado")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": STAYS_CACHE})
 
     if airport_guide is not None:
 

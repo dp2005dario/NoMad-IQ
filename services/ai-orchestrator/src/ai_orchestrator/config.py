@@ -203,6 +203,9 @@ class Settings(BaseSettings):
     # --- Modo coche (ver el paquete drive/): el mismo Overpass, casillas de ~5 km
     drive_enabled: bool = True
     drive_ttl_seconds: int = Field(default=7 * 24 * 3600, ge=24 * 3600, le=30 * 24 * 3600)
+    # Dormir barato (estaciones + alojamientos de OpenStreetMap): un mes de caché.
+    stays_enabled: bool = True
+    stays_ttl_seconds: int = Field(default=30 * 24 * 3600, ge=24 * 3600, le=60 * 24 * 3600)
 
     # --- Guía del aeropuerto (ver el paquete airport_guide/): el mismo Overpass ------
     airport_guide_enabled: bool = True

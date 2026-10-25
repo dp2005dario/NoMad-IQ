@@ -118,6 +118,8 @@ from ai_orchestrator.shared_trips.api import shared_trip_router
 from ai_orchestrator.shared_trips.service import QUOTA_PREFIX as TRIP_ADAPT_QUOTA_PREFIX
 from ai_orchestrator.shared_trips.service import AdaptSettings, RedisAdaptCache, TripAdapter
 from ai_orchestrator.shared_trips.store import PostgresSharedTrips
+from ai_orchestrator.stays.overpass import StayOverpass
+from ai_orchestrator.stays.service import RedisStayCache, StayService, StaySettings
 from ai_orchestrator.store import (
     Pool,
     PostgresPriceHistory,
@@ -364,6 +366,16 @@ def _drive(settings: Settings, redis: Redis, overpass: tuple[httpx.AsyncClient, 
     )
 
 
+def _stays(settings: Settings, redis: Redis, overpass: tuple[httpx.AsyncClient, RateLimiter]) -> StayService:
+    """Dormir barato: estaciones con alojamientos alrededor (un mes de caché)."""
+    http, limiter = overpass
+    return StayService(
+        source=StayOverpass(http, url=settings.overpass_url, limiter=limiter),
+        cache=RedisStayCache(redis),
+        settings=StaySettings(ttl_seconds=settings.stays_ttl_seconds),
+    )
+
+
 def _airport_guide(
     settings: Settings, redis: Redis, overpass: tuple[httpx.AsyncClient, RateLimiter]
 ) -> AirportGuideService:
@@ -607,6 +619,7 @@ async def run(settings: Settings) -> int:
             or settings.airport_guide_enabled
             or settings.nearby_enabled
             or settings.drive_enabled
+            or settings.stays_enabled
             or settings.climate_enabled
             else None
         )
@@ -634,6 +647,7 @@ async def run(settings: Settings) -> int:
             or settings.airport_guide_enabled
             or settings.nearby_enabled
             or settings.drive_enabled
+            or settings.stays_enabled
             else None
         )
         atms: AtmService | None = None
@@ -648,6 +662,9 @@ async def run(settings: Settings) -> int:
         drive: DriveService | None = None
         if settings.drive_enabled and public_redis is not None and overpass is not None:
             drive = _drive(settings, public_redis, overpass)
+        stays: StayService | None = None
+        if settings.stays_enabled and public_redis is not None and overpass is not None:
+            stays = _stays(settings, public_redis, overpass)
 
         # --- Traductor de cartas (Ollama + cupo diario en Redis) ------------------------
         menu: MenuService | None = None
@@ -761,6 +778,7 @@ async def run(settings: Settings) -> int:
                 atms=atms,
                 nearby=nearby,
                 drive=drive,
+                stays=stays,
                 airport_guide=airport_guide,
                 climate=climate,
                 menu=menu,
