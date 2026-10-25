@@ -859,6 +859,7 @@ class _MapShortcuts extends StatelessWidget {
                     Feature.nearby => Routes.nearby,
                     Feature.transport => Routes.transport(),
                     Feature.radar => Routes.radar(),
+                    Feature.queues => Routes.queues(),
                     Feature.assistant => Routes.assistant,
                     _ => Routes.soon(f),
                   }),

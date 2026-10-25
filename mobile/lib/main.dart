@@ -22,6 +22,7 @@ import 'features/camera/speaker.dart';
 import 'core/settings.dart';
 import 'features/audioguide/guide_player.dart';
 import 'features/family/family.dart';
+import 'features/queues/reminders.dart';
 import 'features/widgets/home_widgets.dart';
 import 'features/memories/memories.dart';
 import 'features/memories/travel_camera.dart';
@@ -89,6 +90,7 @@ Future<void> main() async {
     memoryFiles: AppMemoryFiles(),
     homeWidgets: DeviceHomeWidgets(),
     liveFlight: DeviceLiveFlight(),
+    reminders: DeviceReminders(),
     syncWidgetsOnStart: true,
     speaker: DeviceSpeaker(),
     translator: MlKitTranslator(),

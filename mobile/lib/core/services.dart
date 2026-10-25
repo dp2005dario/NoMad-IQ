@@ -55,6 +55,8 @@ import '../features/offline/saved_guides.dart';
 import '../features/push/notices.dart';
 import '../features/push/push_registrar.dart';
 import '../features/route/flight3d.dart';
+import '../features/queues/queues_api.dart';
+import '../features/queues/reminders.dart';
 import '../features/route/places_api.dart';
 import '../features/vault/doc_source.dart';
 import '../features/vault/vault.dart';
@@ -90,6 +92,7 @@ class AppServices {
     MemoryFiles? memoryFiles,
     HomeWidgets? homeWidgets,
     LiveFlight? liveFlight,
+    Reminders? reminders,
     this.loadAirports = worldAirports,
     this.loadVisaData = bundledVisaData,
     this.syncWidgetsOnStart = false,
@@ -124,6 +127,7 @@ class AppServices {
        memoryFiles = memoryFiles ?? MemoryMemoryFiles(),
        homeWidgets = homeWidgets ?? MemoryHomeWidgets(),
        liveFlight = liveFlight ?? MemoryLiveFlight(),
+       reminders = reminders ?? MemoryReminders(),
        vault =
            vault ??
            Vault(
@@ -268,6 +272,9 @@ class AppServices {
   /// El aviso "en directo" del día del vuelo (programado en el móvil).
   final LiveFlight liveFlight;
 
+  /// Avisos del propio móvil a una hora ("recuérdamelo" de Colas).
+  final Reminders reminders;
+
   /// La brújula (hacia dónde miras). En los tests, una de mentira.
   final Stream<double?> Function() compass;
 
@@ -279,6 +286,9 @@ class AppServices {
 
   /// Radar local: lluvia, timos y precios de viajeros.
   late final RadarApi radar = RadarApi(api);
+
+  /// Sin colas: esperas que avisan los viajeros (/v1/queues).
+  late final QueuesApi queues = QueuesApi(api);
 
   /// ¿Poner al día los widgets al abrir la app? (en los tests, no).
   final bool syncWidgetsOnStart;

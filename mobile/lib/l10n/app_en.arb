@@ -8781,5 +8781,160 @@
   "radarPriceThanks": "Thanks! It helps other travellers.",
   "@radarPriceThanks": {
     "description": "Thanks after saving a price."
+  },
+  "queuesTitle": "No queues",
+  "@queuesTitle": {
+    "description": "Queues screen title."
+  },
+  "queuesSubtitle": "How long the queue is at famous places, as reported by travellers who are there.",
+  "@queuesSubtitle": {
+    "description": "Queues screen subtitle."
+  },
+  "queuesWaitNone": "No queue",
+  "@queuesWaitNone": {
+    "description": "Wait level: no queue."
+  },
+  "queuesWaitShort": "Under 15 min",
+  "@queuesWaitShort": {
+    "description": "Wait level: under 15 minutes."
+  },
+  "queuesWaitMedium": "15 to 30 min",
+  "@queuesWaitMedium": {
+    "description": "Wait level: 15 to 30 minutes."
+  },
+  "queuesWaitLong": "30 to 60 min",
+  "@queuesWaitLong": {
+    "description": "Wait level: 30 to 60 minutes."
+  },
+  "queuesWaitVeryLong": "Over an hour",
+  "@queuesWaitVeryLong": {
+    "description": "Wait level: over an hour."
+  },
+  "queuesNoCity": "Turn on location or add your trip to see the places of your city.",
+  "@queuesNoCity": {
+    "description": "No city known (no GPS, no trip)."
+  },
+  "queuesNoPlaces": "We have no famous places for this city yet.",
+  "@queuesNoPlaces": {
+    "description": "City has no famous places with data."
+  },
+  "queuesSignIn": "Sign in to see and share how long the queues are.",
+  "@queuesSignIn": {
+    "description": "Guest: sign in to see and report queues."
+  },
+  "queuesSeeMaps": "Open in Google Maps (sometimes shows live busyness)",
+  "@queuesSeeMaps": {
+    "description": "Open the place in Google Maps."
+  },
+  "queuesNowBy": "{count, plural, other{Reported by {count} travellers}} · {minutes} min ago",
+  "@queuesNowBy": {
+    "description": "Who reported the current wait and how long ago.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "queuesNowUnknown": "Nobody has said how long the queue is in the last hour and a half.",
+  "@queuesNowUnknown": {
+    "description": "Not enough recent reports."
+  },
+  "queuesNoHours": "There are not enough reports yet to show the quietest hours.",
+  "@queuesNoHours": {
+    "description": "Not enough reports for an hourly chart."
+  },
+  "queuesHoursNote": "By hour: what travellers reported in the last 60 days (only hours with 3 or more reports; grey = no data).",
+  "@queuesHoursNote": {
+    "description": "Explains the hourly bars."
+  },
+  "queuesBest": "Quietest hour later today: {hour} ({wait})",
+  "@queuesBest": {
+    "description": "Best hour from now with its usual wait.",
+    "placeholders": {
+      "hour": {
+        "type": "String"
+      },
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
+  "queuesRemindMe": "Remind me before {hour}",
+  "@queuesRemindMe": {
+    "description": "Button: phone reminder before that hour.",
+    "placeholders": {
+      "hour": {
+        "type": "String"
+      }
+    }
+  },
+  "queuesReminderNote": "It's a reminder on your phone, not a place in the queue.",
+  "@queuesReminderNote": {
+    "description": "Clarifies that the reminder is not a real queue turn."
+  },
+  "queuesReminderBody": "In 10 minutes it's usually the quietest time at {place}.",
+  "@queuesReminderBody": {
+    "description": "Reminder notification text.",
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "queuesReminderChannel": "Reminders",
+  "@queuesReminderChannel": {
+    "description": "Android notification channel name."
+  },
+  "queuesReminderSet": "Reminder set for {time}",
+  "@queuesReminderSet": {
+    "description": "Snack: reminder scheduled.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "queuesReported": "You already reported this hour. Tap again to change it.",
+  "@queuesReported": {
+    "description": "User already reported this hour (can change)."
+  },
+  "queuesAskNow": "Are you there? How long is the queue now?",
+  "@queuesAskNow": {
+    "description": "Ask: are you there, how long is the queue?"
+  },
+  "queuesThanks": "Thanks! Other travellers will see it.",
+  "@queuesThanks": {
+    "description": "Thanks after reporting."
+  },
+  "queuesTablesTitle": "Table for dinner",
+  "@queuesTablesTitle": {
+    "description": "Section: restaurants nearby that take bookings."
+  },
+  "queuesTablesNoLocation": "Turn on location to see nearby restaurants that take bookings.",
+  "@queuesTablesNoLocation": {
+    "description": "Restaurants need location."
+  },
+  "queuesNoTables": "No nearby restaurants say on OpenStreetMap that they take bookings.",
+  "@queuesNoTables": {
+    "description": "No bookable restaurants nearby."
+  },
+  "queuesReservationRequired": "booking required",
+  "@queuesReservationRequired": {
+    "description": "Restaurant: booking is required."
+  },
+  "queuesBookWeb": "Book on their website",
+  "@queuesBookWeb": {
+    "description": "Tooltip: book on the restaurant's website."
+  },
+  "queuesCall": "Call",
+  "@queuesCall": {
+    "description": "Tooltip: call the restaurant."
+  },
+  "queuesTablesNote": "You book directly with the restaurant: the app does not book or charge anything. Data:",
+  "@queuesTablesNote": {
+    "description": "Note under the restaurant list."
   }
 }

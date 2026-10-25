@@ -46,6 +46,7 @@ import '../features/drive/drive_screen.dart';
 import '../features/map/geo.dart';
 import '../features/events/events_screen.dart';
 import '../features/stays/stays_screen.dart';
+import '../features/queues/queues_screen.dart';
 import '../features/radar/radar_screen.dart';
 import '../features/transport/transport_screen.dart';
 import '../features/trouble/trouble_screen.dart';
@@ -114,6 +115,12 @@ abstract final class Routes {
   static String transport({String? iata}) => Uri(
     path: '/transport',
     queryParameters: iata == null ? null : <String, String>{'iata': iata},
+  ).toString();
+
+  /// Sin colas: esperas en los sitios famosos de [city] y mesas con reserva.
+  static String queues({String? city}) => Uri(
+    path: '/queues',
+    queryParameters: city == null ? null : <String, String>{'city': city},
   ).toString();
 
   /// Radar local: lluvia real y avisos/precios de otros viajeros en [iata].
@@ -455,6 +462,17 @@ GoRouter buildRouter({
       path: Routes.drive,
       builder: (BuildContext context, GoRouterState state) =>
           const DriveScreen(),
+    ),
+    GoRoute(
+      path: '/queues',
+      builder: (BuildContext context, GoRouterState state) {
+        final String? city = state.uri.queryParameters['city'];
+        return QueuesScreen(
+          city: city != null && RegExp(r'^[A-Za-z]{3}$').hasMatch(city)
+              ? city.toUpperCase()
+              : null,
+        );
+      },
     ),
     GoRoute(
       path: '/radar',

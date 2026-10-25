@@ -13,7 +13,10 @@ enum NearbyKind {
   toilets,
   wifi,
   charging,
-  sight;
+  sight,
+
+  /// Restaurante que, según OpenStreetMap, acepta reservas (para "Colas").
+  table;
 
   static NearbyKind? parse(Object? raw) {
     for (final NearbyKind k in values) {
@@ -32,6 +35,10 @@ class NearbySpot {
     this.openingHours,
     this.fee,
     this.wikidataId,
+    this.website,
+    this.phone,
+    this.cuisine,
+    this.reservationRequired = false,
   });
 
   final String id;
@@ -43,6 +50,14 @@ class NearbySpot {
   /// ¿Cuesta dinero? null = OpenStreetMap no lo sabe.
   final bool? fee;
   final String? wikidataId;
+
+  /// Solo restaurantes: su web (siempre https) y su teléfono para reservar.
+  final Uri? website;
+  final String? phone;
+  final String? cuisine;
+
+  /// true = OpenStreetMap dice que sin reserva no entras.
+  final bool reservationRequired;
 
   static NearbySpot? parse(Object? json) {
     if (json is! Map<String, Object?>) return null;
@@ -66,6 +81,8 @@ class NearbySpot {
 
     final Object? fee = json['fee'];
     final String? qid = text('wikidata_id');
+    final Uri? web = Uri.tryParse(text('website') ?? '');
+    final String? phone = text('phone');
     return NearbySpot(
       id: id,
       kind: kind,
@@ -76,6 +93,15 @@ class NearbySpot {
       wikidataId: qid != null && RegExp(r'^Q[1-9]\d{0,11}$').hasMatch(qid)
           ? qid
           : null,
+      // Solo enlaces https y teléfonos con pinta de teléfono: nada raro.
+      website: web != null && web.scheme == 'https' && web.host.isNotEmpty
+          ? web
+          : null,
+      phone: phone != null && RegExp(r'^\+?[0-9 ()./-]{6,24}$').hasMatch(phone)
+          ? phone
+          : null,
+      cuisine: text('cuisine'),
+      reservationRequired: json['reservation'] == 'required',
     );
   }
 }
