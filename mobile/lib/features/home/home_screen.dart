@@ -136,6 +136,13 @@ class HomeScreen extends StatelessWidget {
                     label: t.visaTitle,
                     onTap: () => context.push(Routes.visa()),
                   ),
+                  // Intérprete cara a cara (sin internet) y "¿qué es esto?".
+                  _Shortcut(
+                    icon: Feature.assistant.icon,
+                    color: Feature.assistant.color,
+                    label: Feature.assistant.label(t),
+                    onTap: () => context.push(Routes.assistant),
+                  ),
                   // Maleta perdida o escala perdida: qué hacer y la reclamación.
                   _Shortcut(
                     icon: Icons.report_problem_rounded,

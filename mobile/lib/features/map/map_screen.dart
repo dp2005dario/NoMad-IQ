@@ -857,6 +857,7 @@ class _MapShortcuts extends StatelessWidget {
                 onPressed: () => unawaited(
                   context.push(switch (f) {
                     Feature.nearby => Routes.nearby,
+                    Feature.assistant => Routes.assistant,
                     _ => Routes.soon(f),
                   }),
                 ),

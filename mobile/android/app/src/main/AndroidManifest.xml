@@ -150,6 +150,10 @@
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="https"/>
         </intent>
+        <!-- Oír lo que dices en el Asistente (reconocimiento de voz del sistema). -->
+        <intent>
+            <action android:name="android.speech.RecognitionService"/>
+        </intent>
         <!-- La voz del móvil (texto a voz) para "Escuchar" en el modo cámara. -->
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE"/>

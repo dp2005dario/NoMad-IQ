@@ -38,6 +38,7 @@ import '../features/money/atms_api.dart';
 import '../features/nearby/nearby_api.dart';
 import '../features/meetups/meetups_api.dart';
 import '../features/drive/drive_api.dart';
+import '../features/assistant/interpreter.dart';
 import '../features/money/expenses_api.dart';
 import '../features/money/fx_api.dart';
 import '../features/cards/league_api.dart';
@@ -72,6 +73,8 @@ class AppServices {
     this.webScene,
     this.newCamera,
     this.speaker = const SilentSpeaker(),
+    this.translator = const NoTranslator(),
+    this.speechInput = const NoSpeechInput(),
     this.receipts = const NoReceiptScanner(),
     this.docSource = const NoDocSource(),
     this.docReader = const NoDocTextReader(),
@@ -159,6 +162,10 @@ class AppServices {
 
   /// La voz del móvil para "Escuchar" la ficha de un monumento.
   final Speaker speaker;
+
+  /// Asistente: traducir (ML Kit, en el móvil) y oír lo que dices.
+  final PhraseTranslator translator;
+  final SpeechInput speechInput;
 
   /// Viajes en grupo: invitar, preferencias y la negociación de los agentes.
   final GroupApi group;

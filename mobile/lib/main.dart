@@ -17,6 +17,7 @@ import 'features/vault/doc_source.dart';
 import 'features/vault/vault.dart';
 import 'features/vault/vault_store.dart';
 import 'features/camera/camera_device.dart';
+import 'features/assistant/interpreter.dart';
 import 'features/camera/speaker.dart';
 import 'core/settings.dart';
 import 'features/audioguide/guide_player.dart';
@@ -90,6 +91,8 @@ Future<void> main() async {
     liveFlight: DeviceLiveFlight(),
     syncWidgetsOnStart: true,
     speaker: DeviceSpeaker(),
+    translator: MlKitTranslator(),
+    speechInput: DeviceSpeechInput(),
     receipts: DeviceReceiptScanner(),
     docSource: DeviceDocSource(),
     docReader: const DeviceDocTextReader(),

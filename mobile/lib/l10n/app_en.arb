@@ -7350,5 +7350,90 @@
   "troubleClaimDelay": "Claim for the delay (Papers)",
   "@troubleClaimDelay": {
     "description": "Button."
+  },
+  "assistantTitle": "Assistant",
+  "@assistantTitle": {
+    "description": "Assistant title."
+  },
+  "assistantTalk": "Conversation",
+  "@assistantTalk": {
+    "description": "Tab: conversation."
+  },
+  "assistantAsk": "Ask",
+  "@assistantAsk": {
+    "description": "Tab: ask."
+  },
+  "assistantTheirLanguage": "Their language",
+  "@assistantTheirLanguage": {
+    "description": "Button: change the other person's language."
+  },
+  "assistantDownload": "Download {languages} to translate without internet (about 30 MB each, on wifi).",
+  "@assistantDownload": {
+    "description": "Banner to download offline models.",
+    "placeholders": {
+      "languages": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantDownloadButton": "Download",
+  "@assistantDownloadButton": {
+    "description": "Download button tooltip."
+  },
+  "assistantDownloadFailed": "Couldn't download. Connect to wifi and try again.",
+  "@assistantDownloadFailed": {
+    "description": "Download failed."
+  },
+  "assistantNeedModels": "Download the languages first (above).",
+  "@assistantNeedModels": {
+    "description": "Translation not available."
+  },
+  "assistantDidntHear": "I didn't hear you. Try again or type it.",
+  "@assistantDidntHear": {
+    "description": "Speech recognised nothing."
+  },
+  "assistantType": "Type",
+  "@assistantType": {
+    "description": "Type instead of speaking."
+  },
+  "assistantTranslate": "Translate",
+  "@assistantTranslate": {
+    "description": "Translate button."
+  },
+  "assistantSpeak": "Speak",
+  "@assistantSpeak": {
+    "description": "Mic tooltip."
+  },
+  "assistantHint": "Tap the mic and speak. The other person reads and hears the translation on their half of the screen.",
+  "@assistantHint": {
+    "description": "Empty conversation hint."
+  },
+  "assistantAskTitle": "What is this?",
+  "@assistantAskTitle": {
+    "description": "Ask tab heading."
+  },
+  "assistantAskBody": "Point the camera at a building or monument and Flyra tells you about it. Or ask her anything.",
+  "@assistantAskBody": {
+    "description": "Ask tab text."
+  },
+  "assistantPointCamera": "Point the camera",
+  "@assistantPointCamera": {
+    "description": "Button."
+  },
+  "assistantAskFlyra": "Ask Flyra",
+  "@assistantAskFlyra": {
+    "description": "Heading."
+  },
+  "assistantChipInside": "What's inside?",
+  "@assistantChipInside": {
+    "description": "Suggested question."
+  },
+  "assistantChipPhoto": "Where's the best photo spot?",
+  "@assistantChipPhoto": {
+    "description": "Suggested question."
+  },
+  "assistantChipMore": "Tell me more",
+  "@assistantChipMore": {
+    "description": "Suggested question."
   }
 }

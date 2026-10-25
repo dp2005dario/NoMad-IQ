@@ -74,6 +74,11 @@ dependencies:
   # Fotos...) con tus recuerdos. Gratis y sin cuentas.
   share_plus: ^13.3.1
   home_widget: ^0.10.0
+  # Asistente: traducir frases DENTRO del móvil (ML Kit, gratis; cada idioma
+  # se baja una vez y luego funciona en modo avión).
+  google_mlkit_translation: ^0.15.1
+  # Asistente: el reconocimiento de voz del sistema (lo que dices, a texto).
+  speech_to_text: ^7.5.0
 
 dev_dependencies:
   flutter_test:

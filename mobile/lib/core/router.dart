@@ -43,6 +43,7 @@ import '../features/nearby/nearby_screen.dart';
 import '../features/meetups/meetups_screen.dart';
 import '../features/drive/drive_screen.dart';
 import '../features/trouble/trouble_screen.dart';
+import '../features/assistant/assistant_screen.dart';
 import '../features/papers/papers_screen.dart';
 import '../features/visa/visa_screen.dart';
 import '../features/travel_with/travel_with_screen.dart';
@@ -87,6 +88,7 @@ abstract final class Routes {
   static const String nearby = '/nearby';
   static const String drive = '/drive';
   static const String trouble = '/trouble';
+  static const String assistant = '/assistant';
   static String meetups({String? city}) => Uri(
     path: '/meetups',
     queryParameters: <String, String>{'city': ?city},
@@ -386,6 +388,11 @@ GoRouter buildRouter({
       path: Routes.nearby,
       builder: (BuildContext context, GoRouterState state) =>
           const NearbyScreen(),
+    ),
+    GoRoute(
+      path: Routes.assistant,
+      builder: (BuildContext context, GoRouterState state) =>
+          const AssistantScreen(),
     ),
     GoRoute(
       path: Routes.trouble,

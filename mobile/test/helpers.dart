@@ -39,6 +39,7 @@ import 'package:nomadiq/features/map/map_surface.dart';
 import 'package:nomadiq/core/settings.dart';
 import 'package:nomadiq/features/camera/camera_device.dart';
 import 'package:nomadiq/features/camera/speaker.dart';
+import 'package:nomadiq/features/assistant/interpreter.dart';
 import 'package:nomadiq/features/money/receipt_scanner.dart';
 import 'package:nomadiq/features/vault/doc_source.dart';
 import 'package:nomadiq/features/vault/vault.dart';
@@ -175,6 +176,8 @@ AppServices fakeServices(
   Future<bool> Function(Uri)? openLink,
   CameraFactory? newCamera,
   Speaker? speaker,
+  PhraseTranslator? translator,
+  SpeechInput? speechInput,
   ReceiptScanner? receipts,
   Vault? vault,
   OfflineFiles? offlineFiles,
@@ -217,6 +220,8 @@ AppServices fakeServices(
     openLink: openLink ?? (Uri _) async => true,
     newCamera: newCamera,
     speaker: speaker ?? const SilentSpeaker(),
+    translator: translator ?? const NoTranslator(),
+    speechInput: speechInput ?? const NoSpeechInput(),
     receipts: receipts ?? const NoReceiptScanner(),
     vault: vault,
     offlineFiles: offlineFiles,

@@ -70,6 +70,9 @@ enum LocalData {
 
   /// "Si algo falla": tu reclamación de maleta (solo en el móvil).
   bagClaim,
+
+  /// Asistente: el idioma de la otra persona ("ja").
+  interpreterLang,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real
