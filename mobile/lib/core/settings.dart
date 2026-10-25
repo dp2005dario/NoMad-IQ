@@ -73,6 +73,9 @@ enum LocalData {
 
   /// Asistente: el idioma de la otra persona ("ja").
   interpreterLang,
+
+  /// Moverte: tus bonos y tarjetas de transporte (solo en el móvil).
+  transitTickets,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real

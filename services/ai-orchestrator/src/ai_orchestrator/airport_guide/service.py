@@ -1,6 +1,6 @@
 """El servicio de la guía del aeropuerto: caché primero, Overpass si hace falta.
 
-    1. Redis (``ai:airport:v1:<IATA>``): ~1 ms.
+    1. Redis (``ai:airport:v2:<IATA>``): ~1 ms.
     2. Single flight: si alguien ya está pidiendo ESE aeropuerto, se espera.
     3. Overpass (1 petición) y se guarda 30 días (7 si salió vacío: quizá
        alguien lo dibuja pronto en OpenStreetMap).
@@ -25,7 +25,8 @@ from ai_orchestrator.places.airports import Airports
 
 log = logging.getLogger(__name__)
 
-KEY_PREFIX = "ai:airport:v1"
+# v2: desde que también trae las estaciones (lo guardado antes no las tiene).
+KEY_PREFIX = "ai:airport:v2"
 
 
 class SpotSource(Protocol):

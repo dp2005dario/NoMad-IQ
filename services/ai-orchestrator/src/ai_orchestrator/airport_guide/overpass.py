@@ -2,6 +2,10 @@
 
 En OpenStreetMap cada aeropuerto es un área (``aeroway=aerodrome``) con su
 código IATA. Se busca esa área y, dentro, puertas, baños, cafés, etc.
+
+Además, las "salidas": estaciones de tren y metro, paradas de tranvía,
+estaciones de autobús y paradas de taxi dentro del recinto o muy cerca. Van
+en la MISMA pregunta (una sola llamada a Overpass por aeropuerto).
 """
 
 from __future__ import annotations
@@ -10,7 +14,13 @@ from typing import Any
 
 import httpx
 
-from ai_orchestrator.airport_guide.domain import AEROWAY_KINDS, AMENITY_KINDS, AirportSpot, SpotKind
+from ai_orchestrator.airport_guide.domain import (
+    AEROWAY_KINDS,
+    AMENITY_KINDS,
+    TRANSIT_AROUND_M,
+    AirportSpot,
+    SpotKind,
+)
 from ai_orchestrator.atms.overpass import USER_AGENT, OverpassBusyError, OverpassError
 from ai_orchestrator.places.airports import IATA_PATTERN
 from ai_orchestrator.places.wikimedia import RateLimiter
@@ -33,7 +43,9 @@ def build_query(iata: str) -> str:
         ".ap map_to_area->.a;"
         f'(nwr(area.a)["aeroway"~"^({aeroways})$"];'
         f'nwr(area.a)["amenity"~"^({amenities})$"];'
-        'nwr(area.a)["tourism"="information"];);'
+        'nwr(area.a)["tourism"="information"];'
+        f'nwr(around.ap:{TRANSIT_AROUND_M})["railway"~"^(station|halt|tram_stop)$"];'
+        f'nwr(around.ap:{TRANSIT_AROUND_M})["amenity"~"^(bus_station|taxi)$"];);'
         f"out center {MAX_SPOTS};"
     )
 
@@ -46,7 +58,31 @@ def _text(tags: dict[str, Any], key: str, limit: int = 60) -> str | None:
     return value[:limit] or None
 
 
+def _transit_kind(tags: dict[str, Any]) -> SpotKind | None:
+    """Tren, metro, tranvía, bus o taxi (o None si no es transporte)."""
+    railway = tags.get("railway")
+    if railway == "tram_stop":
+        return "tram"
+    if railway in ("station", "halt"):
+        # En OSM el metro es una "station" con station=subway (o light_rail,
+        # monorail: para el viajero es lo mismo, "metro").
+        if tags.get("station") in ("subway", "light_rail", "monorail") or tags.get("subway") == "yes":
+            return "metro"
+        if tags.get("station") == "funicular":
+            return None
+        return "train"
+    amenity = tags.get("amenity")
+    if amenity == "bus_station":
+        return "bus"
+    if amenity == "taxi":
+        return "taxi"
+    return None
+
+
 def _kind(tags: dict[str, Any]) -> SpotKind | None:
+    transit = _transit_kind(tags)
+    if transit is not None:
+        return transit
     aeroway = tags.get("aeroway")
     if isinstance(aeroway, str) and aeroway in AEROWAY_KINDS:
         return AEROWAY_KINDS[aeroway]

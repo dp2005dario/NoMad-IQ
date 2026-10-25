@@ -15,7 +15,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import '../../core/router.dart';
-import '../coming_soon/coming_soon_screen.dart' show Feature;
 import 'hpke.dart';
 import 'push_state.dart';
 
@@ -156,7 +155,7 @@ class PushNotice {
   String get route => switch (kind) {
     // El nombre de la zona no viaja en el aviso: la audioguía lo pide luego.
     PushKind.zoneAudioguide => Routes.audioguide(zoneId, ''),
-    PushKind.airportArrival => Routes.soon(Feature.transport),
+    PushKind.airportArrival => Routes.transport(),
     PushKind.zoneSafety => Routes.map,
     // La lista de tus alertas de precio (con el botón de reservar).
     PushKind.fareAlert => Routes.fareAlerts,

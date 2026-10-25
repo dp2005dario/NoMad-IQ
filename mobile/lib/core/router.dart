@@ -45,6 +45,7 @@ import '../features/meetups/meetups_screen.dart';
 import '../features/drive/drive_screen.dart';
 import '../features/map/geo.dart';
 import '../features/stays/stays_screen.dart';
+import '../features/transport/transport_screen.dart';
 import '../features/trouble/trouble_screen.dart';
 import '../features/assistant/assistant_screen.dart';
 import '../features/voice/voice_screen.dart';
@@ -105,6 +106,12 @@ abstract final class Routes {
       },
       'name': ?name,
     },
+  ).toString();
+
+  /// Moverte: del aeropuerto [iata] al hotel, bonos y billetes.
+  static String transport({String? iata}) => Uri(
+    path: '/transport',
+    queryParameters: iata == null ? null : <String, String>{'iata': iata},
   ).toString();
   static String meetups({String? city}) => Uri(
     path: '/meetups',
@@ -434,6 +441,17 @@ GoRouter buildRouter({
       path: Routes.drive,
       builder: (BuildContext context, GoRouterState state) =>
           const DriveScreen(),
+    ),
+    GoRoute(
+      path: '/transport',
+      builder: (BuildContext context, GoRouterState state) {
+        final String? iata = state.uri.queryParameters['iata'];
+        return TransportScreen(
+          iata: iata != null && RegExp(r'^[A-Za-z]{3}$').hasMatch(iata)
+              ? iata
+              : null,
+        );
+      },
     ),
     GoRoute(
       path: '/stays',

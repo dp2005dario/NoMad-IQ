@@ -10,8 +10,28 @@ from ai_orchestrator.atms.domain import ATTRIBUTION, LICENSE_URL
 
 # Qué tipos de sitio enseña la app (y nada más: así la respuesta es pequeña).
 SpotKind = Literal[
-    "gate", "toilets", "cafe", "food", "pharmacy", "atm", "water", "info", "charging", "lounge"
+    "gate",
+    "toilets",
+    "cafe",
+    "food",
+    "pharmacy",
+    "atm",
+    "water",
+    "info",
+    "charging",
+    "lounge",
+    # Las "salidas" del aeropuerto (pantalla Moverte): estaciones y paradas
+    # dentro del recinto o a menos de TRANSIT_AROUND_M.
+    "train",
+    "metro",
+    "tram",
+    "bus",
+    "taxi",
 ]
+
+# Hasta dónde se buscan estaciones alrededor del recinto: muchas están justo
+# fuera del dibujo del aeropuerto (unos cientos de metros, con pasarela).
+TRANSIT_AROUND_M = 1200
 
 # Etiqueta de OpenStreetMap → nuestro tipo.
 AMENITY_KINDS: dict[str, SpotKind] = {

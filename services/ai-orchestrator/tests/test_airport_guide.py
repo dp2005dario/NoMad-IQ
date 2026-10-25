@@ -75,6 +75,29 @@ def test_query_uses_the_airport_area_and_rejects_odd_codes() -> None:
         build_query('MAD"];out;')
 
 
+def test_query_also_asks_for_the_ways_out() -> None:
+    q = build_query("MAD")
+    assert "around.ap:1200" in q
+    assert "tram_stop" in q and "bus_station" in q and "taxi" in q
+
+
+def test_parse_transit_kinds() -> None:
+    def kind(**tags: str) -> str | None:
+        spot = parse_spot(node(9, **tags))
+        return spot.kind if spot else None
+
+    assert kind(railway="station", name="Aeropuerto T4") == "train"
+    assert kind(railway="halt") == "train"
+    assert kind(railway="station", station="subway") == "metro"
+    assert kind(railway="station", subway="yes") == "metro"
+    assert kind(railway="station", station="monorail") == "metro"
+    assert kind(railway="station", station="funicular") is None
+    assert kind(railway="tram_stop") == "tram"
+    assert kind(amenity="bus_station") == "bus"
+    assert kind(amenity="taxi") == "taxi"
+    assert kind(railway="platform") is None
+
+
 def test_parse_spot_kinds() -> None:
     gate = parse_spot(node(1, aeroway="gate", ref="K42", level="1"))
     assert gate is not None and gate.kind == "gate" and gate.ref == "K42" and gate.level == "1"

@@ -22,7 +22,13 @@ enum SpotKind {
   water,
   info,
   charging,
-  lounge;
+  lounge,
+  // Las salidas del aeropuerto (pantalla Moverte).
+  train,
+  metro,
+  tram,
+  bus,
+  taxi;
 
   static SpotKind? parse(Object? raw) {
     for (final SpotKind k in values) {

@@ -166,7 +166,7 @@ void main() {
       expect(safety?.route, Routes.map);
       expect(
         PushNotice.fromJson(json('airport_arrival', zoneId))?.route,
-        startsWith('/soon/'),
+        '/transport',
       );
       expect(PushNotice.fromJson(json('flash_sale', zoneId)), isNull);
       // Un zone_id raro nunca llega a formar una ruta.

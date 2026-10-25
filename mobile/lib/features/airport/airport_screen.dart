@@ -35,6 +35,11 @@ String spotKindLabel(AppLocalizations t, SpotKind k) => switch (k) {
   SpotKind.info => t.airportKindInfo,
   SpotKind.charging => t.airportKindCharging,
   SpotKind.lounge => t.airportKindLounge,
+  SpotKind.train => t.transportModeTrain,
+  SpotKind.metro => t.transportModeMetro,
+  SpotKind.tram => t.transportModeTram,
+  SpotKind.bus => t.transportModeBus,
+  SpotKind.taxi => t.transportModeTaxi,
 };
 
 IconData spotKindIcon(SpotKind k) => switch (k) {
@@ -48,6 +53,11 @@ IconData spotKindIcon(SpotKind k) => switch (k) {
   SpotKind.info => Icons.info_rounded,
   SpotKind.charging => Icons.power_rounded,
   SpotKind.lounge => Icons.weekend_rounded,
+  SpotKind.train => Icons.train_rounded,
+  SpotKind.metro => Icons.subway_rounded,
+  SpotKind.tram => Icons.tram_rounded,
+  SpotKind.bus => Icons.directions_bus_rounded,
+  SpotKind.taxi => Icons.local_taxi_rounded,
 };
 
 /// Lo que se ofrece en los botones, en este orden (como la maqueta: puerta,
@@ -63,6 +73,10 @@ const List<SpotKind> _order = <SpotKind>[
   SpotKind.charging,
   SpotKind.info,
   SpotKind.lounge,
+  SpotKind.train,
+  SpotKind.metro,
+  SpotKind.bus,
+  SpotKind.taxi,
 ];
 
 class AirportScreen extends StatefulWidget {

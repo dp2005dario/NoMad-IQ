@@ -8079,5 +8079,308 @@
   "staysPickUse": "Search around here",
   "@staysPickUse": {
     "description": "Picker button."
+  },
+  "transportTitle": "Getting around",
+  "@transportTitle": {
+    "description": "Getting around title."
+  },
+  "transportSubtitle": "routes, passes and tickets",
+  "@transportSubtitle": {
+    "description": "Subtitle."
+  },
+  "transportTabRoutes": "Routes",
+  "@transportTabRoutes": {
+    "description": "Tab routes."
+  },
+  "transportTabPasses": "Passes",
+  "@transportTabPasses": {
+    "description": "Tab passes."
+  },
+  "transportTabTickets": "My tickets",
+  "@transportTabTickets": {
+    "description": "Tab my tickets."
+  },
+  "transportAirport": "Airport {code}",
+  "@transportAirport": {
+    "description": "Arrival airport.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "transportNoAirport": "Which airport do you land at?",
+  "@transportNoAirport": {
+    "description": "No airport chosen."
+  },
+  "transportPickAirport": "Choose airport",
+  "@transportPickAirport": {
+    "description": "Button choose airport."
+  },
+  "transportChange": "Change",
+  "@transportChange": {
+    "description": "Button change."
+  },
+  "transportTo": "Where are you going",
+  "@transportTo": {
+    "description": "Destination field label."
+  },
+  "transportHotelHint": "Your hotel's address",
+  "@transportHotelHint": {
+    "description": "Destination hint."
+  },
+  "transportWaysOut": "How to get out of the airport",
+  "@transportWaysOut": {
+    "description": "Section: ways out of the airport."
+  },
+  "transportWaysNone": "OpenStreetMap doesn't have this airport's stations mapped yet.",
+  "@transportWaysNone": {
+    "description": "No stations mapped."
+  },
+  "transportWaysError": "Couldn't load the stations. The routes below still work.",
+  "@transportWaysError": {
+    "description": "Stations failed."
+  },
+  "transportModeTrain": "Train",
+  "@transportModeTrain": {
+    "description": "Mode train."
+  },
+  "transportModeMetro": "Metro",
+  "@transportModeMetro": {
+    "description": "Mode metro."
+  },
+  "transportModeTram": "Tram",
+  "@transportModeTram": {
+    "description": "Mode tram."
+  },
+  "transportModeBus": "Bus",
+  "@transportModeBus": {
+    "description": "Mode bus."
+  },
+  "transportModeTaxi": "Taxi",
+  "@transportModeTaxi": {
+    "description": "Mode taxi."
+  },
+  "transportModeFerry": "Ferry",
+  "@transportModeFerry": {
+    "description": "Mode ferry."
+  },
+  "transportRouteTransit": "Public transport",
+  "@transportRouteTransit": {
+    "description": "Route public transport."
+  },
+  "transportRouteTransitNote": "Timetables, changes and fares from each operator, in Google Maps",
+  "@transportRouteTransitNote": {
+    "description": "Transit note."
+  },
+  "transportRouteTaxi": "Taxi or car",
+  "@transportRouteTaxi": {
+    "description": "Route taxi."
+  },
+  "transportRouteTaxiNote": "Easiest with big suitcases or late at night",
+  "@transportRouteTaxiNote": {
+    "description": "Taxi note."
+  },
+  "transportGo": "See route",
+  "@transportGo": {
+    "description": "Tooltip open route."
+  },
+  "transportNeedHotel": "Type your hotel's address to see the routes.",
+  "@transportNeedHotel": {
+    "description": "Need hotel address."
+  },
+  "transportRoutesNote": "Routes, timetables and fares are worked out by Google Maps with each operator's data.",
+  "@transportRoutesNote": {
+    "description": "Routes footnote."
+  },
+  "transportDays": "{count, plural, =1{1 day in the city} other{{count} days in the city}}",
+  "@transportDays": {
+    "description": "Days count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "transportRides": "{count, plural, =1{1 ride a day} other{{count} rides a day}}",
+  "@transportRides": {
+    "description": "Rides per day.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "transportCardWhat": "Top-up card: tap it (or your phone) on metro, buses and more.",
+  "@transportCardWhat": {
+    "description": "Top-up card description."
+  },
+  "transportMustHave": "Must have",
+  "@transportMustHave": {
+    "description": "Verdict must have."
+  },
+  "transportIfMuseums": "Only if you visit museums",
+  "@transportIfMuseums": {
+    "description": "Verdict city card."
+  },
+  "transportOfficial": "Official website",
+  "@transportOfficial": {
+    "description": "Official website."
+  },
+  "transportHaveIt": "I have it",
+  "@transportHaveIt": {
+    "description": "I have it."
+  },
+  "transportNoCity": "We don't have this city's passes yet. Look on its transport website for the top-up card and tourist passes.",
+  "@transportNoCity": {
+    "description": "No pass data for this city."
+  },
+  "transportActive": "ACTIVE",
+  "@transportActive": {
+    "description": "Pass active."
+  },
+  "transportExpired": "EXPIRED",
+  "@transportExpired": {
+    "description": "Pass expired."
+  },
+  "transportPassHours": "{hours}-hour pass",
+  "@transportPassHours": {
+    "description": "Pass hours.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "transportLeftHours": "{hours} h left",
+  "@transportLeftHours": {
+    "description": "Hours left.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "transportLeftMinutes": "{minutes} min left",
+  "@transportLeftMinutes": {
+    "description": "Minutes left.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "transportBalance": "Balance {amount}",
+  "@transportBalance": {
+    "description": "Card balance.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "transportBalanceUnknown": "No balance noted yet",
+  "@transportBalanceUnknown": {
+    "description": "No balance noted."
+  },
+  "transportEditBalance": "Note balance",
+  "@transportEditBalance": {
+    "description": "Note balance."
+  },
+  "transportTopUp": "Top up",
+  "@transportTopUp": {
+    "description": "Top up."
+  },
+  "transportDelete": "Remove",
+  "@transportDelete": {
+    "description": "Remove ticket."
+  },
+  "transportNoTickets": "No tickets yet. In Passes, tap “I have it”, or add one here.",
+  "@transportNoTickets": {
+    "description": "No tickets."
+  },
+  "transportAdd": "Add ticket",
+  "@transportAdd": {
+    "description": "Add ticket."
+  },
+  "transportName": "Name",
+  "@transportName": {
+    "description": "Ticket name."
+  },
+  "transportHoursField": "Hours (empty = top-up card)",
+  "@transportHoursField": {
+    "description": "Hours field."
+  },
+  "transportSave": "Save",
+  "@transportSave": {
+    "description": "Save."
+  },
+  "transportCancel": "Cancel",
+  "@transportCancel": {
+    "description": "Cancel."
+  },
+  "transportTicketsNote": "Saved only on your phone. To go through the gates, use the ticket or the operator's app.",
+  "@transportTicketsNote": {
+    "description": "Tickets footnote."
+  },
+  "transportUnlimited": "Unlimited rides for a set number of hours",
+  "@transportUnlimited": {
+    "description": "Pass type: unlimited rides."
+  },
+  "transportCityCard": "Transport + museums: only pays off if you visit museums",
+  "@transportCityCard": {
+    "description": "Pass type: city card."
+  },
+  "transportCapInfo": "Paying by card or phone has a cap: once you reach it, the rest of the rides that day (or week) are free. Check the amount on the official website.",
+  "@transportCapInfo": {
+    "description": "Fare capping info."
+  },
+  "transportCalcTitle": "Does a pass pay off?",
+  "@transportCalcTitle": {
+    "description": "Calculator title."
+  },
+  "transportCalcHint": "Look up the prices on the official website and enter them here: I'll tell you whether the pass pays off for your trip.",
+  "@transportCalcHint": {
+    "description": "Calculator hint from Flyra."
+  },
+  "transportSingleField": "Price of a single ride",
+  "@transportSingleField": {
+    "description": "Field single price."
+  },
+  "transportPassField": "Price of the pass",
+  "@transportPassField": {
+    "description": "Field pass price."
+  },
+  "transportPassHoursField": "Pass length (hours)",
+  "@transportPassHoursField": {
+    "description": "Field pass hours."
+  },
+  "transportCalcWorth": "The pass pays off: {pass} in passes against {singles} in single rides.",
+  "@transportCalcWorth": {
+    "description": "Result: pass pays off.",
+    "placeholders": {
+      "pass": {
+        "type": "String"
+      },
+      "singles": {
+        "type": "String"
+      }
+    }
+  },
+  "transportCalcNotWorth": "Single rides are cheaper: {singles} against {pass} in passes.",
+  "@transportCalcNotWorth": {
+    "description": "Result: singles cheaper.",
+    "placeholders": {
+      "pass": {
+        "type": "String"
+      },
+      "singles": {
+        "type": "String"
+      }
+    }
+  },
+  "transportHowManyHours": "How many hours is your pass? It starts counting now.",
+  "@transportHowManyHours": {
+    "description": "Dialog: how many hours."
   }
 }
