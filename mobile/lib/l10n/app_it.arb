@@ -1800,5 +1800,18 @@
   "eventsHolidayRegional": "Festivo solo in parte del paese",
   "eventsTickets": "Biglietti",
   "eventsSave": "Salva",
-  "eventsUnsave": "Togli dai salvati"
+  "eventsUnsave": "Togli dai salvati",
+  "beforePlugsTitle": "Prese",
+  "beforePlugType": "Tipo {type}",
+  "beforePlugsNeed": "Compra un adattatore per prese di tipo {types}",
+  "beforePlugsNoNeed": "I tuoi caricatori vanno bene: niente adattatore",
+  "beforePlugsVolts": "Tensione lì: {volts} V",
+  "beforePlugsTransformer": "Lì la tensione è diversa. Guarda l'etichetta del caricatore: se dice 100-240 V va bene; altrimenti serve un trasformatore.",
+  "beforePlugsTip": "Consiglio: un adattatore universale va bene nella maggior parte dei paesi.",
+  "beforePlugsUnknown": "Non abbiamo il tipo di presa di questo paese: controllalo prima di partire.",
+  "fxEurozone": "Area euro",
+  "fxNotesTitle": "In banconote",
+  "fxNotesOr": "oppure",
+  "fxNotesCoins": "+ {amount} in monete",
+  "fxNotesSource": "Banconote secondo la banca centrale"
 }

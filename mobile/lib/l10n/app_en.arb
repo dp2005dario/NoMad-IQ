@@ -8487,5 +8487,77 @@
   "eventsUnsave": "Remove from saved",
   "@eventsUnsave": {
     "description": "Unsave tooltip."
+  },
+  "beforePlugsTitle": "Plugs",
+  "@beforePlugsTitle": {
+    "description": "Section plugs."
+  },
+  "beforePlugType": "Type {type}",
+  "@beforePlugType": {
+    "description": "Plug type label.",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePlugsNeed": "Buy an adapter for type {types} sockets",
+  "@beforePlugsNeed": {
+    "description": "Need adapter.",
+    "placeholders": {
+      "types": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePlugsNoNeed": "Your chargers fit: no adapter needed",
+  "@beforePlugsNoNeed": {
+    "description": "No adapter needed."
+  },
+  "beforePlugsVolts": "Mains voltage there: {volts} V",
+  "@beforePlugsVolts": {
+    "description": "Mains voltage.",
+    "placeholders": {
+      "volts": {
+        "type": "int"
+      }
+    }
+  },
+  "beforePlugsTransformer": "The voltage is different there. Check your charger's label: if it says 100-240 V it works; if not, you need a voltage converter.",
+  "@beforePlugsTransformer": {
+    "description": "Transformer warning."
+  },
+  "beforePlugsTip": "Tip: a universal adapter works in most countries.",
+  "@beforePlugsTip": {
+    "description": "Universal adapter tip."
+  },
+  "beforePlugsUnknown": "We don't have this country's plug type: check it before you travel.",
+  "@beforePlugsUnknown": {
+    "description": "Unknown country plugs."
+  },
+  "fxEurozone": "Euro area",
+  "@fxEurozone": {
+    "description": "Euro area name."
+  },
+  "fxNotesTitle": "In banknotes",
+  "@fxNotesTitle": {
+    "description": "Banknotes card title."
+  },
+  "fxNotesOr": "or",
+  "@fxNotesOr": {
+    "description": "Alternative mix."
+  },
+  "fxNotesCoins": "+ {amount} in coins",
+  "@fxNotesCoins": {
+    "description": "Coins remainder.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "fxNotesSource": "Banknotes according to the central bank",
+  "@fxNotesSource": {
+    "description": "Official notes source link."
   }
 }

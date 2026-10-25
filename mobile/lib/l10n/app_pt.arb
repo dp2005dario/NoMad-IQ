@@ -1800,5 +1800,18 @@
   "eventsHolidayRegional": "Feriado só em parte do país",
   "eventsTickets": "Bilhetes",
   "eventsSave": "Guardar",
-  "eventsUnsave": "Tirar dos guardados"
+  "eventsUnsave": "Tirar dos guardados",
+  "beforePlugsTitle": "Tomadas",
+  "beforePlugType": "Tipo {type}",
+  "beforePlugsNeed": "Compra um adaptador para tomadas do tipo {types}",
+  "beforePlugsNoNeed": "Os teus carregadores encaixam: não precisas de adaptador",
+  "beforePlugsVolts": "Corrente lá: {volts} V",
+  "beforePlugsTransformer": "Lá a tensão é diferente. Vê a etiqueta do carregador: se disser 100-240 V, serve; se não, precisas de um transformador.",
+  "beforePlugsTip": "Dica: um adaptador universal serve na maioria dos países.",
+  "beforePlugsUnknown": "Não temos o tipo de tomada deste país: confirma antes de viajar.",
+  "fxEurozone": "Zona euro",
+  "fxNotesTitle": "Em notas",
+  "fxNotesOr": "ou",
+  "fxNotesCoins": "+ {amount} em moedas",
+  "fxNotesSource": "Notas segundo o banco central"
 }

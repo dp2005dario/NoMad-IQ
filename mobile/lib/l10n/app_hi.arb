@@ -1800,5 +1800,18 @@
   "eventsHolidayRegional": "देश के सिर्फ़ कुछ हिस्से में छुट्टी",
   "eventsTickets": "टिकट",
   "eventsSave": "सेव करें",
-  "eventsUnsave": "सेव से हटाएँ"
+  "eventsUnsave": "सेव से हटाएँ",
+  "beforePlugsTitle": "प्लग",
+  "beforePlugType": "टाइप {type}",
+  "beforePlugsNeed": "टाइप {types} सॉकेट के लिए अडैप्टर खरीदें",
+  "beforePlugsNoNeed": "आपके चार्जर फ़िट होंगे: अडैप्टर की ज़रूरत नहीं",
+  "beforePlugsVolts": "वहाँ वोल्टेज: {volts} V",
+  "beforePlugsTransformer": "वहाँ वोल्टेज अलग है। चार्जर का लेबल देखें: 100-240 V लिखा हो तो चलेगा; नहीं तो वोल्टेज कन्वर्टर चाहिए।",
+  "beforePlugsTip": "सुझाव: यूनिवर्सल अडैप्टर ज़्यादातर देशों में काम करता है।",
+  "beforePlugsUnknown": "इस देश का प्लग टाइप हमारे पास नहीं है: यात्रा से पहले जाँच लें।",
+  "fxEurozone": "यूरो क्षेत्र",
+  "fxNotesTitle": "नोटों में",
+  "fxNotesOr": "या",
+  "fxNotesCoins": "+ {amount} सिक्कों में",
+  "fxNotesSource": "केंद्रीय बैंक के अनुसार नोट"
 }

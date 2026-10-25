@@ -1800,5 +1800,18 @@
   "eventsHolidayRegional": "Festivo solo en parte del país",
   "eventsTickets": "Entradas",
   "eventsSave": "Guardar",
-  "eventsUnsave": "Quitar de guardados"
+  "eventsUnsave": "Quitar de guardados",
+  "beforePlugsTitle": "Enchufes",
+  "beforePlugType": "Tipo {type}",
+  "beforePlugsNeed": "Compra un adaptador para enchufes tipo {types}",
+  "beforePlugsNoNeed": "Tus cargadores encajan: no necesitas adaptador",
+  "beforePlugsVolts": "Corriente allí: {volts} V",
+  "beforePlugsTransformer": "Allí el voltaje es distinto. Mira la etiqueta del cargador: si pone 100-240 V, vale; si no, necesitas un transformador.",
+  "beforePlugsTip": "Consejo: un adaptador universal sirve para la mayoría de países.",
+  "beforePlugsUnknown": "No tenemos el tipo de enchufe de este país: compruébalo antes de viajar.",
+  "fxEurozone": "Zona euro",
+  "fxNotesTitle": "En billetes",
+  "fxNotesOr": "o bien",
+  "fxNotesCoins": "+ {amount} en monedas",
+  "fxNotesSource": "Billetes según el banco central"
 }

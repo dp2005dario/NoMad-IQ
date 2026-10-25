@@ -15,6 +15,9 @@ import '../../core/money.dart';
 import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../visa/visa_data.dart' show CountryNames;
+import 'banknotes.dart';
+import 'currency_info.dart';
 import 'fx_api.dart';
 import 'receipt_parser.dart';
 
@@ -37,6 +40,8 @@ class _FxViewState extends State<FxView> with SingleTickerProviderStateMixin {
   String _from = 'EUR';
   String _to = 'USD';
   bool _landed = false;
+  // Los nombres de país en tu idioma (para "🇬🇧 GBP · Reino Unido").
+  CountryNames? _names;
 
   @override
   void didChangeDependencies() {
@@ -52,6 +57,15 @@ class _FxViewState extends State<FxView> with SingleTickerProviderStateMixin {
   }
 
   Future<void> _load() async {
+    unawaited(
+      CountryNames.load()
+          .then((CountryNames n) {
+            if (mounted) setState(() => _names = n);
+          })
+          .catchError((Object _) {
+            // Sin nombres: se ve solo el código, como antes.
+          }),
+    );
     try {
       final FxResult fx = await _services.fx.load();
       if (mounted) {
@@ -150,6 +164,7 @@ class _FxViewState extends State<FxView> with SingleTickerProviderStateMixin {
                       child: _CurrencyPicker(
                         label: t.fxFrom,
                         value: _from,
+                        describe: _describe,
                         options: rates.currencies,
                         onChanged: (String c) => _pick(from: c),
                       ),
@@ -163,6 +178,7 @@ class _FxViewState extends State<FxView> with SingleTickerProviderStateMixin {
                       child: _CurrencyPicker(
                         label: t.fxTo,
                         value: _to,
+                        describe: _describe,
                         options: rates.currencies,
                         onChanged: (String c) => _pick(to: c),
                       ),
@@ -236,6 +252,15 @@ class _FxViewState extends State<FxView> with SingleTickerProviderStateMixin {
             textAlign: TextAlign.center,
             style: const TextStyle(color: NomadColors.textMuted),
           ),
+        if (_landed && result != null) ...<Widget>[
+          const SizedBox(height: 16),
+          _Banknotes(
+            amountMinor: result,
+            currency: _to,
+            locale: locale,
+            onSource: (Uri u) => unawaited(_services.openBooking(u)),
+          ),
+        ],
         if (fx.offline) ...<Widget>[
           const SizedBox(height: 8),
           Text(
@@ -249,6 +274,24 @@ class _FxViewState extends State<FxView> with SingleTickerProviderStateMixin {
   }
 }
 
+extension on _FxViewState {
+  /// "🇬🇧 GBP · Reino Unido" (o "🇪🇺 EUR · Zona euro").
+  String _describe(String code) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final String lang = Localizations.localeOf(context).languageCode;
+    final String flag = currencyFlag(code);
+    final String? country = code == 'EUR'
+        ? t.fxEurozone
+        : currencyCountry[code] == null
+        ? null
+        : _names?.name(currencyCountry[code]!, lang);
+    return <String>[
+      if (flag.isNotEmpty) flag,
+      country == null ? code : '$code · $country',
+    ].join(' ');
+  }
+}
+
 String _symbol(String code, String locale) =>
     NumberFormat.simpleCurrency(locale: locale, name: code).currencySymbol;
 
@@ -258,11 +301,13 @@ class _CurrencyPicker extends StatelessWidget {
     required this.value,
     required this.options,
     required this.onChanged,
+    required this.describe,
   });
 
   final String label;
   final String value;
   final List<String> options;
+  final String Function(String code) describe;
   final ValueChanged<String> onChanged;
 
   @override
@@ -272,7 +317,10 @@ class _CurrencyPicker extends StatelessWidget {
     decoration: InputDecoration(labelText: label),
     items: <DropdownMenuItem<String>>[
       for (final String c in options)
-        DropdownMenuItem<String>(value: c, child: Text(c)),
+        DropdownMenuItem<String>(
+          value: c,
+          child: Text(describe(c), overflow: TextOverflow.ellipsis),
+        ),
     ],
     onChanged: (String? c) {
       if (c != null) onChanged(c);
@@ -474,4 +522,123 @@ class _CoinFace extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "¿Qué billetes son?": las formas de juntar la cantidad con billetes de
+/// [currency], dibujados (no son fotos de billetes reales).
+class _Banknotes extends StatelessWidget {
+  const _Banknotes({
+    required this.amountMinor,
+    required this.currency,
+    required this.locale,
+    required this.onSource,
+  });
+
+  final int amountMinor;
+  final String currency;
+  final String locale;
+  final ValueChanged<Uri> onSource;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final BanknoteSet? set = banknotes[currency];
+    if (set == null) return const SizedBox.shrink();
+    final int digits = currencyDigits(currency);
+    int unit = 1;
+    for (int i = 0; i < digits; i++) {
+      unit *= 10;
+    }
+    final List<NoteMix> mixes = noteMixes(amountMinor ~/ unit, currency);
+    if (mixes.isEmpty) return const SizedBox.shrink();
+    // Lo que no llega a billete (incluidos los céntimos) va en monedas.
+    final int coinsMinor = amountMinor - (amountMinor ~/ unit) * unit;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              t.fxNotesTitle,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            for (int i = 0; i < mixes.length; i++) ...<Widget>[
+              const SizedBox(height: 8),
+              if (i > 0)
+                Text(
+                  t.fxNotesOr,
+                  style: const TextStyle(color: NomadColors.textMuted),
+                ),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: <Widget>[
+                  for (final NotePile p in mixes[i].piles)
+                    _Note(
+                      label: formatMoney(
+                        p.value * unit,
+                        currency,
+                        locale,
+                        compact: true,
+                      ),
+                      count: p.count,
+                    ),
+                ],
+              ),
+              if (mixes[i].rest * unit + coinsMinor > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    t.fxNotesCoins(
+                      formatMoney(
+                        mixes[i].rest * unit + coinsMinor,
+                        currency,
+                        locale,
+                      ),
+                    ),
+                    style: const TextStyle(color: NomadColors.textMuted),
+                  ),
+                ),
+            ],
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => onSource(Uri.parse(set.source)),
+              child: Text(t.fxNotesSource),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Note extends StatelessWidget {
+  const _Note({required this.label, required this.count});
+
+  final String label;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: <Widget>[
+      Container(
+        width: 86,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: NomadColors.money.withValues(alpha: 0.18),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: NomadColors.money, width: 1.5),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+        ),
+      ),
+      const SizedBox(width: 4),
+      Text('× $count', style: const TextStyle(fontWeight: FontWeight.w800)),
+    ],
+  );
 }

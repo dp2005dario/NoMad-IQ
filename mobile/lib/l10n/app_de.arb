@@ -1800,5 +1800,18 @@
   "eventsHolidayRegional": "Feiertag nur in einem Teil des Landes",
   "eventsTickets": "Tickets",
   "eventsSave": "Speichern",
-  "eventsUnsave": "Aus Gespeichert entfernen"
+  "eventsUnsave": "Aus Gespeichert entfernen",
+  "beforePlugsTitle": "Steckdosen",
+  "beforePlugType": "Typ {type}",
+  "beforePlugsNeed": "Kauf einen Adapter für Steckdosen vom Typ {types}",
+  "beforePlugsNoNeed": "Deine Ladegeräte passen: kein Adapter nötig",
+  "beforePlugsVolts": "Netzspannung dort: {volts} V",
+  "beforePlugsTransformer": "Die Spannung ist dort anders. Schau aufs Etikett des Ladegeräts: Steht 100-240 V drauf, passt es; sonst brauchst du einen Spannungswandler.",
+  "beforePlugsTip": "Tipp: Ein Universaladapter passt in den meisten Ländern.",
+  "beforePlugsUnknown": "Den Steckertyp dieses Landes kennen wir nicht: Prüf ihn vor der Reise.",
+  "fxEurozone": "Euroraum",
+  "fxNotesTitle": "In Scheinen",
+  "fxNotesOr": "oder",
+  "fxNotesCoins": "+ {amount} in Münzen",
+  "fxNotesSource": "Scheine laut Zentralbank"
 }

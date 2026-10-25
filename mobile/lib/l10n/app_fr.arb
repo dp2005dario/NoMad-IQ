@@ -1800,5 +1800,18 @@
   "eventsHolidayRegional": "Férié seulement dans une partie du pays",
   "eventsTickets": "Billets",
   "eventsSave": "Enregistrer",
-  "eventsUnsave": "Retirer des enregistrés"
+  "eventsUnsave": "Retirer des enregistrés",
+  "beforePlugsTitle": "Prises",
+  "beforePlugType": "Type {type}",
+  "beforePlugsNeed": "Achète un adaptateur pour prises de type {types}",
+  "beforePlugsNoNeed": "Tes chargeurs sont compatibles : pas besoin d'adaptateur",
+  "beforePlugsVolts": "Tension sur place : {volts} V",
+  "beforePlugsTransformer": "La tension est différente là-bas. Regarde l'étiquette du chargeur : s'il indique 100-240 V, ça marche ; sinon, il te faut un transformateur.",
+  "beforePlugsTip": "Astuce : un adaptateur universel fonctionne dans la plupart des pays.",
+  "beforePlugsUnknown": "Nous n'avons pas le type de prise de ce pays : vérifie-le avant de partir.",
+  "fxEurozone": "Zone euro",
+  "fxNotesTitle": "En billets",
+  "fxNotesOr": "ou",
+  "fxNotesCoins": "+ {amount} en pièces",
+  "fxNotesSource": "Billets selon la banque centrale"
 }

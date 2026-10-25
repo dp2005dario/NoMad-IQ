@@ -1800,5 +1800,18 @@
   "eventsHolidayRegional": "仅部分地区放假",
   "eventsTickets": "门票",
   "eventsSave": "收藏",
-  "eventsUnsave": "取消收藏"
+  "eventsUnsave": "取消收藏",
+  "beforePlugsTitle": "插座",
+  "beforePlugType": "{type} 型",
+  "beforePlugsNeed": "请买一个适用于 {types} 型插座的转换插头",
+  "beforePlugsNoNeed": "你的充电器可以直接用:不需要转换插头",
+  "beforePlugsVolts": "当地电压:{volts} V",
+  "beforePlugsTransformer": "当地电压不同。看看充电器标签:写着 100-240 V 就能用,否则需要变压器。",
+  "beforePlugsTip": "提示:万能转换插头在大多数国家都能用。",
+  "beforePlugsUnknown": "我们没有这个国家的插座类型,出发前请确认。",
+  "fxEurozone": "欧元区",
+  "fxNotesTitle": "换成纸币",
+  "fxNotesOr": "或者",
+  "fxNotesCoins": "+ {amount} 硬币",
+  "fxNotesSource": "纸币信息来自央行"
 }

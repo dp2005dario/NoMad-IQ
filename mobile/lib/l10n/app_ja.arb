@@ -1800,5 +1800,18 @@
   "eventsHolidayRegional": "国の一部だけの祝日",
   "eventsTickets": "チケット",
   "eventsSave": "保存",
-  "eventsUnsave": "保存を外す"
+  "eventsUnsave": "保存を外す",
+  "beforePlugsTitle": "コンセント",
+  "beforePlugType": "{type}タイプ",
+  "beforePlugsNeed": "{types}タイプ用の変換プラグを買ってね",
+  "beforePlugsNoNeed": "充電器はそのまま使えます。変換プラグは不要",
+  "beforePlugsVolts": "現地の電圧:{volts} V",
+  "beforePlugsTransformer": "現地は電圧が違います。充電器のラベルに100-240 Vとあれば使えます。なければ変圧器が必要です。",
+  "beforePlugsTip": "ヒント:ユニバーサル変換プラグならほとんどの国で使えます。",
+  "beforePlugsUnknown": "この国のコンセントの型はまだありません。出発前に確認してね。",
+  "fxEurozone": "ユーロ圏",
+  "fxNotesTitle": "紙幣にすると",
+  "fxNotesOr": "または",
+  "fxNotesCoins": "+ 硬貨{amount}",
+  "fxNotesSource": "紙幣は中央銀行の情報"
 }

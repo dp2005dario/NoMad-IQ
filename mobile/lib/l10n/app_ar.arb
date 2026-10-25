@@ -1800,5 +1800,18 @@
   "eventsHolidayRegional": "عطلة في جزء من البلد فقط",
   "eventsTickets": "التذاكر",
   "eventsSave": "حفظ",
-  "eventsUnsave": "إزالة من المحفوظات"
+  "eventsUnsave": "إزالة من المحفوظات",
+  "beforePlugsTitle": "المقابس",
+  "beforePlugType": "النوع {type}",
+  "beforePlugsNeed": "اشترِ محولًا لمقابس من النوع {types}",
+  "beforePlugsNoNeed": "شواحنك مناسبة: لا تحتاج إلى محول",
+  "beforePlugsVolts": "الجهد الكهربائي هناك: {volts} فولت",
+  "beforePlugsTransformer": "الجهد هناك مختلف. انظر إلى ملصق الشاحن: إن كُتب 100-240 فولت فهو يعمل؛ وإلا فتحتاج إلى محول جهد.",
+  "beforePlugsTip": "نصيحة: المحول العالمي يعمل في معظم البلدان.",
+  "beforePlugsUnknown": "لا نعرف نوع المقبس في هذا البلد: تحقق منه قبل السفر.",
+  "fxEurozone": "منطقة اليورو",
+  "fxNotesTitle": "بالأوراق النقدية",
+  "fxNotesOr": "أو",
+  "fxNotesCoins": "+ {amount} عملات معدنية",
+  "fxNotesSource": "الأوراق النقدية حسب البنك المركزي"
 }
