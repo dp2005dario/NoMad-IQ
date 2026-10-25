@@ -8559,5 +8559,227 @@
   "fxNotesSource": "Banknotes according to the central bank",
   "@fxNotesSource": {
     "description": "Official notes source link."
+  },
+  "radarTitle": "Local radar",
+  "@radarTitle": {
+    "description": "Radar screen title."
+  },
+  "radarNowIn": "Now in {city}",
+  "@radarNowIn": {
+    "description": "Header: city where the user is now.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "radarRainTitle": "Rain in the next hours",
+  "@radarRainTitle": {
+    "description": "Card title: rain in the next hours."
+  },
+  "radarNoLocation": "Turn on location to see the radar where you are.",
+  "@radarNoLocation": {
+    "description": "No GPS permission or position."
+  },
+  "radarRainFailed": "Could not load the rain forecast. Try again later.",
+  "@radarRainFailed": {
+    "description": "Rain forecast could not be loaded."
+  },
+  "radarNoRain": "No rain expected in the next {hours} hours",
+  "@radarNoRain": {
+    "description": "No rain expected in the next N hours.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "radarRainAt": "Rain from {time} ({mm} mm/h)",
+  "@radarRainAt": {
+    "description": "Rain starts at a time with mm per hour.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
+  "radarFindShelter": "Find a café nearby",
+  "@radarFindShelter": {
+    "description": "Button: find a café nearby to shelter."
+  },
+  "radarScamsTitle": "Scams reported by travellers",
+  "@radarScamsTitle": {
+    "description": "Section: scams other travellers reported."
+  },
+  "radarNoCity": "You are not near any city we know, so there is no traveller radar here.",
+  "@radarNoCity": {
+    "description": "No airport city within reach of the user."
+  },
+  "radarSignIn": "Sign in to see and share what other travellers report.",
+  "@radarSignIn": {
+    "description": "Guest: sign in to see and share reports."
+  },
+  "radarNoScams": "No scam reported by enough travellers yet. We only show one when at least 3 people report it.",
+  "@radarNoScams": {
+    "description": "No scam reported by enough travellers."
+  },
+  "radarReportedBy": "{count, plural, =1{Reported by 1 traveller (last 90 days)} other{Reported by {count} travellers (last 90 days)}}",
+  "@radarReportedBy": {
+    "description": "How many travellers reported a scam (last 90 days).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "radarReportHint": "Did something happen to you here? Tap to warn others (tap again to withdraw). Nobody sees who reported.",
+  "@radarReportHint": {
+    "description": "Hint: tap a chip to report a scam you saw."
+  },
+  "radarScamTouts": "Pushy street sellers",
+  "@radarScamTouts": {
+    "description": "Scam category name."
+  },
+  "radarScamToutsWhy": "They give you a 'gift' and then ask for money. Say no and keep walking.",
+  "@radarScamToutsWhy": {
+    "description": "Short explanation of how this scam works and how to avoid it."
+  },
+  "radarScamTaxi": "Taxi overcharging",
+  "@radarScamTaxi": {
+    "description": "Scam category name."
+  },
+  "radarScamTaxiWhy": "No meter or a 'broken' meter. Use the official rank or an app and agree the price first.",
+  "@radarScamTaxiWhy": {
+    "description": "Short explanation of how this scam works and how to avoid it."
+  },
+  "radarScamPolice": "Fake police",
+  "@radarScamPolice": {
+    "description": "Scam category name."
+  },
+  "radarScamPoliceWhy": "They ask to 'check' your wallet. Never hand it over; offer to go to the police station.",
+  "@radarScamPoliceWhy": {
+    "description": "Short explanation of how this scam works and how to avoid it."
+  },
+  "radarScamBracelet": "Bracelet or petition trick",
+  "@radarScamBracelet": {
+    "description": "Scam category name."
+  },
+  "radarScamBraceletWhy": "They tie something on your wrist or ask you to sign, then demand money or pickpocket you.",
+  "@radarScamBraceletWhy": {
+    "description": "Short explanation of how this scam works and how to avoid it."
+  },
+  "radarScamAtm": "ATM tricks",
+  "@radarScamAtm": {
+    "description": "Scam category name."
+  },
+  "radarScamAtmWhy": "Someone 'helps' you or the machine has a fake slot. Use ATMs inside banks and cover your PIN.",
+  "@radarScamAtmWhy": {
+    "description": "Short explanation of how this scam works and how to avoid it."
+  },
+  "radarScamPickpockets": "Pickpockets",
+  "@radarScamPickpockets": {
+    "description": "Scam category name."
+  },
+  "radarScamPickpocketsWhy": "Crowds, metro doors and terraces. Keep your phone and wallet in front pockets.",
+  "@radarScamPickpocketsWhy": {
+    "description": "Short explanation of how this scam works and how to avoid it."
+  },
+  "radarScamTickets": "Fake tickets",
+  "@radarScamTickets": {
+    "description": "Scam category name."
+  },
+  "radarScamTicketsWhy": "Sellers outside monuments or stations. Buy only at the official website or ticket office.",
+  "@radarScamTicketsWhy": {
+    "description": "Short explanation of how this scam works and how to avoid it."
+  },
+  "radarScamExchange": "Bad currency exchange",
+  "@radarScamExchange": {
+    "description": "Scam category name."
+  },
+  "radarScamExchangeWhy": "'0% commission' with a terrible rate, or paying in euros by card. Compare with the converter and pay in local currency.",
+  "@radarScamExchangeWhy": {
+    "description": "Short explanation of how this scam works and how to avoid it."
+  },
+  "radarItemCoffee": "Coffee",
+  "@radarItemCoffee": {
+    "description": "Price check item."
+  },
+  "radarItemBeer": "Beer",
+  "@radarItemBeer": {
+    "description": "Price check item."
+  },
+  "radarItemWater": "Bottle of water",
+  "@radarItemWater": {
+    "description": "Price check item."
+  },
+  "radarItemMeal": "Simple meal",
+  "@radarItemMeal": {
+    "description": "Price check item."
+  },
+  "radarItemTaxi": "Short taxi ride",
+  "@radarItemTaxi": {
+    "description": "Price check item."
+  },
+  "radarPriceTitle": "Is this price fair?",
+  "@radarPriceTitle": {
+    "description": "Section: is this price fair?"
+  },
+  "radarAsked": "Price they ask you",
+  "@radarAsked": {
+    "description": "Field: price they are asking you."
+  },
+  "radarNoPrices": "Not enough travellers have shared what they paid here yet (we need at least 5).",
+  "@radarNoPrices": {
+    "description": "Not enough real prices reported yet."
+  },
+  "radarNormalRange": "Travellers paid {low} to {high} ({count} reports in the last year)",
+  "@radarNormalRange": {
+    "description": "Normal price range from real traveller reports.",
+    "placeholders": {
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "radarVerdictFine": "Normal price",
+  "@radarVerdictFine": {
+    "description": "Verdict: price is within normal."
+  },
+  "radarVerdictBitHigh": "A bit high",
+  "@radarVerdictBitHigh": {
+    "description": "Verdict: price a bit above normal."
+  },
+  "radarVerdictOver": "Much higher than what others paid",
+  "@radarVerdictOver": {
+    "description": "Verdict: clearly overcharged."
+  },
+  "radarIPaid": "Save what I paid",
+  "@radarIPaid": {
+    "description": "Button: save what I actually paid."
+  },
+  "radarPricesNote": "These prices are what real travellers wrote down, not our estimate. Write only what you actually paid.",
+  "@radarPricesNote": {
+    "description": "Note: prices come from real travellers, not from us."
+  },
+  "radarTooMany": "You have sent many reports today. Try again tomorrow.",
+  "@radarTooMany": {
+    "description": "Daily limit of reports reached."
+  },
+  "radarSendFailed": "Could not send it. Check your connection.",
+  "@radarSendFailed": {
+    "description": "Report could not be sent."
+  },
+  "radarPriceThanks": "Thanks! It helps other travellers.",
+  "@radarPriceThanks": {
+    "description": "Thanks after saving a price."
   }
 }

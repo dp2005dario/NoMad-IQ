@@ -46,6 +46,7 @@ import '../features/drive/drive_screen.dart';
 import '../features/map/geo.dart';
 import '../features/events/events_screen.dart';
 import '../features/stays/stays_screen.dart';
+import '../features/radar/radar_screen.dart';
 import '../features/transport/transport_screen.dart';
 import '../features/trouble/trouble_screen.dart';
 import '../features/assistant/assistant_screen.dart';
@@ -112,6 +113,12 @@ abstract final class Routes {
   /// Moverte: del aeropuerto [iata] al hotel, bonos y billetes.
   static String transport({String? iata}) => Uri(
     path: '/transport',
+    queryParameters: iata == null ? null : <String, String>{'iata': iata},
+  ).toString();
+
+  /// Radar local: lluvia real y avisos/precios de otros viajeros en [iata].
+  static String radar({String? iata}) => Uri(
+    path: '/radar',
     queryParameters: iata == null ? null : <String, String>{'iata': iata},
   ).toString();
 
@@ -448,6 +455,17 @@ GoRouter buildRouter({
       path: Routes.drive,
       builder: (BuildContext context, GoRouterState state) =>
           const DriveScreen(),
+    ),
+    GoRoute(
+      path: '/radar',
+      builder: (BuildContext context, GoRouterState state) {
+        final String? iata = state.uri.queryParameters['iata'];
+        return RadarScreen(
+          iata: iata != null && RegExp(r'^[A-Za-z]{3}$').hasMatch(iata)
+              ? iata.toUpperCase()
+              : null,
+        );
+      },
     ),
     GoRoute(
       path: '/transport',

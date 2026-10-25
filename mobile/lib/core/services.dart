@@ -30,6 +30,7 @@ import '../features/group/group_api.dart';
 import '../features/group_chat/chat_api.dart';
 import '../features/plans/plans_api.dart';
 import '../features/events/events_api.dart';
+import '../features/radar/radar_api.dart';
 import '../features/stays/stays_api.dart';
 import '../features/help/help_contacts.dart';
 import '../features/map/geo_api.dart';
@@ -275,6 +276,9 @@ class AppServices {
 
   /// Festivos y eventos de una ciudad en unas fechas (público).
   late final EventsApi events = EventsApi(api);
+
+  /// Radar local: lluvia, timos y precios de viajeros.
+  late final RadarApi radar = RadarApi(api);
 
   /// ¿Poner al día los widgets al abrir la app? (en los tests, no).
   final bool syncWidgetsOnStart;
