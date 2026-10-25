@@ -68,7 +68,7 @@ http:
     # y "borrar mis datos" (ai-orchestrator).
     ai:
       entryPoints: [web]
-      rule: PathPrefix(`/v1/audioguides`) || PathPrefix(`/v1/recommendations`) || PathPrefix(`/v1/group-negotiations`) || Path(`/v1/flyra/chat`) || Path(`/v1/menu/translate`) || PathPrefix(`/v1/landmarks`) || PathPrefix(`/v1/expense-groups`) || PathPrefix(`/v1/shared-trips`) || PathPrefix(`/v1/leagues`) || PathPrefix(`/v1/meetups`) || Path(`/v1/me/data`)
+      rule: PathPrefix(`/v1/audioguides`) || PathPrefix(`/v1/recommendations`) || PathPrefix(`/v1/group-negotiations`) || Path(`/v1/flyra/chat`) || Path(`/v1/menu/translate`) || PathPrefix(`/v1/landmarks`) || PathPrefix(`/v1/expense-groups`) || PathPrefix(`/v1/shared-trips`) || PathPrefix(`/v1/leagues`) || PathPrefix(`/v1/meetups`) || PathPrefix(`/v1/radar`) || Path(`/v1/me/data`)
       middlewares: [strip-identity, rate-limit, small-body, authenticated]
       service: ai-orchestrator
 
@@ -125,6 +125,14 @@ http:
     stays:
       entryPoints: [web]
       rule: Method(`GET`) && Path(`/v1/stays`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
+    # Radar local: lluvia de las próximas horas (MET Norway). Público; la app
+    # manda una casilla de ~5 km.
+    rain:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/rain`)
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 

@@ -238,6 +238,12 @@ class Settings(BaseSettings):
     nasa_timeout_seconds: float = Field(default=25.0, gt=0, le=60)
     climate_ttl_seconds: int = Field(default=30 * 24 * 3600, ge=24 * 3600, le=90 * 24 * 3600)
 
+    # --- Radar local (ver el paquete radar/): lluvia de MET Norway + avisos ---------
+    radar_enabled: bool = True
+    met_url: str = "https://api.met.no/weatherapi/locationforecast/2.0/compact"
+    met_rate_per_second: float = Field(default=5.0, gt=0, le=20)
+    rain_ttl_seconds: int = Field(default=15 * 60, ge=5 * 60, le=3 * 3600)
+
     # --- Qué pasa en tus fechas (ver el paquete city_events/) --------------------------
     # Festivos de Nager.Date (gratis, sin clave) y, si hay clave, eventos de
     # Ticketmaster (clave gratis con cupo diario). La clave es un secreto:

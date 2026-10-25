@@ -115,6 +115,9 @@ from ai_orchestrator.plans.api import plan_router
 from ai_orchestrator.plans.store import PostgresPlans
 from ai_orchestrator.pseudonym import Pseudonymizer
 from ai_orchestrator.quota import RedisQuota
+from ai_orchestrator.radar.api import radar_router
+from ai_orchestrator.radar.rain import MetClient, RainBusyError, RainService, RedisRainCache
+from ai_orchestrator.radar.store import PostgresRadar
 from ai_orchestrator.recommender import FareRecommender, RecommenderSettings
 from ai_orchestrator.retrieval import KnowledgeBase, NoKnowledge, QdrantKnowledge
 from ai_orchestrator.shared_trips.api import shared_trip_router
@@ -456,6 +459,23 @@ def _city_events(settings: Settings, redis: Redis, stack: AsyncExitStack) -> Cit
     )
 
 
+def _rain(settings: Settings, redis: Redis, stack: AsyncExitStack) -> RainService:
+    """Lluvia en las próximas horas: MET Norway con caché por casilla en Redis."""
+    http = httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0), follow_redirects=False)
+    stack.push_async_callback(http.aclose)
+    return RainService(
+        source=MetClient(
+            http,
+            url=settings.met_url,
+            limiter=RateLimiter(
+                settings.met_rate_per_second, 10, busy=lambda: RainBusyError("límite de peticiones a MET")
+            ),
+        ),
+        cache=RedisRainCache(redis),
+        ttl_seconds=settings.rain_ttl_seconds,
+    )
+
+
 class _NoRatesCache:
     """Sin Redis: los tipos se guardan solo en la memoria del proceso."""
 
@@ -655,6 +675,7 @@ async def run(settings: Settings) -> int:
             or settings.stays_enabled
             or settings.climate_enabled
             or settings.events_enabled
+            or settings.radar_enabled
             else None
         )
         wikimedia = (
@@ -709,6 +730,11 @@ async def run(settings: Settings) -> int:
         climate: ClimateService | None = None
         if settings.climate_enabled and public_redis is not None:
             climate = _climate(settings, public_redis, stack)
+
+        # --- Radar local: lluvia (MET Norway con caché en Redis) --------------------------
+        rain: RainService | None = None
+        if settings.radar_enabled and public_redis is not None:
+            rain = _rain(settings, public_redis, stack)
 
         # --- Qué pasa en tus fechas (festivos + eventos con caché en Redis) -------------
         city_events: CityEventService | None = None
@@ -821,6 +847,10 @@ async def run(settings: Settings) -> int:
                 airport_guide=airport_guide,
                 climate=climate,
                 city_events=city_events,
+                rain=rain,
+                radar=radar_router(PostgresRadar(pool), Airports.bundled())
+                if settings.radar_enabled
+                else None,
                 menu=menu,
                 eraser=PostgresEraser(pool),
                 expose_docs=settings.expose_api_docs,

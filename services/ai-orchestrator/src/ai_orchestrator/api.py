@@ -83,6 +83,7 @@ from ai_orchestrator.nearby.service import NearbyBusyError, NearbyService, Nearb
 from ai_orchestrator.places.domain import PlaceCard
 from ai_orchestrator.places.service import PlaceBusyError, PlaceService, PlaceUnavailableError
 from ai_orchestrator.quota import QuotaExceededError
+from ai_orchestrator.radar.rain import RainBusyError, RainError, RainForecast, RainService
 from ai_orchestrator.stays.domain import StayArea
 from ai_orchestrator.stays.service import StayBusyError, StayService, StayUnavailableError
 from ai_orchestrator.store import RecommendationStore, StoreError
@@ -228,6 +229,8 @@ DRIVE_CACHE = "public, max-age=86400"
 STAYS_CACHE = "public, max-age=86400"
 # Eventos: una hora (Ticketmaster añade eventos durante el día).
 EVENTS_CACHE = "public, max-age=3600"
+# Lluvia: 10 minutos (MET actualiza cada poco).
+RAIN_CACHE = "public, max-age=600"
 # La guía de un aeropuerto: un día en el móvil (en el servidor, un mes).
 AIRPORT_CACHE = "public, max-age=86400"
 # El clima medio no cambia: el móvil puede guardarlo una semana.
@@ -261,6 +264,8 @@ def create_api(
     airport_guide: AirportGuideService | None = None,
     climate: ClimateService | None = None,
     city_events: CityEventService | None = None,
+    rain: RainService | None = None,
+    radar: APIRouter | None = None,
     eraser: UserDataEraser | None = None,
     expose_docs: bool = False,
 ) -> FastAPI:
@@ -504,6 +509,26 @@ def create_api(
                 resp.headers["Retry-After"] = "60"
                 return resp
             return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": CLIMATE_CACHE})
+
+    if rain is not None:
+
+        @app.get("/v1/rain", response_model=RainForecast)
+        async def get_rain(
+            lat: Annotated[float, Query(ge=-85, le=85)],
+            lon: Annotated[float, Query(ge=-180, le=180)],
+        ) -> JSONResponse:
+            # Pública: la previsión de una casilla de ~5 km, igual para todos.
+            try:
+                found = await rain.at(lat, lon)
+            except (RainBusyError, RainError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "previsión no disponible")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": RAIN_CACHE})
+
+    if radar is not None:
+        # Avisos de timos y precios de viajeros (/v1/radar) en radar/api.py.
+        app.include_router(radar)
 
     if city_events is not None:
 
