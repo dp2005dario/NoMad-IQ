@@ -1300,8 +1300,7 @@
   "stopMaxNights": "最大 {n} 泊",
   "stopRuleSameFare": "多くの運賃で、本拠地に立ち寄っても航空券の値段は同じです。ホテル代は自己負担です。",
   "stopRuleFreeHotel": "航空会社がホテルを無料にしてくれることがあります（運賃と乗り継ぎ時間により通常1〜2泊）。",
-  "stopRuleHotelDeal": "航空会社のストップオーバー制度：航空券は同じ値段で、ホテルが割引になります。",
-  "stopRuleSmallFee": "多くの運賃で本拠地に立ち寄れます。少額の追加料金がかかる場合もあります。",
+  "stopRuleHotelDeal": "航空会社のストップオーバープログラムでホテルやツアーが特別価格に。航空券の料金は公式サイトで確認を。",
   "stopCheck": "条件は変わります。予約前に航空会社のページで確認してください。",
   "stopDate": "出発 {date}",
   "stopSeePrice": "料金を見る",
@@ -1309,7 +1308,6 @@
   "stopWithAirline": "{airline}・短い乗り継ぎ：{price}",
   "stopNoAirline": "その日の{airline}の便は見つかりませんでした。別の日付を試すか公式サイトを見てください。",
   "stopSamePrice": "{city}で{nights}：通常は同じ料金",
-  "stopSmallFeeNote": "{city}で{nights}：同じかやや高め",
   "stopBookDirect": "立ち寄らずに予約",
   "stopBookWith": "{city}で{nights}して予約",
   "stopBookHint": "数日間の立ち寄りがあるフライトは、航空会社のページ（複数都市）で予約します。",
@@ -1891,5 +1889,8 @@
   "queuesReservationRequired": "要予約",
   "queuesBookWeb": "公式サイトで予約",
   "queuesCall": "電話する",
-  "queuesTablesNote": "予約はレストランと直接行います。アプリは予約も請求もしません。データ："
+  "queuesTablesNote": "予約はレストランと直接行います。アプリは予約も請求もしません。データ：",
+  "dataSourceCheck": "情報の出典（確認する）",
+  "stopRuleCheckFare": "その都市で途中降機できます。料金は運賃により異なるので公式サイトで確認を。",
+  "stopCheckNote": "{city}で{nights}：正確な料金は公式サイトで確認"
 }

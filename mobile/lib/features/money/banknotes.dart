@@ -108,12 +108,12 @@ const Map<String, BanknoteSet> banknotes = <String, BanknoteSet>{
     500,
     1000,
   ], 'https://www.norges-bank.no/en/topics/notes-and-coins/'),
+  // El billete de 1000 coronas dejó de valer el 31-05-2025.
   'DKK': BanknoteSet(<int>[
     50,
     100,
     200,
     500,
-    1000,
   ], 'https://www.nationalbanken.dk/en/banknotes-and-coins'),
   'PLN': BanknoteSet(<int>[
     10,

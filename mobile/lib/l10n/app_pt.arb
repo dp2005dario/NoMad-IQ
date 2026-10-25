@@ -1300,8 +1300,7 @@
   "stopMaxNights": "Até {n} noites",
   "stopRuleSameFare": "Na maioria das tarifas o bilhete custa o mesmo se parares na cidade dela. O hotel pagas tu.",
   "stopRuleFreeHotel": "A companhia pode oferecer-te o hotel (normalmente 1 ou 2 noites, conforme a tarifa e as horas de escala).",
-  "stopRuleHotelDeal": "Programa de escala da companhia: mesmo preço do voo e hotéis com desconto.",
-  "stopRuleSmallFee": "Muitas tarifas deixam parar na cidade dela; algumas cobram um pequeno suplemento.",
+  "stopRuleHotelDeal": "O programa de escala da companhia vende hotéis e passeios a preço especial. Confira o preço do voo no site.",
   "stopCheck": "As condições mudam: confirma-as na página da companhia antes de reservar.",
   "stopDate": "Partida {date}",
   "stopSeePrice": "Ver preço",
@@ -1309,7 +1308,6 @@
   "stopWithAirline": "Com a {airline}, escala curta: {price}",
   "stopNoAirline": "Não encontrámos voo da {airline} nesse dia. Experimenta outra data ou vê o site.",
   "stopSamePrice": "Com {nights} em {city}: normalmente o mesmo preço",
-  "stopSmallFeeNote": "Com {nights} em {city}: o mesmo ou um pouco mais",
   "stopBookDirect": "Reservar sem parar",
   "stopBookWith": "Reservar com {nights} em {city}",
   "stopBookHint": "Um voo com paragem de vários dias reserva-se na página da companhia (vários destinos).",
@@ -1891,5 +1889,8 @@
   "queuesReservationRequired": "reserva obrigatória",
   "queuesBookWeb": "Reservar no site deles",
   "queuesCall": "Ligar",
-  "queuesTablesNote": "Você reserva direto com o restaurante: o app não reserva nem cobra nada. Dados:"
+  "queuesTablesNote": "Você reserva direto com o restaurante: o app não reserva nem cobra nada. Dados:",
+  "dataSourceCheck": "De onde vem isto (confira)",
+  "stopRuleCheckFare": "Você pode parar na cidade deles; o preço depende da tarifa, confira no site.",
+  "stopCheckNote": "Com {nights} em {city}: confira o preço exato no site"
 }

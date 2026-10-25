@@ -1300,8 +1300,7 @@
   "stopMaxNights": "Jusqu'à {n} nuits",
   "stopRuleSameFare": "Sur la plupart des tarifs, le billet coûte pareil si vous vous arrêtez dans sa ville. L'hôtel est à votre charge.",
   "stopRuleFreeHotel": "La compagnie peut vous offrir l'hôtel (en général 1 ou 2 nuits, selon le tarif et la durée de l'escale).",
-  "stopRuleHotelDeal": "Programme d'escale de la compagnie : même prix de vol et hôtels à prix réduit.",
-  "stopRuleSmallFee": "Beaucoup de tarifs permettent de s'arrêter dans sa ville ; certains facturent un petit supplément.",
+  "stopRuleHotelDeal": "Le programme d'escale de la compagnie propose hôtels et visites à prix spéciaux. Vérifiez le prix du vol sur son site.",
   "stopCheck": "Les conditions changent : vérifiez-les sur la page de la compagnie avant de réserver.",
   "stopDate": "Départ {date}",
   "stopSeePrice": "Voir le prix",
@@ -1309,7 +1308,6 @@
   "stopWithAirline": "Avec {airline}, escale courte : {price}",
   "stopNoAirline": "Aucun vol {airline} trouvé ce jour-là. Essayez une autre date ou consultez son site.",
   "stopSamePrice": "Avec {nights} à {city} : en général le même prix",
-  "stopSmallFeeNote": "Avec {nights} à {city} : pareil ou un peu plus",
   "stopBookDirect": "Réserver sans escale",
   "stopBookWith": "Réserver avec {nights} à {city}",
   "stopBookHint": "Un vol avec un arrêt de plusieurs jours se réserve sur la page de la compagnie (multi-destinations).",
@@ -1891,5 +1889,8 @@
   "queuesReservationRequired": "réservation obligatoire",
   "queuesBookWeb": "Réserver sur leur site",
   "queuesCall": "Appeler",
-  "queuesTablesNote": "Vous réservez directement auprès du restaurant : l'appli ne réserve et ne facture rien. Données :"
+  "queuesTablesNote": "Vous réservez directement auprès du restaurant : l'appli ne réserve et ne facture rien. Données :",
+  "dataSourceCheck": "D'où viennent ces données (vérifiez)",
+  "stopRuleCheckFare": "Vous pouvez faire escale dans leur ville ; le prix dépend du tarif, vérifiez-le sur leur site.",
+  "stopCheckNote": "Avec {nights} à {city} : vérifiez le prix exact sur leur site"
 }

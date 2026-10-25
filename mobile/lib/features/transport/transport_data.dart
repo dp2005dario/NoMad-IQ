@@ -5,6 +5,7 @@
 // queda viejo (o está mal) y engaña al viajero. Por eso la tabla solo dice
 // QUÉ bonos existen y su web OFICIAL; el precio lo mira la persona allí y,
 // si quiere, lo apunta en la calculadora de la app ([passPaysOff]).
+// Todos los enlaces se abrieron y comprobaron el 25-10-2026.
 //
 // ¿Por qué una tabla dentro de la app y no un servidor? Son pocos datos, se
 // ven sin internet y no cuestan nada.
@@ -76,13 +77,13 @@ const List<CityTransit> cityTransit = <CityTransit>[
     url: 'https://www.tokyometro.jp/en/ticket/',
     card: TransitCard(
       name: 'Suica / PASMO',
-      url: 'https://www.jreast.co.jp/multi/en/welcomesuica/',
+      url: 'https://www.jreast.co.jp/multi/en/welcomesuica/purchase.html',
     ),
     passes: <TransitPass>[
       TransitPass(
         name: 'Tokyo Subway Ticket',
         kind: PassKind.unlimited,
-        url: 'https://www.tokyometro.jp/en/ticket/value/travel/',
+        url: 'https://www.tokyometro.jp/en/ticket/travel/index.html',
       ),
     ],
   ),
@@ -103,7 +104,7 @@ const List<CityTransit> cityTransit = <CityTransit>[
     city: 'New York',
     airports: <String>['JFK', 'LGA', 'EWR'],
     currency: 'USD',
-    url: 'https://new.mta.info/fares',
+    url: 'https://www.mta.info/fares-tolls',
     card: TransitCard(name: 'OMNY', url: 'https://omny.info/'),
     capping: true,
   ),
@@ -112,16 +113,16 @@ const List<CityTransit> cityTransit = <CityTransit>[
     city: 'Paris',
     airports: <String>['CDG', 'ORY', 'BVA'],
     currency: 'EUR',
-    url: 'https://www.iledefrance-mobilites.fr/en/tickets-fares',
+    url: 'https://www.iledefrance-mobilites.fr/en/tarifs-titre-de-transport-en-commun-2026',
     card: TransitCard(
       name: 'Navigo Easy',
-      url: 'https://www.iledefrance-mobilites.fr/en/tickets-fares',
+      url: 'https://www.iledefrance-mobilites.fr/en/tarifs-titre-de-transport-en-commun-2026',
     ),
     passes: <TransitPass>[
       TransitPass(
         name: 'Paris Visite',
         kind: PassKind.unlimited,
-        url: 'https://www.iledefrance-mobilites.fr/en/tickets-fares',
+        url: 'https://www.iledefrance-mobilites.fr/en/tarifs-titre-de-transport-en-commun-2026',
       ),
     ],
   ),
@@ -152,13 +153,13 @@ const List<CityTransit> cityTransit = <CityTransit>[
     url: 'https://www.crtm.es/',
     card: TransitCard(
       name: 'Tarjeta Multi',
-      url: 'https://www.crtm.es/billetes-y-tarifas.aspx',
+      url: 'https://www.crtm.es/billetes-y-tarifas/',
     ),
     passes: <TransitPass>[
       TransitPass(
         name: 'Abono Turístico',
         kind: PassKind.unlimited,
-        url: 'https://www.crtm.es/billetes-y-tarifas.aspx',
+        url: 'https://www.crtm.es/billetes-y-tarifas/',
       ),
     ],
   ),
@@ -199,7 +200,7 @@ const List<CityTransit> cityTransit = <CityTransit>[
       TransitPass(
         name: 'Lisboa Card',
         kind: PassKind.cityCard,
-        url: 'https://www.visitlisboa.com/en/lisboa-card',
+        url: 'https://shop.visitlisboa.com/products/lisboa-card',
       ),
     ],
   ),
@@ -208,12 +209,12 @@ const List<CityTransit> cityTransit = <CityTransit>[
     city: 'Berlin',
     airports: <String>['BER'],
     currency: 'EUR',
-    url: 'https://www.bvg.de/en/tickets-and-fares',
+    url: 'https://www.bvg.de/en/tickets/fares',
     passes: <TransitPass>[
       TransitPass(
         name: 'BVG 24-hour ticket',
         kind: PassKind.unlimited,
-        url: 'https://www.bvg.de/en/tickets-and-fares',
+        url: 'https://www.bvg.de/en/tickets/fares',
       ),
     ],
   ),

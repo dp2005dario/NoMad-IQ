@@ -6026,13 +6026,9 @@
   "@stopRuleFreeHotel": {
     "description": "Rule."
   },
-  "stopRuleHotelDeal": "Stopover program of the airline: same flight price and hotels with a discount.",
+  "stopRuleHotelDeal": "The airline's stopover programme sells hotels and tours at special prices. Check the flight price on their website.",
   "@stopRuleHotelDeal": {
-    "description": "Rule."
-  },
-  "stopRuleSmallFee": "Many fares let you stop in its city; some charge a small extra fee.",
-  "@stopRuleSmallFee": {
-    "description": "Rule."
+    "description": "Stopover rule: airline sells hotels and tours at special prices."
   },
   "stopCheck": "Conditions change: check them on the airline's page before booking.",
   "@stopCheck": {
@@ -6083,18 +6079,6 @@
   },
   "stopSamePrice": "With {nights} in {city}: usually the same price",
   "@stopSamePrice": {
-    "description": "Stopover price note.",
-    "placeholders": {
-      "nights": {
-        "type": "String"
-      },
-      "city": {
-        "type": "String"
-      }
-    }
-  },
-  "stopSmallFeeNote": "With {nights} in {city}: the same or a little more",
-  "@stopSmallFeeNote": {
     "description": "Stopover price note.",
     "placeholders": {
       "nights": {
@@ -8936,5 +8920,25 @@
   "queuesTablesNote": "You book directly with the restaurant: the app does not book or charge anything. Data:",
   "@queuesTablesNote": {
     "description": "Note under the restaurant list."
+  },
+  "dataSourceCheck": "Where this comes from (check it)",
+  "@dataSourceCheck": {
+    "description": "Link to the public source of fixed data so users can verify it."
+  },
+  "stopRuleCheckFare": "You can stop in their city; the price depends on the fare, so check it on their website.",
+  "@stopRuleCheckFare": {
+    "description": "Stopover rule: allowed, price depends on fare."
+  },
+  "stopCheckNote": "With {nights} in {city}: check the exact price on their website",
+  "@stopCheckNote": {
+    "description": "Stopover note when price is not the same for sure.",
+    "placeholders": {
+      "nights": {
+        "type": "String"
+      },
+      "city": {
+        "type": "String"
+      }
+    }
   }
 }

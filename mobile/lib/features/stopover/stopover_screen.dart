@@ -22,7 +22,7 @@ String stopRuleText(AppLocalizations t, StopoverRule r) => switch (r) {
   StopoverRule.sameFare => t.stopRuleSameFare,
   StopoverRule.freeHotel => t.stopRuleFreeHotel,
   StopoverRule.hotelDeal => t.stopRuleHotelDeal,
-  StopoverRule.smallFee => t.stopRuleSmallFee,
+  StopoverRule.checkFare => t.stopRuleCheckFare,
 };
 
 final RegExp _iata = RegExp(r'^[A-Z]{3}$');
@@ -278,10 +278,11 @@ class _StopoverScreenState extends State<StopoverScreen> {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    Text(
-                      t.stopMaxNights(o.program.maxNights),
-                      style: const TextStyle(color: NomadColors.money),
-                    ),
+                    if (o.program.maxNights case final int n)
+                      Text(
+                        t.stopMaxNights(n),
+                        style: const TextStyle(color: NomadColors.money),
+                      ),
                     const SizedBox(height: 8),
                     Text(stopRuleText(t, o.program.rule)),
                     const SizedBox(height: 12),
@@ -369,9 +370,10 @@ class _StopoverScreenState extends State<StopoverScreen> {
         Text(t.stopNoAirline(o.program.airlineName)),
       if (_nights > 0)
         Text(
-          o.program.rule == StopoverRule.smallFee
-              ? t.stopSmallFeeNote(nights, o.hub.city)
-              : t.stopSamePrice(nights, o.hub.city),
+          // "Mismo precio" solo donde la aerolínea lo dice en su web.
+          o.program.rule == StopoverRule.sameFare
+              ? t.stopSamePrice(nights, o.hub.city)
+              : t.stopCheckNote(nights, o.hub.city),
           style: const TextStyle(color: NomadColors.mint),
         ),
     ];

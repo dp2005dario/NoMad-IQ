@@ -35,9 +35,9 @@ List<String> hubs(String from, String to) => <String>[
 ];
 
 void main() {
-  test('Madrid → Tokio: Estambul, Helsinki, Doha... pero no Reikiavik', () {
+  test('Madrid → Tokio: Estambul, Doha... pero no Reikiavik', () {
     final List<String> h = hubs('MAD', 'HND');
-    expect(h, containsAll(<String>['IST', 'HEL', 'DOH', 'DXB']));
+    expect(h, containsAll(<String>['IST', 'DOH', 'DXB']));
     expect(h, isNot(contains('KEF')));
     expect(h, isNot(contains('PTY')));
   });
@@ -57,8 +57,18 @@ void main() {
     final StopoverProgram etihad = stopoverPrograms.firstWhere(
       (StopoverProgram p) => p.hub == 'AUH',
     );
-    expect(nightChoices(etihad), <int>[0, 1, 2]);
-    expect(nightChoices(stopoverPrograms.first), <int>[0, 1, 2, 3]);
+    // Su web no dice el máximo: hasta 3, como en la maqueta.
+    expect(etihad.maxNights, isNull);
+    expect(nightChoices(etihad), <int>[0, 1, 2, 3]);
+    const StopoverProgram short = StopoverProgram(
+      hub: 'XXX',
+      airline: 'XX',
+      airlineName: 'X',
+      url: 'https://x.example',
+      maxNights: 2,
+      rule: StopoverRule.sameFare,
+    );
+    expect(nightChoices(short), <int>[0, 1, 2]);
   });
 
   testWidgets('escala en Estambul: precio con Turkish y reservar en su web', (
@@ -205,7 +215,8 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.text('Con 2 noches en Istanbul: normalmente el mismo precio'),
+      // Turkish no promete el mismo precio en su web: se pide mirarlo allí.
+      find.text('Con 2 noches en Istanbul: mira el precio exacto en su web'),
       findsOneWidget,
     );
 

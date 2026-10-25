@@ -48,11 +48,11 @@ enum StopoverRule {
   /// Puede regalarte el hotel (1-2 noches, según tarifa y horas de escala).
   freeHotel,
 
-  /// Mismo precio de vuelo y hoteles con descuento de la aerolínea.
+  /// La aerolínea vende hoteles y visitas a precio especial para la parada.
   hotelDeal,
 
-  /// Muchas tarifas dejan parar; algunas cobran un poco más.
-  smallFee,
+  /// Se puede parar, pero el precio depende de la tarifa (su web lo dice).
+  checkFare,
 }
 
 class StopoverProgram {
@@ -61,7 +61,7 @@ class StopoverProgram {
     required this.airline,
     required this.airlineName,
     required this.url,
-    required this.maxNights,
+    this.maxNights,
     required this.rule,
     this.regions,
   });
@@ -81,27 +81,31 @@ class StopoverProgram {
   /// La página oficial del programa (allí se reserva el vuelo con parada).
   final String url;
 
-  /// Cuántas noches deja como mucho.
-  final int maxNights;
+  /// Cuántas noches deja como mucho (null = su web no lo dice).
+  final int? maxNights;
   final StopoverRule rule;
 }
 
 /// Los programas de escala más conocidos. Las condiciones cambian, así que la
 /// app siempre dice "compruébalo en la página de la aerolínea".
+///
+/// Cada enlace, noches y regla se comprobó en la web oficial el 25-10-2026.
+/// Finnair y Singapore Airlines se quitaron: no encontramos su programa
+/// en sus webs oficiales (nada que no se pueda comprobar).
 const List<StopoverProgram> stopoverPrograms = <StopoverProgram>[
   StopoverProgram(
     hub: 'IST',
     airline: 'TK',
     airlineName: 'Turkish Airlines',
     url: 'https://www.turkishairlines.com/en-int/flights/stopover/',
-    maxNights: 3,
+    maxNights: 7,
     rule: StopoverRule.freeHotel,
   ),
   StopoverProgram(
     hub: 'DOH',
     airline: 'QR',
     airlineName: 'Qatar Airways',
-    url: 'https://www.qatarairways.com/en/stopover.html',
+    url: 'https://discoverqatar.qa/stopover',
     maxNights: 4,
     rule: StopoverRule.hotelDeal,
   ),
@@ -129,24 +133,10 @@ const List<StopoverProgram> stopoverPrograms = <StopoverProgram>[
     },
   ),
   StopoverProgram(
-    hub: 'HEL',
-    airline: 'AY',
-    airlineName: 'Finnair',
-    url: 'https://www.finnair.com/en/stopover',
-    maxNights: 5,
-    rule: StopoverRule.sameFare,
-    regions: <WorldRegion>{
-      WorldRegion.europe,
-      WorldRegion.asia,
-      WorldRegion.northAmerica,
-    },
-  ),
-  StopoverProgram(
     hub: 'DXB',
     airline: 'EK',
     airlineName: 'Emirates',
-    url: 'https://www.emirates.com/english/plan-book/dubai-stopovers/',
-    maxNights: 4,
+    url: 'https://www.emirates.com/us/english/discover-dubai/dubai-stopover',
     rule: StopoverRule.hotelDeal,
   ),
   StopoverProgram(
@@ -154,22 +144,13 @@ const List<StopoverProgram> stopoverPrograms = <StopoverProgram>[
     airline: 'EY',
     airlineName: 'Etihad Airways',
     url: 'https://www.etihad.com/en/abu-dhabi/stopover',
-    maxNights: 2,
     rule: StopoverRule.freeHotel,
-  ),
-  StopoverProgram(
-    hub: 'SIN',
-    airline: 'SQ',
-    airlineName: 'Singapore Airlines',
-    url: 'https://www.singaporeair.com/en_UK/sg/plan-travel/packages/singapore-stopover-holiday/',
-    maxNights: 4,
-    rule: StopoverRule.hotelDeal,
   ),
   StopoverProgram(
     hub: 'PTY',
     airline: 'CM',
     airlineName: 'Copa Airlines',
-    url: 'https://www.copaair.com/en-us/discover/stopover/',
+    url: 'https://shopping.copaair.com/booking-panel?roundtrip=false&advanced_air_search=true&stopover=true&origin=stopoverinpanama',
     maxNights: 7,
     rule: StopoverRule.sameFare,
     regions: <WorldRegion>{WorldRegion.northAmerica, WorldRegion.southAmerica},
@@ -178,9 +159,9 @@ const List<StopoverProgram> stopoverPrograms = <StopoverProgram>[
     hub: 'HKG',
     airline: 'CX',
     airlineName: 'Cathay Pacific',
-    url: 'https://www.cathaypacific.com/cx/en_US/book-a-trip/stopover.html',
-    maxNights: 3,
-    rule: StopoverRule.smallFee,
+    url: 'https://flights.cathaypacific.com/en_HK/offers/stopover-in-hong-kong.html',
+    maxNights: 7,
+    rule: StopoverRule.checkFare,
   ),
 ];
 
@@ -236,7 +217,9 @@ List<StopoverOption> stopoversFor(
 }
 
 /// Noches que se pueden elegir (0 = solo cambiar de avión), como en la
-/// maqueta: hasta 3, o menos si la aerolínea no deja más.
-List<int> nightChoices(StopoverProgram p) => <int>[
-  for (int n = 0; n <= (p.maxNights < 3 ? p.maxNights : 3); n++) n,
-];
+/// maqueta: hasta 3, o menos si la aerolínea no deja más (si su web no dice
+/// el máximo, hasta 3 y la app pide comprobarlo allí).
+List<int> nightChoices(StopoverProgram p) {
+  final int max = p.maxNights ?? 3;
+  return <int>[for (int n = 0; n <= (max < 3 ? max : 3); n++) n];
+}

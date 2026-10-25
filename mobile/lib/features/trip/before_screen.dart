@@ -335,6 +335,14 @@ class _Plugs extends StatelessWidget {
                 style: const TextStyle(color: NomadColors.textMuted),
               ),
             ],
+            // De dónde salen los enchufes, para poder comprobarlos.
+            TextButton.icon(
+              icon: const Icon(Icons.verified_outlined, size: 18),
+              label: Text(t.dataSourceCheck),
+              onPressed: () => unawaited(
+                ServicesScope.of(context).openBooking(Uri.parse(powerSource)),
+              ),
+            ),
           ],
         ),
       ),

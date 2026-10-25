@@ -222,6 +222,15 @@ class _SosScreenState extends State<SosScreen>
                   ),
             ],
           ),
+          // De dónde salen los números, para poder comprobarlos.
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              icon: const Icon(Icons.verified_outlined, size: 18),
+              label: Text(t.dataSourceCheck),
+              onPressed: () => _open(Uri.parse(emergencySource)),
+            ),
+          ),
           _Section(t.sosContactsTitle),
           Card(
             child: Column(

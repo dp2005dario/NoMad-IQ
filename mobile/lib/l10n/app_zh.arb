@@ -1300,8 +1300,7 @@
   "stopMaxNights": "最多 {n} 晚",
   "stopRuleSameFare": "大多数票价下，在其枢纽城市停留票价不变。酒店自付。",
   "stopRuleFreeHotel": "航空公司可能免费提供酒店（通常 1 到 2 晚，取决于票价和中转时长）。",
-  "stopRuleHotelDeal": "航空公司的中转停留项目：机票价格不变，酒店有折扣。",
-  "stopRuleSmallFee": "许多票价允许在其城市停留；部分会收少量附加费。",
+  "stopRuleHotelDeal": "航空公司的中转停留计划提供特价酒店和游览。机票价格请在其官网查看。",
   "stopCheck": "条件会变化：预订前请在航空公司页面确认。",
   "stopDate": "出发 {date}",
   "stopSeePrice": "查看价格",
@@ -1309,7 +1308,6 @@
   "stopWithAirline": "{airline}，短暂中转：{price}",
   "stopNoAirline": "当天没有找到 {airline} 的航班。换个日期或查看其官网。",
   "stopSamePrice": "在{city}停留 {nights}：通常价格不变",
-  "stopSmallFeeNote": "在{city}停留 {nights}：价格相同或略高",
   "stopBookDirect": "不停留直接预订",
   "stopBookWith": "预订并在{city}停留 {nights}",
   "stopBookHint": "多日停留的航班需要在航空公司页面预订（多城市）。",
@@ -1891,5 +1889,8 @@
   "queuesReservationRequired": "必须预订",
   "queuesBookWeb": "在其官网预订",
   "queuesCall": "致电",
-  "queuesTablesNote": "你直接向餐厅预订：本应用不代订也不收费。数据："
+  "queuesTablesNote": "你直接向餐厅预订：本应用不代订也不收费。数据：",
+  "dataSourceCheck": "数据来源（可核实）",
+  "stopRuleCheckFare": "可以在其城市停留；价格取决于票价类型，请在其官网查看。",
+  "stopCheckNote": "在{city}停留{nights}：请在其官网查看确切价格"
 }
