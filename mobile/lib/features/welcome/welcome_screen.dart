@@ -1,5 +1,7 @@
-// Bienvenida: lo primero que ve alguien que abre la app (maqueta 1).
-// Presenta a Flyra y ofrece entrar con Google, con correo o como invitado.
+// Bienvenida: lo primero que ve alguien que abre la app (maqueta v7, ECLIPTA).
+// Un eclipse con Flyra dentro y el nombre ECLIPTA. Presenta a Flyra y ofrece entrar con Google, con correo o como invitado.
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -43,14 +45,27 @@ class WelcomeScreen extends StatelessWidget {
                   icon: const Icon(Icons.translate_rounded),
                 ),
               ),
+              const SizedBox(height: 24),
+              // El eclipse: un círculo oscuro con el borde menta y un resplandor
+              // detrás; dentro va Flyra.
+              const Center(child: _Eclipse()),
               const SizedBox(height: 32),
-              Text(t.appTitle, style: text.displaySmall),
+              // El nombre de la app. letterSpacing separa las letras.
+              Text(
+                'ECLIPTA',
+                textAlign: TextAlign.center,
+                style: text.displaySmall?.copyWith(
+                  fontSize: 44,
+                  letterSpacing: 9,
+                ),
+              ),
               const SizedBox(height: 8),
               Text(
                 t.welcomeTagline,
+                textAlign: TextAlign.center,
                 style: text.titleMedium?.copyWith(color: NomadColors.textMuted),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(20),
@@ -85,6 +100,48 @@ class WelcomeScreen extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// El dibujo del eclipse (solo decoración, el lector de pantalla lo salta).
+class _Eclipse extends StatelessWidget {
+  const _Eclipse();
+
+  @override
+  Widget build(BuildContext context) {
+    return ExcludeSemantics(
+      child: SizedBox.square(
+        dimension: 200,
+        child: Stack(
+          alignment: Alignment.center,
+          children: <Widget>[
+            // Resplandor: un círculo menta difuminado (blur) y suave.
+            ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: NomadColors.mint.withValues(alpha: 0.45),
+                ),
+                child: const SizedBox.square(dimension: 190),
+              ),
+            ),
+            // La luna oscura con la corona menta.
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: NomadColors.background,
+                border: Border.fromBorderSide(
+                  BorderSide(color: NomadColors.mint, width: 3),
+                ),
+              ),
+              child: SizedBox.square(dimension: 184),
+            ),
+            const FlyraAvatar(size: 124),
+          ],
         ),
       ),
     );
