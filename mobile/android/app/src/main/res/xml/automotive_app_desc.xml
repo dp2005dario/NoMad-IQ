@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android Auto: NomadIQ es una app de AUDIO (las audioguías). Así sale en
+<!-- Android Auto: ECLIPTA es una app de AUDIO (las audioguías). Así sale en
      la pantalla del coche usando el reproductor que ya tenemos
      (audio_service + MediaBrowserService). No pide nada a Google. -->
 <automotiveApp>

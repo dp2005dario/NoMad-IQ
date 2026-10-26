@@ -1,8 +1,8 @@
 // Tests de pantallas: comprueban lo que VE el usuario, como si tocara el móvil.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/core/settings.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/settings.dart';
 
 import 'helpers.dart';
 
@@ -38,6 +38,7 @@ void main() {
 
   testWidgets('Google avisa de que llega pronto', (WidgetTester tester) async {
     await pumpWelcome(tester, locale: 'es');
+    await tester.ensureVisible(find.text('Continuar con Google'));
     await tester.tap(find.text('Continuar con Google'));
     await tester.pump();
     expect(find.byType(SnackBar), findsOneWidget);
@@ -45,6 +46,7 @@ void main() {
 
   testWidgets('invitado -> Inicio -> pestañas', (WidgetTester tester) async {
     await pumpWelcome(tester, locale: 'es');
+    await tester.ensureVisible(find.text('Entrar como invitado'));
     await tester.tap(find.text('Entrar como invitado'));
     await tester.pumpAndSettle();
     expect(find.text('Hola, viajero'), findsOneWidget);

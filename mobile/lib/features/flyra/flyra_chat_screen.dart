@@ -1,5 +1,5 @@
 // El chat con Flyra: le preguntas lo que quieras (de tu viaje o de cualquier
-// cosa) y te contesta la IA de NomadIQ.
+// cosa) y te contesta la IA de ECLIPTA.
 //
 // Cómo funciona:
 //   - Tus mensajes y los de Flyra se ven como "bocadillos" (como WhatsApp).

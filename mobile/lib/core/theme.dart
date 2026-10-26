@@ -3,7 +3,7 @@
 // las pantallas. Los valores salen de las maquetas aprobadas por DARIO.
 import 'package:flutter/material.dart';
 
-/// Paleta de NomadIQ. Cada sección de la app tiene su color, igual que en
+/// Paleta de ECLIPTA. Cada sección de la app tiene su color, igual que en
 /// las maquetas: así el usuario sabe "dónde está" solo con mirar.
 abstract final class NomadColors {
   static const Color background = Color(0xFF0B1217); // fondo casi negro

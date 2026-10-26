@@ -66,7 +66,7 @@ Camino: ai-orchestrator (buzón `ai.outbox`) → Kafka
 
 ## Para tocarlo en VS Code
 
-1. Abre la carpeta `NoMad-IQ` (Archivo → Abrir carpeta).
+1. Abre la carpeta `ECLIPTA` (Archivo → Abrir carpeta).
 2. App: `mobile/lib/features/group_chat/`. Servidor:
    `services/ai-orchestrator/src/ai_orchestrator/group_chat/` y la tabla en
    `migrations/0014_group_chat.sql`.

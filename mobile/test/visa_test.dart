@@ -5,11 +5,11 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/core/settings.dart';
-import 'package:nomadiq/features/vault/vault.dart';
-import 'package:nomadiq/features/visa/mrz.dart';
-import 'package:nomadiq/features/visa/visa_data.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/vault/vault.dart';
+import 'package:eclipta/features/visa/mrz.dart';
+import 'package:eclipta/features/visa/visa_data.dart';
 
 import 'helpers.dart';
 import 'vault_test.dart' show FakeUnlocker, newVault;

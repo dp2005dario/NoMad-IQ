@@ -203,7 +203,7 @@ class MapPalette {
   };
 }
 
-/// Colores de las zonas de NomadIQ (iguales en los tres aspectos).
+/// Colores de las zonas de ECLIPTA (iguales en los tres aspectos).
 abstract final class ZoneColors {
   static const Color audioguide = Color(0xFF3DDC97); // menta: hay audioguía
   static const Color airport = Color(0xFF6CA8FF); // azul de Vuelos
@@ -361,7 +361,7 @@ Map<String, Object?> buildMapStyle({
 
   return <String, Object?>{
     'version': 8,
-    'name': 'NomadIQ ${look.name}',
+    'name': 'ECLIPTA ${look.name}',
     // Lo lee la superficie del mapa para saber qué texturas añadir.
     'metadata': <String, Object?>{'nomadiq:look': look.name},
     'glyphs': glyphsUrl,

@@ -4,13 +4,13 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/core/settings.dart';
-import 'package:nomadiq/features/camera/camera_device.dart' show CameraStart;
-import 'package:nomadiq/features/camera/stamps.dart';
-import 'package:nomadiq/features/memories/memories.dart';
-import 'package:nomadiq/features/memories/memories_screen.dart';
-import 'package:nomadiq/features/memories/travel_camera.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/camera/camera_device.dart' show CameraStart;
+import 'package:eclipta/features/camera/stamps.dart';
+import 'package:eclipta/features/memories/memories.dart';
+import 'package:eclipta/features/memories/memories_screen.dart';
+import 'package:eclipta/features/memories/travel_camera.dart';
 
 import 'helpers.dart';
 

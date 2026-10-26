@@ -4,7 +4,7 @@
 
 - **La cámara de viaje** ("Recuerdo"): haces una foto o un vídeo corto y la
   foto lleva encima la **pegatina del viaje**:
-  `NOMADIQ · DÍA 2`, `MADRID`, `22 oct 2026 · atardecer`.
+  `ECLIPTA · DÍA 2`, `MADRID`, `22 oct 2026 · atardecer`.
 - **La historia automática** ("Recuerdos"): con tus fotos, tu ruta y tus
   sellos, la app monta sola una historia de unos 30 segundos, como las de
   Instagram.
@@ -25,7 +25,7 @@ Los vídeos duran como mucho **30 segundos** y se paran solos.
 
 ### ¿Y la música y los stickers de Instagram?
 
-Se ponen en Instagram. NomadIQ le pasa la foto o el vídeo por el menú de
+Se ponen en Instagram. ECLIPTA le pasa la foto o el vídeo por el menú de
 compartir del móvil, que funciona con **cualquier** app sin pedir permisos ni
 cuentas de desarrollador de Meta. Por eso no tienes que hacer nada para que
 "compartir a Instagram" funcione.
@@ -47,7 +47,7 @@ para pausar.
 en que empezó tu viaje, toca "El viaje empezó el..." y elige otra fecha.
 
 **Compartir historia** manda las fotos de la historia y un texto resumen
-("Madrid → Lisboa: 4 días, 12 fotos y vídeos. Hecho con NomadIQ."). No se
+("Madrid → Lisboa: 4 días, 12 fotos y vídeos. Hecho con ECLIPTA."). No se
 fabrica un vídeo en el móvil: hacerlo necesita un codificador de vídeo que
 haría la app decenas de MB más grande y gastaría mucha batería.
 
@@ -73,7 +73,7 @@ haría la app decenas de MB más grande y gastaría mucha batería.
 
 ## Probarlo en VS Code
 
-1. Abre la carpeta `NoMad-IQ` (Archivo → Abrir carpeta).
+1. Abre la carpeta `ECLIPTA` (Archivo → Abrir carpeta).
 2. Abre una terminal (Terminal → Nueva terminal) y escribe:
 
    ```bash

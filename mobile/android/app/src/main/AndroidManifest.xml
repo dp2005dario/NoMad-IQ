@@ -39,7 +39,7 @@
          otro móvil (su clave vive en el chip del teléfono y no viajaría). -->
     <application
         android:allowBackup="false"
-        android:label="NomadIQ"
+        android:label="ECLIPTA"
         android:localeConfig="@xml/locales_config"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

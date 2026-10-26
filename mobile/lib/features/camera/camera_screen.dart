@@ -1,5 +1,5 @@
 // La pestaña Cámara (maqueta "Modo cámara"): apuntas a un monumento, tocas
-// el botón y NomadIQ te dice qué es, cuándo se construyó y su historia.
+// el botón y ECLIPTA te dice qué es, cuándo se construyó y su historia.
 //
 // Cómo lo sabe (ver landmarks_api.dart): manda dónde estás (GPS), hacia
 // dónde miras (brújula) y una foto pequeña. El servidor busca los lugares

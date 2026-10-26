@@ -1,4 +1,4 @@
-/* Estilo común de las páginas legales de NomadIQ (GitHub Pages).
+/* Estilo común de las páginas legales de ECLIPTA (GitHub Pages).
    Sencillo a propósito: se lee bien en el móvil y en modo oscuro. */
 :root { --fondo: #ffffff; --texto: #1d2433; --suave: #5b6478; --acento: #2457d6; --borde: #e3e7ef; }
 @media (prefers-color-scheme: dark) {

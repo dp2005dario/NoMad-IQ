@@ -58,7 +58,7 @@ def main(path, out="assets/geo/visas.txt", updated="2026-02-17"):
     passports = sorted(p for p in data if iso.match(p))
     dests = sorted({d for p in passports for d in data[p] if iso.match(d)} | set(passports))
     lines = [
-        f"# NomadIQ visas · passportindex.org via imorte/passport-index-data (MIT) · {updated}",
+        f"# ECLIPTA visas · passportindex.org via imorte/passport-index-data (MIT) · {updated}",
         " ".join(dests),
     ]
     for p in passports:

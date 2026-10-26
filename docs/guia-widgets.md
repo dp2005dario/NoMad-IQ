@@ -1,8 +1,8 @@
-# Guía para principiantes: Widgets (NomadIQ fuera de la app)
+# Guía para principiantes: Widgets (ECLIPTA fuera de la app)
 
 Un **widget** es un recuadro de una app que pones en el escritorio del móvil
 (la pantalla donde están los iconos) y que enseña información sin abrir la
-app. NomadIQ tiene tres, y además un **aviso "en directo"** el día del vuelo
+app. ECLIPTA tiene tres, y además un **aviso "en directo"** el día del vuelo
 que también sale en el **reloj**.
 
 Se entra desde Inicio, con el icono de los cuadraditos (Widgets).
@@ -18,7 +18,7 @@ Se entra desde Inicio, con el icono de los cuadraditos (Widgets).
 ### ¿Cómo cambia el widget del vuelo si la app está cerrada?
 
 Un widget de Android no puede ejecutar el código de la app. Por eso, cada vez
-que abres NomadIQ, la app prepara **todas** las "fotos fijas" que el widget
+que abres ECLIPTA, la app prepara **todas** las "fotos fijas" que el widget
 va a enseñar (ya traducidas) con la hora a partir de la que vale cada una:
 una por hora el día antes, cada media hora antes de embarcar y cada 15
 minutos durante el vuelo. Android despierta al widget justo a esas horas y
@@ -36,7 +36,7 @@ gratis y fiable de horarios de vuelos en directo para miles de usuarios.
 - En la pantalla Widgets toca **Añadir al escritorio** debajo del que
   quieras (si tu móvil lo permite).
 - O a mano: mantén pulsado un hueco del escritorio → **Widgets** → busca
-  **NomadIQ** y arrástralo.
+  **ECLIPTA** y arrástralo.
 
 ## El aviso "en directo"
 
@@ -80,7 +80,7 @@ eso no hace falta una app aparte para el reloj (ni el gasto de hacerla).
 
 ## Probarlo en VS Code
 
-1. Abre la carpeta `NoMad-IQ` (Archivo → Abrir carpeta).
+1. Abre la carpeta `ECLIPTA` (Archivo → Abrir carpeta).
 2. Terminal → Nueva terminal:
 
    ```bash

@@ -1,5 +1,5 @@
 // La pestaña del Mapa (maqueta 3): el mapa de la ciudad con las zonas de
-// NomadIQ, tu posición, el aviso al entrar en una zona y el acceso a su
+// ECLIPTA, tu posición, el aviso al entrar en una zona y el acceso a su
 // audioguía.
 //
 // La pantalla solo DIBUJA y reparte toques. Lo que hay que hacer en cada

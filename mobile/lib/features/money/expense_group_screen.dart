@@ -1,7 +1,7 @@
 // Un bote por dentro: quién debe a quién, los gastos apuntados y el botón
 // "Añadir gasto" (escaneando el ticket o a mano).
 //
-// "Saldar" NO mueve dinero: NomadIQ no es un banco. Le pagas a tu amigo como
+// "Saldar" NO mueve dinero: ECLIPTA no es un banco. Le pagas a tu amigo como
 // siempre (efectivo, Bizum, transferencia...) y aquí apuntas que ya está,
 // para que las cuentas cuadren para todos.
 import 'dart:async';

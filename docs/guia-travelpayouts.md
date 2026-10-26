@@ -1,6 +1,6 @@
 # Guía: precios reales de vuelos y comisiones con Travelpayouts
 
-Esta guía explica, para principiantes, cómo NomadIQ consigue precios de
+Esta guía explica, para principiantes, cómo ECLIPTA consigue precios de
 vuelos **reales** y cómo **ganas dinero** cuando alguien reserva desde la app.
 
 ---
@@ -12,7 +12,7 @@ cuando un cliente quiere uno, le das una tarjeta con tu sello para que vaya
 a una agencia grande. Si compra allí con tu tarjeta, la agencia te da una
 parte de lo que gana. Eso es el **marketing de afiliados**:
 
-| En la analogía | En NomadIQ |
+| En la analogía | En ECLIPTA |
 |---|---|
 | La agencia grande | Aviasales (un buscador de vuelos) |
 | El programa de "tarjetas con sello" | Travelpayouts (la red de afiliados de Aviasales) |
@@ -29,7 +29,7 @@ billete. La comisión se confirma cuando la persona viaja (1–2 meses después)
 
 1. Entra en <https://www.travelpayouts.com> y crea una cuenta.
 2. Cuando te pregunte por tu proyecto, di que es una **app móvil de viajes**
-   (NomadIQ) y pon el enlace del repositorio o de la Play Store cuando exista.
+   (ECLIPTA) y pon el enlace del repositorio o de la Play Store cuando exista.
 3. Únete al programa **Aviasales** (vuelos). Más adelante se pueden añadir
    hoteles, seguros o eSIM, que pagan más.
 4. Busca en tu panel estos dos datos (los menús pueden cambiar de nombre):
@@ -44,7 +44,7 @@ billete. La comisión se confirma cuando la persona viaja (1–2 meses después)
 
 ## 2. Activarlo en tu ordenador (Visual Studio Code)
 
-1. Abre VS Code → **Archivo → Abrir carpeta…** → `NoMad-IQ`.
+1. Abre VS Code → **Archivo → Abrir carpeta…** → `ECLIPTA`.
 2. Abre el archivo `infrastructure/.env` (si no existe, copia
    `infrastructure/.env.example` con el nombre `.env`). Ese archivo **no se
    sube a GitHub** (está en `.gitignore`).

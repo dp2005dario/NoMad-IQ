@@ -1,11 +1,11 @@
-# 🚀 NomadIQ — Next-Gen Autonomous Travel Ecosystem
+# 🚀 ECLIPTA — Next-Gen Autonomous Travel Ecosystem
 
-> NomadIQ es un asistente de viajes inteligente y autónomo que elimina la fricción de la planificación turística. A diferencia de las aplicaciones tradicionales, combina procesamiento de alta concurrencia, computación geoespacial, orquestación de agentes de IA y seguridad de grado bancario, monetizándose de forma pasiva a través de un motor de afiliación automatizado.
+> ECLIPTA es un asistente de viajes inteligente y autónomo que elimina la fricción de la planificación turística. A diferencia de las aplicaciones tradicionales, combina procesamiento de alta concurrencia, computación geoespacial, orquestación de agentes de IA y seguridad de grado bancario, monetizándose de forma pasiva a través de un motor de afiliación automatizado.
 
 ---
 
 ## 🌟 Visión General del Proyecto
-En la industria turística actual, los usuarios sufren de fatiga de planificación: comparar cientos de webs, coordinar grupos con intereses dispares, lidiar con imprevistos climáticos o logísticos y preocuparse por la seguridad de sus documentos. **NomadIQ** nace para resolver este problema mediante un ecosistema hiper-conectado impulsado por inteligencia artificial, diseñado desde cero para escalar a millones de usuarios.
+En la industria turística actual, los usuarios sufren de fatiga de planificación: comparar cientos de webs, coordinar grupos con intereses dispares, lidiar con imprevistos climáticos o logísticos y preocuparse por la seguridad de sus documentos. **ECLIPTA** nace para resolver este problema mediante un ecosistema hiper-conectado impulsado por inteligencia artificial, diseñado desde cero para escalar a millones de usuarios.
 
 ---
 
@@ -39,7 +39,7 @@ Para garantizar una escalabilidad masiva sin degradación del rendimiento, el si
 
 ## 💰 Modelo de Negocio y Monetización Pasiva
 * **Afiliación por Conversión (CPS):** Integración mediante *Deep Linking* con plataformas globales de hoteles (Booking), vuelos (Travelpayouts), eSIMs, seguros de viaje, transporte y atracciones.
-* **Google Play Billing:** Gestión automatizada de suscripciones recurrentes (**NomadIQ Pro**) y micropagos, con ingresos limpios transferidos directamente a cuentas bancarias (como BBVA) por umbrales mínimos.
+* **Google Play Billing:** Gestión automatizada de suscripciones recurrentes (**ECLIPTA Pro**) y micropagos, con ingresos limpios transferidos directamente a cuentas bancarias (como BBVA) por umbrales mínimos.
 
 ---
 

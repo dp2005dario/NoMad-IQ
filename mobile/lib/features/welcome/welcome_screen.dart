@@ -52,7 +52,7 @@ class WelcomeScreen extends StatelessWidget {
               const SizedBox(height: 32),
               // El nombre de la app. letterSpacing separa las letras.
               Text(
-                'ECLIPTA',
+                t.appTitle,
                 textAlign: TextAlign.center,
                 style: text.displaySmall?.copyWith(
                   fontSize: 44,

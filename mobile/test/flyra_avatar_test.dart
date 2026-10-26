@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/widgets/flyra_avatar.dart';
+import 'package:eclipta/widgets/flyra_avatar.dart';
 
 void main() {
   testWidgets('el avatar de Flyra se anuncia solo si tiene etiqueta', (

@@ -74,7 +74,7 @@ que lo que vale es la póliza.
 
 ## 5. Probarlo desde Visual Studio Code
 
-1. **Archivo → Abrir carpeta…** → `NoMad-IQ`, y **Ver → Terminal**.
+1. **Archivo → Abrir carpeta…** → `ECLIPTA`, y **Ver → Terminal**.
 2. `cd mobile` y `flutter test test/vault_test.dart`.
 3. En un móvil de verdad: `flutter run`, **Inicio → Bóveda**. El móvil
    necesita tener puesto un bloqueo de pantalla (huella o PIN).

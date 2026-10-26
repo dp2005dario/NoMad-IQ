@@ -148,7 +148,7 @@ class DeviceNotices implements NoticeCenter {
               : urgent
               ? AndroidNotificationCategory.status
               : AndroidNotificationCategory.recommendation,
-          // En la pantalla de bloqueo no se enseña el texto, solo "NomadIQ".
+          // En la pantalla de bloqueo no se enseña el texto, solo "ECLIPTA".
           visibility: NotificationVisibility.private,
         ),
         iOS: const DarwinNotificationDetails(),

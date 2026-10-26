@@ -15,7 +15,7 @@ import 'places_api.dart';
 
 /// Wikimedia pide que quien descarga sus fotos diga quién es.
 const Map<String, String> _imageHeaders = <String, String>{
-  'User-Agent': 'NomadIQ/1.0 (https://github.com/dp2005dario/NoMad-IQ)',
+  'User-Agent': 'ECLIPTA/1.0 (https://github.com/dp2005dario/NoMad-IQ)',
 };
 
 class CitySheet extends StatefulWidget {

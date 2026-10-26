@@ -66,7 +66,7 @@ al cambiar de pestaña o salir de la app, y nunca se pide el micrófono.
 
 ## 5. Probarlo desde Visual Studio Code
 
-1. **Archivo → Abrir carpeta…** → `NoMad-IQ`, y **Ver → Terminal**.
+1. **Archivo → Abrir carpeta…** → `ECLIPTA`, y **Ver → Terminal**.
 2. Servidor:
    ```bash
    cd services/ai-orchestrator

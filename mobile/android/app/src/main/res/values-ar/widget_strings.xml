@@ -2,11 +2,11 @@
 <!-- Textos de los widgets que Android enseña antes de abrir la app (la
      lista de widgets del escritorio). El resto los traduce la app. -->
 <resources>
-    <string name="widget_flight_name">NomadIQ: رحلتك</string>
+    <string name="widget_flight_name">ECLIPTA: رحلتك</string>
     <string name="widget_flight_desc">المغادرة والصعود والرحلة مباشرة ووصولك</string>
-    <string name="widget_deal_name">NomadIQ: عرض اليوم</string>
+    <string name="widget_deal_name">ECLIPTA: عرض اليوم</string>
     <string name="widget_deal_desc">أرخص رحلة اليوم من مطارك</string>
-    <string name="widget_budget_name">NomadIQ: الميزانية</string>
+    <string name="widget_budget_name">ECLIPTA: الميزانية</string>
     <string name="widget_budget_desc">كم تبقى لك اليوم في رحلتك</string>
-    <string name="widget_empty">افتح NomadIQ لملء هذه الأداة</string>
+    <string name="widget_empty">افتح ECLIPTA لملء هذه الأداة</string>
 </resources>

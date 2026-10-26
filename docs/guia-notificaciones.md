@@ -1,7 +1,7 @@
 # Guía de las notificaciones push, explicada desde cero
 
 Esta guía es para alguien que **no ha programado nunca** y quiere entender cómo
-NomadIQ avisa en el móvil ("Estás en el centro de Madrid: ¿escuchas la
+ECLIPTA avisa en el móvil ("Estás en el centro de Madrid: ¿escuchas la
 audioguía?") sin tres problemas: llenar el teléfono de avisos al pasear,
 construir sin querer una base de datos de "quién estuvo dónde", y quedarse sin
 la cuota gratuita de Google cuando 10.000 personas llegan a la vez a la Sagrada
@@ -246,7 +246,7 @@ idioma y, al tocarlo, abre tus alertas de vuelos.
 
 ## 5. Cómo probarlo en tu ordenador con Visual Studio Code
 
-1. Abre VS Code → **Archivo → Abrir carpeta…** → elige la carpeta `NoMad-IQ`.
+1. Abre VS Code → **Archivo → Abrir carpeta…** → elige la carpeta `ECLIPTA`.
 2. Extensiones recomendadas: **Go** (de Google), **rust-analyzer**, **Docker**
    y **Buf**. VS Code las ofrece al abrir la carpeta; con la de Go podrás
    pulsar "run test" encima de cada test.

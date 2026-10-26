@@ -1,9 +1,9 @@
 // Si algo falla: plazos de la maleta, la carta y la escala perdida.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/core/settings.dart';
-import 'package:nomadiq/features/trouble/bag_claim.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/trouble/bag_claim.dart';
 
 import 'helpers.dart';
 

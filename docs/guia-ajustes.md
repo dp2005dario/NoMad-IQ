@@ -88,7 +88,7 @@ en claro a un archivo sería un riesgo. Se ven en la propia Bóveda.
 
 ## 5. Probarlo desde Visual Studio Code
 
-1. **Archivo → Abrir carpeta…** → `NoMad-IQ`, y **Ver → Terminal**.
+1. **Archivo → Abrir carpeta…** → `ECLIPTA`, y **Ver → Terminal**.
 2. App: `cd mobile` y `flutter test test/settings_test.dart`.
 3. ai-orchestrator: `cd services/ai-orchestrator`, activa el `.venv` y
    `pytest tests/test_erasure.py -q`.

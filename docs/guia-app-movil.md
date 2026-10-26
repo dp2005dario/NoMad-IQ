@@ -1,6 +1,6 @@
-# Guía para principiantes: la app móvil de NomadIQ (Flutter)
+# Guía para principiantes: la app móvil de ECLIPTA (Flutter)
 
-Hasta ahora todo NomadIQ eran servicios que corren en servidores (la "cocina").
+Hasta ahora todo ECLIPTA eran servicios que corren en servidores (la "cocina").
 La app móvil es el "comedor": lo que el viajero ve y toca. Esta guía explica
 cómo está hecha la primera versión y cómo abrirla en tu PC con VS Code.
 
@@ -61,7 +61,7 @@ Cosas que la app ya hace sola:
   está en un idioma que aún no tenemos, usa el inglés.
 - **Puedes cambiar el idioma** dentro de la app, en Idioma, y lo recuerda la
   próxima vez. En Android 13 o posterior también aparece en
-  Ajustes → Apps → NomadIQ → Idioma.
+  Ajustes → Apps → ECLIPTA → Idioma.
 - **Escribe de derecha a izquierda (RTL)** en árabe, hebreo, persa…: la pantalla
   entera se da la vuelta como en un espejo. Por eso el código usa
   `EdgeInsetsDirectional` y `AlignmentDirectional`, que significan "al
@@ -85,7 +85,7 @@ Cosas que la app ya hace sola:
 
 ### 4.1 Instalar lo necesario (una sola vez)
 
-1. **VS Code.** Al abrir la carpeta `NoMad-IQ`, abajo a la derecha te sugiere
+1. **VS Code.** Al abrir la carpeta `ECLIPTA`, abajo a la derecha te sugiere
    unas extensiones. Pulsa **Instalar todas**. La que importa aquí es
    **Flutter** (`Dart-Code.flutter`).
 2. **Flutter SDK.** En VS Code pulsa `Ctrl+Shift+P`, escribe
@@ -94,7 +94,7 @@ Cosas que la app ya hace sola:
    `C:\src\flutter`. Cuando acabe, pulsa **Add SDK to PATH**.
    - ⚠️ Tu proyecto está en `C:\Users\Darío\OneDrive\...`, y la tilde de
      "Darío" y OneDrive a veces dan problemas a las herramientas de Android.
-     Si ves errores raros al compilar, copia el proyecto a `C:\src\NoMad-IQ`.
+     Si ves errores raros al compilar, copia el proyecto a `C:\src\ECLIPTA`.
 3. **Android Studio** (https://developer.android.com/studio). Solo hace falta
    para que te dé el **Android SDK** (las herramientas de Android) y un
    **emulador**, que es un móvil virtual dentro del PC. Ábrelo una vez y deja
@@ -163,7 +163,7 @@ Algunas decisiones y su porqué:
   Inicio sigue como lo dejaste.
 - **Las fuentes van dentro de la app:** no se descargan de Internet. Así
   funciona sin conexión y no avisa a terceros de quién usa la app.
-- **Identificador de la app: `com.nomadiq.app`.** Es su "DNI" en Google Play y
+- **Identificador de la app: `com.eclipta.app`.** Es su "DNI" en Google Play y
   **no se puede cambiar** después de publicarla.
 
 ## 6. Glosario
@@ -183,7 +183,7 @@ Algunas decisiones y su porqué:
 | OpenStreetMap | El mapa libre del mundo, hecho por voluntarios (como la Wikipedia) |
 | MapLibre | La librería que dibuja el mapa en el móvil |
 | Histéresis | Esperar un poco antes de cambiar de estado, para no "parpadear" en el borde |
-| Permiso de ubicación | La pregunta del móvil "¿Permitir que NomadIQ acceda a tu ubicación?" |
+| Permiso de ubicación | La pregunta del móvil "¿Permitir que ECLIPTA acceda a tu ubicación?" |
 
 ## 7. Iniciar sesión (conectada al auth-gateway)
 
@@ -243,7 +243,7 @@ que llega pronto, porque el servidor aún no sabe comprobar cuentas de Google.
 
 ## 8. El mapa y las audioguías
 
-La pestaña **Mapa** ya es de verdad: enseña la ciudad, las zonas de NomadIQ,
+La pestaña **Mapa** ya es de verdad: enseña la ciudad, las zonas de ECLIPTA,
 tu posición y la audioguía de cada zona.
 
 ### Qué ves
@@ -329,7 +329,7 @@ la calle **de verdad**, el botón **Ver la calle de verdad** (abajo, junto a
 
 1. Entra en <https://www.mapillary.com/dashboard/developers> con una cuenta
    de Mapillary (o de Facebook) y pulsa **Register application**.
-2. Pon un nombre (por ejemplo, `NomadIQ`), una web (la del repositorio) y
+2. Pon un nombre (por ejemplo, `ECLIPTA`), una web (la del repositorio) y
    marca solo el permiso de **lectura** ("Read").
 3. Copia la **Client Token** (empieza por `MLY|`).
 4. En VS Code, abre `infrastructure/.env` (no el `.env.example`) y añade:
@@ -370,7 +370,7 @@ Sin token, el botón sale igual pero dice que las fotos no están disponibles.
 
 ## 9. Modo viaje y avisos push
 
-Con el **modo viaje** encendido, NomadIQ te avisa aunque cierres la app:
+Con el **modo viaje** encendido, ECLIPTA te avisa aunque cierres la app:
 "Audioguía cerca", "¡Bienvenido!" al llegar al aeropuerto o un aviso de
 seguridad en una zona restringida.
 
@@ -379,7 +379,7 @@ seguridad en una zona restringida.
 | En pantalla | Qué hace |
 |---|---|
 | Botón **Modo viaje** (abajo a la izquierda en el Mapa) | Aparece con la ubicación activada y con cuenta. Al pulsarlo, Android pide permiso de notificaciones (Android 13+) |
-| Notificación fija "NomadIQ · Modo viaje" | Avisa de que la app sigue usando tu ubicación. No se puede quitar deslizando: así nunca te rastreamos sin que lo sepas |
+| Notificación fija "ECLIPTA · Modo viaje" | Avisa de que la app sigue usando tu ubicación. No se puede quitar deslizando: así nunca te rastreamos sin que lo sepas |
 | "Audioguía cerca" | Al tocarla, se abre la audioguía de esa zona |
 | "Posible tarifa error · MAD → NRT · 15 mar: 315 € (−65 %)" | Alerta de precio de un vuelo que vigilas (canal propio "Alertas de precio", que puedes silenciar aparte). El precio y la fecha salen en el formato de tu idioma (`lib/core/money.dart`). De momento abre la ficha de Vuelos; con las pantallas de Vuelos abrirá tus alertas |
 
@@ -428,10 +428,10 @@ seguridad en una zona restringida.
 Sin estos datos la app funciona igual, pero sin avisos push.
 
 1. Entra en <https://console.firebase.google.com> con tu cuenta de Google y
-   pulsa **Crear un proyecto**. Llámalo, por ejemplo, `nomadiq`. Google
+   pulsa **Crear un proyecto**. Llámalo, por ejemplo, `eclipta`. Google
    Analytics no hace falta.
 2. En el proyecto, pulsa el icono de **Android** ("Añadir app").
-   - **Nombre del paquete:** `com.nomadiq.app` (exactamente este).
+   - **Nombre del paquete:** `com.eclipta.app` (exactamente este).
    - Pulsa **Registrar app**. El archivo `google-services.json` que te
      ofrece **no hace falta**: sáltalo con **Siguiente** hasta terminar.
 3. Ve a ⚙️ **Configuración del proyecto** → pestaña **General**. En "Tus
@@ -459,7 +459,7 @@ Sin estos datos la app funciona igual, pero sin avisos push.
 1. Entra con tu cuenta, ve a **Mapa**, pulsa **Activar ubicación** y luego
    **Modo viaje**. Acepta el permiso de notificaciones.
 2. Sal de la app (botón de inicio del emulador). La notificación fija
-   "NomadIQ · Modo viaje" sigue ahí.
+   "ECLIPTA · Modo viaje" sigue ahí.
 3. Con `⋮` → **Location**, pon la Puerta del Sol (`40.41694, -3.70361`).
    Si el notifier usa tu Firebase de verdad (paso 4 de arriba), en unos
    segundos llega
@@ -508,7 +508,7 @@ price-consumer:
   unas pocas líneas de código en vez de una librería entera. Para TalkBack lleva
   una descripción: "Gráfica de precios de 3 días. Mínimo…".
 - **Solo se abren enlaces https**, y además fuera de la app (en el navegador):
-  NomadIQ nunca ve tus datos de pago.
+  ECLIPTA nunca ve tus datos de pago.
 
 ### Probarlo en tu PC
 

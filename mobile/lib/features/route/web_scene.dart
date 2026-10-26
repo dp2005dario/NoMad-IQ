@@ -3,7 +3,7 @@
 // Seguridad: la página va dentro de la app y no necesita Internet. Por eso
 // se bloquea CUALQUIER intento de ir a otra dirección (aunque la página no
 // tiene enlaces, así un fallo no puede abrir webs dentro de la app). La
-// página solo puede mandar a la app dos palabras por el canal "NomadIQ":
+// página solo puede mandar a la app dos palabras por el canal "ECLIPTA":
 // "landed" (ha aterrizado) y "done" (pulsó Continuar).
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -31,7 +31,7 @@ class _WebSceneState extends State<WebScene> {
       ),
     )
     ..addJavaScriptChannel(
-      'NomadIQ',
+      'ECLIPTA',
       onMessageReceived: (JavaScriptMessage m) {
         if (m.message == 'landed' || m.message == 'done') {
           widget.onMessage(m.message);

@@ -9,7 +9,7 @@
 
 ## Parte 1. ¿Qué estamos construyendo?
 
-NomadIQ es una app de viajes. Una de sus funciones es **avisarte cuando un
+ECLIPTA es una app de viajes. Una de sus funciones es **avisarte cuando un
 vuelo baja de precio**. Para eso, alguien tiene que estar mirando precios todo
 el rato, día y noche. Ese "alguien" es un programa que vive en un servidor.
 
@@ -25,7 +25,7 @@ Lo que hay en este repositorio hoy es **la primera parte** de ese sistema:
 
 ## Parte 2. La gran analogía: una empresa de viajes
 
-Imagina NomadIQ como una empresa con varios empleados. Cada empleado es un
+Imagina ECLIPTA como una empresa con varios empleados. Cada empleado es un
 programa (lo llamamos **microservicio**) y cada uno hace una sola cosa muy bien:
 
 | Empleado (microservicio) | Qué hace en la "empresa" | Lenguaje |
@@ -177,7 +177,7 @@ Sigamos a un precio desde que nace hasta que llega al tablón:
 ## Parte 5. Mapa de carpetas (qué hay en cada sitio)
 
 ```
-NoMad-IQ/
+ECLIPTA/
 ├── proto/                     ← Los "formularios oficiales" (protobuf)
 ├── gen/go/                    ← Código generado automáticamente desde proto/ (no tocar)
 ├── infrastructure/            ← Docker Compose: Kafka, PostgreSQL, Redis, Qdrant
@@ -217,7 +217,7 @@ fichero con el mismo nombre.
 ```bash
 # 1. Descarga el proyecto
 git clone https://github.com/dp2005dario/NoMad-IQ.git
-cd NoMad-IQ/infrastructure
+cd ECLIPTA/infrastructure
 
 # 2. Crea tu fichero de contraseñas a partir de la plantilla
 cp .env.example .env
@@ -259,7 +259,7 @@ VS Code es el editor que vas a usar. El proyecto ya viene preparado para él.
 ### 7.1 Abrir el proyecto (una sola vez)
 
 1. Abre VS Code → **File → Open Folder…** (en español: *Archivo → Abrir carpeta…*).
-2. Elige la carpeta **raíz** `NoMad-IQ` (la que contiene `README.md`), no una subcarpeta.
+2. Elige la carpeta **raíz** `ECLIPTA` (la que contiene `README.md`), no una subcarpeta.
    Así VS Code ve todo el proyecto a la vez gracias al fichero `go.work`.
 3. Si pregunta *"¿Confías en los autores de esta carpeta?"*, pulsa **Sí, confío**.
 4. Abajo a la derecha aparecerá *"Este espacio de trabajo tiene extensiones

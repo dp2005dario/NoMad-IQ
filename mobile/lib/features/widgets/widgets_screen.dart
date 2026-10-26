@@ -1,4 +1,4 @@
-// Widgets (maqueta "Widgets"): NomadIQ fuera de la app.
+// Widgets (maqueta "Widgets"): ECLIPTA fuera de la app.
 //   - Escritorio: tres widgets de Android (tu vuelo, el chollo de hoy y el
 //     presupuesto) que cambian solos a su hora.
 //   - Avisos: el aviso "en directo" del día del vuelo.

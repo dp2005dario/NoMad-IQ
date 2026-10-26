@@ -117,7 +117,7 @@ class DeviceTravelCamera implements TravelCamera {
 
 /// Pinta la pegatina del viaje encima de la foto y devuelve un PNG.
 ///
-/// [lines]: la primera en pequeño ("NOMADIQ · DÍA 2"), la segunda grande
+/// [lines]: la primera en pequeño ("ECLIPTA · DÍA 2"), la segunda grande
 /// ("MADRID") y el resto debajo ("22 oct 2026 · atardecer").
 Future<Uint8List> stickerPhoto(Uint8List jpeg, List<String> lines) async {
   final ui.Codec codec = await ui.instantiateImageCodec(jpeg);

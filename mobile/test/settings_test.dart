@@ -5,16 +5,16 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:nomadiq/auth/session.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/core/settings.dart';
-import 'package:nomadiq/features/family/family.dart';
-import 'package:nomadiq/features/push/notice_prefs.dart';
-import 'package:nomadiq/features/push/push_notice.dart';
-import 'package:nomadiq/features/settings/account_data.dart';
-import 'package:nomadiq/features/settings/settings_screen.dart';
-import 'package:nomadiq/features/vault/vault.dart';
-import 'package:nomadiq/features/vault/vault_store.dart';
+import 'package:eclipta/auth/session.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/family/family.dart';
+import 'package:eclipta/features/push/notice_prefs.dart';
+import 'package:eclipta/features/push/push_notice.dart';
+import 'package:eclipta/features/settings/account_data.dart';
+import 'package:eclipta/features/settings/settings_screen.dart';
+import 'package:eclipta/features/vault/vault.dart';
+import 'package:eclipta/features/vault/vault_store.dart';
 
 import 'helpers.dart';
 import 'vault_test.dart' show FakeUnlocker;
@@ -246,10 +246,10 @@ void main() {
       expect(find.text('Borrar mi cuenta y mis datos'), findsOneWidget);
       // Ajustes es una lista larga: la versión está al final.
       await tester.scrollUntilVisible(
-        find.textContaining('NomadIQ 1.0.0'),
+        find.textContaining('ECLIPTA 1.0.0'),
         300,
       );
-      expect(find.textContaining('NomadIQ 1.0.0'), findsOneWidget);
+      expect(find.textContaining('ECLIPTA 1.0.0'), findsOneWidget);
     });
 
     testWidgets(

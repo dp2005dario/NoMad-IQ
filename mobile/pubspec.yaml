@@ -1,8 +1,8 @@
 # pubspec.yaml es el "carné de identidad" de la app Flutter: nombre, versión,
 # librerías que usa (dependencias) y archivos que lleva dentro (fuentes, imágenes).
 # Tras cambiarlo, VS Code ejecuta solo "flutter pub get" para descargar lo nuevo.
-name: nomadiq
-description: "NomadIQ: asistente de viaje con Flyra"
+name: eclipta
+description: "ECLIPTA: asistente de viaje con Flyra"
 # No se publica en pub.dev (el almacén de librerías): es una app, no una librería.
 publish_to: 'none'
 

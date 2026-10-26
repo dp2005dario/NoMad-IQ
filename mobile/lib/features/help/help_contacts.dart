@@ -4,7 +4,7 @@
 class HelpContacts {
   const HelpContacts({this.supportEmail, this.claimsUrl, this.visaUrl});
 
-  /// El correo del equipo de NomadIQ.
+  /// El correo del equipo de ECLIPTA.
   final String? supportEmail;
 
   /// La web del socio que reclama retrasos y cancelaciones por ti.

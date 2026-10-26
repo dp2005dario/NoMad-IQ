@@ -5,8 +5,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/core/languages.dart';
-import 'package:nomadiq/l10n/generated/app_localizations.dart';
+import 'package:eclipta/core/languages.dart';
+import 'package:eclipta/l10n/generated/app_localizations.dart';
 
 Map<String, Object?> _read(File f) =>
     jsonDecode(f.readAsStringSync()) as Map<String, Object?>;
@@ -50,7 +50,7 @@ void main() {
           reason: '$key debe conservar sus {huecos}',
         );
       }
-      expect(arb['appTitle'], 'NomadIQ', reason: 'la marca no se traduce');
+      expect(arb['appTitle'], 'ECLIPTA', reason: 'la marca no se traduce');
     });
   }
 

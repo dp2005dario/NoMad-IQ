@@ -1,4 +1,4 @@
-# Guía para principiantes: poner NomadIQ en Internet (gratis)
+# Guía para principiantes: poner ECLIPTA en Internet (gratis)
 
 Hasta ahora todo corría en tu ordenador con `docker compose`. Esta guía
 explica cómo ponerlo en un **servidor de verdad**, encendido 24 horas, para
@@ -60,7 +60,7 @@ alguna vez aparece un gasto, aunque sea de 1 céntimo.
 | `render_edge.py` | Pasa las reglas de la puerta de desarrollo a producción (https + mTLS) |
 | `postgres.Dockerfile`, `audio-worker.Dockerfile` | Imágenes que construimos nosotros |
 
-Ábrelos en **VS Code** (Archivo → Abrir carpeta → `NoMad-IQ`). Con la
+Ábrelos en **VS Code** (Archivo → Abrir carpeta → `ECLIPTA`). Con la
 extensión **YAML** (de Red Hat) verás colores y errores en los `.yaml`, y con
 **Kubernetes** (de Microsoft) te explica cada campo al pasar el ratón.
 
@@ -109,7 +109,7 @@ y lo apagamos antes de que cueste nada.
 
 > Sobre "máquinas inactivas": Oracle puede **parar** (no borrar) una
 > máquina gratis si durante 7 días usa menos del 20 % de CPU, red **y**
-> memoria. NomadIQ tiene Kafka, la IA y la base de datos cargados en
+> memoria. ECLIPTA tiene Kafka, la IA y la base de datos cargados en
 > memoria, así que lo normal es superar ese 20 % de memoria. Si un día la
 > paran, la arrancas desde la consola y todo vuelve (los datos siguen en el
 > disco y además hay copias).
@@ -175,7 +175,7 @@ Ya dentro del servidor:
 
 ```bash
 git clone https://github.com/dp2005dario/NoMad-IQ.git
-cd NoMad-IQ
+cd ECLIPTA
 sudo bash infrastructure/production/bootstrap.sh
 exit   # sal y vuelve a entrar para que se aplique el grupo "docker"
 ```

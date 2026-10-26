@@ -18,7 +18,7 @@ val keyProps = Properties().apply {
 val hasUploadKey = keyProps.getProperty("storeFile") != null
 
 android {
-    namespace = "com.nomadiq.app"
+    namespace = "com.eclipta.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -33,7 +33,7 @@ android {
     defaultConfig {
         // Identificador único en Google Play. Una vez publicada la app NO se
         // puede cambiar nunca (sería otra app distinta).
-        applicationId = "com.nomadiq.app"
+        applicationId = "com.eclipta.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         // Salen de "version: 1.0.0+1" en pubspec.yaml: lo de antes del "+" es
@@ -59,7 +59,7 @@ android {
             signingConfig = if (hasUploadKey) {
                 signingConfigs.getByName("upload")
             } else {
-                logger.warn("NomadIQ: falta android/key.properties; release firmada con la llave de PRUEBAS (Play la rechazará).")
+                logger.warn("ECLIPTA: falta android/key.properties; release firmada con la llave de PRUEBAS (Play la rechazará).")
                 signingConfigs.getByName("debug")
             }
         }

@@ -5,12 +5,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/core/settings.dart';
-import 'package:nomadiq/features/assistant/interpreter.dart';
-import 'package:nomadiq/features/camera/speaker.dart';
-import 'package:nomadiq/features/easy/easy_mode.dart';
-import 'package:nomadiq/features/voice/voice_intents.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/assistant/interpreter.dart';
+import 'package:eclipta/features/camera/speaker.dart';
+import 'package:eclipta/features/easy/easy_mode.dart';
+import 'package:eclipta/features/voice/voice_intents.dart';
 
 import 'helpers.dart';
 

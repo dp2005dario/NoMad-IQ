@@ -46,7 +46,7 @@ Nada de esto va a ningún servidor. Se borra con "Borrar mi cuenta".
 
 ## 4. Probarlo desde Visual Studio Code
 
-1. **Archivo → Abrir carpeta…** → `NoMad-IQ`, **Ver → Terminal**.
+1. **Archivo → Abrir carpeta…** → `ECLIPTA`, **Ver → Terminal**.
 2. `cd mobile` y `flutter test test/sos_test.dart`.
 3. En un móvil de verdad: **Inicio → SOS**. Para probar sin llamar a
    emergencias, añade un contacto tuyo y usa solo el botón del SMS.

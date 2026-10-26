@@ -55,7 +55,7 @@ const Map<String, String> exportSources = <String, String>{
   'group_trips': '/v1/group-negotiations',
 };
 
-/// Reúne TODO lo que NomadIQ sabe de ti: lo de los servidores y lo que solo
+/// Reúne TODO lo que ECLIPTA sabe de ti: lo de los servidores y lo que solo
 /// está en este móvil. Los documentos de la Bóveda no van: están cifrados y
 /// se ven en la propia Bóveda (sacarlos en claro a un archivo sería un riesgo).
 Future<Map<String, Object?>> collectMyData({
@@ -95,7 +95,7 @@ Future<Map<String, Object?>> collectMyData({
   };
 
   return <String, Object?>{
-    'app': 'NomadIQ',
+    'app': 'ECLIPTA',
     'format': 1,
     'exported_at': now().toUtc().toIso8601String(),
     'account': <String, Object?>{

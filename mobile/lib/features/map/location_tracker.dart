@@ -55,9 +55,9 @@ class LocationTracker extends ChangeNotifier {
 
   /// Texto traducido de la notificación fija. Lo pone la app.
   TrackingNotice notice = const TrackingNotice(
-    title: 'NomadIQ',
+    title: 'ECLIPTA',
     text: '',
-    channel: 'NomadIQ',
+    channel: 'ECLIPTA',
   );
 
   final StreamController<PositionFix> _fixes =

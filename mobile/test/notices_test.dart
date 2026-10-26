@@ -3,11 +3,11 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/auth/session.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/core/settings.dart';
-import 'package:nomadiq/features/push/notice_log.dart';
-import 'package:nomadiq/features/push/push_notice.dart';
+import 'package:eclipta/auth/session.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/push/notice_log.dart';
+import 'package:eclipta/features/push/push_notice.dart';
 
 import 'helpers.dart';
 

@@ -1,4 +1,4 @@
-package com.nomadiq.app
+package com.eclipta.app
 
 import android.appwidget.AppWidgetManager
 import android.content.Context
@@ -39,7 +39,7 @@ abstract class NomadWidget(private val key: String) : HomeWidgetProvider() {
         for (id in appWidgetIds) {
             val views = RemoteViews(context.packageName, R.layout.nomad_widget)
             if (snap == null) {
-                // Nada que enseñar: solo la frase "Abre NomadIQ y añade tu vuelo".
+                // Nada que enseñar: solo la frase "Abre ECLIPTA y añade tu vuelo".
                 views.setViewVisibility(R.id.widget_content, View.GONE)
                 views.setViewVisibility(R.id.widget_empty, View.VISIBLE)
                 views.setTextViewText(R.id.widget_empty, empty)

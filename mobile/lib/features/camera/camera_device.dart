@@ -53,7 +53,7 @@ class DeviceCamera implements CameraDevice {
         enableAudio: false, // solo fotos: nunca pedimos el micrófono
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
-      // Aquí Android enseña "¿Permitir que NomadIQ haga fotos?".
+      // Aquí Android enseña "¿Permitir que ECLIPTA haga fotos?".
       await controller.initialize();
       _controller = controller;
       return CameraStart.ready;

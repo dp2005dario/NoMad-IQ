@@ -10,40 +10,40 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:nomadiq/features/route/world_data.dart';
-import 'package:nomadiq/features/queues/reminders.dart';
-import 'package:nomadiq/features/widgets/home_widgets.dart';
-import 'package:nomadiq/features/visa/visa_data.dart';
-import 'package:nomadiq/app.dart';
-import 'package:nomadiq/auth/auth_api.dart';
-import 'package:nomadiq/auth/session.dart';
-import 'package:nomadiq/auth/token_store.dart';
-import 'package:nomadiq/core/api_client.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/core/launch.dart';
-import 'package:nomadiq/core/services.dart';
-import 'package:nomadiq/features/family/family.dart';
-import 'package:nomadiq/features/memories/memories.dart';
-import 'package:nomadiq/features/memories/travel_camera.dart';
-import 'package:nomadiq/features/help/help_contacts.dart';
-import 'package:nomadiq/features/offline/city_downloader.dart';
-import 'package:nomadiq/features/offline/saved_guides.dart';
-import 'package:nomadiq/features/audioguide/guide_player.dart';
-import 'package:nomadiq/features/flights/booking.dart';
-import 'package:nomadiq/features/map/geo.dart';
-import 'package:nomadiq/features/map/geo_api.dart';
-import 'package:nomadiq/features/map/location.dart';
-import 'package:nomadiq/features/map/location_tracker.dart';
-import 'package:nomadiq/features/map/position_reporter.dart';
-import 'package:nomadiq/features/push/notices.dart';
-import 'package:nomadiq/features/map/map_surface.dart';
-import 'package:nomadiq/core/settings.dart';
-import 'package:nomadiq/features/camera/camera_device.dart';
-import 'package:nomadiq/features/camera/speaker.dart';
-import 'package:nomadiq/features/assistant/interpreter.dart';
-import 'package:nomadiq/features/money/receipt_scanner.dart';
-import 'package:nomadiq/features/vault/doc_source.dart';
-import 'package:nomadiq/features/vault/vault.dart';
+import 'package:eclipta/features/route/world_data.dart';
+import 'package:eclipta/features/queues/reminders.dart';
+import 'package:eclipta/features/widgets/home_widgets.dart';
+import 'package:eclipta/features/visa/visa_data.dart';
+import 'package:eclipta/app.dart';
+import 'package:eclipta/auth/auth_api.dart';
+import 'package:eclipta/auth/session.dart';
+import 'package:eclipta/auth/token_store.dart';
+import 'package:eclipta/core/api_client.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/launch.dart';
+import 'package:eclipta/core/services.dart';
+import 'package:eclipta/features/family/family.dart';
+import 'package:eclipta/features/memories/memories.dart';
+import 'package:eclipta/features/memories/travel_camera.dart';
+import 'package:eclipta/features/help/help_contacts.dart';
+import 'package:eclipta/features/offline/city_downloader.dart';
+import 'package:eclipta/features/offline/saved_guides.dart';
+import 'package:eclipta/features/audioguide/guide_player.dart';
+import 'package:eclipta/features/flights/booking.dart';
+import 'package:eclipta/features/map/geo.dart';
+import 'package:eclipta/features/map/geo_api.dart';
+import 'package:eclipta/features/map/location.dart';
+import 'package:eclipta/features/map/location_tracker.dart';
+import 'package:eclipta/features/map/position_reporter.dart';
+import 'package:eclipta/features/push/notices.dart';
+import 'package:eclipta/features/map/map_surface.dart';
+import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/camera/camera_device.dart';
+import 'package:eclipta/features/camera/speaker.dart';
+import 'package:eclipta/features/assistant/interpreter.dart';
+import 'package:eclipta/features/money/receipt_scanner.dart';
+import 'package:eclipta/features/vault/doc_source.dart';
+import 'package:eclipta/features/vault/vault.dart';
 
 /// Un auth-gateway falso, en memoria, que se comporta como el de verdad:
 /// una cuenta, pases largos de un solo uso y errores con sus códigos HTTP.
@@ -466,7 +466,7 @@ Future<SettingsController> pumpApp(
   );
   final SessionController s = session ?? (newSession()..continueAsGuest());
   await tester.pumpWidget(
-    NomadIqApp(
+    EcliptaApp(
       settings: settings,
       session: s,
       services: services ?? fakeServices(s),

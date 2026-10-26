@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:nomadiq/auth/auth_api.dart';
-import 'package:nomadiq/auth/session.dart';
-import 'package:nomadiq/auth/token_store.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/features/home/home_screen.dart';
+import 'package:eclipta/auth/auth_api.dart';
+import 'package:eclipta/auth/session.dart';
+import 'package:eclipta/auth/token_store.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/features/home/home_screen.dart';
 
 import 'helpers.dart';
 
@@ -235,6 +235,7 @@ void main() {
     ) async {
       final FakeGateway gw = FakeGateway();
       await pumpApp(tester, locale: 'es', session: newSession(gw));
+      await tester.ensureVisible(find.text('Continuar con correo'));
       await tester.tap(find.text('Continuar con correo'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('¿Eres nuevo? Crea una cuenta'));

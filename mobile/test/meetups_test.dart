@@ -5,10 +5,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/core/settings.dart';
-import 'package:nomadiq/features/meetups/meetups_api.dart';
-import 'package:nomadiq/l10n/generated/app_localizations_es.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/meetups/meetups_api.dart';
+import 'package:eclipta/l10n/generated/app_localizations_es.dart';
 
 import 'helpers.dart';
 

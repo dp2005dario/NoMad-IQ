@@ -2,11 +2,11 @@
 <!-- Textos de los widgets que Android enseña antes de abrir la app (la
      lista de widgets del escritorio). El resto los traduce la app. -->
 <resources>
-    <string name="widget_flight_name">NomadIQ：あなたのフライト</string>
+    <string name="widget_flight_name">ECLIPTA：あなたのフライト</string>
     <string name="widget_flight_desc">出発、搭乗、フライトのライブ表示、到着</string>
-    <string name="widget_deal_name">NomadIQ：今日のお得</string>
+    <string name="widget_deal_name">ECLIPTA：今日のお得</string>
     <string name="widget_deal_desc">あなたの空港から今日いちばん安いフライト</string>
-    <string name="widget_budget_name">NomadIQ：予算</string>
+    <string name="widget_budget_name">ECLIPTA：予算</string>
     <string name="widget_budget_desc">旅行で今日使える残り</string>
-    <string name="widget_empty">NomadIQを開いてこのウィジェットを表示</string>
+    <string name="widget_empty">ECLIPTAを開いてこのウィジェットを表示</string>
 </resources>

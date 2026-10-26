@@ -1,7 +1,7 @@
 # Guía de la negociación de grupo con agentes de IA, explicada desde cero
 
 Esta guía es para alguien que **no ha programado nunca** y quiere entender cómo
-NomadIQ consigue que un grupo de amigos se ponga de acuerdo sobre a dónde
+ECLIPTA consigue que un grupo de amigos se ponga de acuerdo sobre a dónde
 viajar sin pasarse una semana discutiendo por WhatsApp: cada persona tiene un
 **agente de IA** que la representa, y los agentes negocian entre ellos con unas
 reglas que nadie (ni siquiera la IA) puede saltarse.
@@ -268,7 +268,7 @@ se sienta. Cuando la cena empieza (la negociación), el código deja de valer.
 
 ## 7. Cómo probarlo en tu ordenador con Visual Studio Code
 
-1. Abre VS Code → **Archivo → Abrir carpeta…** → elige la carpeta `NoMad-IQ`.
+1. Abre VS Code → **Archivo → Abrir carpeta…** → elige la carpeta `ECLIPTA`.
 2. Extensiones recomendadas (VS Code te las ofrece al abrir la carpeta):
    **Python** y **Pylance**, **Docker**, **Buf** (protobuf).
 3. Abre la terminal integrada: **Terminal → Nuevo terminal** (o `` Ctrl+ñ `` /

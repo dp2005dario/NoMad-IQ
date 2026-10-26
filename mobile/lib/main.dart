@@ -50,7 +50,7 @@ Future<void> main() async {
   // suena; la notificación se puede quitar al pausar.
   if (defaultTargetPlatform == TargetPlatform.android) {
     await JustAudioBackground.init(
-      androidNotificationChannelId: 'com.nomadiq.app.audioguide',
+      androidNotificationChannelId: 'com.eclipta.app.audioguide',
       androidNotificationChannelName: 'Audioguías · Audio guides',
       androidNotificationIcon: 'mipmap/ic_launcher',
       androidStopForegroundOnPause: true,
@@ -143,7 +143,7 @@ Future<void> main() async {
     AppLifecycleListener(onResume: () => unawaited(registrar.sync()));
   }
   runApp(
-    NomadIqApp(
+    EcliptaApp(
       settings: SettingsController(store),
       session: session,
       services: services,

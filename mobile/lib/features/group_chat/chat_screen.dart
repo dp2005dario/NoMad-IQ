@@ -915,7 +915,7 @@ class _EndSheetState extends State<_EndSheet> {
                     Uri.https(
                       'play.google.com',
                       '/store/apps/details',
-                      <String, String>{'id': 'com.nomadiq.app'},
+                      <String, String>{'id': 'com.eclipta.app'},
                     ),
                   ),
                 ),

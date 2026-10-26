@@ -1,15 +1,15 @@
 // SOS: números del país, el SMS con la ubicación, contactos y ficha médica.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/core/settings.dart';
-import 'package:nomadiq/features/map/geo.dart';
-import 'package:nomadiq/features/map/location.dart';
-import 'package:nomadiq/features/route/geo.dart';
-import 'package:nomadiq/features/route/world_data.dart';
-import 'package:nomadiq/features/sos/emergency_data.dart';
-import 'package:nomadiq/features/sos/sos_store.dart';
-import 'package:nomadiq/features/sos/where_am_i.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/map/geo.dart';
+import 'package:eclipta/features/map/location.dart';
+import 'package:eclipta/features/route/geo.dart';
+import 'package:eclipta/features/route/world_data.dart';
+import 'package:eclipta/features/sos/emergency_data.dart';
+import 'package:eclipta/features/sos/sos_store.dart';
+import 'package:eclipta/features/sos/where_am_i.dart';
 
 import 'helpers.dart';
 
