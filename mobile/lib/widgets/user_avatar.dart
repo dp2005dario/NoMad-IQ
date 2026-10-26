@@ -69,7 +69,8 @@ class UserAvatar extends StatelessWidget {
             ),
     );
     final String? url = photoUrl;
-    final bool useFake = debugImageFactory != null && url != null && url.isNotEmpty;
+    final bool useFake =
+        debugImageFactory != null && url != null && url.isNotEmpty;
     Widget content = fallback;
     if (useFake || isTrustedPhotoUrl(url)) {
       final ImageProvider provider = useFake

@@ -86,7 +86,9 @@ class ChatMessage {
       at: at,
       mine: json['mine'] == true,
       flyra: json['flyra'] == true,
-      photoUrl: json['photo_url'] is String ? json['photo_url'] as String : null,
+      photoUrl: json['photo_url'] is String
+          ? json['photo_url'] as String
+          : null,
     );
   }
 }

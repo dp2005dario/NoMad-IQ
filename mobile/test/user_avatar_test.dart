@@ -22,7 +22,10 @@ void main() {
     expect(isTrustedPhotoUrl('https://lh3.googleusercontent.com/a/x'), isTrue);
     expect(isTrustedPhotoUrl('http://lh3.googleusercontent.com/a'), isFalse);
     expect(isTrustedPhotoUrl('https://evil.example.com/a.png'), isFalse);
-    expect(isTrustedPhotoUrl('https://googleusercontent.com.evil.io/a'), isFalse);
+    expect(
+      isTrustedPhotoUrl('https://googleusercontent.com.evil.io/a'),
+      isFalse,
+    );
     expect(isTrustedPhotoUrl(null), isFalse);
   });
 
@@ -40,7 +43,12 @@ void main() {
   testWidgets('con foto usa la imagen (falsa)', (WidgetTester tester) async {
     UserAvatar.debugImageFactory = (String url) => _fake;
     await tester.pumpWidget(
-      _app(const UserAvatar(name: 'Darío', photoUrl: 'https://lh3.googleusercontent.com/a')),
+      _app(
+        const UserAvatar(
+          name: 'Darío',
+          photoUrl: 'https://lh3.googleusercontent.com/a',
+        ),
+      ),
     );
     await tester.pump();
     expect(find.byType(Image), findsOneWidget);
@@ -50,7 +58,12 @@ void main() {
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
-      _app(const UserAvatar(name: 'Darío', photoUrl: 'https://evil.example.com/a.png')),
+      _app(
+        const UserAvatar(
+          name: 'Darío',
+          photoUrl: 'https://evil.example.com/a.png',
+        ),
+      ),
     );
     expect(find.byType(Image), findsNothing);
     expect(find.text('D'), findsOneWidget);
