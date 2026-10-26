@@ -51,10 +51,13 @@ class TokenPair {
 }
 
 class UserProfile {
-  const UserProfile({required this.id, required this.email});
+  const UserProfile({required this.id, required this.email, this.photoUrl});
 
   final String id;
   final String email;
+
+  /// Foto de perfil (opcional): solo si el servidor la manda.
+  final String? photoUrl;
 }
 
 class AuthApi {
@@ -119,7 +122,12 @@ class AuthApi {
       null,
       accessToken: accessToken,
     );
-    return UserProfile(id: _string(json, 'id'), email: _string(json, 'email'));
+    final Object? photo = json['photo_url'];
+    return UserProfile(
+      id: _string(json, 'id'),
+      email: _string(json, 'email'),
+      photoUrl: photo is String ? photo : null,
+    );
   }
 
   /// "Borrar mi cuenta": pide la contraseña otra vez. 204 = borrada para
