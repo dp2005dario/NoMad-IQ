@@ -1892,5 +1892,8 @@
   "queuesTablesNote": "Kamu memesan langsung ke restoran: aplikasi tidak memesan atau menagih apa pun. Data:",
   "dataSourceCheck": "Dari mana info ini (cek kembali)",
   "stopRuleCheckFare": "Kamu bisa singgah di kota mereka; harganya tergantung tarif, jadi cek di situs web mereka.",
-  "stopCheckNote": "Dengan {nights} di {city}: cek harga pastinya di situs web mereka"
+  "stopCheckNote": "Dengan {nights} di {city}: cek harga pastinya di situs web mereka",
+  "welcomeHeadline": "Perjalanan berikutnya sudah lepas landas.",
+  "welcomeMute": "Matikan musik",
+  "welcomeUnmute": "Nyalakan musik"
 }

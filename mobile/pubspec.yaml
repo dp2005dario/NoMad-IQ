@@ -79,6 +79,8 @@ dependencies:
   google_mlkit_translation: ^0.15.1
   # Asistente: el reconocimiento de voz del sistema (lo que dices, a texto).
   speech_to_text: ^7.5.0
+  # El vídeo de fondo de la Bienvenida (en bucle, con música suave).
+  video_player: ^2.14.1
 
 dev_dependencies:
   flutter_test:
@@ -99,6 +101,10 @@ flutter:
     - assets/geo/visas.txt
     # El Vuelo 3D: una página con three.js ya empaquetado (ver tool/flight3d/).
     - assets/flight3d/vuelo.html
+    # La Bienvenida: vídeo de fondo (720x1280, ~1 MB), logo y la G de Google.
+    - assets/video/bienvenida.mp4
+    - assets/brand/eclipta_spark.png
+    - assets/brand/google_g.png
   # Genera el código de traducciones a partir de lib/l10n/*.arb (ver l10n.yaml).
   generate: true
   # Las fuentes van DENTRO de la app (no se descargan de Internet al abrirla):

@@ -1892,5 +1892,8 @@
   "queuesTablesNote": "你直接向餐厅预订：本应用不代订也不收费。数据：",
   "dataSourceCheck": "数据来源（可核实）",
   "stopRuleCheckFare": "可以在其城市停留；价格取决于票价类型，请在其官网查看。",
-  "stopCheckNote": "在{city}停留{nights}：请在其官网查看确切价格"
+  "stopCheckNote": "在{city}停留{nights}：请在其官网查看确切价格",
+  "welcomeHeadline": "你的下一段旅程正在起飞。",
+  "welcomeMute": "静音音乐",
+  "welcomeUnmute": "开启音乐"
 }

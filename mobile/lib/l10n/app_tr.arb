@@ -1892,5 +1892,8 @@
   "queuesTablesNote": "Rezervasyonu doğrudan restoranla yaparsın: uygulama rezervasyon yapmaz veya ücret almaz. Veriler:",
   "dataSourceCheck": "Bu bilgi nereden geliyor (kontrol et)",
   "stopRuleCheckFare": "Onların şehrinde mola verebilirsin; fiyat tarifeye bağlı, bu yüzden web sitelerinden kontrol et.",
-  "stopCheckNote": "{city} şehrinde {nights} ile: kesin fiyatı web sitelerinden kontrol et"
+  "stopCheckNote": "{city} şehrinde {nights} ile: kesin fiyatı web sitelerinden kontrol et",
+  "welcomeHeadline": "Bir sonraki yolculuğun şimdiden havalanıyor.",
+  "welcomeMute": "Müziği sessize al",
+  "welcomeUnmute": "Müziği aç"
 }

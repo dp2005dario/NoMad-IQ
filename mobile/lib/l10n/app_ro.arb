@@ -1892,5 +1892,8 @@
   "queuesTablesNote": "Rezervi direct la restaurant: aplicația nu rezervă și nu încasează nimic. Date:",
   "dataSourceCheck": "De unde vine asta (verifică)",
   "stopRuleCheckFare": "Poți face o oprire în orașul lor; prețul depinde de tarif, deci verifică-l pe site-ul lor.",
-  "stopCheckNote": "Cu {nights} în {city}: verifică prețul exact pe site-ul lor"
+  "stopCheckNote": "Cu {nights} în {city}: verifică prețul exact pe site-ul lor",
+  "welcomeHeadline": "Următoarea ta călătorie decolează deja.",
+  "welcomeMute": "Oprește muzica",
+  "welcomeUnmute": "Pornește muzica"
 }

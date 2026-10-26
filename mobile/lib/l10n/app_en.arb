@@ -8940,5 +8940,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "welcomeHeadline": "Your next trip is already taking off.",
+  "welcomeMute": "Mute music",
+  "welcomeUnmute": "Turn music on"
 }

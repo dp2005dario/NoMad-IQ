@@ -1892,5 +1892,8 @@
   "queuesTablesNote": "Anda menempah terus dengan restoran: aplikasi tidak menempah atau mengenakan bayaran apa-apa. Data:",
   "dataSourceCheck": "Dari mana maklumat ini (semak)",
   "stopRuleCheckFare": "Anda boleh singgah di bandar mereka; harganya bergantung pada tambang, jadi semak di laman web mereka.",
-  "stopCheckNote": "Dengan {nights} di {city}: semak harga tepat di laman web mereka"
+  "stopCheckNote": "Dengan {nights} di {city}: semak harga tepat di laman web mereka",
+  "welcomeHeadline": "Perjalanan seterusnya sudah berlepas.",
+  "welcomeMute": "Senyapkan muzik",
+  "welcomeUnmute": "Hidupkan muzik"
 }

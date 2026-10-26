@@ -1892,5 +1892,8 @@
   "queuesTablesNote": "Je reserveert direct bij het restaurant: de app reserveert niets en rekent niets af. Gegevens:",
   "dataSourceCheck": "Waar dit vandaan komt (controleer het)",
   "stopRuleCheckFare": "Je kunt een tussenstop maken in hun stad; de prijs hangt af van het tarief, dus controleer het op hun website.",
-  "stopCheckNote": "Met {nights} in {city}: controleer de exacte prijs op hun website"
+  "stopCheckNote": "Met {nights} in {city}: controleer de exacte prijs op hun website",
+  "welcomeHeadline": "Je volgende reis stijgt al op.",
+  "welcomeMute": "Muziek dempen",
+  "welcomeUnmute": "Muziek aanzetten"
 }

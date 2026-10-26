@@ -1892,5 +1892,8 @@
   "queuesTablesNote": "Bạn đặt trực tiếp với nhà hàng: ứng dụng không đặt hay thu tiền gì. Dữ liệu:",
   "dataSourceCheck": "Thông tin này từ đâu (hãy kiểm tra)",
   "stopRuleCheckFare": "Bạn có thể dừng chân ở thành phố của họ; giá tùy hạng vé, nên hãy kiểm tra trên trang web của họ.",
-  "stopCheckNote": "Với {nights} ở {city}: kiểm tra giá chính xác trên trang web của họ"
+  "stopCheckNote": "Với {nights} ở {city}: kiểm tra giá chính xác trên trang web của họ",
+  "welcomeHeadline": "Chuyến đi tiếp theo của bạn đang cất cánh.",
+  "welcomeMute": "Tắt nhạc",
+  "welcomeUnmute": "Bật nhạc"
 }

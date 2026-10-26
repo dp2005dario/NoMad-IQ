@@ -44,6 +44,7 @@ import 'package:eclipta/features/assistant/interpreter.dart';
 import 'package:eclipta/features/money/receipt_scanner.dart';
 import 'package:eclipta/features/vault/doc_source.dart';
 import 'package:eclipta/features/vault/vault.dart';
+import 'package:eclipta/features/welcome/welcome_video.dart';
 
 /// Un auth-gateway falso, en memoria, que se comporta como el de verdad:
 /// una cuenta, pases largos de un solo uso y errores con sus códigos HTTP.
@@ -171,6 +172,7 @@ AppServices fakeServices(
   FakeLocation? location,
   FakeMap? map,
   List<FakePlayer>? players,
+  WelcomeVideoFactory? welcomeVideo,
   NoticeCenter? notices,
   SettingsStore? prefs,
   OpenBooking? openBooking,
@@ -214,6 +216,7 @@ AppServices fakeServices(
       players?.add(p);
       return p;
     },
+    newWelcomeVideo: welcomeVideo ?? FakeWelcomeVideo.new,
     tilesUrl: Uri.parse('https://tiles.test/planet'),
     glyphsUrl: 'https://tiles.test/fonts/{fontstack}/{range}.pbf',
     notices: notices ?? FakeNotices(),
@@ -357,6 +360,30 @@ class FakeMap implements MapSurfaceController {
 
   @override
   Future<GeoBox?> visibleBox() async => view;
+}
+
+/// Un vídeo de bienvenida falso: no reproduce nada, solo apunta si se silencia.
+/// Con `works: false` simula un vídeo que no carga (la pantalla debe seguir
+/// funcionando con su fondo oscuro).
+class FakeWelcomeVideo implements WelcomeVideo {
+  FakeWelcomeVideo({bool works = true}) : ready = ValueNotifier<bool>(works);
+
+  @override
+  final ValueNotifier<bool> ready;
+  bool muted = false;
+  bool disposed = false;
+
+  @override
+  Widget buildView() => const ColoredBox(
+    color: Color(0xFF0B1217),
+    child: SizedBox.expand(key: Key('fake-welcome-video')),
+  );
+
+  @override
+  Future<void> setMuted(bool value) async => muted = value;
+
+  @override
+  Future<void> dispose() async => disposed = true;
 }
 
 /// Un reproductor falso que solo cambia su estado.

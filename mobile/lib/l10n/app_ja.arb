@@ -1892,5 +1892,8 @@
   "queuesTablesNote": "予約はレストランと直接行います。アプリは予約も請求もしません。データ：",
   "dataSourceCheck": "情報の出典（確認する）",
   "stopRuleCheckFare": "その都市で途中降機できます。料金は運賃により異なるので公式サイトで確認を。",
-  "stopCheckNote": "{city}で{nights}：正確な料金は公式サイトで確認"
+  "stopCheckNote": "{city}で{nights}：正確な料金は公式サイトで確認",
+  "welcomeHeadline": "次の旅は、もう離陸しています。",
+  "welcomeMute": "音楽をミュート",
+  "welcomeUnmute": "音楽をオンにする"
 }

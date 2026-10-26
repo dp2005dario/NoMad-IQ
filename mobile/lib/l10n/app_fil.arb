@@ -1892,5 +1892,8 @@
   "queuesTablesNote": "Direkta kang magbu-book sa restawran: walang bina-book o sinisingil ang app. Data:",
   "dataSourceCheck": "Saan galing ito (tingnan)",
   "stopRuleCheckFare": "Puwede kang huminto sa lungsod nila; depende sa fare ang presyo, kaya tingnan ito sa website nila.",
-  "stopCheckNote": "Sa {nights} sa {city}: tingnan ang eksaktong presyo sa website nila"
+  "stopCheckNote": "Sa {nights} sa {city}: tingnan ang eksaktong presyo sa website nila",
+  "welcomeHeadline": "Papaalis na ang susunod mong biyahe.",
+  "welcomeMute": "I-mute ang musika",
+  "welcomeUnmute": "I-on ang musika"
 }

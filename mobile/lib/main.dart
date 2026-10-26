@@ -39,6 +39,7 @@ import 'features/push/push_registrar.dart';
 import 'features/push/push_state.dart';
 import 'features/route/data_licenses.dart';
 import 'features/route/web_scene.dart';
+import 'features/welcome/welcome_video.dart';
 
 Future<void> main() async {
   // Necesario antes de usar plugins (como el almacenamiento) en main().
@@ -85,6 +86,7 @@ Future<void> main() async {
     webScene: (String html, void Function(String) onMessage) =>
         WebScene(html: html, onMessage: onMessage),
     newPlayer: JustAudioGuidePlayer.new,
+    newWelcomeVideo: AssetWelcomeVideo.new,
     newCamera: DeviceCamera.new,
     newTravelCamera: DeviceTravelCamera.new,
     memoryFiles: AppMemoryFiles(),

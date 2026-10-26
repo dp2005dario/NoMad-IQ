@@ -1892,5 +1892,8 @@
   "queuesTablesNote": "Vous réservez directement auprès du restaurant : l'appli ne réserve et ne facture rien. Données :",
   "dataSourceCheck": "D'où viennent ces données (vérifiez)",
   "stopRuleCheckFare": "Vous pouvez faire escale dans leur ville ; le prix dépend du tarif, vérifiez-le sur leur site.",
-  "stopCheckNote": "Avec {nights} à {city} : vérifiez le prix exact sur leur site"
+  "stopCheckNote": "Avec {nights} à {city} : vérifiez le prix exact sur leur site",
+  "welcomeHeadline": "Votre prochain voyage décolle déjà.",
+  "welcomeMute": "Couper la musique",
+  "welcomeUnmute": "Activer la musique"
 }
