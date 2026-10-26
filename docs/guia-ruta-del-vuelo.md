@@ -65,7 +65,7 @@ Para que millones de usuarios no cuesten nada:
    que lleva la app). Nadie puede inventarse millones de ciudades para
    llenar la caché.
 2. **Caché de 7 días** en Redis y de un día en el móvil (`Cache-Control`).
-   Como mucho hay 5.500 × 10 idiomas fichas posibles.
+   Como mucho hay 5.500 × 24 idiomas fichas posibles.
 3. **Single flight**: si mil personas abren Tokio a la vez, sale UNA
    consulta a Wikimedia.
 4. **Límite de ritmo** hacia Wikimedia (`WIKIMEDIA_RATE_PER_SECOND`, 5 por
@@ -124,7 +124,7 @@ Sídney → Santiago de Chile), el vuelo sale igual, con campos, pueblos y nubes
   Por seguridad, ese navegador no puede ir a ninguna web: solo puede avisar
   a la app de dos cosas, "ha aterrizado" y "pulsó Continuar".
 - **Textos:** la página no trae textos propios. La app le pasa todos los
-  textos en tu idioma (desde los `.arb`, en 10 idiomas). El nombre del país
+  textos en tu idioma (desde los `.arb`, en 25 idiomas). El nombre del país
   lo traduce el propio móvil (`Intl.DisplayNames`), y las banderas son emojis.
 - **Código fuente:** está en `mobile/tool/flight3d/`. `vuelo.js` es la escena,
   `vuelo.html` la plantilla y `build.mjs` junta las dos con three.js.

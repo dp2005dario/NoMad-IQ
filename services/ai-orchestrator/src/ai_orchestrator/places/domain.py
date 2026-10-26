@@ -4,8 +4,35 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-# Los idiomas de la app (mobile/lib/l10n). Wikipedia existe en todos.
-PLACE_LANGUAGES: tuple[str, ...] = ("en", "es", "fr", "de", "it", "pt", "ar", "zh", "ja", "hi")
+# Los idiomas de la app (mobile/lib/l10n) que tienen su propia Wikipedia.
+# El filipino ("fil") no está: su Wikipedia es la de tagalo ("tl"), así que
+# esas fichas salen en inglés, como cualquier idioma que falte aquí.
+PLACE_LANGUAGES: tuple[str, ...] = (
+    "en",
+    "es",
+    "fr",
+    "de",
+    "it",
+    "pt",
+    "ar",
+    "zh",
+    "ja",
+    "hi",
+    "ru",
+    "ko",
+    "tr",
+    "vi",
+    "id",
+    "pl",
+    "nl",
+    "uk",
+    "th",
+    "fa",
+    "bn",
+    "ur",
+    "ms",
+    "ro",
+)
 DEFAULT_LANGUAGE = "en"
 
 # Lo que hay que mostrar junto a los textos y fotos (lo piden sus licencias).
