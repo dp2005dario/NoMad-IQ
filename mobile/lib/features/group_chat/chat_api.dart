@@ -52,7 +52,11 @@ class ChatMessage {
     required this.mine,
     required this.flyra,
     this.seat,
+    this.photoUrl,
   });
+
+  /// Foto de quien escribe, si viene con su perfil.
+  final String? photoUrl;
 
   final int id;
 
@@ -82,6 +86,7 @@ class ChatMessage {
       at: at,
       mine: json['mine'] == true,
       flyra: json['flyra'] == true,
+      photoUrl: json['photo_url'] is String ? json['photo_url'] as String : null,
     );
   }
 }

@@ -111,7 +111,11 @@ class TripMember {
     required this.submitted,
     required this.me,
     this.name,
+    this.photoUrl,
   });
+
+  /// Foto de perfil del miembro, si su perfil la trae.
+  final String? photoUrl;
 
   /// "Viajero 2": lo único que ve la IA.
   final String alias;
@@ -131,6 +135,7 @@ class TripMember {
     return TripMember(
       alias: _str(m['alias']),
       name: name as String?,
+      photoUrl: m['photo_url'] is String ? m['photo_url'] as String : null,
       submitted: submitted,
       me: me,
     );

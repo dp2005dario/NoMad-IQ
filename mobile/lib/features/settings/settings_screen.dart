@@ -14,6 +14,7 @@ import '../../core/router.dart';
 import '../../core/services.dart';
 import '../../core/settings.dart';
 import '../../core/theme.dart';
+import '../../widgets/user_avatar.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../home/home_screen.dart' show displayName;
 import 'account_data.dart';
@@ -150,17 +151,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: <Widget>[
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor: NomadColors.group,
-                        foregroundColor: NomadColors.background,
-                        child: Text(
-                          name.characters.first.toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
+                      UserAvatar(
+                        name: name,
+                        photoUrl: user?.photoUrl,
+                        size: 60,
                       ),
                       const SizedBox(width: 16),
                       Expanded(
