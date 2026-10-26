@@ -23,6 +23,7 @@ import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
+import '../../widgets/user_avatar.dart';
 import '../group/group_api.dart';
 import 'chat_api.dart';
 
@@ -565,17 +566,11 @@ class _Bubble extends StatelessWidget {
         : const Color(0xFF2A1E26);
     final Widget avatar = m.flyra
         ? const FlyraAvatar(size: 30)
-        : CircleAvatar(
-            radius: 15,
-            backgroundColor: NomadColors.group,
-            child: Text(
-              m.name.isEmpty ? '?' : m.name.characters.first.toUpperCase(),
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF0B1217),
-              ),
-            ),
+        : UserAvatar(
+            name: m.name.isEmpty ? '?' : m.name,
+            photoUrl: m.photoUrl,
+            size: 30,
+            textColor: const Color(0xFF0B1217),
           );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),

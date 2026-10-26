@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../widgets/user_avatar.dart';
 import 'group_api.dart';
 
 /// Cada gusto ("beach") en el idioma de la persona ("Playa").
@@ -64,7 +65,6 @@ class MemberFace extends StatelessWidget {
     final String name = memberName(t, member);
     // "characters" cuenta letras como las ve una persona (también emoji o
     // letras con tilde compuestas), no trozos de memoria.
-    final String initial = name.characters.first.toUpperCase();
     return Semantics(
       label: member.submitted ? t.groupMemberReady(name) : name,
       excludeSemantics: true,
@@ -73,22 +73,17 @@ class MemberFace extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: <Widget>[
+            // Foto si la hay; si no, la inicial sobre el color de siempre.
             Container(
-              width: size,
-              height: size,
-              alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: _faces[index % _faces.length],
                 shape: BoxShape.circle,
                 border: Border.all(color: NomadColors.background, width: 3),
               ),
-              child: Text(
-                initial,
-                style: TextStyle(
-                  color: NomadColors.background,
-                  fontWeight: FontWeight.w800,
-                  fontSize: size * 0.4,
-                ),
+              child: UserAvatar(
+                name: name,
+                photoUrl: member.photoUrl,
+                size: size - 6,
+                color: _faces[index % _faces.length],
               ),
             ),
             if (member.submitted)

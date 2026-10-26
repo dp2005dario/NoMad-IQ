@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/router.dart';
 import '../../core/services.dart';
 import '../../core/theme.dart';
+import '../../widgets/user_avatar.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'family.dart';
 
@@ -267,18 +268,7 @@ class _MemberCard extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
           child: Row(
             children: <Widget>[
-              CircleAvatar(
-                radius: 23,
-                backgroundColor: color,
-                child: Text(
-                  m.name.characters.first.toUpperCase(),
-                  style: const TextStyle(
-                    color: NomadColors.background,
-                    fontSize: 19,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
+              UserAvatar(name: m.name, size: 46, color: color),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

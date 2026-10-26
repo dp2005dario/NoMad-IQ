@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../auth/session.dart';
 import '../../core/router.dart';
 import '../../core/theme.dart';
+import '../../widgets/user_avatar.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
 import '../coming_soon/coming_soon_screen.dart';
@@ -253,17 +254,10 @@ class _AccountButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
-    final String? initial = name?.characters.first;
     return IconButton(
       tooltip: t.accountMenu,
       onPressed: () => context.push(Routes.settings),
-      icon: CircleAvatar(
-        backgroundColor: NomadColors.group,
-        foregroundColor: NomadColors.background,
-        child: initial == null
-            ? const Icon(Icons.person_rounded)
-            : Text(initial),
-      ),
+      icon: UserAvatar(name: name, photoUrl: session.user?.photoUrl, size: 40),
     );
   }
 }
