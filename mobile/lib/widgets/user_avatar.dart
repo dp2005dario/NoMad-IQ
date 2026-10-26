@@ -87,6 +87,8 @@ class UserAvatar extends StatelessWidget {
         errorBuilder: (_, Object e, StackTrace? s) => fallback,
       );
     }
-    return ClipOval(child: SizedBox.square(dimension: size, child: content));
+    return ClipOval(
+      child: SizedBox.square(dimension: size, child: content),
+    );
   }
 }

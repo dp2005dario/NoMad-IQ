@@ -257,11 +257,7 @@ class _AccountButton extends StatelessWidget {
     return IconButton(
       tooltip: t.accountMenu,
       onPressed: () => context.push(Routes.settings),
-      icon: UserAvatar(
-        name: name,
-        photoUrl: session.user?.photoUrl,
-        size: 40,
-      ),
+      icon: UserAvatar(name: name, photoUrl: session.user?.photoUrl, size: 40),
     );
   }
 }

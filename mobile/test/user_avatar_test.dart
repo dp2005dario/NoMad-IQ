@@ -12,8 +12,9 @@ final MemoryImage _fake = MemoryImage(
   ),
 );
 
-Widget _app(Widget child) =>
-    MaterialApp(home: Scaffold(body: Center(child: child)));
+Widget _app(Widget child) => MaterialApp(
+  home: Scaffold(body: Center(child: child)),
+);
 
 void main() {
   tearDown(() => UserAvatar.debugImageFactory = null);
