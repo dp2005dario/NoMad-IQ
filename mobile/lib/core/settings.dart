@@ -54,6 +54,31 @@ enum LocalData {
 
   /// Los viajes que has copiado de otros (ya adaptados a tu presupuesto).
   copiedTrips,
+
+  /// La lista de Recuerdos (fotos y vídeos del viaje) y el día que empezó.
+  memories,
+
+  /// "0" = sin el aviso "en directo" el día del vuelo (por defecto, con él).
+  liveFlight,
+
+  /// El país de tu pasaporte ("ES"), para la pantalla Visado. Solo el país:
+  /// el número y lo demás nunca se guardan.
+  visaPassport,
+
+  /// "1" = en las quedadas, los demás no ven tu nombre (sale "Alguien").
+  meetupHidden,
+
+  /// "Si algo falla": tu reclamación de maleta (solo en el móvil).
+  bagClaim,
+
+  /// Asistente: el idioma de la otra persona ("ja").
+  interpreterLang,
+
+  /// Moverte: tus bonos y tarjetas de transporte (solo en el móvil).
+  transitTickets,
+
+  /// Qué pasa en tus fechas: los eventos que guardaste (con la estrella).
+  savedEvents,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real

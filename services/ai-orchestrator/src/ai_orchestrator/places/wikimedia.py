@@ -137,6 +137,12 @@ def _value(row: dict[str, Any], name: str) -> str | None:
     return value if isinstance(value, str) and value else None
 
 
+def _qid_of(entity_uri: str) -> str | None:
+    """ "http://www.wikidata.org/entity/Q193208" → "Q193208" (o None si es raro)."""
+    tail = entity_uri.rsplit("/", 1)[-1]
+    return tail if re.fullmatch(r"Q[1-9][0-9]{0,11}", tail) else None
+
+
 def _is_label(value: str | None) -> bool:
     # Si un dato no tiene nombre en ningún idioma, el servicio de etiquetas
     # devuelve su identificador ("Q12345"): eso no se enseña.
@@ -321,6 +327,7 @@ class WikimediaClient:
                     description=_value(row, "itemDescription"),
                     photo=commons_photo(image, self._attraction_width) if image else None,
                     article_url=_value(row, "article"),
+                    wikidata_id=_qid_of(item),
                 )
             )
             if len(out) >= MAX_ATTRACTIONS:

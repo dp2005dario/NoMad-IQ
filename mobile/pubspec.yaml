@@ -70,6 +70,15 @@ dependencies:
   # Dice si el móvil está en wifi o con datos: así "Sin conexión" no gasta
   # tu tarifa descargando una ciudad en el extranjero sin querer.
   connectivity_plus: ^7.3.1
+  # "Compartir": abre el menú del móvil (Instagram, WhatsApp, Guardar en
+  # Fotos...) con tus recuerdos. Gratis y sin cuentas.
+  share_plus: ^13.3.1
+  home_widget: ^0.10.0
+  # Asistente: traducir frases DENTRO del móvil (ML Kit, gratis; cada idioma
+  # se baja una vez y luego funciona en modo avión).
+  google_mlkit_translation: ^0.15.1
+  # Asistente: el reconocimiento de voz del sistema (lo que dices, a texto).
+  speech_to_text: ^7.5.0
 
 dev_dependencies:
   flutter_test:
@@ -86,6 +95,8 @@ flutter:
     - assets/geo/world.bin
     - assets/geo/airports.txt
     - assets/geo/countries.txt
+    - assets/geo/country_names.txt
+    - assets/geo/visas.txt
     # El Vuelo 3D: una página con three.js ya empaquetado (ver tool/flight3d/).
     - assets/flight3d/vuelo.html
   # Genera el código de traducciones a partir de lib/l10n/*.arb (ver l10n.yaml).

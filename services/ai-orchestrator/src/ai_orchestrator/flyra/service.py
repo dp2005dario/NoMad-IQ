@@ -106,7 +106,8 @@ class FlyraService:
         self._settings = settings
         self._clock = clock
 
-    async def answer(self, user_id: str, request: ChatRequest) -> ChatReply:
+    async def answer(self, user_id: str, request: ChatRequest, *, context: str | None = None) -> ChatReply:
+        """Contesta. [context]: una línea más para las instrucciones (el chat de grupo)."""
         now = self._clock()
         day = day_key(now)
         try:
@@ -118,7 +119,7 @@ class FlyraService:
         try:
             text = await asyncio.wait_for(
                 self._llm.chat(
-                    build_messages(request, now),
+                    build_messages(request, now, context),
                     json_schema=None,
                     temperature=self._settings.temperature,
                     max_tokens=self._settings.max_tokens,
@@ -141,12 +142,15 @@ class FlyraService:
         return ChatReply(reply=reply, remaining_today=remaining)
 
 
-def build_messages(request: ChatRequest, now: datetime) -> list[ChatMessage]:
+def build_messages(request: ChatRequest, now: datetime, context: str | None = None) -> list[ChatMessage]:
     """Instrucciones de sistema + el hilo, en el formato del modelo."""
     base = request.language.split("-")[0]
     language = LANGUAGE_NAMES.get(base, f"the language with code '{request.language}'")
     place = clean_text(request.place) if request.place else ""
     place_line = f"The traveller is now in or near: {place}." if place else ""
+    if context:
+        # El chat de grupo añade quiénes son y qué tipo de viaje es.
+        place_line = f"{place_line} {context}".strip()
     system = SYSTEM_PROMPT.format(today=now.date().isoformat(), place_line=place_line, language=language)
     return [
         ChatMessage(role="system", content=system),

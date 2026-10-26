@@ -57,6 +57,7 @@ class DeviceNotices implements NoticeCenter {
   static const String zonesChannel = 'zones';
   static const String safetyChannel = 'safety';
   static const String faresChannel = 'fares';
+  static const String groupChannel = 'group';
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -125,6 +126,8 @@ class DeviceNotices implements NoticeCenter {
     final bool urgent = notice.urgent || fare;
     final (String channel, String channelName) = fare
         ? (faresChannel, t.pushChannelFares)
+        : notice.isGroup
+        ? (groupChannel, t.pushChannelGroup)
         : urgent
         ? (safetyChannel, t.pushChannelSafety)
         : (zonesChannel, t.pushChannelZones);
@@ -170,6 +173,8 @@ Future<(String, String)> noticeTexts(
     return switch (notice.kind) {
       PushKind.zoneAudioguide => (t.pushGuideTitle, t.pushGuideBody),
       PushKind.airportArrival => (t.pushAirportTitle, t.pushAirportBody),
+      PushKind.groupChat => (t.pushGroupChatTitle, t.pushGroupChatBody),
+      PushKind.groupResult => (t.pushGroupResultTitle, t.pushGroupResultBody),
       PushKind.zoneSafety ||
       PushKind.fareAlert => (t.pushSafetyTitle, t.pushSafetyBody),
     };

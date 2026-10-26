@@ -4,6 +4,8 @@
 //
 // En los tests se monta la misma caja con piezas falsas: así las pantallas
 // se prueban sin red, sin GPS y sin tarjeta gráfica.
+import 'dart:typed_data';
+
 import 'package:flutter/widgets.dart';
 
 import '../features/audioguide/audioguide_api.dart';
@@ -16,8 +18,20 @@ import '../features/flights/climate_api.dart';
 import '../features/flights/fares_api.dart';
 import '../features/easy/easy_mode.dart';
 import '../features/family/family.dart';
+import '../features/visa/visa_data.dart';
+import '../features/airport/airport_guide.dart';
+import '../features/airport/compass.dart';
+import '../features/route/world_data.dart';
+import '../features/widgets/home_widgets.dart';
+import '../features/memories/memories.dart';
+import '../features/memories/travel_camera.dart';
 import '../features/flyra/flyra_api.dart';
 import '../features/group/group_api.dart';
+import '../features/group_chat/chat_api.dart';
+import '../features/plans/plans_api.dart';
+import '../features/events/events_api.dart';
+import '../features/radar/radar_api.dart';
+import '../features/stays/stays_api.dart';
 import '../features/help/help_contacts.dart';
 import '../features/map/geo_api.dart';
 import '../features/map/location.dart';
@@ -25,6 +39,10 @@ import '../features/map/location_tracker.dart';
 import '../features/map/map_surface.dart';
 import '../features/map/street_photos_api.dart';
 import '../features/money/atms_api.dart';
+import '../features/nearby/nearby_api.dart';
+import '../features/meetups/meetups_api.dart';
+import '../features/drive/drive_api.dart';
+import '../features/assistant/interpreter.dart';
 import '../features/money/expenses_api.dart';
 import '../features/money/fx_api.dart';
 import '../features/cards/league_api.dart';
@@ -37,6 +55,8 @@ import '../features/offline/saved_guides.dart';
 import '../features/push/notices.dart';
 import '../features/push/push_registrar.dart';
 import '../features/route/flight3d.dart';
+import '../features/queues/queues_api.dart';
+import '../features/queues/reminders.dart';
 import '../features/route/places_api.dart';
 import '../features/vault/doc_source.dart';
 import '../features/vault/vault.dart';
@@ -59,11 +79,24 @@ class AppServices {
     this.webScene,
     this.newCamera,
     this.speaker = const SilentSpeaker(),
+    this.translator = const NoTranslator(),
+    this.speechInput = const NoSpeechInput(),
     this.receipts = const NoReceiptScanner(),
     this.docSource = const NoDocSource(),
     this.docReader = const NoDocTextReader(),
     this.saved = const NoSavedGuides(),
     this.help = const HelpContacts(),
+    this.newTravelCamera,
+    this.share = shareFiles,
+    this.sticker = stickerPhoto,
+    MemoryFiles? memoryFiles,
+    HomeWidgets? homeWidgets,
+    LiveFlight? liveFlight,
+    Reminders? reminders,
+    this.loadAirports = worldAirports,
+    this.loadVisaData = bundledVisaData,
+    this.syncWidgetsOnStart = false,
+    this.compass = deviceCompass,
     FamilyStore? family,
     OfflineFiles? offlineFiles,
     OfflineMaps? offlineMaps,
@@ -76,8 +109,14 @@ class AppServices {
        flyra = FlyraApi(api),
        landmarks = LandmarksApi(api),
        group = GroupApi(api),
+       plans = PlansApi(api),
+       groupChat = GroupChatApi(api),
        expenses = ExpensesApi(api),
        atms = AtmsApi(api),
+       nearby = NearbyApi(api),
+       meetups = MeetupsApi(api),
+       drive = DriveApi(api),
+       stays = StaysApi(api),
        places = PlacesApi(api),
        streetPhotos = StreetPhotosApi(api),
        prefs = prefs ?? MemorySettingsStore(),
@@ -85,6 +124,10 @@ class AppServices {
        offlineMaps = offlineMaps ?? const NoOfflineMaps(),
        net = net ?? const AlwaysWifi(),
        family = family ?? MemoryFamilyStore(),
+       memoryFiles = memoryFiles ?? MemoryMemoryFiles(),
+       homeWidgets = homeWidgets ?? MemoryHomeWidgets(),
+       liveFlight = liveFlight ?? MemoryLiveFlight(),
+       reminders = reminders ?? MemoryReminders(),
        vault =
            vault ??
            Vault(
@@ -130,14 +173,32 @@ class AppServices {
   /// La voz del móvil para "Escuchar" la ficha de un monumento.
   final Speaker speaker;
 
+  /// Asistente: traducir (ML Kit, en el móvil) y oír lo que dices.
+  final PhraseTranslator translator;
+  final SpeechInput speechInput;
+
   /// Viajes en grupo: invitar, preferencias y la negociación de los agentes.
   final GroupApi group;
+
+  /// Elegid planes (los votos del grupo).
+  final PlansApi plans;
+
+  /// El chat del viaje en grupo (con Flyra dentro).
+  final GroupChatApi groupChat;
+
+  /// "Dormir barato": zonas con alojamiento a un tren del sitio.
+  final StaysApi stays;
 
   /// Gastos compartidos: botes, tickets y "¿cuánto le debo a Álex?".
   final ExpensesApi expenses;
 
   /// Cajeros cercanos (OpenStreetMap, por zonas de ~1 km).
   final AtmsApi atms;
+
+  /// Cerca de ti: agua, baños, wifi, enchufes y sitios que ver.
+  final NearbyApi nearby;
+  final MeetupsApi meetups;
+  final DriveApi drive;
 
   /// Tipos de cambio del BCE (con copia en el móvil para usarlos sin red).
   late final FxApi fx = FxApi(api, prefs);
@@ -192,6 +253,54 @@ class AppServices {
 
   /// Los perfiles de familia (cifrados en el Keystore del móvil).
   final FamilyStore family;
+
+  /// La cámara de viaje (fotos con pegatina y vídeos); null = no hay.
+  final TravelCameraFactory? newTravelCamera;
+
+  /// Abre el menú "Compartir" del móvil.
+  final ShareFiles share;
+
+  /// Pinta la pegatina del viaje sobre una foto (en los tests, una falsa).
+  final Future<Uint8List> Function(Uint8List jpeg, List<String> lines) sticker;
+
+  /// Dónde se guardan las fotos y vídeos de Recuerdos (solo en el móvil).
+  final MemoryFiles memoryFiles;
+
+  /// Los widgets del escritorio de Android.
+  final HomeWidgets homeWidgets;
+
+  /// El aviso "en directo" del día del vuelo (programado en el móvil).
+  final LiveFlight liveFlight;
+
+  /// Avisos del propio móvil a una hora ("recuérdamelo" de Colas).
+  final Reminders reminders;
+
+  /// La brújula (hacia dónde miras). En los tests, una de mentira.
+  final Stream<double?> Function() compass;
+
+  /// Guía del aeropuerto (puertas, baños, cafés de OpenStreetMap).
+  late final AirportGuideApi airportGuide = AirportGuideApi(api);
+
+  /// Festivos y eventos de una ciudad en unas fechas (público).
+  late final EventsApi events = EventsApi(api);
+
+  /// Radar local: lluvia, timos y precios de viajeros.
+  late final RadarApi radar = RadarApi(api);
+
+  /// Sin colas: esperas que avisan los viajeros (/v1/queues).
+  late final QueuesApi queues = QueuesApi(api);
+
+  /// ¿Poner al día los widgets al abrir la app? (en los tests, no).
+  final bool syncWidgetsOnStart;
+
+  /// Los aeropuertos (van dentro de la app). En los tests, unos pocos.
+  final Future<Airports> Function() loadAirports;
+
+  /// La tabla de visados y los nombres de países (van dentro de la app).
+  final Future<VisaData> Function() loadVisaData;
+
+  /// Tus recuerdos del viaje.
+  late final MemoryBook memories = MemoryBook(prefs, memoryFiles);
 
   /// ¿Inicio en Modo fácil? (letras grandes y solo lo importante)
   late final EasyMode easyMode = EasyMode(prefs);

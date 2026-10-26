@@ -48,7 +48,7 @@ class _EasyHomeScreenState extends State<EasyHomeScreen> {
       isScrollControlled: true,
       // Por encima de la barra de abajo (si no, tapa el botón Guardar).
       useRootNavigator: true,
-      builder: (_) => _TripSheet(trip: _trip),
+      builder: (_) => EasyTripSheet(trip: _trip),
     );
     if (trip == null) return;
     await saveEasyTrip(_services.prefs, trip);
@@ -336,16 +336,16 @@ class _BigButton extends StatelessWidget {
 }
 
 /// Para poner o cambiar el viaje (lo puede hacer alguien de la familia).
-class _TripSheet extends StatefulWidget {
-  const _TripSheet({required this.trip});
+class EasyTripSheet extends StatefulWidget {
+  const EasyTripSheet({super.key, required this.trip});
 
   final EasyTrip trip;
 
   @override
-  State<_TripSheet> createState() => _TripSheetState();
+  State<EasyTripSheet> createState() => _EasyTripSheetState();
 }
 
-class _TripSheetState extends State<_TripSheet> {
+class _EasyTripSheetState extends State<EasyTripSheet> {
   late final TextEditingController _from = TextEditingController(
     text: widget.trip.from,
   );

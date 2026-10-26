@@ -31,7 +31,9 @@ fuente de verdad: Go, Rust, Java y Python generan su código desde estos fichero
 | `notify.zone-requests-dlq.v1` | `ZoneNotificationRequested` (original) | seudónimo | 3 | 3 días | notifier (mensajes inválidos) |
 | `ai.group-negotiation-requests.v1` | `GroupNegotiationRequested` (solo el id, sin preferencias) | `negotiation_id` | 6 | 7 días | ai-orchestrator (outbox) → ai-orchestrator (agentes) |
 | `ai.group-negotiation-requests-dlq.v1` | `GroupNegotiationRequested` (original) | `negotiation_id` | 3 | 3 días | ai-orchestrator (mensajes inválidos) |
-| `ai.group-negotiations.v1` | `GroupNegotiationConcluded` (seudónimos, sin user_id) | `negotiation_id` | 6 | 7 días | ai-orchestrator (outbox) → (futuro) notifier |
+| `ai.group-negotiations.v1` | `GroupNegotiationConcluded` (seudónimos, sin user_id) | `negotiation_id` | 6 | 7 días | ai-orchestrator (outbox) → notifier (aviso "ya tenéis destino") |
+| `ai.group-chat-activity.v1` | `GroupChatActivity` (seudónimos, sin texto) | `negotiation_id` | 6 | 1 día | ai-orchestrator (outbox) → notifier (aviso "mensajes nuevos") |
+| `notify.group-dlq.v1` | los dos anteriores (original) | `negotiation_id` | 3 | 3 días | notifier (mensajes inválidos) |
 
 ### Geometrías: WKB
 

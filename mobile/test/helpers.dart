@@ -2,6 +2,7 @@
 // ni la red (el "servidor" es un MockClient que responde lo que le digamos).
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
@@ -9,14 +10,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:nomadiq/features/route/world_data.dart';
+import 'package:nomadiq/features/queues/reminders.dart';
+import 'package:nomadiq/features/widgets/home_widgets.dart';
+import 'package:nomadiq/features/visa/visa_data.dart';
 import 'package:nomadiq/app.dart';
 import 'package:nomadiq/auth/auth_api.dart';
 import 'package:nomadiq/auth/session.dart';
 import 'package:nomadiq/auth/token_store.dart';
 import 'package:nomadiq/core/api_client.dart';
 import 'package:nomadiq/core/router.dart';
+import 'package:nomadiq/core/launch.dart';
 import 'package:nomadiq/core/services.dart';
 import 'package:nomadiq/features/family/family.dart';
+import 'package:nomadiq/features/memories/memories.dart';
+import 'package:nomadiq/features/memories/travel_camera.dart';
 import 'package:nomadiq/features/help/help_contacts.dart';
 import 'package:nomadiq/features/offline/city_downloader.dart';
 import 'package:nomadiq/features/offline/saved_guides.dart';
@@ -32,6 +40,7 @@ import 'package:nomadiq/features/map/map_surface.dart';
 import 'package:nomadiq/core/settings.dart';
 import 'package:nomadiq/features/camera/camera_device.dart';
 import 'package:nomadiq/features/camera/speaker.dart';
+import 'package:nomadiq/features/assistant/interpreter.dart';
 import 'package:nomadiq/features/money/receipt_scanner.dart';
 import 'package:nomadiq/features/vault/doc_source.dart';
 import 'package:nomadiq/features/vault/vault.dart';
@@ -146,6 +155,13 @@ class FakeGateway {
       AuthApi(baseUrl: Uri.parse('http://gateway.test'), client: client);
 }
 
+/// Unos pocos aeropuertos para las pruebas (los de verdad van en assets).
+final Airports testAirports = Airports.parse(
+  'MAD|40.472|-3.563|Madrid|Spain|Europe/Madrid\n'
+  'HND|35.552|139.780|Tokio|Japan|Asia/Tokyo\n'
+  'LIS|38.781|-9.136|Lisboa|Portugal|Europe/Lisbon',
+);
+
 /// La caja de herramientas de la app, con piezas falsas: el servidor es el
 /// [gateway], el GPS es [location], el mapa no dibuja nada y el reproductor
 /// no suena.
@@ -161,6 +177,8 @@ AppServices fakeServices(
   Future<bool> Function(Uri)? openLink,
   CameraFactory? newCamera,
   Speaker? speaker,
+  PhraseTranslator? translator,
+  SpeechInput? speechInput,
   ReceiptScanner? receipts,
   Vault? vault,
   OfflineFiles? offlineFiles,
@@ -169,6 +187,15 @@ AppServices fakeServices(
   SavedGuides? saved,
   HelpContacts help = const HelpContacts(),
   FamilyStore? family,
+  TravelCameraFactory? newTravelCamera,
+  ShareFiles? share,
+  MemoryFiles? memoryFiles,
+  HomeWidgets? homeWidgets,
+  LiveFlight? liveFlight,
+  Reminders? reminders,
+  Future<Airports> Function()? loadAirports,
+  Future<VisaData> Function()? loadVisaData,
+  Stream<double?> Function()? compass,
   DocSource? docSource,
   DocTextReader? docReader,
 }) {
@@ -195,6 +222,8 @@ AppServices fakeServices(
     openLink: openLink ?? (Uri _) async => true,
     newCamera: newCamera,
     speaker: speaker ?? const SilentSpeaker(),
+    translator: translator ?? const NoTranslator(),
+    speechInput: speechInput ?? const NoSpeechInput(),
     receipts: receipts ?? const NoReceiptScanner(),
     vault: vault,
     offlineFiles: offlineFiles,
@@ -203,6 +232,25 @@ AppServices fakeServices(
     saved: saved ?? const NoSavedGuides(),
     help: help,
     family: family,
+    newTravelCamera: newTravelCamera,
+    share: share ?? (List<String> _, {String? text}) async {},
+    sticker: (Uint8List jpeg, List<String> _) async => jpeg,
+    memoryFiles: memoryFiles,
+    homeWidgets: homeWidgets,
+    liveFlight: liveFlight,
+    reminders: reminders,
+    loadAirports: loadAirports ?? () async => testAirports,
+    // Los archivos de verdad, leídos de golpe (en los tests no hay assets
+    // grandes: Flutter los leería en otro hilo que el test no espera).
+    loadVisaData:
+        loadVisaData ??
+        () async => VisaData(
+          VisaTable.parse(File('assets/geo/visas.txt').readAsStringSync()),
+          CountryNames.parse(
+            File('assets/geo/country_names.txt').readAsStringSync(),
+          ),
+        ),
+    compass: compass ?? () => Stream<double?>.value(0),
     docSource: docSource ?? const NoDocSource(),
     docReader: docReader ?? const NoDocTextReader(),
   );

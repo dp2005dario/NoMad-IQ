@@ -53,6 +53,8 @@ from fastapi import APIRouter
 from pydantic import SecretStr, ValidationError
 from redis.asyncio import Redis
 
+from ai_orchestrator.airport_guide.overpass import AirportOverpass
+from ai_orchestrator.airport_guide.service import AirportGuideService, GuideSettings, RedisGuideCache
 from ai_orchestrator.api import create_api, create_management_api
 from ai_orchestrator.atms.overpass import OverpassBusyError, OverpassClient
 from ai_orchestrator.atms.service import AtmService, AtmSettings, RedisAtmCache
@@ -68,10 +70,14 @@ from ai_orchestrator.audioguides.service import AudioguideService, ServiceSettin
 from ai_orchestrator.audioguides.speech import PiperOpusSynthesizer, SpeechError, discover_voices
 from ai_orchestrator.audioguides.versions import ZoneVersionCache
 from ai_orchestrator.audioguides.writer import AudioguideWriter, WriterSettings
+from ai_orchestrator.city_events.service import CityEventService, EventSettings, RedisEventCache
+from ai_orchestrator.city_events.sources import NagerClient, SourceBusyError, TicketmasterClient
 from ai_orchestrator.climate.nasa import NasaBusyError, NasaClient
 from ai_orchestrator.climate.service import ClimateService, ClimateSettings, RedisClimateCache
 from ai_orchestrator.config import Settings
 from ai_orchestrator.consumer import AlertProcessor, FareAlertConsumer
+from ai_orchestrator.drive.overpass import DriveOverpass
+from ai_orchestrator.drive.service import DriveService, DriveSettings, RedisDriveCache
 from ai_orchestrator.erasure import PostgresEraser
 from ai_orchestrator.expenses.api import expense_router
 from ai_orchestrator.expenses.store import PostgresExpenses
@@ -79,6 +85,9 @@ from ai_orchestrator.flyra.service import KEY_PREFIX as FLYRA_QUOTA_PREFIX
 from ai_orchestrator.flyra.service import FlyraService, FlyraSettings
 from ai_orchestrator.fx.ecb import EcbClient
 from ai_orchestrator.fx.service import FxService, RedisRatesCache
+from ai_orchestrator.group_chat.api import chat_router
+from ai_orchestrator.group_chat.push import ChatPusher, PushThrottle
+from ai_orchestrator.group_chat.store import PostgresChat
 from ai_orchestrator.landmarks.service import QUOTA_PREFIX as LANDMARK_QUOTA_PREFIX
 from ai_orchestrator.landmarks.service import LandmarkService, LandmarkSettings, RedisLandmarkCache
 from ai_orchestrator.landmarks.wikidata import LandmarkSource
@@ -86,8 +95,12 @@ from ai_orchestrator.leagues.api import league_router
 from ai_orchestrator.leagues.store import PostgresLeagues
 from ai_orchestrator.llm.client import LLMClient, OllamaClient
 from ai_orchestrator.logs import setup_logging
+from ai_orchestrator.meetups.api import meetup_router
+from ai_orchestrator.meetups.store import PostgresMeetups
 from ai_orchestrator.menu.service import QUOTA_PREFIX as MENU_QUOTA_PREFIX
 from ai_orchestrator.menu.service import MenuService, MenuSettings
+from ai_orchestrator.nearby.overpass import NearbyOverpass
+from ai_orchestrator.nearby.service import NearbyService, NearbySettings, RedisNearbyCache
 from ai_orchestrator.negotiation.agents import AgentSettings
 from ai_orchestrator.negotiation.api import ApiSettings, negotiation_router
 from ai_orchestrator.negotiation.consumer import NegotiationRequestConsumer
@@ -95,16 +108,26 @@ from ai_orchestrator.negotiation.service import NegotiationService, NegotiationS
 from ai_orchestrator.negotiation.store import PostgresNegotiations, SweepReport
 from ai_orchestrator.outbox import OutboxRelay
 from ai_orchestrator.places.airports import Airports
+from ai_orchestrator.places.countries import bundled_countries
 from ai_orchestrator.places.service import PlaceService, PlaceSettings, RedisPlaceCache
 from ai_orchestrator.places.wikimedia import RateLimiter, WikimediaClient
+from ai_orchestrator.plans.api import plan_router
+from ai_orchestrator.plans.store import PostgresPlans
 from ai_orchestrator.pseudonym import Pseudonymizer
+from ai_orchestrator.queues.api import queues_router
+from ai_orchestrator.queues.store import PostgresQueues
 from ai_orchestrator.quota import RedisQuota
+from ai_orchestrator.radar.api import radar_router
+from ai_orchestrator.radar.rain import MetClient, RainBusyError, RainService, RedisRainCache
+from ai_orchestrator.radar.store import PostgresRadar
 from ai_orchestrator.recommender import FareRecommender, RecommenderSettings
 from ai_orchestrator.retrieval import KnowledgeBase, NoKnowledge, QdrantKnowledge
 from ai_orchestrator.shared_trips.api import shared_trip_router
 from ai_orchestrator.shared_trips.service import QUOTA_PREFIX as TRIP_ADAPT_QUOTA_PREFIX
 from ai_orchestrator.shared_trips.service import AdaptSettings, RedisAdaptCache, TripAdapter
 from ai_orchestrator.shared_trips.store import PostgresSharedTrips
+from ai_orchestrator.stays.overpass import StayOverpass
+from ai_orchestrator.stays.service import RedisStayCache, StayService, StaySettings
 from ai_orchestrator.store import (
     Pool,
     PostgresPriceHistory,
@@ -302,25 +325,75 @@ def _streetview(
     )
 
 
-def _atms(settings: Settings, redis: Redis, stack: AsyncExitStack) -> AtmService:
-    """Cajeros: Overpass (OpenStreetMap) con límite de ritmo + caché en Redis."""
+def _overpass(settings: Settings, stack: AsyncExitStack) -> tuple[httpx.AsyncClient, RateLimiter]:
+    """Una conexión y UN límite de ritmo para todo lo que pregunta a Overpass
+    (cajeros, guía del aeropuerto y "cerca de ti"): su norma de uso justo es
+    por quien pregunta, no por pantalla, así que el límite se comparte."""
     http = httpx.AsyncClient(
         timeout=httpx.Timeout(settings.overpass_timeout_seconds, connect=5.0),
         follow_redirects=False,
     )
     stack.push_async_callback(http.aclose)
+    limiter = RateLimiter(
+        settings.overpass_rate_per_second,
+        settings.overpass_burst,
+        busy=lambda: OverpassBusyError("límite de peticiones a Overpass"),
+    )
+    return http, limiter
+
+
+def _atms(settings: Settings, redis: Redis, overpass: tuple[httpx.AsyncClient, RateLimiter]) -> AtmService:
+    """Cajeros: Overpass (OpenStreetMap) con límite de ritmo + caché en Redis."""
+    http, limiter = overpass
     return AtmService(
-        overpass=OverpassClient(
-            http,
-            url=settings.overpass_url,
-            limiter=RateLimiter(
-                settings.overpass_rate_per_second,
-                settings.overpass_burst,
-                busy=lambda: OverpassBusyError("límite de peticiones a Overpass"),
-            ),
-        ),
+        overpass=OverpassClient(http, url=settings.overpass_url, limiter=limiter),
         cache=RedisAtmCache(redis),
         settings=AtmSettings(ttl_seconds=settings.atm_ttl_seconds),
+    )
+
+
+def _nearby(
+    settings: Settings, redis: Redis, overpass: tuple[httpx.AsyncClient, RateLimiter]
+) -> NearbyService:
+    """Cerca de ti: agua, baños, wifi, enchufes y sitios que ver (una semana de caché)."""
+    http, limiter = overpass
+    return NearbyService(
+        source=NearbyOverpass(http, url=settings.overpass_url, limiter=limiter),
+        cache=RedisNearbyCache(redis),
+        settings=NearbySettings(ttl_seconds=settings.nearby_ttl_seconds),
+    )
+
+
+def _drive(settings: Settings, redis: Redis, overpass: tuple[httpx.AsyncClient, RateLimiter]) -> DriveService:
+    """Modo coche: gasolineras, aparcamientos, cargadores y zonas ZTL/ZBE (una semana de caché)."""
+    http, limiter = overpass
+    return DriveService(
+        source=DriveOverpass(http, url=settings.overpass_url, limiter=limiter),
+        cache=RedisDriveCache(redis),
+        settings=DriveSettings(ttl_seconds=settings.drive_ttl_seconds),
+    )
+
+
+def _stays(settings: Settings, redis: Redis, overpass: tuple[httpx.AsyncClient, RateLimiter]) -> StayService:
+    """Dormir barato: estaciones con alojamientos alrededor (un mes de caché)."""
+    http, limiter = overpass
+    return StayService(
+        source=StayOverpass(http, url=settings.overpass_url, limiter=limiter),
+        cache=RedisStayCache(redis),
+        settings=StaySettings(ttl_seconds=settings.stays_ttl_seconds),
+    )
+
+
+def _airport_guide(
+    settings: Settings, redis: Redis, overpass: tuple[httpx.AsyncClient, RateLimiter]
+) -> AirportGuideService:
+    """Guía del aeropuerto: el mismo Overpass que los cajeros y un mes de caché por aeropuerto."""
+    http, limiter = overpass
+    return AirportGuideService(
+        source=AirportOverpass(http, url=settings.overpass_url, limiter=limiter),
+        cache=RedisGuideCache(redis),
+        airports=Airports.bundled(),
+        settings=GuideSettings(ttl_seconds=settings.airport_guide_ttl_seconds),
     )
 
 
@@ -355,6 +428,53 @@ def _climate(settings: Settings, redis: Redis, stack: AsyncExitStack) -> Climate
         ),
         cache=RedisClimateCache(redis),
         settings=ClimateSettings(ttl_seconds=settings.climate_ttl_seconds),
+    )
+
+
+def _city_events(settings: Settings, redis: Redis, stack: AsyncExitStack) -> CityEventService:
+    """Qué pasa en tus fechas: festivos (Nager.Date) y eventos (Ticketmaster, si hay clave)."""
+    http = httpx.AsyncClient(
+        timeout=httpx.Timeout(settings.events_timeout_seconds, connect=5.0),
+        follow_redirects=False,
+    )
+    stack.push_async_callback(http.aclose)
+
+    def limiter() -> RateLimiter:
+        return RateLimiter(
+            settings.events_rate_per_second,
+            4,
+            busy=lambda: SourceBusyError("límite de peticiones de eventos"),
+        )
+
+    key = settings.ticketmaster_api_key
+    return CityEventService(
+        airports=Airports.bundled(),
+        countries=bundled_countries(),
+        holidays=NagerClient(http, limiter=limiter(), url=settings.nager_url),
+        tickets=None
+        if key is None
+        else TicketmasterClient(
+            http, api_key=key.get_secret_value(), limiter=limiter(), url=settings.ticketmaster_url
+        ),
+        cache=RedisEventCache(redis),
+        settings=EventSettings(ticketmaster_daily_limit=settings.ticketmaster_daily_limit),
+    )
+
+
+def _rain(settings: Settings, redis: Redis, stack: AsyncExitStack) -> RainService:
+    """Lluvia en las próximas horas: MET Norway con caché por casilla en Redis."""
+    http = httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0), follow_redirects=False)
+    stack.push_async_callback(http.aclose)
+    return RainService(
+        source=MetClient(
+            http,
+            url=settings.met_url,
+            limiter=RateLimiter(
+                settings.met_rate_per_second, 10, busy=lambda: RainBusyError("límite de peticiones a MET")
+            ),
+        ),
+        cache=RedisRainCache(redis),
+        ttl_seconds=settings.rain_ttl_seconds,
     )
 
 
@@ -551,7 +671,13 @@ async def run(settings: Settings) -> int:
             or (settings.menu_enabled and llm is not None)
             or (settings.shared_trips_enabled and llm is not None)
             or settings.atms_enabled
+            or settings.airport_guide_enabled
+            or settings.nearby_enabled
+            or settings.drive_enabled
+            or settings.stays_enabled
             or settings.climate_enabled
+            or settings.events_enabled
+            or settings.radar_enabled
             else None
         )
         wikimedia = (
@@ -571,10 +697,31 @@ async def run(settings: Settings) -> int:
         if settings.mapillary_token is not None and public_redis is not None:
             streetview = _streetview(settings, settings.mapillary_token, public_redis, stack)
 
-        # --- Cajeros cercanos (OpenStreetMap con caché en Redis) ------------------------
+        # --- OpenStreetMap (Overpass): cajeros, guía del aeropuerto y "cerca de ti" ------
+        overpass = (
+            _overpass(settings, stack)
+            if settings.atms_enabled
+            or settings.airport_guide_enabled
+            or settings.nearby_enabled
+            or settings.drive_enabled
+            or settings.stays_enabled
+            else None
+        )
         atms: AtmService | None = None
-        if settings.atms_enabled and public_redis is not None:
-            atms = _atms(settings, public_redis, stack)
+        if settings.atms_enabled and public_redis is not None and overpass is not None:
+            atms = _atms(settings, public_redis, overpass)
+        airport_guide: AirportGuideService | None = None
+        if settings.airport_guide_enabled and public_redis is not None and overpass is not None:
+            airport_guide = _airport_guide(settings, public_redis, overpass)
+        nearby: NearbyService | None = None
+        if settings.nearby_enabled and public_redis is not None and overpass is not None:
+            nearby = _nearby(settings, public_redis, overpass)
+        drive: DriveService | None = None
+        if settings.drive_enabled and public_redis is not None and overpass is not None:
+            drive = _drive(settings, public_redis, overpass)
+        stays: StayService | None = None
+        if settings.stays_enabled and public_redis is not None and overpass is not None:
+            stays = _stays(settings, public_redis, overpass)
 
         # --- Traductor de cartas (Ollama + cupo diario en Redis) ------------------------
         menu: MenuService | None = None
@@ -585,6 +732,16 @@ async def run(settings: Settings) -> int:
         climate: ClimateService | None = None
         if settings.climate_enabled and public_redis is not None:
             climate = _climate(settings, public_redis, stack)
+
+        # --- Radar local: lluvia (MET Norway con caché en Redis) --------------------------
+        rain: RainService | None = None
+        if settings.radar_enabled and public_redis is not None:
+            rain = _rain(settings, public_redis, stack)
+
+        # --- Qué pasa en tus fechas (festivos + eventos con caché en Redis) -------------
+        city_events: CityEventService | None = None
+        if settings.events_enabled and public_redis is not None:
+            city_events = _city_events(settings, public_redis, stack)
 
         # --- Chat libre con Flyra (Ollama + cupo diario en Redis) ------------------------
         # Sin LLM no hay chat: la ruta no existe y la app lo explica.
@@ -625,6 +782,14 @@ async def run(settings: Settings) -> int:
         # --- Cromos con amigos (solo PostgreSQL) -----------------------------------------
         leagues = league_router(PostgresLeagues(pool)) if settings.leagues_enabled else None
 
+        # --- Elegid planes (los viajes en grupo; solo PostgreSQL) ------------------------
+        plans = plan_router(PostgresPlans(pool)) if settings.negotiations_enabled else None
+
+        # --- Quedadas con otros viajeros (solo PostgreSQL) -------------------------------
+        meetups = (
+            meetup_router(PostgresMeetups(pool), Airports.bundled()) if settings.meetups_enabled else None
+        )
+
         # --- Negociación de grupo (tercer consumidor + relé del outbox) -----------------
         negotiations: APIRouter | None = None
         negotiation_consumer: NegotiationRequestConsumer | None = None
@@ -633,6 +798,20 @@ async def run(settings: Settings) -> int:
             negotiations, negotiation_consumer, relay = await _negotiations(
                 settings, pool, llm, producer, kafka_common, stack
             )
+
+        # --- Chat del viaje (PostgreSQL; Flyra contesta si está el modelo) ---------------
+        group_chat: APIRouter | None = None
+        if settings.negotiations_enabled and relay is not None:
+            pusher: ChatPusher | None = None
+            if settings.notify_pseudonym_key is not None:
+                pusher = ChatPusher(
+                    pool=pool,
+                    pseudonymizer=Pseudonymizer.from_hex(settings.notify_pseudonym_key.get_secret_value()),
+                    topic=settings.kafka_topic_group_chat_activity,
+                    throttle=PushThrottle(public_redis, settings.group_chat_push_seconds),
+                    on_outbox=relay.kick.set,
+                )
+            group_chat = chat_router(PostgresChat(pool), flyra, pusher)
 
         # --- Servidores HTTP --------------------------------------------------------------
         async def readiness() -> dict[str, bool]:
@@ -655,13 +834,26 @@ async def run(settings: Settings) -> int:
                 expenses=expenses,
                 shared_trips=shared_trips,
                 leagues=leagues,
+                plans=plans,
+                group_chat=group_chat,
+                meetups=meetups,
                 places=places,
                 streetview=streetview,
                 flyra=flyra,
                 landmarks=landmarks,
                 fx=fx,
                 atms=atms,
+                nearby=nearby,
+                drive=drive,
+                stays=stays,
+                airport_guide=airport_guide,
                 climate=climate,
+                city_events=city_events,
+                rain=rain,
+                radar=radar_router(PostgresRadar(pool), Airports.bundled())
+                if settings.radar_enabled
+                else None,
+                queues=queues_router(PostgresQueues(pool)) if settings.queues_enabled else None,
                 menu=menu,
                 eraser=PostgresEraser(pool),
                 expose_docs=settings.expose_api_docs,

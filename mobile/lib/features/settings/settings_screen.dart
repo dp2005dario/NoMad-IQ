@@ -95,6 +95,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       vault: services.vault,
       prefs: services.prefs,
       family: services.family,
+      memories: services.memories,
+      homeWidgets: services.homeWidgets,
+      liveFlight: services.liveFlight,
     );
     setState(() => _busy = true);
     try {

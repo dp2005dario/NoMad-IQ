@@ -27,6 +27,8 @@ Set<PushKind>? _kindsOf(_Tab tab) => switch (tab) {
   PushKind.airportArrival => (Icons.flight_land_rounded, NomadColors.flights),
   PushKind.zoneSafety => (Icons.warning_amber_rounded, NomadColors.safety),
   PushKind.fareAlert => (Icons.local_offer_rounded, NomadColors.money),
+  PushKind.groupChat => (Icons.forum_rounded, NomadColors.group),
+  PushKind.groupResult => (Icons.groups_rounded, NomadColors.group),
 };
 
 class NoticesScreen extends StatefulWidget {

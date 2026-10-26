@@ -24,6 +24,7 @@ import '../route/geo.dart';
 import '../route/world_data.dart';
 import 'before_trip.dart';
 import 'co2.dart';
+import 'plug_painter.dart';
 import 'plugs.dart';
 
 class BeforeTripScreen extends StatefulWidget {
@@ -252,6 +253,9 @@ class _BeforeTripScreenState extends State<BeforeTripScreen> {
               RoamingStatus.unknown => t.beforeFillTrip,
             }),
             const SizedBox(height: 24),
+            _Section(t.beforePlugsTitle),
+            _Plugs(home: powerOf(_homeCountry), there: powerOf(_thereCountry)),
+            const SizedBox(height: 24),
             _Section(t.beforeCo2Title),
             _Carbon(from: _origin, to: to),
             const SizedBox(height: 24),
@@ -264,6 +268,83 @@ class _BeforeTripScreenState extends State<BeforeTripScreen> {
               ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// Enchufes: el dibujo de los de allí y qué tienes que comprar.
+class _Plugs extends StatelessWidget {
+  const _Plugs({required this.home, required this.there});
+
+  final Power? home;
+  final Power? there;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final Power? there = this.there;
+    final Power? home = this.home;
+    if (there == null) return Text(t.beforePlugsUnknown);
+    final List<String> types = there.plugs.split('/');
+    final bool adapter = home == null || there.needsAdapterFrom(home);
+    final bool transformer = home != null && there.needsTransformerFrom(home);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: <Widget>[
+                for (final String type in types)
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      PlugIcon(type),
+                      const SizedBox(height: 4),
+                      Text(
+                        t.beforePlugType(type),
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              adapter
+                  ? t.beforePlugsNeed(types.join(', '))
+                  : t.beforePlugsNoNeed,
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                color: adapter ? NomadColors.money : NomadColors.mint,
+              ),
+            ),
+            Text(t.beforePlugsVolts(there.volts)),
+            if (transformer) ...<Widget>[
+              const SizedBox(height: 4),
+              Text(t.beforePlugsTransformer),
+            ],
+            if (adapter) ...<Widget>[
+              const SizedBox(height: 4),
+              Text(
+                t.beforePlugsTip,
+                style: const TextStyle(color: NomadColors.textMuted),
+              ),
+            ],
+            // De dónde salen los enchufes, para poder comprobarlos.
+            TextButton.icon(
+              icon: const Icon(Icons.verified_outlined, size: 18),
+              label: Text(t.dataSourceCheck),
+              onPressed: () => unawaited(
+                ServicesScope.of(context).openBooking(Uri.parse(powerSource)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

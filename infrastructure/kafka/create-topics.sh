@@ -8,6 +8,12 @@ set -euo pipefail
 # Dirección del broker; si no se define KAFKA_BOOTSTRAP se usa kafka:9092.
 BOOTSTRAP="${KAFKA_BOOTSTRAP:-kafka:9092}"
 KAFKA_BIN=/opt/kafka/bin
+# En producción Kafka va con TLS: KAFKA_COMMAND_CONFIG apunta al fichero con
+# la configuración del cliente (security.protocol=SSL y la CA). En local, vacío.
+EXTRA=()
+if [ -n "${KAFKA_COMMAND_CONFIG:-}" ]; then
+  EXTRA=(--command-config "${KAFKA_COMMAND_CONFIG}")
+fi
 
 # nombre | particiones | retención en ms | política de limpieza
 TOPICS=(
@@ -51,6 +57,11 @@ TOPICS=(
   "ai.group-negotiation-requests-dlq.v1|3|259200000|delete"
   # Resultados de las negociaciones (con seudónimos, sin user_id): 7 días.
   "ai.group-negotiations.v1|6|604800000|delete"
+  # "Hay mensajes nuevos en el chat del viaje" (seudónimos, sin texto). Un
+  # aviso de chat de hace horas ya no sirve: 1 día.
+  "ai.group-chat-activity.v1|6|86400000|delete"
+  # Avisos de grupo que el notifier no pudo leer (DLQ): 3 días.
+  "notify.group-dlq.v1|3|259200000|delete"
 )
 
 # Recorre la lista y separa cada entrada por el carácter | en cuatro variables.
@@ -58,7 +69,7 @@ TOPICS=(
 for entry in "${TOPICS[@]}"; do
   IFS='|' read -r name partitions retention cleanup <<<"${entry}"
   echo "Asegurando topic ${name} (${partitions} particiones)"
-  "${KAFKA_BIN}/kafka-topics.sh" --bootstrap-server "${BOOTSTRAP}" \
+  "${KAFKA_BIN}/kafka-topics.sh" --bootstrap-server "${BOOTSTRAP}" "${EXTRA[@]}" \
     --create --if-not-exists \
     --topic "${name}" \
     --partitions "${partitions}" \
@@ -69,4 +80,4 @@ for entry in "${TOPICS[@]}"; do
 done
 
 # Muestra los topics existentes para comprobarlo en los logs.
-"${KAFKA_BIN}/kafka-topics.sh" --bootstrap-server "${BOOTSTRAP}" --list
+"${KAFKA_BIN}/kafka-topics.sh" --bootstrap-server "${BOOTSTRAP}" "${EXTRA[@]}" --list

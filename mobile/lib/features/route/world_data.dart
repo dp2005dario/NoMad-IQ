@@ -125,3 +125,6 @@ class WorldData {
     }
   }
 }
+
+/// Solo los aeropuertos (para quien no necesita el mapa).
+Future<Airports> worldAirports() async => (await WorldData.load()).airports;

@@ -1,0 +1,251 @@
+iso3 en ar de es fr hi it ja pt zh
+AD|AND|Andorra|أندورا|Andorra|Andorra|Andorre|अंडोरा|Andorra|アンドラ|Andorra|安道尔
+AE|ARE|United Arab Emirates|الإمارات العربية المتحدة|Vereinigte Arabische Emirate|Emiratos Árabes Unidos|Émirats Arabes Unis|संयुक्त अरब अमीरात|Emirati Arabi Uniti|アラブ首長国連邦|Emirados Árabes Unidos|阿联酋
+AF|AFG|Afghanistan|أفغانستان|Afghanistan|Afganistán|Afghanistan|अफगानिस्तान|Afghanistan|アフガニスタン|Afeganistão|阿富汗
+AG|ATG|Antigua and Barbuda|أنتيغوا وباربودا|Antigua und Barbuda|Antigua y Barbuda|Antigua-et-Barbuda|एंटीगुआ और बारबूडा|Antigua e Barbuda|アンティグア・バーブーダ|Antígua e Barbuda|安提瓜和巴布达
+AI|AIA|Anguilla|أنغويلا|Anguilla|Anguila|Anguilla|अंग्विला|Anguilla|アンギラ|Anguila|安圭拉
+AL|ALB|Albania|ألبانيا|Albanien|Albania|Albanie|अल्बानिया|Albania|アルバニア|Albânia|阿尔巴尼亚
+AM|ARM|Armenia|أرمينيا|Armenien|Armenia|Arménie|अर्मेनिया|Armenia|アルメニア|Arménia|亚美尼亚
+AO|AGO|Angola|أنغولا|Angola|Angola|Angola|अंगोला|Angola|アンゴラ|Angola|安哥拉
+AQ|ATA|Antarctica|القارة القطبية الجنوبية|Antarktis|Antártida|Antarctique|अंटार्टिका|Antartide|南極|Antártida|南极洲
+AR|ARG|Argentina|الأرجنتين|Argentinien|Argentina|Argentine|अर्जेंटिना|Argentina|アルゼンチン|Argentina|阿根廷
+AS|ASM|American Samoa|ساموا الأمريكية|Amerikanisch-Samoa|Samoa Americana|Samoa américaines|अमेरिकान सामोआ|Samoa Americane|アメリカ領サモア|Samoa Americana|美属萨摩亚
+AT|AUT|Austria|النمسا|Österreich|Austria|Autriche|आस्ट्रिया|Austria|オーストリア|Áustria|奥地利
+AU|AUS|Australia|أستراليا|Australien|Australia|Australie|आस्ट्रेलिया|Australia|オーストラリア|Austrália|澳大利亚
+AW|ABW|Aruba|أروبا|Aruba|Aruba|Aruba|अरुबा|Aruba|アルバ|Aruba|阿鲁巴
+AX|ALA|Åland Islands|جزر أولاند|Åland|Islas Åland|Åland|ऑलैण्ड द्वीपसमूह|Isole Åland|オーランド諸島|Ilhas Åland|奥兰
+AZ|AZE|Azerbaijan|أذربيجان|Aserbaidschan|Azerbaiyán|Azerbaïdjan|अजरबेजान|Azerbaigian|アゼルバイジャン|Azerbaijão|阿塞拜疆
+BA|BIH|Bosnia and Herzegovina|البوسنة والهرسك|Bosnien und Herzegowina|Bosnia y Herzegovina|Bosnie-Herzégovine|बोस्निया हर्जेगोविना|Bosnia ed Erzegovina|ボスニア・ヘルツェゴビナ|Bósnia-Herzegovina|波黑
+BB|BRB|Barbados|باربادوس|Barbados|Barbados|Barbade|बार्बाडोस|Barbados|バルバドス|Barbados|巴巴多斯
+BD|BGD|Bangladesh|بنغلاديش|Bangladesch|Bangladesh|Bangladesh|बांग्लादेश|Bangladesh|バングラデシュ|Bangladesh|孟加拉国
+BE|BEL|Belgium|بلجيكا|Belgien|Bélgica|Belgique|बेल्जियम|Belgio|ベルギー|Bélgica|比利时
+BF|BFA|Burkina Faso|بوركينا فاسو|Burkina Faso|Burkina Faso|Burkina Faso|बुर्किना फासो|Burkina Faso|ブルキナファソ|Burkina Faso|布基纳法索
+BG|BGR|Bulgaria|بلغاريا|Bulgarien|Bulgaria|Bulgarie|बल्गारिया|Bulgaria|ブルガリア|Bulgária|保加利亚
+BH|BHR|Bahrain|البحرين|Bahrain|Bahrein|Bahreïn|बहरीन|Bahrain|バーレーン|Bahrein|巴林
+BI|BDI|Burundi|بوروندي|Burundi|Burundi|Burundi|बुरुंडी|Burundi|ブルンジ|Burundi|布隆迪
+BJ|BEN|Benin|بنين|Benin|Benin|Bénin|बानिन|Benin|ベナン|Benim|贝宁
+BL|BLM|Saint Barthélemy|سان بارتيلمي|Saint-Barthélemy|Saint Barthélemy|Saint-Barthélemy|सेंट_बार्थेलेमी|Saint-Barthélemy|サン・バルテルミー|São Bartolomeu|圣巴泰勒米
+BM|BMU|Bermuda|برمودا|Bermuda|Bermudas|Bermudes|बर्मूडा|Bermuda|バミューダ|Bermudas|百慕大
+BN|BRN|Brunei Darussalam|بروناي|Brunei Darussalam|Brunei Darussalam|Brunei Darussalam|ब्रुनेई|Brunei|ブルネイ・ダルサラーム|Brunei|文莱
+BO|BOL|Bolivia|بوليفيا|Bolivien|Bolivia|Bolivie|बोलिविया|Bolivia|ボリビア多民族国|Bolívia|玻利维亚
+BQ|BES|Bonaire, Sint Eustatius and Saba|الجزر الكاريبية الهولندية|Bonaire|Bonaire, San Eustaquio y Saba|Bonaire, Saint-Eustache et Saba|कैरिबियन नीदरलैंड|Isole BES|ボネール、シント・ユースタティウスおよびサバ|Países Baixos Caribenhos|荷兰加勒比区
+BR|BRA|Brazil|البرازيل|Brasilien|Brasil|Brésil|ब्राजील|Brasile|ブラジル|Brasil|巴西
+BS|BHS|Bahamas|باهاماس|Bahamas|Bahamas|Bahamas|बहामास|Bahamas|バハマ|Bahamas|巴哈马
+BT|BTN|Bhutan|بوتان|Bhutan|Bután|Bhoutan|भूटान|Bhutan|ブータン|Butão|不丹
+BV|BVT|Bouvet Island|جزيرة بوفيه|Bouvetinsel|Isla Bouvet|Île Bouvet|बाउवेट|Isola Bouvet|ブーベ島|Ilha Bouvet|布韦岛
+BW|BWA|Botswana|بوتسوانا|Botswana|Botswana|Botswana|बोत्सवाना|Botswana|ボツワナ|Botsuana|博茨瓦纳
+BY|BLR|Belarus|روسيا البيضاء|Belarus|Bielorrusia|Biélorussie|बेलारुस|Bielorussia|ベラルーシ|Bielorrússia|白俄罗斯
+BZ|BLZ|Belize|بليز|Belize|Belice|Belize|बेलिजे|Belize|ベリーズ|Belize|伯利兹
+CA|CAN|Canada|كندا|Kanada|Canadá|Canada|कनाडा|Canada|カナダ|Canadá|加拿大
+CC|CCK|Cocos (Keeling) Islands|جزر كوكوس|Kokosinseln|Islas Cocos (Keeling)|Îles Cocos|कोकोस (कीलिंग) द्वीप|Isole Cocos e Keeling|ココス（キーリング）諸島|Ilhas Cocos (Keeling)|科科斯（基林）群岛
+CD|COD|Democratic Republic of the Congo|جمهورية الكونغو الديمقراطية|Kongo|Congo (República Democrática del)|République démocratique du Congo|कांगो लोकतान्त्रिक गणराज्य|Repubblica Democratica del Congo|コンゴ民主共和国|República Popular do Congo|刚果（金）
+CF|CAF|Central African Republic|جمهورية أفريقيا الوسطى|Zentralafrikanische Republik|República Centroafricana|République Centrafricaine|सेंट्रल अफ्रीका गणतंत्र|Repubblica Centrafricana|中央アフリカ共和国|República Centro-Africana|中非
+CG|COG|Republic of the Congo|جمهورية الكونغو|Republik Kongo|Congo|République du Congo|कांगो|Repubblica del Congo|コンゴ共和国|República Democrática do Congo|刚果（布）
+CH|CHE|Switzerland|سويسرا|Schweiz|Suiza|Suisse|स्विट्जरलैंड|Svizzera|スイス|Suíça|瑞士
+CI|CIV|Cote d'Ivoire|ساحل العاج|Elfenbeinküste|Costa de Marfil|Côte-d'Ivoire|आइवरी कोस्ट|Costa d'Avorio|コートジボワール|Costa do Marfim|科特迪瓦
+CK|COK|Cook Islands|جزر كوك|Cookinseln|Islas Cook|Îles Cook|कुक द्वीप|Isole Cook|クック諸島|Ilhas Cook|库克群岛
+CL|CHL|Chile|تشيلي|Chile|Chile|Chili|चिली|Cile|チリ|Chile|智利
+CM|CMR|Cameroon|الكاميرون|Kamerun|Camerún|Cameroun|कैमरून|Camerun|カメルーン|Camarões|喀麦隆
+CN|CHN|People's Republic of China|الصين|China|China|Chine|चीन|Cina|中華人民共和国|China|中国
+CO|COL|Colombia|كولومبيا|Kolumbien|Colombia|Colombie|कोलंबिया|Colombia|コロンビア|Colômbia|哥伦比亚
+CR|CRI|Costa Rica|كوستاريكا|Costa Rica|Costa Rica|Costa Rica|कोस्टा रिका|Costa Rica|コスタリカ|Costa Rica|哥斯达黎加
+CU|CUB|Cuba|كوبا|Kuba|Cuba|Cuba|क्यूबा|Cuba|キューバ|Cuba|古巴
+CV|CPV|Cape Verde|الرأس الأخضر|Kap Verde|Cabo Verde|Cap-Vert|केप वर्दे|Capo Verde|カーボベルデ|Cabo Verde|佛得角
+CW|CUW|Curaçao|كوراساو|Curaçao|Curaçao|Curaçao|कुराकाओ|Curaçao|キュラソー|Curaçao|库拉索
+CX|CXR|Christmas Island|جزيرة عيد الميلاد|Weihnachtsinsel|Isla de Navidad|Île Christmas|क्रिसमस द्वीप|Isola del Natale|クリスマス島|Ilha de Natal|圣诞岛
+CY|CYP|Cyprus|قبرص|Zypern|Chipre|Chypre|साइप्रस|Cipro|キプロス|Chipre|塞浦路斯
+CZ|CZE|Czech Republic|جمهورية التشيك|Tschechische Republik|República Checa|République Tchèque|चेक|Repubblica Ceca|チェコ|Chéquia|捷克
+DE|DEU|Germany|ألمانيا|Deutschland|Alemania|Allemagne|जर्मनी|Germania|ドイツ|Alemanha|德国
+DJ|DJI|Djibouti|جيبوتي|Dschibuti|Yibuti|Djibouti|जिबॉती|Gibuti|ジブチ|Djibouti|吉布提
+DK|DNK|Denmark|الدنمارك|Dänemark|Dinamarca|Danemark|डैनमार्क|Danimarca|デンマーク|Dinamarca|丹麦
+DM|DMA|Dominica|دومينيكا|Dominica|Dominica|Dominique|डोमिनिक|Dominica|ドミニカ国|Dominica|多米尼克
+DO|DOM|Dominican Republic|جمهورية الدومينيكان|Dominikanische Republik|República Dominicana|République Dominicaine|डोमिनिक गणतंत्र|Repubblica Dominicana|ドミニカ共和国|República Dominicana|多米尼加
+DZ|DZA|Algeria|الجزائر|Algerien|Argelia|Algérie|अल्जीरिया|Algeria|アルジェリア|Argélia|阿尔及利亚
+EC|ECU|Ecuador|الإكوادور|Ecuador|Ecuador|Équateur|इक्वाडोर|Ecuador|エクアドル|Equador|厄瓜多尔
+EE|EST|Estonia|إستونيا|Estland|Estonia|Estonie|एस्तोनिया|Estonia|エストニア|Estónia|爱沙尼亚
+EG|EGY|Egypt|مصر|Ägypten|Egipto|Égypte|मिस्र|Egitto|エジプト|Egito|埃及
+EH|ESH|Western Sahara|الصحراء الغربية|Westsahara|Sahara Occidental|Sahara occidental|पश्चिमी सहारा|Sahara Occidentale|西サハラ|Saara Ocidental|阿拉伯撒哈拉民主共和国
+ER|ERI|Eritrea|إريتريا|Eritrea|Eritrea|Érythrée|एरिट्रेया|Eritrea|エリトリア|Eritreia|厄立特里亚
+ES|ESP|Spain|إسبانيا|Spanien|España|Espagne|स्पेन|Spagna|スペイン|Espanha|西班牙
+ET|ETH|Ethiopia|إثيوبيا|Äthiopien|Etiopía|Éthiopie|इथियोपिया|Etiopia|エチオピア|Etiópia|埃塞俄比亚
+FI|FIN|Finland|فنلندا|Finnland|Finlandia|Finlande|फिनलैंड|Finlandia|フィンランド|Finlândia|芬兰
+FJ|FJI|Fiji|فيجي|Fidschi|Fiji|Fidji|फिजी|Figi|フィジー|Fiji|斐济
+FK|FLK|Falkland Islands (Malvinas)|جزر فوكلاند|Falklandinseln|Islas Malvinas|Îles Malouines|फाकलैंड द्वीप समूह (मालविनास)|Isole Falkland|フォークランド（マルビナス）諸島|Ilhas Malvinas|福克兰群岛
+FM|FSM|Micronesia, Federated States of|ولايات ميكرونيسيا المتحدة|Mikronesien|Micronesia|Micronésie|माइक्रोनेशिया|Stati Federati di Micronesia|ミクロネシア連邦|Micronésia|密克罗尼西亚联邦
+FO|FRO|Faroe Islands|جزر فارو|Färöer|Islas Feroe|Îles Féroé|फराओ द्वीप समूह|Isole Fær Øer|フェロー諸島|Ilhas Faroé|法罗群岛
+FR|FRA|France|فرنسا|Frankreich|Francia|France|फ्रांस|Francia|フランス|França|法国
+GA|GAB|Gabon|الغابون|Gabun|Gabón|Gabon|गैबोन|Gabon|ガボン|Gabão|加蓬
+GB|GBR|United Kingdom|المملكة المتحدة|Vereinigtes Königreich|Reino Unido|Royaume-Uni|ग्रेट ब्रिटेन|Regno Unito|イギリス|Reino Unido|英国
+GD|GRD|Grenada|غرينادا|Grenada|Granada|Grenade|ग्रेनेडा|Grenada|グレナダ|Granada|格林纳达
+GE|GEO|Georgia|جورجيا|Georgien|Georgia|Géorgie|जॉर्जिया|Georgia|ジョージア|Geórgia|格鲁吉亚
+GF|GUF|French Guiana|غويانا الفرنسية|Französisch-Guayana|Guayana Francesa|Guyane française|फ्रेंच गुआना|Guyana Francese|フランス領ギアナ|Guiana Francesa|法属圭亚那
+GG|GGY|Guernsey|غيرنزي|Guernsey|Guernsey|Guernesey|ग्वेर्नसे|Guernsey|ガーンジー|Guernsey|根西
+GH|GHA|Ghana|غانا|Ghana|Ghana|Ghana|घाना|Ghana|ガーナ|Gana|加纳
+GI|GIB|Gibraltar|جبل طارق|Gibraltar|Gibraltar|Gibraltar|जिब्राल्टर|Gibilterra|ジブラルタル|Gibraltar|直布罗陀
+GL|GRL|Greenland|جرينلاند|Grönland|Groenlandia|Groenland|ग्रीनलैंड|Groenlandia|グリーンランド|Gronelândia|格陵兰
+GM|GMB|Republic of The Gambia|غامبيا|Gambia|Gambia|Gambie|गाम्बिया|Gambia|ガンビア|Gâmbia|冈比亚
+GN|GIN|Guinea|غينيا|Guinea|Guinea|Guinée|गिनी|Guinea|ギニア|Guiné|几内亚
+GP|GLP|Guadeloupe|غوادلوب|Guadeloupe|Guadalupe|Guadeloupe|ग्वाडेलोप|Guadalupa|グアドループ|Guadalupe|瓜德罗普
+GQ|GNQ|Equatorial Guinea|غينيا الاستوائية|Äquatorialguinea|Guinea Ecuatorial|Guinée équatoriale|एक्वेटोरियल गिनी|Guinea Equatoriale|赤道ギニア|Guiné Equatorial|赤道几内亚
+GR|GRC|Greece|اليونان|Griechenland|Grecia|Grèce|यूनान|Grecia|ギリシャ|Grécia|希腊
+GS|SGS|South Georgia and the South Sandwich Islands|جورجيا الجنوبية وجزر ساندويتش الجنوبية|Südgeorgien und die Südlichen Sandwichinseln|Georgia del Sur y las Islas Sandwich del Sur|Géorgie du Sud-et-les Îles Sandwich du Sud|दक्षिण जॉर्जिया और दक्षिण सैंडविच द्वीप समूह|Georgia del Sud e isole Sandwich meridionali|サウスジョージア・サウスサンドウィッチ諸島|Geórgia do Sul e Ilhas Sandwich do Sul|南乔治亚和南桑威奇群岛
+GT|GTM|Guatemala|غواتيمالا|Guatemala|Guatemala|Guatemala|ग्वाटेमाला|Guatemala|グアテマラ|Guatemala|危地马拉
+GU|GUM|Guam|غوام|Guam|Guam|Guam|ग्वाम|Guam|グアム|Guam|关岛
+GW|GNB|Guinea-Bissau|غينيا بيساو|Guinea-Bissau|Guinea Bissau|Guinée-Bissau|गिनी-बिसाउ|Guinea-Bissau|ギニアビサウ|Guiné-Bissau|几内亚比绍
+GY|GUY|Guyana|غيانا|Guyana|Guyana|Guyana|गुआना|Guyana|ガイアナ|Guiana|圭亚那
+HK|HKG|Hong Kong|هونغ كونغ|Hongkong|Hong Kong|Hong Kong|हांग कांग|Hong Kong|香港|Hong Kong|香港
+HM|HMD|Heard Island and McDonald Islands|جزيرة هيرد وجزر ماكدونالد|Heard und McDonaldinseln|Heard e Islas McDonald|Îles Heard-et-MacDonald|हर्ड एंड मैकडोनाल्ड द्वीपसमूह|Isole Heard e McDonald|ハード島とマクドナルド諸島|Ilha Heard e Ilhas McDonald|赫德岛和麦克唐纳群岛
+HN|HND|Honduras|هندوراس|Honduras|Honduras|Honduras|होंडुरास|Honduras|ホンジュラス|Honduras|洪都拉斯
+HR|HRV|Croatia|كرواتيا|Kroatien|Croacia|Croatie|क्रोएशिया|Croazia|クロアチア|Croácia|克罗地亚
+HT|HTI|Haiti|هايتي|Haiti|Haití|Haïti|हैती|Haiti|ハイチ|Haiti|海地
+HU|HUN|Hungary|المجر|Ungarn|Hungría|Hongrie|हंगरी|Ungheria|ハンガリー|Hungria|匈牙利
+ID|IDN|Indonesia|إندونيسيا|Indonesien|Indonesia|Indonésie|इंडोनेशिया|Indonesia|インドネシア|Indonésia|印尼
+IE|IRL|Ireland|أيرلندا|Irland|Irlanda|Irlande|आयरलैंड|Irlanda|アイルランド|Irlanda|爱尔兰
+IL|ISR|Israel|إسرائيل|Israel|Israel|Israël|इजराइल|Israele|イスラエル|Israel|以色列
+IM|IMN|Isle of Man|جزيرة مان|Insel Man|Isla de Man|Île de Man|आइसल ऑफ मैन|Isola di Man|マン島|Ilha de Man|马恩岛
+IN|IND|India|الهند|Indien|India|Inde|भारत|India|インド|Índia|印度
+IO|IOT|British Indian Ocean Territory|إقليم المحيط الهندي البريطاني|Britisches Territorium im Indischen Ozean|Territorio Británico del Océano Índico|Océan Indien Britannique|ब्रितानी हिंद महासागरीय क्षेत्र|Territori Britannici dell'Oceano Indiano|イギリス領インド洋地域|Território Britânico do Oceano Índico|英属印度洋领地
+IQ|IRQ|Iraq|العراق|Irak|Iraq|Irak|इराक|Iraq|イラク|Iraque|伊拉克
+IR|IRN|Islamic Republic of Iran|إيران|Iran|Irán|Iran|ईरान|Iran|イラン・イスラム共和国|Irão|伊朗
+IS|ISL|Iceland|آيسلندا|Island|Islandia|Islande|आइसलैंड|Islanda|アイスランド|Islândia|冰岛
+IT|ITA|Italy|إيطاليا|Italien|Italia|Italie|इटली|Italia|イタリア|Itália|意大利
+JE|JEY|Jersey|جيرزي|Jersey|Jersey|Jersey|जर्सी|Jersey|ジャージー|Jersey|泽西
+JM|JAM|Jamaica|جامايكا|Jamaika|Jamaica|Jamaïque|जमैका|Giamaica|ジャマイカ|Jamaica|牙买加
+JO|JOR|Jordan|الأردن|Jordanien|Jordania|Jordanie|जॉर्डन|Giordania|ヨルダン|Jordânia|约旦
+JP|JPN|Japan|اليابان|Japan|Japón|Japon|जापान|Giappone|日本|Japão|日本
+KE|KEN|Kenya|كينيا|Kenia|Kenia|Kenya|केन्या|Kenya|ケニア|Quénia|肯尼亚
+KG|KGZ|Kyrgyzstan|قيرغيزستان|Kirgisistan|Kirguistán|Kirghizistan|किर्जिस्तान|Kirghizistan|キルギス|Quirguistão|吉尔吉斯斯坦
+KH|KHM|Cambodia|كمبوديا|Kambodscha|Camboya|Cambodge|कंबोडिया|Cambogia|カンボジア|Camboja|柬埔寨
+KI|KIR|Kiribati|كيريباتي|Kiribati|Kiribati|Kiribati|किरिबिती|Kiribati|キリバス|Quiribati|基里巴斯
+KM|COM|Comoros|جزر القمر|Komoren|Comoras|Comores|कोमोरोस|Comore|コモロ|Comores|科摩罗
+KN|KNA|Saint Kitts and Nevis|سانت كيتس ونيفيس|St. Kitts und Nevis|Saint Kitts y Nevis|Saint-Christophe-et-Niévès|सेंट किट्स एंड नेविस|Saint Kitts e Nevis|セントクリストファー・ネイビス|São Cristóvão e Neves|圣基茨和尼维斯
+KP|PRK|North Korea|كوريا الشمالية|Nordkorea|República Popular Democrática de Corea|Corée du Nord|उत्तर कोरिया|Corea del Nord|朝鮮民主主義人民共和国|Coreia do Norte|朝鲜
+KR|KOR|South Korea|كوريا الجنوبية|Südkorea|República de Corea|Corée du Sud|दक्षिण कोरिया|Corea del Sud|大韓民国|Coreia do Sul|韩国
+KW|KWT|Kuwait|الكويت|Kuwait|Kuwait|Koweït|कुवैत|Kuwait|クウェート|Koweit|科威特
+KY|CYM|Cayman Islands|جزر كايمان|Kaimaninseln|Islas Caimán|Îles Caïmans|केमैन आइसलैंड्स|Isole Cayman|ケイマン諸島|Ilhas Caimão|开曼群岛
+KZ|KAZ|Kazakhstan|كازاخستان|Kasachstan|Kazajistán|Kazakhstan|कज़ाखिस्तान|Kazakistan|カザフスタン|Cazaquistão|哈萨克斯坦
+LA|LAO|Lao People's Democratic Republic|لاوس|Laos|República Democrática Popular de Lao|Laos|लाओस|Laos|ラオス人民民主共和国|Laos|老挝
+LB|LBN|Lebanon|لبنان|Libanon|Líbano|Liban|लेबनान|Libano|レバノン|Líbano|黎巴嫩
+LC|LCA|Saint Lucia|سانت لوسيا|St. Lucia|Santa Lucía|Sainte-Lucie|सेंट लुसिया|Santa Lucia|セントルシア|Santa Lúcia|圣卢西亚
+LI|LIE|Liechtenstein|ليختنشتاين|Liechtenstein|Liechtenstein|Liechtenstein|लिक्टेनिस्टीन|Liechtenstein|リヒテンシュタイン|Liechtenstein|列支敦士登
+LK|LKA|Sri Lanka|سريلانكا|Sri Lanka|Sri Lanka|Sri Lanka|श्री लंका|Sri Lanka|スリランカ|Sri Lanka|斯里兰卡
+LR|LBR|Liberia|ليبيريا|Liberia|Liberia|Libéria|लाइबेरिया|Liberia|リベリア|Libéria|利比里亚
+LS|LSO|Lesotho|ليسوتو|Lesotho|Lesoto|Lesotho|लेसोथो|Lesotho|レソト|Lesoto|莱索托
+LT|LTU|Lithuania|ليتوانيا|Litauen|Lituania|Lituanie|लिथुआनिया|Lituania|リトアニア|Lituânia|立陶宛
+LU|LUX|Luxembourg|لوكسمبورغ|Luxemburg|Luxemburgo|Luxembourg|लक्जमबर्ग|Lussemburgo|ルクセンブルク|Luxemburgo|卢森堡
+LV|LVA|Latvia|لاتفيا|Lettland|Letonia|Lettonie|लात्विया|Lettonia|ラトビア|Letónia|拉脱维亚
+LY|LBY|Libya|ليبيا|Libyen|Libia|Libye|लीबिया|Libia|リビア|Líbia|利比亚
+MA|MAR|Morocco|المغرب|Marokko|Marruecos|Maroc|मोरक्को|Marocco|モロッコ|Marrocos|摩洛哥
+MC|MCO|Monaco|موناكو|Monaco|Mónaco|Monaco|मोनाको|Monaco|モナコ|Mónaco|摩纳哥
+MD|MDA|Moldova, Republic of|مولدوفا|Moldawien|Moldavia|Moldavie|मोलदोवा|Moldavia|モルドバ共和国|Moldávia|摩尔多瓦
+ME|MNE|Montenegro|الجبل الأسود|Montenegro|Montenegro|Monténégro|मोंटेनेग्रो|Montenegro|モンテネグロ|Montenegro|黑山
+MF|MAF|Saint Martin (French part)|سانت مارتن (الجزء الفرنسي)|Saint-Martin|Saint Martin (francesa)|Saint-Martin (partie française)|सेंट मार्टिन की सामूहिकता|Saint-Martin|サン・マルタン（フランス領）|São Martinho|法属圣马丁
+MG|MDG|Madagascar|مدغشقر|Madagaskar|Madagascar|Madagascar|मैडागास्कर|Madagascar|マダガスカル|Madagáscar|马达加斯加
+MH|MHL|Marshall Islands|جزر مارشال|Marshallinseln|Islas Marshall|Îles Marshall|मार्शल द्वीपसमूह|Isole Marshall|マーシャル諸島|Ilhas Marshall|马绍尔群岛
+MK|MKD|The Republic of North Macedonia|مقدونيا الشمالية|Nordmazedonien|Macedonia del Norte|Macédoine du Nord|मकदूनिया|Macedonia del Nord|北マケドニア|Macedónia do Norte|北马其顿
+ML|MLI|Mali|مالي|Mali|Malí|Mali|माली|Mali|マリ|Mali|马里
+MM|MMR|Myanmar|بورما|Myanmar|Myanmar|Myanmar|म्यामांर (बर्मा)|Birmania  Myanmar|ミャンマー|Mianmar (Birmânia)|缅甸
+MN|MNG|Mongolia|منغوليا|Mongolei|Mongolia|Mongolie|मंगोलिया|Mongolia|モンゴル|Mongólia|蒙古
+MO|MAC|Macao|ماكاو|Macao|Macao|Macao|मकाओ|Macao|マカオ|Macau|澳门
+MP|MNP|Northern Mariana Islands|جزر ماريانا الشمالية|Nördliche Marianen|Islas Marianas del Norte|Îles Mariannes du Nord|उत्तर मैरिना द्वीपसमूह|Isole Marianne Settentrionali|北マリアナ諸島|Ilhas Marianas do Norte|北马里亚纳群岛
+MQ|MTQ|Martinique|مارتينيك|Martinique|Martinica|Martinique|मार्टिनिक|Martinica|マルティニーク|Martinica|马提尼克
+MR|MRT|Mauritania|موريتانيا|Mauretanien|Mauritania|Mauritanie|मॉरितानिया|Mauritania|モーリタニア|Mauritânia|毛里塔尼亚
+MS|MSR|Montserrat|مونتسرات|Montserrat|Montserrat|Montserrat|मोंटसेराट|Montserrat|モントセラト|Monserrate|蒙特塞拉特
+MT|MLT|Malta|مالطا|Malta|Malta|Malte|माल्टा|Malta|マルタ|Malta|马耳他
+MU|MUS|Mauritius|موريشيوس|Mauritius|Mauricio|Maurice|मारीशस|Mauritius|モーリシャス|Maurícia|毛里求斯
+MV|MDV|Maldives|جزر المالديف|Malediven|Maldivas|Maldives|मालदीव|Maldive|モルディブ|Maldivas|马尔代夫
+MW|MWI|Malawi|مالاوي|Malawi|Malaui|Malawi|मालावी|Malawi|マラウイ|Maláui|马拉维
+MX|MEX|Mexico|المكسيك|Mexiko|México|Mexique|मेक्सिको|Messico|メキシコ|México|墨西哥
+MY|MYS|Malaysia|ماليزيا|Malaysia|Malasia|Malaisie|मलयेशिया|Malesia|マレーシア|Malásia|马来西亚
+MZ|MOZ|Mozambique|موزمبيق|Mosambik|Mozambique|Mozambique|मोजांबिक|Mozambico|モザンビーク|Moçambique|莫桑比克
+NA|NAM|Namibia|ناميبيا|Namibia|Namibia|Namibie|नामीबिया|Namibia|ナミビア|Namíbia|纳米比亚
+NC|NCL|New Caledonia|كاليدونيا الجديدة|Neukaledonien|Nueva Caledonia|Nouvelle-Calédonie|न्यू कैलेडोनिया|Nuova Caledonia|ニューカレドニア|Nova Caledónia|新喀里多尼亚
+NE|NER|Niger|النيجر|Niger|Níger|Niger|नाइजर|Niger|ニジェール|Níger|尼日尔
+NF|NFK|Norfolk Island|جزيرة نورفولك|Norfolkinsel|Isla Norfolk|Île Norfolk|नोरफॉक द्वीप|Isola Norfolk|ノーフォーク島|Ilha Norfolk|诺福克岛
+NG|NGA|Nigeria|نيجيريا|Nigeria|Nigeria|Nigéria|नाइजीरिया|Nigeria|ナイジェリア|Nigéria|尼日利亚
+NI|NIC|Nicaragua|نيكاراغوا|Nicaragua|Nicaragua|Nicaragua|निकारागुआ|Nicaragua|ニカラグア|Nicarágua|尼加拉瓜
+NL|NLD|Netherlands|هولندا|Niederlande|Países Bajos|Pays-Bas|नीदरलैंड्स|Paesi Bassi|オランダ|Países Baixos|荷兰
+NO|NOR|Norway|النرويج|Norwegen|Noruega|Norvège|नॉर्वे|Norvegia|ノルウェー|Noruega|挪威
+NP|NPL|Nepal|نيبال|Nepal|Nepal|Népal|नेपाल|Nepal|ネパール|Nepal|尼泊尔
+NR|NRU|Nauru|ناورو|Nauru|Nauru|Nauru|नाउरू|Nauru|ナウル|Nauru|瑙鲁
+NU|NIU|Niue|نييوي|Niue|Niue|Niué|नियू|Niue|ニウエ|Niue|纽埃
+NZ|NZL|New Zealand|نيوزيلندا|Neuseeland|Nueva Zelanda|Nouvelle-Zélande|न्यूजीलैंड|Nuova Zelanda|ニュージーランド|Nova Zelândia|新西兰
+OM|OMN|Oman|عمان|Oman|Omán|Oman|ओमान|Oman|オマーン|Omã|阿曼
+PA|PAN|Panama|بنما|Panama|Panamá|Panama|पनामा|Panamá|パナマ|Panamá|巴拿马
+PE|PER|Peru|بيرو|Peru|Perú|Pérou|पेरू|Perù|ペルー|Peru|秘鲁
+PF|PYF|French Polynesia|بولينزيا الفرنسية|Französisch-Polynesien|Polinesia Francesa|Polynésie française|फ्रैंच गुआना|Polinesia Francese|フランス領ポリネシア|Polinésia Francesa|法属波利尼西亚
+PG|PNG|Papua New Guinea|بابوا غينيا الجديدة|Papua-Neuguinea|Papua Nueva Guinea|Papouasie-Nouvelle-Guinée|पापुआ न्यू गिनी|Papua Nuova Guinea|パプアニューギニア|Papua-Nova Guiné|巴布亚新几内亚
+PH|PHL|Philippines|الفلبين|Philippinen|Filipinas|Philippines|फिलीपींस|Filippine|フィリピン|Filipinas|菲律宾
+PK|PAK|Pakistan|باكستان|Pakistan|Pakistán|Pakistan|पाकिस्तान|Pakistan|パキスタン|Paquistão|巴基斯坦
+PL|POL|Poland|بولندا|Polen|Polonia|Pologne|पोलैंड|Polonia|ポーランド|Polónia|波兰
+PM|SPM|Saint Pierre and Miquelon|سان بيير وميكلون|Saint-Pierre und Miquelon|San Pedro y Miquelón|Saint-Pierre-et-Miquelon|सेंट पिएरे एंड मिक्वेलॉन|Saint Pierre e Miquelon|サンピエール島・ミクロン島|Saint Pierre e Miquelon|圣皮埃尔和密克隆
+PN|PCN|Pitcairn|جزر بيتكيرن|Pitcairninseln|Pitcairn|Îles Pitcairn|पिटकैर्न द्वीपसमूह|Isole Pitcairn|ピトケアン|Ilhas Pitcairn|皮特凯恩群岛
+PR|PRI|Puerto Rico|بورتوريكو|Puerto Rico|Puerto Rico|Porto Rico|पुएर्तो रिको|Porto Rico|プエルトリコ|Porto Rico|波多黎各
+PS|PSE|State of Palestine|فلسطين|Staat Palästina|Palestina|Palestine|फिलिस्तीन राज्य|Stato di Palestina|パレスチナ|Territórios palestinos|巴勒斯坦
+PT|PRT|Portugal|البرتغال|Portugal|Portugal|Portugal|पुर्तगाल|Portogallo|ポルトガル|Portugal|葡萄牙
+PW|PLW|Palau|بالاو|Palau|Palau|Palaos|पलाउ|Palau|パラオ|Palau|帕劳
+PY|PRY|Paraguay|باراغواي|Paraguay|Paraguay|Paraguay|पराग्वे|Paraguay|パラグアイ|Paraguai|巴拉圭
+QA|QAT|Qatar|قطر|Katar|Catar|Qatar|क़तार|Qatar|カタール|Qatar|卡塔尔
+RE|REU|Reunion|لا ريونيون|Réunion|Reunión|Réunion|रीयूनियन|Réunion|レユニオン|Reunião|留尼汪
+RO|ROU|Romania|رومانيا|Rumänien|Rumanía|Roumanie|रोमानिया|Romania|ルーマニア|Roménia|罗马尼亚
+RS|SRB|Serbia|صربيا|Serbien|Serbia|Serbie|सर्बिया|Serbia|セルビア|Sérvia|塞尔维亚
+RU|RUS|Russian Federation|روسيا|Russische Föderation|Rusia|Russie|रूस|Russia|ロシア連邦|Rússia|俄罗斯
+RW|RWA|Rwanda|رواندا|Ruanda|Ruanda|Rwanda|रवांडा|Ruanda|ルワンダ|Ruanda|卢旺达
+SA|SAU|Saudi Arabia|السعودية|Saudi-Arabien|Arabia Saudita|Arabie Saoudite|सऊदी अरब|Arabia Saudita|サウジアラビア|Arábia Saudita|沙特阿拉伯
+SB|SLB|Solomon Islands|جزر سليمان|Salomonen|Islas Salomón|Îles Salomon|सोलोमन द्वीपसमूह|Isole Salomone|ソロモン諸島|Ilhas Salomão|所罗门群岛
+SC|SYC|Seychelles|سيشل|Seychellen|Seychelles|Seychelles|सेशेल्स|Seychelles|セーシェル|Seychelles|塞舌尔
+SD|SDN|Sudan|السودان|Sudan|Sudán|Soudan|सूडान|Sudan|スーダン|Sudão|苏丹
+SE|SWE|Sweden|السويد|Schweden|Suecia|Suède|स्वीडन|Svezia|スウェーデン|Suécia|瑞典
+SG|SGP|Singapore|سنغافورة|Singapur|Singapur|Singapour|सिंगापुर|Singapore|シンガポール|Singapura|新加坡
+SH|SHN|Saint Helena|سانت هيلينا وأسينشين وتريستان دا كونا|St. Helena|Santa Helena, Ascensión y Tristán de Acuña|Sainte-Hélène|सेंट हेलेना|Sant'Elena, Isola di Ascensione e Tristan da Cunha|セントヘレナ・アセンションおよびトリスタンダクーニャ|Santa Helena|圣赫勒拿、阿森松和特里斯坦-达库尼亚
+SI|SVN|Slovenia|سلوفينيا|Slowenien|Eslovenia|Slovénie|स्लोवानिया|Slovenia|スロベニア|Eslovénia|斯洛文尼亚
+SJ|SJM|Svalbard and Jan Mayen|سفالبارد ويان ماين|Svalbard und Jan Mayen|Svalbard y Jan Mayen|Svalbard et Île Jan Mayen|स्यालबार्ड (स्यालबार्ड एंड जन मावेम)|Svalbard e Jan Mayen|スヴァールバル諸島およびヤンマイエン島|Svalbard e Jan Mayen|斯瓦尔巴和扬马延
+SK|SVK|Slovakia|سلوفاكيا|Slowakei|Eslovaquia|Slovaquie|स्लोवाकिया|Slovacchia|スロバキア|Eslováquia|斯洛伐克
+SL|SLE|Sierra Leone|سيراليون|Sierra Leone|Sierra Leona|Sierra Leone|सियारा लिओन|Sierra Leone|シエラレオネ|Serra Leoa|塞拉利昂
+SM|SMR|San Marino|سان مارينو|San Marino|San Marino|Saint-Marin|सैन मारिनो|San Marino|サンマリノ|San Marino|圣马力诺
+SN|SEN|Senegal|السنغال|Senegal|Senegal|Sénégal|सेनेगल|Senegal|セネガル|Senegal|塞内加尔
+SO|SOM|Somalia|الصومال|Somalia|Somalia|Somalie|सोमालिया|Somalia|ソマリア|Somália|索马里
+SR|SUR|Suriname|سورينام|Suriname|Suriname|Suriname|सूरीनाम|Suriname|スリナム|Suriname|苏里南
+SS|SSD|South Sudan|جنوب السودان|Südsudan|Sudán del Sur|Soudan du Sud|दक्षिण सूडान|Sudan del Sud|南スーダン|Sudão do Sul|南苏丹
+ST|STP|Sao Tome and Principe|ساو تومي وبرينسيب|São Tomé und Príncipe|Santo Tomé y Príncipe|São Tomé-et-Principe|साओ टॉम एंड प्रिंसिपी|São Tomé e Príncipe|サントメ・プリンシペ|São Tomé e Príncipe|圣多美和普林西比
+SV|SLV|El Salvador|السلفادور|El Salvador|El Salvador|El Salvador|सल्वाडोर|El Salvador|エルサルバドル|El Salvador|萨尔瓦多
+SX|SXM|Sint Maarten (Dutch part)|سانت مارتن (الجزء الهولندي)|Sint Maarten|Sint Maarten (neerlandesa)|Saint-Martin (partie néerlandaise)|सिण्ट मार्टेन|Sint Maarten|シント・マールテン（オランダ領）|São Martinho|荷属圣马丁
+SY|SYR|Syrian Arab Republic|سوريا|Syrien, Arabische Republik|República Árabe Siria|Syrie|सीरिया|Siria|シリア・アラブ共和国|Síria|叙利亚
+SZ|SWZ|Eswatini|سوازيلاند|Eswatini|Esuatini|Royaume d'Eswatini|स्वाजीलैंड|Eswatini|スワジランド|Essuatíni|斯威士兰
+TC|TCA|Turks and Caicos Islands|جزر توركس وكايكوس|Turks- und Caicosinseln|Islas Turcas y Caicos|Îles Turques-et-Caïques|तुर्क एंड कैकोस द्वीपसमूह|Isole Turks e Caicos|タークス・カイコス諸島|Ilhas Turcas e Caicos|特克斯和凯科斯群岛
+TD|TCD|Chad|تشاد|Tschad|Chad|Tchad|चाड|Ciad|チャド|Chade|乍得
+TF|ATF|French Southern Territories|أراض فرنسية جنوبية وأنتارتيكية|Französische Süd- und Antarktisgebiete|Tierras Australes Francesas|Terres australes françaises|फ्रांसीसी दक्षिणी क्षेत्र|Territori Francesi del Sud|フランス領南方・南極地域|Terras Austrais e Antárticas Francesas|法属南部领地
+TG|TGO|Togo|توغو|Togo|Togo|Togo|टोगो|Togo|トーゴ|Togo|多哥
+TH|THA|Thailand|تايلاند|Thailand|Tailandia|Thaïlande|थाईलैंड|Thailandia|タイ|Tailândia|泰国
+TJ|TJK|Tajikistan|طاجيكستان|Tadschikistan|Tayikistán|Tadjikistan|तज़ाकिस्तान|Tagikistan|タジキスタン|Tajiquistão|塔吉克斯坦
+TK|TKL|Tokelau|توكيلاو|Tokelau|Tokelau|Tokelau|टोकेलू|Tokelau|トケラウ|Tokelau|托克劳
+TL|TLS|Timor-Leste|تيمور الشرقية|Osttimor|Timor-Leste|Timor-Leste|पूर्वी तिमोर|Timor Est|東ティモール|Timor-Leste|东帝汶
+TM|TKM|Turkmenistan|تركمانستان|Turkmenistan|Turkmenistán|Turkménistan|तुर्कमेनिस्तान|Turkmenistan|トルクメニスタン|Turquemenistão|土库曼斯坦
+TN|TUN|Tunisia|تونس|Tunesien|Túnez|Tunisie|ट्यूनीशिया|Tunisia|チュニジア|Tunísia|突尼斯
+TO|TON|Tonga|تونغا|Tonga|Tonga|Tonga|टोंगा|Tonga|トンガ|Tonga|汤加
+TR|TUR|Türkiye|تركيا|Türkei|Turquía|Turquie|तुर्की|Turchia|トルコ|Turquia|土耳其
+TT|TTO|Trinidad and Tobago|ترينيداد وتوباغو|Trinidad und Tobago|Trinidad y Tobago|Trinité-et-Tobago|ट्रिनिडाड एंड टोबैगो|Trinidad e Tobago|トリニダード・トバゴ|Trindade e Tobago|特立尼达和多巴哥
+TV|TUV|Tuvalu|توفالو|Tuvalu|Tuvalu|Tuvalu|तुवालू|Tuvalu|ツバル|Tuvalu|图瓦卢
+TW|TWN|Taiwan, Province of China|تايوان|Taiwan|Taiwán|Taïwan|ताइवान|Repubblica di Cina|台湾|Taiwan|中国台湾省
+TZ|TZA|United Republic of Tanzania|تانزانيا|Tansania, Vereinigte Republik|Tanzania|République unie de Tanzanie|तंजानिया|Tanzania|タンザニア|Tanzânia|坦桑尼亚
+UA|UKR|Ukraine|أوكرانيا|Ukraine|Ucrania|Ukraine|उक्रेन|Ucraina|ウクライナ|Ucrânia|乌克兰
+UG|UGA|Uganda|أوغندا|Uganda|Uganda|Ouganda|उगांडा|Uganda|ウガンダ|Uganda|乌干达
+UM|UMI|United States Minor Outlying Islands|جزر الولايات المتحدة|United States Minor Outlying Islands|Islas Ultramarinas Menores de los Estados Unidos|Îles mineures éloignées des États-Unis|यूएस माइनर आउटलाइंग द्वीपसमूह|Isole minori esterne degli Stati Uniti|合衆国領有小離島|Ilhas Distantes dos EUA|美国本土外小岛屿
+US|USA|United States of America|الولايات المتحدة|Vereinigte Staaten von Amerika|Estados Unidos|États-Unis d'Amérique|यूएसए (संयुक्त राज्य अमेरिका)|Stati Uniti d'America|アメリカ合衆国|Estados Unidos|美国
+UY|URY|Uruguay|الأوروغواي|Uruguay|Uruguay|Uruguay|उरुग्वे|Uruguay|ウルグアイ|Uruguai|乌拉圭
+UZ|UZB|Uzbekistan|أوزبكستان|Usbekistan|Uzbekistán|Ouzbékistan|उजबेकिस्तान|Uzbekistan|ウズベキスタン|Uzbequistão|乌兹别克斯坦
+VA|VAT|Holy See (Vatican City State)|الفاتيكان|Vatikanstadt|Santa Sede|Saint-Siège (Vatican)|वेटिकन|Città del Vaticano|バチカン市国|Santa Sé|梵蒂冈
+VC|VCT|Saint Vincent and the Grenadines|سانت فينسنت والغرينادين|St. Vincent und die Grenadinen|San Vicente y las Granadinas|Saint-Vincent-et-les-Grenadines|सेंट विंसेंट एंड द ग्रेनेंडाइन्स|Saint Vincent e Grenadine|セントビンセントおよびグレナディーン諸島|São Vicente e Granadinas|圣文森特和格林纳丁斯
+VE|VEN|Venezuela|فنزويلا|Venezuela|Venezuela|Venezuela|वेनेजुएला|Venezuela|ベネズエラ・ボリバル共和国|Venezuela|委内瑞拉
+VG|VGB|Virgin Islands, British|جزر العذراء البريطانية|Britische Jungferninseln|Islas Vírgenes británicas|Îles vierges britanniques|ब्रितानी वर्जिन द्वीपसमूह|Isole Vergini Britanniche|イギリス領ヴァージン諸島|Ilhas Virgens Britânicas|英属维尔京群岛
+VI|VIR|Virgin Islands, U.S.|جزر العذراء الأمريكية|Amerikanische Jungferninseln|Islas Vírgenes de los Estados Unidos|Îles vierges américaines|अमेरिकी वर्जिन द्वीपसमूह|Isole Vergini Americane|アメリカ領ヴァージン諸島|Ilhas Virgens Americanas|美属维尔京群岛
+VN|VNM|Vietnam|فيتنام|Vietnam|Vietnam|Vietnam|विएतनाम|Vietnam|ベトナム|Vietname|越南
+VU|VUT|Vanuatu|فانواتو|Vanuatu|Vanuatu|Vanuatu|वनातू|Vanuatu|バヌアツ|Vanuatu|瓦努阿图
+WF|WLF|Wallis and Futuna|والس وفوتونا|Wallis und Futuna|Wallis y Futuna|Wallis-et-Futuna|वालीज एंड फुटुना|Wallis e Futuna|ウォリス・フツナ|Wallis e Futuna|瓦利斯和富图纳
+WS|WSM|Samoa|ساموا|Samoa|Samoa|Samoa|पश्चिमी सामोआ|Samoa|サモア|Samoa|萨摩亚
+XK|XKK|Kosovo|كوسوفو|Kosovo|Kosovo|Kosovo|कोसोवो|Kosovo|コソボ|Kosovo|科索沃
+YE|YEM|Yemen|اليمن|Jemen|Yemen|Yémen|यमन|Yemen|イエメン|Iémen|也门
+YT|MYT|Mayotte|مايوت|Mayotte|Mayotte|Mayotte|मायोते|Mayotte|マヨット|Mayotte|马约特
+ZA|ZAF|South Africa|جنوب أفريقيا|Südafrika|Sudáfrica|Afrique du Sud|दक्षिण अफ्रीका|Sudafrica|南アフリカ|África do Sul|南非
+ZM|ZMB|Zambia|زامبيا|Sambia|Zambia|Zambie|जाम्बिया|Zambia|ザンビア|Zâmbia|赞比亚
+ZW|ZWE|Zimbabwe|زيمبابوي|Simbabwe|Zimbabue|Zimbabwe|जिंबावे|Zimbabwe|ジンバブエ|Zimbábue|津巴布韦

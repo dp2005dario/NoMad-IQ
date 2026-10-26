@@ -393,6 +393,7 @@ BEN|32.097|20.270|Benghazi|Libya|Africa/Tripoli
 BEO|-33.067|151.648|Lake Macquarie|Australia|Australia/Sydney
 BEP|15.163|76.883|Bellary|India|Asia/Calcutta
 BEQ|52.343|0.773|Honington|United Kingdom|Europe/London
+BER|52.367|13.503|Berlin|Germany|Europe/Berlin
 BES|48.448|-4.419|Brest|France|Europe/Paris
 BET|60.780|-161.838|Bethel|United States|America/Anchorage
 BEU|-24.346|139.460|Bedourie|Australia|Australia/Brisbane
@@ -1127,6 +1128,7 @@ DNV|40.199|-87.596|Danville|United States|America/Chicago
 DNZ|37.786|29.701|Denizli|Turkey|Europe/Istanbul
 DOD|-6.170|35.753|Dodoma|Tanzania|Africa/Dar_es_Salaam
 DOG|19.154|30.430|Dongola|Sudan|Africa/Khartoum
+DOH|25.273|51.608|Doha|Qatar|Asia/Qatar
 DOK|48.074|37.740|Donetsk|Ukraine|Europe/Kiev
 DOL|49.365|0.154|Deauville|France|Europe/Paris
 DOM|15.547|-61.300|Dominica|Dominica|America/Dominica
@@ -1611,6 +1613,7 @@ GOR|8.161|35.553|Gore|Ethiopia|Africa/Addis_Ababa
 GOT|57.663|12.280|Gothenborg|Sweden|Europe/Stockholm
 GOU|9.336|13.370|Garoua|Cameroon|Africa/Douala
 GOV|-12.269|136.818|Gove|Australia|Australia/Darwin
+GOX|15.739|73.861|Goa|India|Asia/Kolkata
 GOZ|43.151|25.713|Gorna Orechovica|Bulgaria|Europe/Sofia
 GPA|38.151|21.426|Patras|Greece|Europe/Athens
 GPB|-25.388|-51.520|Guarapuava|Brazil|America/Sao_Paulo
@@ -2020,6 +2023,7 @@ ISM|28.290|-81.437|Kissimmee|United States|America/New_York
 ISN|48.178|-103.642|Williston|United States|America/Chicago
 ISO|35.331|-77.609|Kinston|United States|America/New_York
 ISP|40.795|-73.100|Islip|United States|America/New_York
+IST|41.275|28.752|Istanbul|Turkey|Europe/Istanbul
 ISU|35.562|45.317|Sulaymaniyah|Iraq|Asia/Baghdad
 ISW|44.360|-89.839|Wisconsin Rapids|United States|America/Chicago
 ITA|-3.127|-58.481|Itaituba|Brazil|America/Boa_Vista
@@ -3222,6 +3226,7 @@ NLK|-29.042|167.939|Norfolk Island|Norfolk Island|Pacific/Norfolk
 NLO|-4.327|15.328|Kinshasa|Congo (Kinshasa)|Africa/Kinshasa
 NLP|-25.500|30.914|Nelspruit|South Africa|Africa/Johannesburg
 NLT|43.432|83.379|Xinyuan|China|Asia/Shanghai
+NLU|19.737|-99.016|Mexico City|Mexico|America/Mexico_City
 NLV|47.058|31.920|Nikolayev|Ukraine|Europe/Kiev
 NMA|40.985|71.557|Namangan|Uzbekistan|Asia/Samarkand
 NMB|20.434|72.843|Daman|India|Asia/Calcutta
@@ -3263,6 +3268,7 @@ NQT|52.920|-1.079|Nottingham|United Kingdom|Europe/London
 NQU|5.696|-77.281|Nuquí|Colombia|America/Bogota
 NQX|24.576|-81.689|Key West|United States|America/New_York
 NQY|50.441|-4.995|Newquai|United Kingdom|Europe/London
+NQZ|51.022|71.467|Astana|Kazakhstan|Asia/Almaty
 NRA|-34.702|146.512|Narrandera|Australia|Australia/Sydney
 NRD|53.707|7.230|Norderney|Germany|Europe/Berlin
 NRK|58.586|16.251|Norrkoeping|Sweden|Europe/Stockholm
@@ -3628,6 +3634,7 @@ PKR|28.201|83.982|Pokhara|Nepal|Asia/Katmandu
 PKU|0.461|101.445|Pekanbaru|Indonesia|Asia/Jakarta
 PKV|57.784|28.396|Pskov|Russia|Europe/Moscow
 PKW|-22.058|27.829|Selebi-phikwe|Botswana|Africa/Gaborone
+PKX|39.509|116.411|Beijing|China|Asia/Shanghai
 PKY|-2.225|113.943|Palangkaraya|Indonesia|Asia/Jakarta
 PKZ|15.132|105.781|Pakse|Laos|Asia/Vientiane
 PLD|9.871|-85.481|Carrillo|Costa Rica|America/Costa_Rica
@@ -4476,6 +4483,7 @@ TEZ|26.709|92.785|Tezpur|India|Asia/Calcutta
 TFF|-3.383|-64.724|Tefe|Brazil|America/Boa_Vista
 TFN|28.483|-16.341|Tenerife|Spain|Atlantic/Canary
 TFS|28.045|-16.573|Tenerife|Spain|Atlantic/Canary
+TFU|30.312|104.441|Chengdu|China|Asia/Shanghai
 TGA|1.387|103.709|Tengah|Singapore|Asia/Singapore
 TGD|42.359|19.252|Podgorica|Montenegro|Europe/Podgorica
 TGG|5.383|103.103|Kuala Terengganu|Malaysia|Asia/Kuala_Lumpur

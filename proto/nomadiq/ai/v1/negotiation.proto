@@ -67,3 +67,23 @@ message GroupNegotiationConcluded {
   // reglas deterministas (plan B, por ejemplo con Ollama caído).
   bool llm_used = 7;
 }
+
+// Hay mensajes nuevos en el chat de un viaje en grupo: "avisad a estas
+// personas". Lo publica el ai-orchestrator en "ai.group-chat-activity.v1" y
+// lo consume el notifier, que manda un push cifrado ("Mensajes nuevos en tu
+// viaje") a los teléfonos de esos seudónimos.
+//
+// NO lleva el texto de ningún mensaje ni nombres: solo el viaje (para que la
+// app abra ese chat al tocar el aviso) y los destinatarios como SEUDÓNIMOS
+// (igual que GroupNegotiationConcluded.recipients). Quien escribió no va en
+// la lista: no se avisa a uno mismo.
+//
+// El ai-orchestrator manda como mucho UN aviso por viaje cada 2 minutos: un
+// grupo charlando no llena los móviles de avisos (ni gasta cupo de FCM).
+//
+// Clave del mensaje Kafka: negotiation_id.
+message GroupChatActivity {
+  nomadiq.common.v1.EventMetadata metadata = 1;
+  string negotiation_id = 2;
+  repeated string recipients = 3;
+}

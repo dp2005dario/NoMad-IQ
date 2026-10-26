@@ -22,3 +22,12 @@ Cómo se regeneran: `tool/build_geo_data.py` (instrucciones en `docs/guia-ruta-d
 ISO de dos letras (`Spain|ES`). Lo genera `tool/flight3d/build_country_codes.mjs`
 con [i18n-iso-countries](https://github.com/michaelwittig/node-i18n-iso-countries)
 (licencia MIT). El Vuelo 3D lo usa para la bandera y el nombre del país.
+
+`visas.txt`: qué necesita cada pasaporte para entrar en cada país (199 × 199),
+para la pantalla Visado. Sale de [passport-index-data](https://github.com/imorte/passport-index-data)
+(datos de passportindex.org, licencia MIT). Formato y cómo se regenera:
+`tool/build_visa_data.py`.
+
+`country_names.txt`: el nombre de cada país en los idiomas de la app y su
+código de tres letras (el del pasaporte). Lo genera
+`tool/flight3d/build_country_names.mjs` con i18n-iso-countries (MIT).

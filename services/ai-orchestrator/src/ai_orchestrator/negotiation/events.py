@@ -3,6 +3,7 @@
 Contratos en proto/nomadiq/ai/v1/negotiation.proto:
     ai.group-negotiation-requests.v1 -> GroupNegotiationRequested (orden de trabajo)
     ai.group-negotiations.v1         -> GroupNegotiationConcluded (resultado)
+    ai.group-chat-activity.v1        -> GroupChatActivity (mensajes nuevos en el chat)
 
 Ninguno lleva datos personales: solo el id de la negociación, el resultado y,
 como mucho, seudónimos de los miembros (ver pseudonym.py).
@@ -35,6 +36,7 @@ from nomadiq.common.v1 import common_pb2
 PRODUCER = "ai-orchestrator"
 REQUESTED_TYPE = negotiation_pb2.GroupNegotiationRequested.DESCRIPTOR.full_name
 CONCLUDED_TYPE = negotiation_pb2.GroupNegotiationConcluded.DESCRIPTOR.full_name
+CHAT_ACTIVITY_TYPE = negotiation_pb2.GroupChatActivity.DESCRIPTOR.full_name
 
 _OUTCOMES = {
     Outcome.CONSENSUS: negotiation_pb2.NEGOTIATION_OUTCOME_CONSENSUS,
@@ -93,6 +95,25 @@ def concluded_message(
         key=negotiation_id.encode(),
         value=evt.SerializeToString(),
         headers=_headers(CONCLUDED_TYPE, event_id, now),
+    )
+
+
+def chat_activity_message(
+    topic: str, negotiation_id: str, recipients: Sequence[str], now: datetime
+) -> OutboxMessage:
+    """El aviso "hay mensajes nuevos en el chat" para ai.group-chat-activity.v1.
+
+    Sin texto ni nombres: el viaje y los seudónimos de a quién avisar.
+    """
+    metadata, event_id = _metadata(now)
+    evt = negotiation_pb2.GroupChatActivity(
+        metadata=metadata, negotiation_id=negotiation_id, recipients=list(recipients)
+    )
+    return OutboxMessage(
+        topic=topic,
+        key=negotiation_id.encode(),
+        value=evt.SerializeToString(),
+        headers=_headers(CHAT_ACTIVITY_TYPE, event_id, now),
     )
 
 

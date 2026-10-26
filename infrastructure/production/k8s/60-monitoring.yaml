@@ -1,0 +1,308 @@
+# Vigilancia GRATIS dentro de la propia máquina: Prometheus mira cómo va
+# todo y Alertmanager te manda un aviso al móvil (app ntfy, gratis) si algo
+# se rompe: un servicio caído, una copia de seguridad que falla, el disco
+# casi lleno, un certificado a punto de caducar o un servicio sin memoria.
+#
+# Para mirar las gráficas:  kubectl -n nomadiq-monitoring port-forward svc/prometheus 9090
+# y abre http://localhost:9090 (solo desde tu ordenador, nunca abierto a internet).
+
+# --- kube-state-metrics: traduce el estado de Kubernetes a números ------------
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kube-state-metrics
+  namespace: nomadiq-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nomadiq-kube-state-metrics
+rules:
+  - apiGroups: [""]
+    resources: [pods, nodes, persistentvolumeclaims, persistentvolumes, namespaces, services]
+    verbs: [list, watch]
+  - apiGroups: [apps]
+    resources: [deployments, statefulsets, replicasets]
+    verbs: [list, watch]
+  - apiGroups: [batch]
+    resources: [cronjobs, jobs]
+    verbs: [list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nomadiq-kube-state-metrics
+subjects:
+  - {kind: ServiceAccount, name: kube-state-metrics, namespace: nomadiq-monitoring}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nomadiq-kube-state-metrics
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-state-metrics
+  namespace: nomadiq-monitoring
+spec:
+  selector: {app: kube-state-metrics}
+  ports: [{name: http, port: 8080}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-state-metrics
+  namespace: nomadiq-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: kube-state-metrics}
+  template:
+    metadata:
+      labels: {app: kube-state-metrics}
+    spec:
+      serviceAccountName: kube-state-metrics
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: kube-state-metrics
+          image: registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.13.0
+          args:
+            - --resources=pods,deployments,statefulsets,cronjobs,jobs,persistentvolumeclaims,nodes
+          ports: [{containerPort: 8080}]
+          resources:
+            requests: {cpu: 20m, memory: 32Mi}
+            limits: {cpu: 200m, memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+---
+# --- Prometheus -----------------------------------------------------------------
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: nomadiq-monitoring
+---
+# Solo lectura de las métricas de la máquina (kubelet/cAdvisor).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nomadiq-prometheus
+rules:
+  - apiGroups: [""]
+    resources: [nodes, nodes/metrics, nodes/proxy, services, endpoints, pods]
+    verbs: [get, list, watch]
+  - nonResourceURLs: [/metrics, /metrics/cadvisor]
+    verbs: [get]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nomadiq-prometheus
+subjects:
+  - {kind: ServiceAccount, name: prometheus, namespace: nomadiq-monitoring}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nomadiq-prometheus
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus
+  namespace: nomadiq-monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 60s
+      evaluation_interval: 60s
+    alerting:
+      alertmanagers:
+        - static_configs: [{targets: ["alertmanager:9093"]}]
+    rule_files: [/etc/prometheus/alerts.yml]
+    scrape_configs:
+      - job_name: kube-state-metrics
+        static_configs: [{targets: ["kube-state-metrics:8080"]}]
+      # Memoria/CPU de cada contenedor y espacio de los discos (kubelet).
+      - job_name: kubelet
+        scheme: https
+        tls_config: {insecure_skip_verify: true}
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs: [{role: node}]
+      - job_name: cadvisor
+        scheme: https
+        metrics_path: /metrics/cadvisor
+        tls_config: {insecure_skip_verify: true}
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        kubernetes_sd_configs: [{role: node}]
+      # Caducidad de los certificados internos.
+      - job_name: cert-manager
+        static_configs: [{targets: ["cert-manager.cert-manager.svc:9402"]}]
+  alerts.yml: |
+    groups:
+      - name: nomadiq
+        rules:
+          - alert: ServicioCaido
+            expr: kube_pod_status_ready{namespace="nomadiq", condition="false"} == 1
+            for: 10m
+            annotations: {summary: "El pod {{ $labels.pod }} lleva 10 minutos sin estar listo"}
+          - alert: ServicioReiniciandose
+            expr: increase(kube_pod_container_status_restarts_total{namespace="nomadiq"}[1h]) > 3
+            annotations: {summary: "{{ $labels.container }} se ha reiniciado más de 3 veces en una hora"}
+          - alert: CopiaFallida
+            expr: kube_job_status_failed{namespace="nomadiq", job_name=~"backup-.*"} > 0
+            annotations: {summary: "La copia de seguridad {{ $labels.job_name }} ha fallado"}
+          - alert: SinCopiaReciente
+            expr: time() - kube_cronjob_status_last_successful_time{namespace="nomadiq", cronjob="backup"} > 36 * 3600
+            annotations: {summary: "No hay copia de seguridad buena desde hace más de 36 horas"}
+          - alert: DiscoCasiLleno
+            expr: kubelet_volume_stats_available_bytes / kubelet_volume_stats_capacity_bytes < 0.15
+            for: 30m
+            annotations: {summary: "El disco {{ $labels.persistentvolumeclaim }} tiene menos del 15 % libre"}
+          - alert: CertificadoCaducando
+            expr: certmanager_certificate_expiration_timestamp_seconds - time() < 14 * 24 * 3600
+            annotations: {summary: "El certificado {{ $labels.name }} caduca en menos de 14 días"}
+          - alert: SinMemoria
+            expr: >-
+              max by (pod, container) (container_memory_working_set_bytes{namespace="nomadiq", container!=""})
+              / max by (pod, container) (kube_pod_container_resource_limits{namespace="nomadiq", resource="memory"}) > 0.9
+            for: 15m
+            annotations: {summary: "{{ $labels.container }} usa más del 90 % de su memoria"}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: nomadiq-monitoring
+spec:
+  selector: {app: prometheus}
+  ports: [{name: http, port: 9090}]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: prometheus
+  namespace: nomadiq-monitoring
+spec:
+  serviceName: prometheus
+  replicas: 1
+  selector:
+    matchLabels: {app: prometheus}
+  template:
+    metadata:
+      labels: {app: prometheus}
+    spec:
+      serviceAccountName: prometheus
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        fsGroup: 65534
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.53.0
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.path=/prometheus
+            # 7 días de historia y como mucho 4 GB: el disco no crece sin fin.
+            - --storage.tsdb.retention.time=7d
+            - --storage.tsdb.retention.size=4GB
+          ports: [{containerPort: 9090}]
+          readinessProbe:
+            httpGet: {path: /-/ready, port: 9090}
+          resources:
+            requests: {cpu: 50m, memory: 256Mi}
+            limits: {cpu: 500m, memory: 768Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: config, mountPath: /etc/prometheus, readOnly: true}
+            - {name: data, mountPath: /prometheus}
+      volumes:
+        - {name: config, configMap: {name: prometheus}}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests: {storage: 5Gi}
+---
+# --- Alertmanager → aviso al móvil con ntfy -------------------------------------
+# La dirección del aviso (con tu tema secreto de ntfy) va en un Secret que
+# crea deploy.sh: así el nombre del tema no queda escrito en GitHub.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager
+  namespace: nomadiq-monitoring
+data:
+  alertmanager.yml: |
+    route:
+      receiver: phone
+      group_by: [alertname]
+      group_wait: 1m
+      group_interval: 10m
+      repeat_interval: 12h
+    receivers:
+      - name: phone
+        webhook_configs:
+          - url_file: /secrets/ntfy-url
+            send_resolved: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: nomadiq-monitoring
+spec:
+  selector: {app: alertmanager}
+  ports: [{name: http, port: 9093}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: nomadiq-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: alertmanager}
+  template:
+    metadata:
+      labels: {app: alertmanager}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        fsGroup: 65534
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.27.0
+          args:
+            - --config.file=/etc/alertmanager/alertmanager.yml
+            - --storage.path=/data
+          ports: [{containerPort: 9093}]
+          resources:
+            requests: {cpu: 20m, memory: 32Mi}
+            limits: {cpu: 200m, memory: 128Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: config, mountPath: /etc/alertmanager, readOnly: true}
+            - {name: secrets, mountPath: /secrets, readOnly: true}
+            - {name: data, mountPath: /data}
+      volumes:
+        - {name: config, configMap: {name: alertmanager}}
+        - {name: secrets, secret: {secretName: alertmanager-ntfy}}
+        - {name: data, emptyDir: {}}

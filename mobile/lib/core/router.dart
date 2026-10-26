@@ -21,6 +21,8 @@ import '../features/flyra/flyra_chat_screen.dart';
 import '../features/group/group_screen.dart';
 import '../features/group/trip_create_screen.dart';
 import '../features/group/trip_screen.dart';
+import '../features/plans/plans_screen.dart';
+import '../features/group_chat/chat_screen.dart';
 import '../features/home/home_screen.dart';
 import '../features/map/map_screen.dart';
 import '../features/money/expense_group_screen.dart';
@@ -29,11 +31,29 @@ import '../features/settings/language_screen.dart';
 import '../features/offline/offline_screen.dart';
 import '../features/easy/easy_home_screen.dart';
 import '../features/cards/cards_screen.dart';
+import '../features/memories/memories_screen.dart';
+import '../features/memories/travel_camera_screen.dart';
+import '../features/airport/airport_screen.dart';
+import '../features/stopover/stopover_screen.dart';
+import '../features/widgets/widgets_screen.dart';
 import '../features/copy_trip/copy_trip_screen.dart';
 import '../features/copy_trip/share_trip_screen.dart';
 import '../features/family/family_screen.dart';
 import '../features/help/help_screen.dart';
+import '../features/nearby/nearby_screen.dart';
+import '../features/meetups/meetups_screen.dart';
+import '../features/drive/drive_screen.dart';
+import '../features/map/geo.dart';
+import '../features/events/events_screen.dart';
+import '../features/stays/stays_screen.dart';
+import '../features/queues/queues_screen.dart';
+import '../features/radar/radar_screen.dart';
+import '../features/transport/transport_screen.dart';
+import '../features/trouble/trouble_screen.dart';
+import '../features/assistant/assistant_screen.dart';
+import '../features/voice/voice_screen.dart';
 import '../features/papers/papers_screen.dart';
+import '../features/visa/visa_screen.dart';
 import '../features/travel_with/travel_with_screen.dart';
 import '../features/passport/passport_screen.dart';
 import '../features/menu/menu_screen.dart';
@@ -70,6 +90,54 @@ abstract final class Routes {
   static const String family = '/family';
   static const String shareTrip = '/copy-trip/share';
   static const String cards = '/cards';
+  static const String memories = '/memories';
+  static const String travelCamera = '/memories/camera';
+  static const String widgets = '/widgets';
+  static const String nearby = '/nearby';
+  static const String drive = '/drive';
+  static const String trouble = '/trouble';
+  static const String assistant = '/assistant';
+  static const String voice = '/voice';
+
+  /// Dormir barato: zonas para dormir cerca de un punto (o de ti, sin punto).
+  static String stays({double? lat, double? lon, String? name}) => Uri(
+    path: '/stays',
+    queryParameters: <String, String>{
+      if (lat != null && lon != null) ...<String, String>{
+        'lat': lat.toStringAsFixed(5),
+        'lon': lon.toStringAsFixed(5),
+      },
+      'name': ?name,
+    },
+  ).toString();
+
+  /// Moverte: del aeropuerto [iata] al hotel, bonos y billetes.
+  static String transport({String? iata}) => Uri(
+    path: '/transport',
+    queryParameters: iata == null ? null : <String, String>{'iata': iata},
+  ).toString();
+
+  /// Sin colas: esperas en los sitios famosos de [city] y mesas con reserva.
+  static String queues({String? city}) => Uri(
+    path: '/queues',
+    queryParameters: city == null ? null : <String, String>{'city': city},
+  ).toString();
+
+  /// Radar local: lluvia real y avisos/precios de otros viajeros en [iata].
+  static String radar({String? iata}) => Uri(
+    path: '/radar',
+    queryParameters: iata == null ? null : <String, String>{'iata': iata},
+  ).toString();
+
+  /// Qué pasa en tus fechas (festivos y eventos de la ciudad [iata]).
+  static String events({String? iata}) => Uri(
+    path: '/events',
+    queryParameters: iata == null ? null : <String, String>{'iata': iata},
+  ).toString();
+  static String meetups({String? city}) => Uri(
+    path: '/meetups',
+    queryParameters: <String, String>{'city': ?city},
+  ).toString();
 
   /// "Copia este viaje"; con [code] abre directamente ese viaje.
   static String copyTrip({String? code}) => Uri(
@@ -114,6 +182,24 @@ abstract final class Routes {
     ).toString();
   }
 
+  /// Aeropuerto: flecha a tu puerta, al baño o a un café.
+  static String airport({String? iata, String? gate}) => Uri(
+    path: '/airport',
+    queryParameters: <String, String>{'iata': ?iata, 'gate': ?gate},
+  ).toString();
+
+  /// Visado: qué te piden para entrar en [to] (código de país, "US").
+  static String visa({String? to}) => Uri(
+    path: '/visa',
+    queryParameters: <String, String>{'to': ?to},
+  ).toString();
+
+  /// Escala de regalo: dónde parar unos días de camino a [to].
+  static String stopover({String? from, String? to}) => Uri(
+    path: '/stopover',
+    queryParameters: <String, String>{'from': ?from, 'to': ?to},
+  ).toString();
+
   /// La Ruta del vuelo en el mapamundi (sin destino, se pregunta).
   static String flightRoute({required String from, String? to}) => Uri(
     path: '/fares/map',
@@ -130,6 +216,16 @@ abstract final class Routes {
   /// Un viaje en grupo por dentro (también al tocar el aviso del resultado).
   static String groupTrip(String id) =>
       '/group/trip/${Uri.encodeComponent(id)}';
+
+  /// El chat del viaje [id] (con Flyra dentro).
+  static String groupChat(String id) =>
+      '/group/trip/${Uri.encodeComponent(id)}/chat';
+
+  /// Elegid planes del viaje [id]; [city] es el destino elegido ("Lisboa").
+  static String groupPlans(String id, {String? city}) => Uri(
+    path: '/group/trip/${Uri.encodeComponent(id)}/plans',
+    queryParameters: <String, String>{'city': ?city},
+  ).toString();
 
   /// El chat con Flyra. Con `question`, la escribe ya en la caja.
   static String flyra({String? question}) => Uri(
@@ -279,6 +375,18 @@ GoRouter buildRouter({
           TripScreen(tripId: state.pathParameters['id'] ?? ''),
     ),
     GoRoute(
+      path: '/group/trip/:id/chat',
+      builder: (BuildContext context, GoRouterState state) =>
+          GroupChatScreen(tripId: state.pathParameters['id'] ?? ''),
+    ),
+    GoRoute(
+      path: '/group/trip/:id/plans',
+      builder: (BuildContext context, GoRouterState state) => PlansScreen(
+        tripId: state.pathParameters['id'] ?? '',
+        city: state.uri.queryParameters['city'],
+      ),
+    ),
+    GoRoute(
       path: Routes.settings,
       builder: (BuildContext context, GoRouterState state) =>
           const SettingsScreen(),
@@ -322,6 +430,126 @@ GoRouter buildRouter({
       path: Routes.help,
       builder: (BuildContext context, GoRouterState state) =>
           const HelpScreen(),
+    ),
+    GoRoute(
+      path: '/airport',
+      builder: (BuildContext context, GoRouterState state) => AirportScreen(
+        iata: state.uri.queryParameters['iata'],
+        gate: state.uri.queryParameters['gate'],
+      ),
+    ),
+    GoRoute(
+      path: Routes.nearby,
+      builder: (BuildContext context, GoRouterState state) =>
+          const NearbyScreen(),
+    ),
+    GoRoute(
+      path: Routes.voice,
+      builder: (BuildContext context, GoRouterState state) =>
+          const VoiceScreen(),
+    ),
+    GoRoute(
+      path: Routes.assistant,
+      builder: (BuildContext context, GoRouterState state) =>
+          const AssistantScreen(),
+    ),
+    GoRoute(
+      path: Routes.trouble,
+      builder: (BuildContext context, GoRouterState state) =>
+          const TroubleScreen(),
+    ),
+    GoRoute(
+      path: Routes.drive,
+      builder: (BuildContext context, GoRouterState state) =>
+          const DriveScreen(),
+    ),
+    GoRoute(
+      path: '/queues',
+      builder: (BuildContext context, GoRouterState state) {
+        final String? city = state.uri.queryParameters['city'];
+        return QueuesScreen(
+          city: city != null && RegExp(r'^[A-Za-z]{3}$').hasMatch(city)
+              ? city.toUpperCase()
+              : null,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/radar',
+      builder: (BuildContext context, GoRouterState state) {
+        final String? iata = state.uri.queryParameters['iata'];
+        return RadarScreen(
+          iata: iata != null && RegExp(r'^[A-Za-z]{3}$').hasMatch(iata)
+              ? iata.toUpperCase()
+              : null,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/transport',
+      builder: (BuildContext context, GoRouterState state) {
+        final String? iata = state.uri.queryParameters['iata'];
+        return TransportScreen(
+          iata: iata != null && RegExp(r'^[A-Za-z]{3}$').hasMatch(iata)
+              ? iata
+              : null,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/events',
+      builder: (BuildContext context, GoRouterState state) {
+        final String? iata = state.uri.queryParameters['iata'];
+        return EventsScreen(
+          iata: iata != null && RegExp(r'^[A-Za-z]{3}$').hasMatch(iata)
+              ? iata
+              : null,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/stays',
+      builder: (BuildContext context, GoRouterState state) {
+        final Map<String, String> q = state.uri.queryParameters;
+        final double? lat = double.tryParse(q['lat'] ?? '');
+        final double? lon = double.tryParse(q['lon'] ?? '');
+        return StaysScreen(
+          target: lat == null || lon == null ? null : GeoPoint(lat, lon),
+          name: q['name'],
+        );
+      },
+    ),
+    GoRoute(
+      path: '/meetups',
+      builder: (BuildContext context, GoRouterState state) =>
+          MeetupsScreen(city: state.uri.queryParameters['city']),
+    ),
+    GoRoute(
+      path: '/visa',
+      builder: (BuildContext context, GoRouterState state) =>
+          VisaScreen(to: state.uri.queryParameters['to']),
+    ),
+    GoRoute(
+      path: '/stopover',
+      builder: (BuildContext context, GoRouterState state) => StopoverScreen(
+        from: state.uri.queryParameters['from'],
+        to: state.uri.queryParameters['to'],
+      ),
+    ),
+    GoRoute(
+      path: Routes.widgets,
+      builder: (BuildContext context, GoRouterState state) =>
+          const WidgetsScreen(),
+    ),
+    GoRoute(
+      path: Routes.memories,
+      builder: (BuildContext context, GoRouterState state) =>
+          const MemoriesScreen(),
+    ),
+    GoRoute(
+      path: Routes.travelCamera,
+      builder: (BuildContext context, GoRouterState state) =>
+          const TravelCameraScreen(),
     ),
     GoRoute(
       path: Routes.cards,

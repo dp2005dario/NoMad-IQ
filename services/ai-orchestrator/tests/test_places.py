@@ -165,6 +165,7 @@ async def test_builds_a_card_from_wikidata_and_wikipedia() -> None:
     assert card.country.languages == ["español"]  # "Q12345" no es un nombre
     assert [a.name for a in card.attractions] == ["Museo del Prado", "Parque del Retiro"]
     assert card.attractions[0].photo is not None
+    assert card.attractions[0].wikidata_id == "Q160112"
     assert card.photo is not None and card.photo.url.startswith("https://upload.wikimedia.org/")
     assert "MAD:es" in cache.cards
 

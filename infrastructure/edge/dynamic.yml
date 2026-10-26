@@ -64,11 +64,11 @@ http:
       middlewares: [strip-identity, rate-limit, small-body, authenticated]
       service: geo-engine
 
-    # Audioguías, recomendaciones, negociación de grupo, chat con Flyra, modo cámara, gastos compartidos
+    # Audioguías, recomendaciones, negociación de grupo, chat con Flyra, modo cámara, gastos compartidos, quedadas
     # y "borrar mis datos" (ai-orchestrator).
     ai:
       entryPoints: [web]
-      rule: PathPrefix(`/v1/audioguides`) || PathPrefix(`/v1/recommendations`) || PathPrefix(`/v1/group-negotiations`) || Path(`/v1/flyra/chat`) || Path(`/v1/menu/translate`) || PathPrefix(`/v1/landmarks`) || PathPrefix(`/v1/expense-groups`) || PathPrefix(`/v1/shared-trips`) || PathPrefix(`/v1/leagues`) || Path(`/v1/me/data`)
+      rule: PathPrefix(`/v1/audioguides`) || PathPrefix(`/v1/recommendations`) || PathPrefix(`/v1/group-negotiations`) || Path(`/v1/flyra/chat`) || Path(`/v1/menu/translate`) || PathPrefix(`/v1/landmarks`) || PathPrefix(`/v1/expense-groups`) || PathPrefix(`/v1/shared-trips`) || PathPrefix(`/v1/leagues`) || PathPrefix(`/v1/meetups`) || PathPrefix(`/v1/radar`) || PathPrefix(`/v1/queues`) || Path(`/v1/me/data`)
       middlewares: [strip-identity, rate-limit, small-body, authenticated]
       service: ai-orchestrator
 
@@ -101,6 +101,54 @@ http:
     atms:
       entryPoints: [web]
       rule: Method(`GET`) && Path(`/v1/atms`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
+    # Cerca de ti (OpenStreetMap): agua, baños, wifi, enchufes y sitios que
+    # ver. Público como los cajeros; la app manda la casilla de ~1 km.
+    nearby:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/nearby`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
+    # Modo coche (OpenStreetMap): gasolineras, aparcamientos, cargadores y
+    # zonas ZTL/ZBE. Público; la app manda una casilla de ~5 km.
+    drive:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/drive`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
+    # Dormir barato (OpenStreetMap): estaciones con alojamientos cerca del
+    # sitio al que vas. Público; la app manda una casilla de ~2 km.
+    stays:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/stays`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
+    # Radar local: lluvia de las próximas horas (MET Norway). Público; la app
+    # manda una casilla de ~5 km.
+    rain:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/rain`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
+    # Qué pasa en tus fechas: festivos y eventos de una ciudad. Público; la
+    # app manda solo el aeropuerto y las fechas.
+    city-events:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/events`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
+    # Guía del aeropuerto (OpenStreetMap): pública como los cajeros. Solo GET
+    # y solo /v1/airports/<código>/spots.
+    airport-guide:
+      entryPoints: [web]
+      rule: Method(`GET`) && PathRegexp(`^/v1/airports/[A-Za-z]{3}/spots$`)
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 

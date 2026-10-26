@@ -92,3 +92,17 @@ de la maleta se guarda **solo en tu teléfono**.
   factores de emisión que usa casi todo el mundo para estas cuentas.
 - **NASA POWER**: un servicio gratuito de la NASA con medias de temperatura y
   lluvia de todo el planeta, calculadas con satélites.
+
+## Enchufes
+
+La sección **Enchufes** dibuja los enchufes del país al que vas (tipo A, C,
+G...) para reconocer el adaptador en la tienda, y dice:
+
+- "Compra un adaptador para enchufes tipo G" o "no necesitas adaptador",
+  comparando con los de tu país.
+- El voltaje de allí y, si es distinto del tuyo, que mires la etiqueta del
+  cargador (100-240 V = vale; si no, transformador).
+
+Los dibujos están en `mobile/lib/features/trip/plug_painter.dart` (son
+sencillos, para reconocer la forma, no planos a escala). Los datos por
+país, en `plugs.dart`.

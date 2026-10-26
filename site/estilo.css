@@ -1,0 +1,19 @@
+/* Estilo común de las páginas legales de NomadIQ (GitHub Pages).
+   Sencillo a propósito: se lee bien en el móvil y en modo oscuro. */
+:root { --fondo: #ffffff; --texto: #1d2433; --suave: #5b6478; --acento: #2457d6; --borde: #e3e7ef; }
+@media (prefers-color-scheme: dark) {
+  :root { --fondo: #10141c; --texto: #e8ecf4; --suave: #9aa3b5; --acento: #7ea2ff; --borde: #263042; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--fondo); color: var(--texto);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 1.8rem; line-height: 1.2; margin: 0 0 4px; }
+h2 { font-size: 1.25rem; margin: 32px 0 8px; }
+.fecha, small { color: var(--suave); }
+a { color: var(--acento); }
+nav { display: flex; gap: 16px; flex-wrap: wrap; padding: 12px 16px; border-bottom: 1px solid var(--borde); }
+table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+th, td { text-align: left; vertical-align: top; padding: 8px; border-bottom: 1px solid var(--borde); }
+.tabla { overflow-x: auto; }
+.caja { border: 1px solid var(--borde); border-radius: 12px; padding: 12px 16px; margin: 16px 0; }

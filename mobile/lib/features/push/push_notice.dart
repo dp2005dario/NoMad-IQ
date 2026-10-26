@@ -15,7 +15,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import '../../core/router.dart';
-import '../coming_soon/coming_soon_screen.dart' show Feature;
 import 'hpke.dart';
 import 'push_state.dart';
 
@@ -25,6 +24,8 @@ enum PushKind {
   airportArrival, // "Bienvenido": transporte, eSIM...
   zoneSafety, // aviso de seguridad (urgente)
   fareAlert, // un vuelo que vigilas ha bajado de precio
+  groupChat, // mensajes nuevos en el chat de un viaje en grupo
+  groupResult, // el viaje en grupo ya tiene destino
 }
 
 /// Por qué salta una alerta de precio.
@@ -131,7 +132,8 @@ class PushNotice {
 
   final PushKind kind;
 
-  /// La zona del aviso ('' en las alertas de precio).
+  /// La zona del aviso; en los avisos de grupo, el viaje (negotiation_id);
+  /// '' en las alertas de precio.
   final String zoneId;
 
   /// Solo en las alertas de precio.
@@ -153,11 +155,16 @@ class PushNotice {
   String get route => switch (kind) {
     // El nombre de la zona no viaja en el aviso: la audioguía lo pide luego.
     PushKind.zoneAudioguide => Routes.audioguide(zoneId, ''),
-    PushKind.airportArrival => Routes.soon(Feature.transport),
+    PushKind.airportArrival => Routes.transport(),
     PushKind.zoneSafety => Routes.map,
     // La lista de tus alertas de precio (con el botón de reservar).
     PushKind.fareAlert => Routes.fareAlerts,
+    PushKind.groupChat => Routes.groupChat(zoneId),
+    PushKind.groupResult => Routes.groupTrip(zoneId),
   };
+
+  bool get isGroup =>
+      kind == PushKind.groupChat || kind == PushKind.groupResult;
 
   /// Un aviso antiguo (el móvil estuvo apagado) ya no sirve de nada.
   static const Duration maxAge = Duration(hours: 1);
@@ -166,7 +173,8 @@ class PushNotice {
   /// pena unas horas después (el servidor también las guarda 6 h).
   static const Duration fareMaxAge = Duration(hours: 6);
 
-  Duration get _maxAge => kind == PushKind.fareAlert ? fareMaxAge : maxAge;
+  Duration get _maxAge =>
+      kind == PushKind.fareAlert || isGroup ? fareMaxAge : maxAge;
 
   static final RegExp _uuid = RegExp(
     r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
@@ -183,6 +191,8 @@ class PushNotice {
       'airport_arrival' => PushKind.airportArrival,
       'zone_safety' => PushKind.zoneSafety,
       'fare_alert' => PushKind.fareAlert,
+      'group_chat' => PushKind.groupChat,
+      'group_result' => PushKind.groupResult,
       _ => null,
     };
     final Object? at = json['at'];
@@ -198,6 +208,13 @@ class PushNotice {
         at: when,
         fare: fare,
       );
+    }
+    if (kind == PushKind.groupChat || kind == PushKind.groupResult) {
+      // Solo el id del viaje: el texto lo pone la app y el chat se lee al
+      // abrirlo.
+      final Object? trip = json['negotiation_id'];
+      if (trip is! String || !_uuid.hasMatch(trip)) return null;
+      return PushNotice(kind: kind, zoneId: trip, language: '', at: when);
     }
     final Object? zoneId = json['zone_id'];
     final Object? lang = json['lang'];

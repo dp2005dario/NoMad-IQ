@@ -192,3 +192,18 @@ hacia dónde vas con tres ritmos: seguir igual, un 25 % menos o la mitad.
 
 Para probarlo en VS Code: `pytest tests/test_atms.py -q` (servidor) y
 `flutter test test/abroad_test.dart` (app).
+
+## Divisas: bandera, país y billetes
+
+- Cada moneda sale con su **bandera** y su **país** en tu idioma
+  ("🇬🇧 GBP · Reino Unido"; el euro, "🇪🇺 EUR · Zona euro"). La bandera es
+  un emoji: no hace falta ninguna imagen.
+- Al convertir, la tarjeta **"En billetes"** enseña cómo juntar la cantidad:
+  la forma con menos billetes y otras sin los más grandes (50 € = 1 de 50,
+  o 2 de 20 y 1 de 10, o 5 de 10). Lo que no llega a billete, "en monedas".
+- Los billetes se **dibujan** con su valor: no son fotos de billetes reales
+  (muchos bancos centrales no permiten reproducirlos).
+- Solo hay billetes de las monedas de la tabla
+  `mobile/lib/features/money/banknotes.dart`, cada una con la web de su
+  banco central ("Billetes según el banco central"). Si una moneda no está,
+  no se enseñan billetes: nunca uno inventado.

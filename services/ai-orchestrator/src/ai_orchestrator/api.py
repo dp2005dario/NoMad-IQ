@@ -39,7 +39,7 @@ from __future__ import annotations
 import logging
 import uuid
 from collections.abc import Awaitable, Callable
-from datetime import datetime
+from datetime import UTC, date, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Path, Query, Request, Response
@@ -48,15 +48,27 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from ai_orchestrator.airport_guide.domain import AirportGuide
+from ai_orchestrator.airport_guide.service import (
+    AirportGuideService,
+    GuideBusyError,
+    GuideUnavailableError,
+    UnknownAirportError,
+)
 from ai_orchestrator.atms.domain import Atms
 from ai_orchestrator.atms.service import AtmBusyError, AtmService, AtmUnavailableError
 from ai_orchestrator.audioguides.audio_catalog import AudioCatalog, AudioLookup
 from ai_orchestrator.audioguides.cache import CacheError
 from ai_orchestrator.audioguides.domain import AudioguideScript
 from ai_orchestrator.audioguides.service import AudioguideService
+from ai_orchestrator.city_events.domain import CityEvents
+from ai_orchestrator.city_events.service import BadDatesError, CityEventService
+from ai_orchestrator.city_events.service import UnknownAirportError as UnknownEventAirportError
 from ai_orchestrator.climate.domain import Climate
 from ai_orchestrator.climate.service import ClimateBusyError, ClimateService, ClimateUnavailableError
 from ai_orchestrator.domain import Recommendation, Verdict
+from ai_orchestrator.drive.domain import DriveArea
+from ai_orchestrator.drive.service import DriveBusyError, DriveService, DriveUnavailableError
 from ai_orchestrator.erasure import UserDataEraser
 from ai_orchestrator.flyra.domain import ChatReply, ChatRequest
 from ai_orchestrator.flyra.service import FlyraBusyError, FlyraService
@@ -66,9 +78,14 @@ from ai_orchestrator.landmarks.domain import Landmark, Recognition, RecognizeReq
 from ai_orchestrator.landmarks.service import LandmarkBusyError, LandmarkService
 from ai_orchestrator.menu.domain import MenuReply, MenuRequest
 from ai_orchestrator.menu.service import MenuBusyError, MenuService
+from ai_orchestrator.nearby.domain import Nearby
+from ai_orchestrator.nearby.service import NearbyBusyError, NearbyService, NearbyUnavailableError
 from ai_orchestrator.places.domain import PlaceCard
 from ai_orchestrator.places.service import PlaceBusyError, PlaceService, PlaceUnavailableError
 from ai_orchestrator.quota import QuotaExceededError
+from ai_orchestrator.radar.rain import RainBusyError, RainError, RainForecast, RainService
+from ai_orchestrator.stays.domain import StayArea
+from ai_orchestrator.stays.service import StayBusyError, StayService, StayUnavailableError
 from ai_orchestrator.store import RecommendationStore, StoreError
 from ai_orchestrator.streetview.domain import StreetPhotos
 from ai_orchestrator.streetview.service import StreetBusyError, StreetUnavailableError, StreetViewService
@@ -206,6 +223,16 @@ STREET_CACHE = "public, max-age=3600"
 FX_CACHE = "public, max-age=3600"
 # Los cajeros casi nunca cambian: seis horas en el móvil y en la CDN.
 ATM_CACHE = "public, max-age=21600"
+# "Cerca de ti": lo gratis de una ciudad casi no cambia (un día en el móvil).
+NEARBY_CACHE = "public, max-age=86400"
+DRIVE_CACHE = "public, max-age=86400"
+STAYS_CACHE = "public, max-age=86400"
+# Eventos: una hora (Ticketmaster añade eventos durante el día).
+EVENTS_CACHE = "public, max-age=3600"
+# Lluvia: 10 minutos (MET actualiza cada poco).
+RAIN_CACHE = "public, max-age=600"
+# La guía de un aeropuerto: un día en el móvil (en el servidor, un mes).
+AIRPORT_CACHE = "public, max-age=86400"
 # El clima medio no cambia: el móvil puede guardarlo una semana.
 CLIMATE_CACHE = "public, max-age=604800"
 # "Esta ciudad no tiene ficha" se recuerda menos (por si aparece).
@@ -221,6 +248,9 @@ def create_api(
     expenses: APIRouter | None = None,
     shared_trips: APIRouter | None = None,
     leagues: APIRouter | None = None,
+    plans: APIRouter | None = None,
+    group_chat: APIRouter | None = None,
+    meetups: APIRouter | None = None,
     places: PlaceService | None = None,
     streetview: StreetViewService | None = None,
     flyra: FlyraService | None = None,
@@ -228,7 +258,15 @@ def create_api(
     landmarks: LandmarkService | None = None,
     fx: FxService | None = None,
     atms: AtmService | None = None,
+    nearby: NearbyService | None = None,
+    drive: DriveService | None = None,
+    stays: StayService | None = None,
+    airport_guide: AirportGuideService | None = None,
     climate: ClimateService | None = None,
+    city_events: CityEventService | None = None,
+    rain: RainService | None = None,
+    radar: APIRouter | None = None,
+    queues: APIRouter | None = None,
     eraser: UserDataEraser | None = None,
     expose_docs: bool = False,
 ) -> FastAPI:
@@ -391,6 +429,71 @@ def create_api(
             # Sin cajeros también es 200 (lista vacía): la app lo explica.
             return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": ATM_CACHE})
 
+    if nearby is not None:
+
+        @app.get("/v1/nearby", response_model=Nearby)
+        async def get_nearby(
+            lat: Annotated[float, Query(ge=-85, le=85)],
+            lon: Annotated[float, Query(ge=-180, le=180)],
+        ) -> JSONResponse:
+            try:
+                found = await nearby.near(lat, lon)
+            except (NearbyBusyError, NearbyUnavailableError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "cerca de ti ocupado")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            # Sin sitios también es 200 (lista vacía): la app lo explica.
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": NEARBY_CACHE})
+
+    if drive is not None:
+
+        @app.get("/v1/drive", response_model=DriveArea)
+        async def get_drive(
+            lat: Annotated[float, Query(ge=-85, le=85)],
+            lon: Annotated[float, Query(ge=-180, le=180)],
+        ) -> JSONResponse:
+            try:
+                found = await drive.around(lat, lon)
+            except (DriveBusyError, DriveUnavailableError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "modo coche ocupado")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": DRIVE_CACHE})
+
+    if stays is not None:
+
+        @app.get("/v1/stays", response_model=StayArea)
+        async def get_stays(
+            lat: Annotated[float, Query(ge=-85, le=85)],
+            lon: Annotated[float, Query(ge=-180, le=180)],
+        ) -> JSONResponse:
+            # Público (también para invitados): es el sitio al que vas, no
+            # dónde estás, y va en casillas de ~2 km.
+            try:
+                found = await stays.around(lat, lon)
+            except (StayBusyError, StayUnavailableError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "dormir barato ocupado")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": STAYS_CACHE})
+
+    if airport_guide is not None:
+
+        @app.get("/v1/airports/{iata}/spots", response_model=AirportGuide)
+        async def get_airport_spots(
+            iata: Annotated[str, Path(pattern="^[A-Za-z]{3}$")],
+        ) -> JSONResponse:
+            try:
+                guide = await airport_guide.guide(iata)
+            except UnknownAirportError:
+                return _problem(404, "No encontrado", "ese aeropuerto no está en la lista")
+            except (GuideBusyError, GuideUnavailableError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "guía del aeropuerto ocupada")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            # Sin sitios también es 200 (lista vacía): la app lo explica.
+            return JSONResponse(guide.model_dump(mode="json"), headers={"Cache-Control": AIRPORT_CACHE})
+
     if climate is not None:
 
         @app.get("/v1/climate", response_model=Climate)
@@ -407,6 +510,47 @@ def create_api(
                 resp.headers["Retry-After"] = "60"
                 return resp
             return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": CLIMATE_CACHE})
+
+    if rain is not None:
+
+        @app.get("/v1/rain", response_model=RainForecast)
+        async def get_rain(
+            lat: Annotated[float, Query(ge=-85, le=85)],
+            lon: Annotated[float, Query(ge=-180, le=180)],
+        ) -> JSONResponse:
+            # Pública: la previsión de una casilla de ~5 km, igual para todos.
+            try:
+                found = await rain.at(lat, lon)
+            except (RainBusyError, RainError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "previsión no disponible")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": RAIN_CACHE})
+
+    if radar is not None:
+        # Avisos de timos y precios de viajeros (/v1/radar) en radar/api.py.
+        app.include_router(radar)
+    if queues is not None:
+        # Esperas que avisan los viajeros (/v1/queues) en queues/api.py.
+        app.include_router(queues)
+
+    if city_events is not None:
+
+        @app.get("/v1/events", response_model=CityEvents)
+        async def get_events(
+            iata: Annotated[str, Query(pattern="^[A-Za-z]{3}$")],
+            start: Annotated[date, Query(alias="from")],
+            end: Annotated[date, Query(alias="to")],
+        ) -> JSONResponse:
+            # Pública (también para invitados): festivos y eventos de una
+            # ciudad, iguales para todos. No dice nada de quién pregunta.
+            try:
+                found = await city_events.between(iata.upper(), start, end, today=datetime.now(UTC).date())
+            except UnknownEventAirportError:
+                return _problem(404, "No encontrado", "ese aeropuerto no está en la lista")
+            except BadDatesError as exc:
+                return _problem(400, "Fechas no válidas", str(exc))
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": EVENTS_CACHE})
 
     if fx is not None:
 
@@ -524,6 +668,18 @@ def create_api(
     if leagues is not None:
         # Las rutas /v1/leagues ("Cromos con amigos") viven en leagues/api.py.
         app.include_router(leagues)
+
+    if plans is not None:
+        # "Elegid planes" (/v1/group-negotiations/{id}/plans) vive en plans/api.py.
+        app.include_router(plans)
+
+    if group_chat is not None:
+        # El chat del viaje (/v1/group-negotiations/{id}/chat) vive en group_chat/api.py.
+        app.include_router(group_chat)
+
+    if meetups is not None:
+        # Las quedadas (/v1/meetups) viven en meetups/api.py.
+        app.include_router(meetups)
 
     if negotiations is not None:
         # Las rutas /v1/group-negotiations viven en negotiation/api.py.

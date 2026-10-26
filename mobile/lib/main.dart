@@ -17,10 +17,15 @@ import 'features/vault/doc_source.dart';
 import 'features/vault/vault.dart';
 import 'features/vault/vault_store.dart';
 import 'features/camera/camera_device.dart';
+import 'features/assistant/interpreter.dart';
 import 'features/camera/speaker.dart';
 import 'core/settings.dart';
 import 'features/audioguide/guide_player.dart';
 import 'features/family/family.dart';
+import 'features/queues/reminders.dart';
+import 'features/widgets/home_widgets.dart';
+import 'features/memories/memories.dart';
+import 'features/memories/travel_camera.dart';
 import 'features/map/location.dart';
 import 'features/map/map_style.dart';
 import 'features/map/map_surface.dart';
@@ -81,7 +86,15 @@ Future<void> main() async {
         WebScene(html: html, onMessage: onMessage),
     newPlayer: JustAudioGuidePlayer.new,
     newCamera: DeviceCamera.new,
+    newTravelCamera: DeviceTravelCamera.new,
+    memoryFiles: AppMemoryFiles(),
+    homeWidgets: DeviceHomeWidgets(),
+    liveFlight: DeviceLiveFlight(),
+    reminders: DeviceReminders(),
+    syncWidgetsOnStart: true,
     speaker: DeviceSpeaker(),
+    translator: MlKitTranslator(),
+    speechInput: DeviceSpeechInput(),
     receipts: DeviceReceiptScanner(),
     docSource: DeviceDocSource(),
     docReader: const DeviceDocTextReader(),

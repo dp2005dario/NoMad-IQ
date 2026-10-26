@@ -1,7 +1,9 @@
 // Los números de emergencia de cada país y cómo se dice "¡Ayuda!" allí.
 //
-// Van dentro de la app: en un apuro puede no haber Internet. Fuentes: las
-// webs oficiales de emergencias de cada país y la lista de la UE (112).
+// Van dentro de la app: en un apuro puede no haber Internet. Fuente: la
+// "List of emergency telephone numbers" de Wikipedia (que cita las webs
+// oficiales de cada país), comprobada el 25-10-2026. La app enseña el
+// enlace para que cualquiera lo verifique.
 // Si un país no está en la tabla, se usa el 112: los móviles GSM lo
 // desvían al número local en la mayor parte del mundo.
 
@@ -21,6 +23,9 @@ class EmergencyNumbers {
   final String? fire;
 }
 
+const String emergencySource =
+    'https://en.wikipedia.org/wiki/List_of_emergency_telephone_numbers';
+
 const EmergencyNumbers _eu = EmergencyNumbers('112');
 const EmergencyNumbers fallbackNumbers = EmergencyNumbers('112');
 
@@ -32,9 +37,10 @@ emergencyNumbers = <String, EmergencyNumbers>{
   'HU': _eu, 'IE': _eu, 'IT': _eu, 'LV': _eu, 'LT': _eu, 'LU': _eu,
   'MT': _eu, 'NL': _eu, 'PL': _eu, 'PT': _eu, 'RO': _eu, 'SK': _eu,
   'SI': _eu, 'ES': _eu, 'SE': _eu, 'IS': _eu, 'TR': _eu, 'RU': _eu,
-  'UA': _eu, 'IN': _eu,
   'NO': EmergencyNumbers('112', police: '112', ambulance: '113', fire: '110'),
   'CH': EmergencyNumbers('112', police: '117', ambulance: '144', fire: '118'),
+  'UA': EmergencyNumbers('112', police: '102', ambulance: '103', fire: '101'),
+  'IN': EmergencyNumbers('112', ambulance: '108', fire: '101'),
   'GB': EmergencyNumbers('999'),
   // América
   'US': EmergencyNumbers('911'), 'CA': EmergencyNumbers('911'),
@@ -45,9 +51,9 @@ emergencyNumbers = <String, EmergencyNumbers>{
   'AR': EmergencyNumbers('911', ambulance: '107', fire: '100'),
   'BR': EmergencyNumbers('190', police: '190', ambulance: '192', fire: '193'),
   'CL': EmergencyNumbers('133', police: '133', ambulance: '131', fire: '132'),
-  'CO': EmergencyNumbers('123'),
-  'PE': EmergencyNumbers('105', police: '105', ambulance: '106', fire: '116'),
-  'BO': EmergencyNumbers('110', police: '110', ambulance: '118', fire: '119'),
+  'CO': EmergencyNumbers('123', police: '112', ambulance: '125', fire: '119'),
+  'PE': EmergencyNumbers('911', ambulance: '106', fire: '116'),
+  'BO': EmergencyNumbers('911', ambulance: '118', fire: '119'),
   'CU': EmergencyNumbers('106', police: '106', ambulance: '104', fire: '105'),
   // Asia y Oceanía
   'JP': EmergencyNumbers('110', police: '110', ambulance: '119', fire: '119'),
@@ -57,7 +63,7 @@ emergencyNumbers = <String, EmergencyNumbers>{
   'KR': EmergencyNumbers('112', police: '112', ambulance: '119', fire: '119'),
   'TH': EmergencyNumbers('191', police: '191', ambulance: '1669', fire: '199'),
   'VN': EmergencyNumbers('113', police: '113', ambulance: '115', fire: '114'),
-  'ID': EmergencyNumbers('112'),
+  'ID': EmergencyNumbers('112', ambulance: '118', fire: '113'),
   'PH': EmergencyNumbers('911'),
   'MY': EmergencyNumbers('999'),
   'SG': EmergencyNumbers('999', police: '999', ambulance: '995', fire: '995'),
@@ -65,7 +71,7 @@ emergencyNumbers = <String, EmergencyNumbers>{
   'NZ': EmergencyNumbers('111'),
   // Oriente Medio y África
   'AE': EmergencyNumbers('999', police: '999', ambulance: '998', fire: '997'),
-  'SA': EmergencyNumbers('911'),
+  'SA': EmergencyNumbers('911', ambulance: '997', fire: '998'),
   'IL': EmergencyNumbers('100', police: '100', ambulance: '101', fire: '102'),
   'EG': EmergencyNumbers('122', police: '122', ambulance: '123', fire: '180'),
   'MA': EmergencyNumbers('19', police: '19', ambulance: '15', fire: '15'),

@@ -36,9 +36,20 @@ docker compose exec kafka /opt/kafka/bin/kafka-console-consumer.sh \
 
 ## Desarrollo frente a producción
 
-Este compose es para desarrollo. En producción (Kubernetes) cambian varias cosas:
+Este compose es para desarrollo. Producción vive en [`production/`](production/)
+y se explica paso a paso en [`docs/guia-produccion.md`](../docs/guia-produccion.md):
 
-- Kafka con 3+ brokers, `replication-factor=3`, `min.insync.replicas=2` y listeners con mTLS.
-- PostgreSQL gestionado o con réplicas, y cifrado del disco (AES-256 en reposo).
-- Redis Cluster en lugar de un nodo.
-- Secretos desde un gestor (Kubernetes Secrets + Sealed Secrets / Vault), nunca ficheros `.env`.
+- **k3s** (Kubernetes ligero) en una máquina **Oracle Always Free** ARM
+  (2 núcleos, 12 GB): 0 €, sin pasar la cuenta a pago por uso.
+- **Puerta "edge"** con https (Let's Encrypt, TLS 1.3) y las MISMAS reglas que
+  `edge/dynamic.yml` (las convierte `production/render_edge.py`).
+- **mTLS interno** con certificados de cert-manager (renovación automática);
+  PostgreSQL y Redis solo aceptan TLS; Kafka con TLS + NetworkPolicies.
+- **Copias cifradas** cada noche a Oracle Object Storage (rclone crypt, 14 días).
+- **Vigilancia**: Prometheus + Alertmanager → avisos al móvil con ntfy.
+- **Secretos** solo en el servidor (`secrets.env`, ignorado por git) → Kubernetes
+  Secrets cifrados en disco.
+
+Límites (una sola máquina, Kafka sin réplica, IA sin GPU) en la guía. Los
+manifiestos de `production/k8s/` sirven para un clúster más grande cambiando
+réplicas y tamaños.

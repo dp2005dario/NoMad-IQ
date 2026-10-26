@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Datos del widget para Android: tamaño, vista previa y descripción (la
+     que sale en la lista de widgets del móvil, traducida en values-xx).
+     updatePeriodMillis="0": no se despierta cada X minutos; la app le dice
+     las horas exactas en que cambia (gasta menos batería). -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="180dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="3"
+    android:targetCellHeight="2"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/nomad_widget"
+    android:previewLayout="@layout/nomad_widget"
+    android:description="@string/widget_budget_desc" />

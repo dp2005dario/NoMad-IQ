@@ -1,0 +1,7 @@
+# Copia este archivo como "key.properties" (en esta misma carpeta android/)
+# y rellénalo. key.properties está en .gitignore: NUNCA lo subas a git.
+# Cómo crear la llave: docs/guia-play-store.md
+storeFile=/ruta/completa/a/nomadiq-upload.jks
+storePassword=
+keyAlias=upload
+keyPassword=

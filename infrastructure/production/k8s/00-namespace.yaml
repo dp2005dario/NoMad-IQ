@@ -1,0 +1,20 @@
+# El "barrio" de NomadIQ dentro de Kubernetes: todo lo nuestro vive aquí.
+# "restricted" = Kubernetes rechaza cualquier pod que intente ser root,
+# ganar privilegios o tocar la máquina (las normas más estrictas que hay).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nomadiq
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+---
+# La vigilancia (Prometheus) va aparte. "baseline" porque kube-state-metrics
+# y Prometheus no necesitan nada raro, pero así no mezclamos permisos.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nomadiq-monitoring
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest

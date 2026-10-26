@@ -225,6 +225,13 @@ void main() {
     // Fuera de la UE: avisa de la eSIM, y pide adaptador para Japón.
     expect(find.textContaining('eSIM'), findsWidgets);
     expect(find.textContaining('Adaptador de enchufe'), findsOneWidget);
+    // La sección de enchufes: el dibujo de los de Japón y qué comprar.
+    expect(find.text('Tipo A'), findsOneWidget);
+    expect(find.text('Tipo B'), findsOneWidget);
+    expect(
+      find.text('Compra un adaptador para enchufes tipo A, B'),
+      findsOneWidget,
+    );
     expect(find.text('Seguro de viaje'), findsOneWidget);
     // La huella: el vuelo, la escala y el coche, con el aviso de estimación.
     expect(find.textContaining('kg CO₂'), findsNWidgets(3));

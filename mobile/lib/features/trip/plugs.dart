@@ -20,6 +20,13 @@ class Power {
   bool needsTransformerFrom(Power other) => (volts - other.volts).abs() > 60;
 }
 
+/// De dónde salen los datos: la tabla "Mains electricity by country" de
+/// Wikipedia, basada en la guía oficial IEC World Plugs (de la Comisión
+/// Electrotécnica Internacional). Comprobada el 25-10-2026. La app enseña
+/// este enlace junto al enchufe para que cualquiera lo pueda verificar.
+const String powerSource =
+    'https://en.wikipedia.org/wiki/Mains_electricity_by_country';
+
 /// Enchufe y tensión por país (código ISO de dos letras).
 const Map<String, Power> powerByCountry = <String, Power>{
   'AE': Power('G', 230),
@@ -31,9 +38,9 @@ const Map<String, Power> powerByCountry = <String, Power>{
   'BR': Power('C/N', 127),
   'CA': Power('A/B', 120),
   'CH': Power('C/J', 230),
-  'CL': Power('C/L', 220),
-  'CN': Power('A/C/I', 220),
-  'CO': Power('A/B', 110),
+  'CL': Power('C/F/L', 220),
+  'CN': Power('A/I', 220),
+  'CO': Power('A/B', 120),
   'CZ': Power('C/E', 230),
   'DE': Power('C/F', 230),
   'DK': Power('C/E/F/K', 230),
@@ -49,7 +56,7 @@ const Map<String, Power> powerByCountry = <String, Power>{
   'HU': Power('C/F', 230),
   'ID': Power('C/F', 230),
   'IE': Power('G', 230),
-  'IL': Power('C/H/M', 230),
+  'IL': Power('C/H', 230),
   'IN': Power('C/D/M', 230),
   'IS': Power('C/F', 230),
   'IT': Power('C/F/L', 230),
@@ -60,28 +67,28 @@ const Map<String, Power> powerByCountry = <String, Power>{
   'LV': Power('C/F', 230),
   'MA': Power('C/E', 220),
   'MX': Power('A/B', 127),
-  'MY': Power('G', 240),
+  'MY': Power('C/G/M', 230),
   'NL': Power('C/F', 230),
   'NO': Power('C/F', 230),
   'NZ': Power('I', 230),
   'PE': Power('A/B/C', 220),
-  'PH': Power('A/B/C', 220),
+  'PH': Power('A/B/C', 230),
   'PL': Power('C/E', 230),
-  'PT': Power('C/F', 230),
-  'QA': Power('G', 240),
+  'PT': Power('C/E/F', 230),
+  'QA': Power('D/F/G/L', 240),
   'RO': Power('C/F', 230),
   'RS': Power('C/F', 230),
   'SA': Power('G', 230),
   'SE': Power('C/F', 230),
-  'SG': Power('G', 230),
+  'SG': Power('C/G/M', 230),
   'SI': Power('C/F', 230),
-  'SK': Power('C/E', 230),
+  'SK': Power('C/E/F', 230),
   'TH': Power('A/B/C/O', 230),
   'TR': Power('C/F', 230),
   'TW': Power('A/B', 110),
   'US': Power('A/B', 120),
-  'VN': Power('A/C/F', 220),
-  'ZA': Power('D/M/N', 230),
+  'VN': Power('A/B/C/F', 220),
+  'ZA': Power('C/M/N', 230),
 };
 
 Power? powerOf(String? isoCountry) =>

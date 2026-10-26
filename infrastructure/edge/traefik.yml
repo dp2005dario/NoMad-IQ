@@ -55,6 +55,14 @@ log:
 accessLog:
   format: json
   fields:
+    # Ni la IP de quien llama ni la ruta (puede llevar coordenadas, como
+    # /v1/nearby?lat=...): datos personales que no hacen falta para ver fallos.
+    names:
+      ClientAddr: drop
+      ClientHost: drop
+      ClientPort: drop
+      ClientUsername: drop
+      RequestPath: drop
     headers:
       defaultMode: drop
 

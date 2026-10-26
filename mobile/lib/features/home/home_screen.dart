@@ -115,6 +115,69 @@ class HomeScreen extends StatelessWidget {
                     label: t.copyTitle,
                     onTap: () => context.push(Routes.copyTrip()),
                   ),
+                  // Tus fotos y vídeos del viaje y la historia automática.
+                  _Shortcut(
+                    icon: Icons.photo_library_rounded,
+                    color: NomadColors.mint,
+                    label: t.memTitle,
+                    onTap: () => context.push(Routes.memories),
+                  ),
+                  // Flecha a tu puerta, al baño o a un café en el aeropuerto.
+                  _Shortcut(
+                    icon: Icons.local_airport_rounded,
+                    color: NomadColors.flights,
+                    label: t.airportTitle,
+                    onTap: () => context.push(Routes.airport()),
+                  ),
+                  // Qué te piden para entrar en otro país (ESTA, eTA...).
+                  _Shortcut(
+                    icon: Icons.verified_user_rounded,
+                    color: NomadColors.flights,
+                    label: t.visaTitle,
+                    onTap: () => context.push(Routes.visa()),
+                  ),
+                  // Preguntarle a Flyra en voz alta (o escrito).
+                  _Shortcut(
+                    icon: Icons.mic_rounded,
+                    color: NomadColors.group,
+                    label: t.voiceTitle,
+                    onTap: () => context.push(Routes.voice),
+                  ),
+                  // Intérprete cara a cara (sin internet) y "¿qué es esto?".
+                  _Shortcut(
+                    icon: Feature.assistant.icon,
+                    color: Feature.assistant.color,
+                    label: Feature.assistant.label(t),
+                    onTap: () => context.push(Routes.assistant),
+                  ),
+                  // Maleta perdida o escala perdida: qué hacer y la reclamación.
+                  _Shortcut(
+                    icon: Icons.report_problem_rounded,
+                    color: NomadColors.safety,
+                    label: t.troubleShort,
+                    onTap: () => context.push(Routes.trouble),
+                  ),
+                  // Gasolineras, aparcamientos y zonas ZTL mientras conduces.
+                  _Shortcut(
+                    icon: Icons.directions_car_rounded,
+                    color: NomadColors.money,
+                    label: t.driveShort,
+                    onTap: () => context.push(Routes.drive),
+                  ),
+                  // Planes abiertos con otros viajeros de la misma ciudad.
+                  _Shortcut(
+                    icon: Icons.diversity_3_rounded,
+                    color: NomadColors.group,
+                    label: t.meetupsShort,
+                    onTap: () => context.push(Routes.meetups()),
+                  ),
+                  // Tu vuelo, el chollo y el presupuesto en el escritorio.
+                  _Shortcut(
+                    icon: Icons.widgets_rounded,
+                    color: NomadColors.flights,
+                    label: t.widgetsTitle,
+                    onTap: () => context.push(Routes.widgets),
+                  ),
                   // Liga y cambios de cromos con tus amigos.
                   _Shortcut(
                     icon: Icons.style_rounded,

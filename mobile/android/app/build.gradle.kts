@@ -1,8 +1,21 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// Llave de subida a Google Play ("upload key"). Sus datos van en
+// android/key.properties, que NUNCA se sube a git (está en .gitignore).
+// Cómo crearla: docs/guia-play-store.md. Si el archivo no existe (por
+// ejemplo en el CI o en tu PC antes de crearla), la versión "release" se
+// firma con la llave de pruebas: sirve para probar, pero Play la rechaza.
+val keyProps = Properties().apply {
+    val f = rootProject.file("key.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+val hasUploadKey = keyProps.getProperty("storeFile") != null
 
 android {
     namespace = "com.nomadiq.app"
@@ -18,25 +31,37 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Identificador único en Google Play. Una vez publicada la app NO se
+        // puede cambiar nunca (sería otra app distinta).
         applicationId = "com.nomadiq.app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
-        // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
-        // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
-        // flag during build.
+        // Salen de "version: 1.0.0+1" en pubspec.yaml: lo de antes del "+" es
+        // lo que ve el usuario y el número de después debe SUBIR en cada
+        // versión que mandes a Play.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasUploadKey) {
+            create("upload") {
+                storeFile = file(keyProps.getProperty("storeFile"))
+                storePassword = keyProps.getProperty("storePassword")
+                keyAlias = keyProps.getProperty("keyAlias")
+                keyPassword = keyProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (hasUploadKey) {
+                signingConfigs.getByName("upload")
+            } else {
+                logger.warn("NomadIQ: falta android/key.properties; release firmada con la llave de PRUEBAS (Play la rechazará).")
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }

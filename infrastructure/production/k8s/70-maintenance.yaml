@@ -1,0 +1,78 @@
+# Cada domingo a las 4:00 (hora del servidor, UTC) se reinician los servicios
+# uno a uno para que lean los certificados internos renovados (cert-manager
+# los renueva solos 30 días antes de caducar). Solo tiene permiso para eso.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: restarter
+  namespace: nomadiq
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: restarter
+  namespace: nomadiq
+rules:
+  - apiGroups: [apps]
+    resources: [deployments, statefulsets]
+    verbs: [get, list, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: restarter
+  namespace: nomadiq
+subjects:
+  - {kind: ServiceAccount, name: restarter, namespace: nomadiq}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: restarter
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: restart-weekly
+  namespace: nomadiq
+spec:
+  schedule: "0 4 * * 0"
+  timeZone: "Etc/UTC"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels: {app: restarter}
+        spec:
+          serviceAccountName: restarter
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            seccompProfile: {type: RuntimeDefault}
+          # Primero las bases de datos (initContainer) y luego los servicios.
+          # rancher/kubectl: solo trae el programa kubectl (sin shell), para
+          # ARM e Intel. (La de Bitnami dejó de ser gratis en 2025.)
+          initContainers:
+            - name: datos
+              image: rancher/kubectl:v1.36.2
+              args: ["-n", "nomadiq", "rollout", "restart", "statefulset"]
+              resources:
+                requests: {cpu: 10m, memory: 32Mi}
+                limits: {cpu: 200m, memory: 128Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}
+          containers:
+            - name: kubectl
+              image: rancher/kubectl:v1.36.2
+              args: ["-n", "nomadiq", "rollout", "restart", "deployment"]
+              resources:
+                requests: {cpu: 10m, memory: 32Mi}
+                limits: {cpu: 200m, memory: 128Mi}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: {drop: [ALL]}

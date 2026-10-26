@@ -127,8 +127,12 @@ class Settings(BaseSettings):
     # Órdenes de trabajo (las publica nuestro propio outbox) y su DLQ.
     kafka_topic_negotiation_requests: str = "ai.group-negotiation-requests.v1"
     kafka_topic_negotiation_requests_dlq: str = "ai.group-negotiation-requests-dlq.v1"
-    # Resultados, para quien quiera enterarse (el notifier, en el futuro).
+    # Resultados: el notifier avisa "ya tenéis destino".
     kafka_topic_negotiation_results: str = "ai.group-negotiations.v1"
+    # "Mensajes nuevos en el chat del viaje" (el notifier manda el push).
+    kafka_topic_group_chat_activity: str = "ai.group-chat-activity.v1"
+    # Como mucho un aviso de chat por viaje cada tantos segundos.
+    group_chat_push_seconds: int = Field(default=120, ge=10, le=3600)
     # Grupo de consumidores PROPIO: una negociación larga no frena las alertas.
     kafka_negotiations_group_id: str = "ai-orchestrator-negotiations"
     # Rondas si el organizador no dice otra cosa (el techo absoluto es 10).
@@ -192,8 +196,27 @@ class Settings(BaseSettings):
     overpass_timeout_seconds: float = Field(default=25.0, gt=0, le=60)
     atm_ttl_seconds: int = Field(default=24 * 3600, ge=3600, le=7 * 24 * 3600)
 
+    # --- Cerca de ti (ver el paquete nearby/): el mismo Overpass, una semana de caché ----
+    nearby_enabled: bool = True
+    nearby_ttl_seconds: int = Field(default=7 * 24 * 3600, ge=24 * 3600, le=30 * 24 * 3600)
+
+    # --- Modo coche (ver el paquete drive/): el mismo Overpass, casillas de ~5 km
+    drive_enabled: bool = True
+    drive_ttl_seconds: int = Field(default=7 * 24 * 3600, ge=24 * 3600, le=30 * 24 * 3600)
+    # Dormir barato (estaciones + alojamientos de OpenStreetMap): un mes de caché.
+    stays_enabled: bool = True
+    stays_ttl_seconds: int = Field(default=30 * 24 * 3600, ge=24 * 3600, le=60 * 24 * 3600)
+
+    # --- Guía del aeropuerto (ver el paquete airport_guide/): el mismo Overpass ------
+    airport_guide_enabled: bool = True
+    # Un aeropuerto casi no cambia: un mes de caché por aeropuerto.
+    airport_guide_ttl_seconds: int = Field(default=30 * 24 * 3600, ge=24 * 3600, le=90 * 24 * 3600)
+
     # --- Cromos con amigos (ver el paquete leagues/): solo PostgreSQL
     leagues_enabled: bool = True
+
+    # --- Quedadas con otros viajeros (ver el paquete meetups/): solo PostgreSQL
+    meetups_enabled: bool = True
 
     # --- Copia este viaje (ver el paquete shared_trips/): PostgreSQL; adaptar necesita Ollama y Redis
     shared_trips_enabled: bool = True
@@ -214,6 +237,27 @@ class Settings(BaseSettings):
     nasa_burst: int = Field(default=3, ge=1, le=20)
     nasa_timeout_seconds: float = Field(default=25.0, gt=0, le=60)
     climate_ttl_seconds: int = Field(default=30 * 24 * 3600, ge=24 * 3600, le=90 * 24 * 3600)
+
+    # --- Radar local (ver el paquete radar/): lluvia de MET Norway + avisos ---------
+    radar_enabled: bool = True
+    met_url: str = "https://api.met.no/weatherapi/locationforecast/2.0/compact"
+    met_rate_per_second: float = Field(default=5.0, gt=0, le=20)
+    rain_ttl_seconds: int = Field(default=15 * 60, ge=5 * 60, le=3 * 3600)
+
+    # --- Sin colas (ver el paquete queues/): esperas que avisan los viajeros ------------
+    queues_enabled: bool = True
+
+    # --- Qué pasa en tus fechas (ver el paquete city_events/) --------------------------
+    # Festivos de Nager.Date (gratis, sin clave) y, si hay clave, eventos de
+    # Ticketmaster (clave gratis con cupo diario). La clave es un secreto:
+    # en producción, desde un gestor de secretos, nunca en git.
+    events_enabled: bool = True
+    nager_url: str = "https://date.nager.at/api/v3/PublicHolidays"
+    ticketmaster_api_key: SecretStr | None = None
+    ticketmaster_url: str = "https://app.ticketmaster.com/discovery/v2/events.json"
+    ticketmaster_daily_limit: int = Field(default=4000, ge=1, le=5000)
+    events_rate_per_second: float = Field(default=2.0, gt=0, le=5)
+    events_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
 
     # --- Chat libre con Flyra (ver el paquete flyra/) --------------------------------
     # Necesita Ollama (LLM_ENABLED) y Redis (el contador de preguntas diarias).
@@ -295,7 +339,7 @@ class Settings(BaseSettings):
     # --- Registros (logs) ---------------------------------------------------------
     log_level: Literal["debug", "info", "warning", "error"] = "info"
 
-    @field_validator("notify_pseudonym_key", "mapillary_token", mode="before")
+    @field_validator("notify_pseudonym_key", "mapillary_token", "ticketmaster_api_key", mode="before")
     @classmethod
     def _empty_is_none(cls, value: object) -> object:
         # docker compose pasa "NOTIFY_PSEUDONYM_KEY=" o "MAPILLARY_TOKEN="

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos de los widgets que Android enseña antes de abrir la app (la
+     lista de widgets del escritorio). El resto los traduce la app. -->
+<resources>
+    <string name="widget_flight_name">NomadIQ: आपकी उड़ान</string>
+    <string name="widget_flight_desc">प्रस्थान, बोर्डिंग, लाइव उड़ान और आपका आगमन</string>
+    <string name="widget_deal_name">NomadIQ: आज की डील</string>
+    <string name="widget_deal_desc">आपके हवाई अड्डे से आज की सबसे सस्ती उड़ान</string>
+    <string name="widget_budget_name">NomadIQ: बजट</string>
+    <string name="widget_budget_desc">आज आपकी यात्रा में कितना बचा है</string>
+    <string name="widget_empty">यह विजेट भरने के लिए NomadIQ खोलें</string>
+</resources>

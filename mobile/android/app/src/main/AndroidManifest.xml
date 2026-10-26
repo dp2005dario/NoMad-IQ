@@ -21,12 +21,18 @@
     <!-- Android 13+: permiso para enseñar notificaciones (avisos push y la
          notificación fija del modo viaje). Se pide al encender el modo viaje. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- Modo cámara: solo fotos para reconocer monumentos. El paquete de la
-         cámara también pide micrófono y escribir en la memoria (para vídeo);
-         como no los usamos, los quitamos (tools:node="remove"). Y la cámara
-         no es obligatoria: la app se instala también en aparatos sin ella. -->
+    <!-- Para volver a programar los widgets y el aviso del vuelo tras
+         reiniciar el móvil (Android borra las alarmas al apagarse). Sin
+         alarmas exactas: unos minutos de margen bastan y no piden permiso. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Cámara: fotos de monumentos y la cámara de viaje de Recuerdos. El
+         micrófono solo hace falta para el sonido de los vídeos de Recuerdos y
+         Android lo pregunta la primera vez que pasas a VÍDEO. Escribir en la
+         memoria compartida no lo usamos (los recuerdos van a la carpeta
+         privada de la app), así que se quita (tools:node="remove"). Y la
+         cámara no es obligatoria: la app se instala en aparatos sin ella. -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
     <!-- allowBackup="false": la sesión cifrada no debe copiarse a la nube ni a
@@ -59,6 +65,10 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- Android Auto: somos una app de audio (ver res/xml/automotive_app_desc.xml). -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
         <!-- El servicio de audio de just_audio_background (paquete
              audio_service) y quien recibe los botones de los auriculares. -->
         <service
@@ -76,6 +86,47 @@
             tools:ignore="Instantiatable">
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
+        <!-- Widgets del escritorio (NomadWidgets.kt). -->
+        <receiver android:name=".FlightWidget" android:label="@string/widget_flight_name" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/nomad_widget_flight" />
+        </receiver>
+        <receiver android:name=".DealWidget" android:label="@string/widget_deal_name" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/nomad_widget_deal" />
+        </receiver>
+        <receiver android:name=".BudgetWidget" android:label="@string/widget_budget_name" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/nomad_widget_budget" />
+        </receiver>
+        <!-- Despierta los widgets a las horas que dejó la app (embarque,
+             despegue, llegada...) y vuelve a armar esas horas al reiniciar. -->
+        <receiver
+            android:name="es.antonborri.home_widget.HomeWidgetScheduledUpdateReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+        <!-- El aviso "en directo" del día del vuelo: se programa en el móvil
+             (sin servidor) y estos dos lo enseñan a su hora y tras reiniciar. -->
+        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
             </intent-filter>
         </receiver>
         <!-- Don't delete the meta-data below.
@@ -98,6 +149,10 @@
         <intent>
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="https"/>
+        </intent>
+        <!-- Oír lo que dices en el Asistente (reconocimiento de voz del sistema). -->
+        <intent>
+            <action android:name="android.speech.RecognitionService"/>
         </intent>
         <!-- La voz del móvil (texto a voz) para "Escuchar" en el modo cámara. -->
         <intent>

@@ -117,6 +117,12 @@ abstract final class AppConfig {
     visaUrl: _https(_visaUrl),
   );
 
+  /// Código de afiliado de Booking.com ("aid") para "Dormir barato". Si
+  /// falta, el botón "Ver precios" funciona igual, solo que sin comisión.
+  static const String bookingAffiliateId = String.fromEnvironment(
+    'NOMADIQ_BOOKING_AID',
+  );
+
   /// Solo se aceptan enlaces https (nunca una web sin cifrar).
   static Uri? _https(String url) {
     final Uri? u = Uri.tryParse(url);

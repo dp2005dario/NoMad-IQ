@@ -449,9 +449,11 @@ void main() {
         guest: true, // los tipos son públicos
         prefs: prefs,
       );
-      await tester.tap(find.text('USD').first);
+      // Cada moneda con su bandera y su país.
+      expect(find.text('🇺🇸 USD · Estados Unidos'), findsOneWidget);
+      await tester.tap(find.textContaining('USD').first);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('JPY').last);
+      await tester.tap(find.text('🇯🇵 JPY · Japón').last);
       await tester.pumpAndSettle();
       expect(find.text('LISTA PARA LANZAR'), findsOneWidget);
       await tester.tap(find.text('Lanzar la moneda'));
@@ -460,6 +462,15 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('CAMBIADO A JPY'), findsOneWidget);
       expect(find.textContaining('8.161'), findsOneWidget);
+      // En billetes: 5000 + 2000 + 1000 y el resto en monedas.
+      await tester.scrollUntilVisible(
+        find.text('Billetes según el banco central'),
+        300,
+        scrollable: find.byType(Scrollable).last,
+      );
+      expect(find.text('En billetes'), findsOneWidget);
+      expect(find.textContaining('5.000'), findsOneWidget);
+      expect(find.textContaining('en monedas'), findsWidgets);
       // Se guardó una copia para usarla sin red.
       expect(prefs.data[LocalData.fxRates], contains('163.21'));
     });

@@ -5364,5 +5364,3581 @@
   "cardsCommon": "Common",
   "@cardsCommon": {
     "description": "Card rarity name."
+  },
+  "memTitle": "Memories",
+  "@memTitle": {
+    "description": "Memories screen title."
+  },
+  "memSubtitle": "Photos, videos and your trip story",
+  "@memSubtitle": {
+    "description": "Home shortcut subtitle."
+  },
+  "memMorning": "morning",
+  "@memMorning": {
+    "description": "Part of day."
+  },
+  "memAfternoon": "afternoon",
+  "@memAfternoon": {
+    "description": "Part of day."
+  },
+  "memSunset": "sunset",
+  "@memSunset": {
+    "description": "Part of day."
+  },
+  "memNight": "night",
+  "@memNight": {
+    "description": "Part of day."
+  },
+  "memStickerDay": "NOMADIQ · DAY {day}",
+  "@memStickerDay": {
+    "description": "Sticker first line.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "memDayN": "DAY {day}",
+  "@memDayN": {
+    "description": "Story caption.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "memCameraTitle": "Travel camera",
+  "@memCameraTitle": {
+    "description": "Travel camera title."
+  },
+  "memFlip": "Switch camera",
+  "@memFlip": {
+    "description": "Switch camera."
+  },
+  "memFull": "You have 300 memories. Delete some to make room.",
+  "@memFull": {
+    "description": "Too many memories."
+  },
+  "memFailed": "Could not save it. Try again.",
+  "@memFailed": {
+    "description": "Save failed."
+  },
+  "memDenied": "NomadIQ has no permission to use the camera. Allow it in your phone settings.",
+  "@memDenied": {
+    "description": "No camera permission."
+  },
+  "memNoCamera": "The camera of this phone is not available.",
+  "@memNoCamera": {
+    "description": "Camera missing."
+  },
+  "memRetry": "Try again",
+  "@memRetry": {
+    "description": "Retry."
+  },
+  "memSticker": "Trip sticker",
+  "@memSticker": {
+    "description": "Sticker toggle."
+  },
+  "memVideoNoSticker": "Videos are saved without the sticker.",
+  "@memVideoNoSticker": {
+    "description": "Video hint."
+  },
+  "memPhoto": "Photo",
+  "@memPhoto": {
+    "description": "Photo mode."
+  },
+  "memVideo": "Video",
+  "@memVideo": {
+    "description": "Video mode."
+  },
+  "memStop": "Stop recording",
+  "@memStop": {
+    "description": "Stop recording."
+  },
+  "memRecord": "Record video",
+  "@memRecord": {
+    "description": "Start recording."
+  },
+  "memShoot": "Take photo",
+  "@memShoot": {
+    "description": "Take photo."
+  },
+  "memVideoSaved": "Video saved ({time})",
+  "@memVideoSaved": {
+    "description": "Video saved.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "memSavedHint": "Saved in your Memories, only on this phone.",
+  "@memSavedHint": {
+    "description": "Saved hint."
+  },
+  "memShare": "Share",
+  "@memShare": {
+    "description": "Share."
+  },
+  "memRetake": "Retake",
+  "@memRetake": {
+    "description": "Retake."
+  },
+  "memAnother": "Take another",
+  "@memAnother": {
+    "description": "Take another."
+  },
+  "memInstagramNote": "For an Instagram story, choose Instagram in the menu. Music and stickers are added there.",
+  "@memInstagramNote": {
+    "description": "Instagram hint."
+  },
+  "memEmpty": "Nothing yet. Photos and videos you make with the travel camera appear here.",
+  "@memEmpty": {
+    "description": "No memories yet."
+  },
+  "memOnlyHere": "Your memories stay only on this phone. Nothing is uploaded unless you share it.",
+  "@memOnlyHere": {
+    "description": "Privacy note."
+  },
+  "memTripStart": "Trip started {date}",
+  "@memTripStart": {
+    "description": "Trip start chip.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "memStory": "Your trip story",
+  "@memStory": {
+    "description": "Story card title."
+  },
+  "memStoryHint": "Made by itself with your photos, your route and your stamps.",
+  "@memStoryHint": {
+    "description": "Story card hint."
+  },
+  "memPlay": "Watch story",
+  "@memPlay": {
+    "description": "Play story."
+  },
+  "memNoPhotos": "Take some photos on the trip to make your story.",
+  "@memNoPhotos": {
+    "description": "Story needs photos."
+  },
+  "memStyleCinema": "Cinema",
+  "@memStyleCinema": {
+    "description": "Story style."
+  },
+  "memStyleComic": "Comic strip",
+  "@memStyleComic": {
+    "description": "Story style."
+  },
+  "memStyleFast": "Fast",
+  "@memStyleFast": {
+    "description": "Story style."
+  },
+  "memMyTrip": "My trip",
+  "@memMyTrip": {
+    "description": "Cover title without cities."
+  },
+  "memDays": "days",
+  "@memDays": {
+    "description": "Stat label."
+  },
+  "memCities": "cities",
+  "@memCities": {
+    "description": "Stat label."
+  },
+  "memMedia": "photos and videos",
+  "@memMedia": {
+    "description": "Stat label."
+  },
+  "memStamps": "new stamps",
+  "@memStamps": {
+    "description": "Stat label."
+  },
+  "memShareStory": "Share story",
+  "@memShareStory": {
+    "description": "Share story."
+  },
+  "memShareText": "{title}: {days} days, {media} photos and videos. Made with NomadIQ.",
+  "@memShareText": {
+    "description": "Text shared with the story photos.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      },
+      "media": {
+        "type": "int"
+      }
+    }
+  },
+  "memPause": "Pause",
+  "@memPause": {
+    "description": "Pause story."
+  },
+  "memResume": "Play",
+  "@memResume": {
+    "description": "Resume story."
+  },
+  "memClose": "Close",
+  "@memClose": {
+    "description": "Close story."
+  },
+  "memDelete": "Delete",
+  "@memDelete": {
+    "description": "Delete memory."
+  },
+  "memDeleteConfirm": "Delete this memory from your phone? It cannot be undone.",
+  "@memDeleteConfirm": {
+    "description": "Delete confirm."
+  },
+  "memCancel": "Cancel",
+  "@memCancel": {
+    "description": "Cancel."
+  },
+  "memCount": "{n} of {max}",
+  "@memCount": {
+    "description": "Counter.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "widgetNextFlight": "NEXT FLIGHT",
+  "@widgetNextFlight": {
+    "description": "Widget tag."
+  },
+  "widgetDepartsAt": "Departs at {time}",
+  "@widgetDepartsAt": {
+    "description": "Departure time.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetDepartsIn": "DEPARTS IN {h} H",
+  "@widgetDepartsIn": {
+    "description": "Hours to departure.",
+    "placeholders": {
+      "h": {
+        "type": "int"
+      }
+    }
+  },
+  "widgetLeaveAt": "Leave home at {time}",
+  "@widgetLeaveAt": {
+    "description": "Leave home time.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetLeaveNow": "TIME TO GO TO THE AIRPORT",
+  "@widgetLeaveNow": {
+    "description": "Widget tag."
+  },
+  "widgetBoardingIn": "BOARDING IN {min} MIN",
+  "@widgetBoardingIn": {
+    "description": "Minutes to boarding.",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "widgetBoardingAt": "Boarding at {time}",
+  "@widgetBoardingAt": {
+    "description": "Boarding time.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetGate": "Gate {gate}",
+  "@widgetGate": {
+    "description": "Gate.",
+    "placeholders": {
+      "gate": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetBoardingNow": "BOARDING NOW",
+  "@widgetBoardingNow": {
+    "description": "Widget tag."
+  },
+  "widgetHoursMinutes": "{h} h {m}",
+  "@widgetHoursMinutes": {
+    "description": "Remaining time.",
+    "placeholders": {
+      "h": {
+        "type": "int"
+      },
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetInFlight": "IN FLIGHT · {pct} %",
+  "@widgetInFlight": {
+    "description": "Widget tag.",
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "widgetLandsAt": "Lands in {city} at {time} local time",
+  "@widgetLandsAt": {
+    "description": "Arrival.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetArrived": "YOU HAVE ARRIVED IN {city}",
+  "@widgetArrived": {
+    "description": "Widget tag.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetWelcome": "Tap to open your trip",
+  "@widgetWelcome": {
+    "description": "Arrival hint."
+  },
+  "widgetHotel": "Your hotel: {name}",
+  "@widgetHotel": {
+    "description": "Hotel.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetDealTag": "DEAL OF THE DAY",
+  "@widgetDealTag": {
+    "description": "Widget tag."
+  },
+  "widgetDealDrop": "-{pct} % · usually {usual}",
+  "@widgetDealDrop": {
+    "description": "Deal drop.",
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      },
+      "usual": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetDealCheck": "Check the price in NomadIQ",
+  "@widgetDealCheck": {
+    "description": "Deal hint."
+  },
+  "widgetBudgetTag": "BUDGET",
+  "@widgetBudgetTag": {
+    "description": "Widget tag."
+  },
+  "widgetBudgetDay": "Day {day} of {days}",
+  "@widgetBudgetDay": {
+    "description": "Budget day.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "widgetBudgetLeftToday": "left for today",
+  "@widgetBudgetLeftToday": {
+    "description": "Budget hint."
+  },
+  "widgetBudgetOver": "{amount} over budget",
+  "@widgetBudgetOver": {
+    "description": "Over budget.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetFlightEmpty": "Add your next flight in NomadIQ",
+  "@widgetFlightEmpty": {
+    "description": "Empty flight widget."
+  },
+  "widgetDealEmpty": "Open NomadIQ to see today's deal",
+  "@widgetDealEmpty": {
+    "description": "Empty deal widget."
+  },
+  "widgetBudgetEmpty": "Set a trip budget in NomadIQ, in Money",
+  "@widgetBudgetEmpty": {
+    "description": "Empty budget widget."
+  },
+  "widgetLiveChannel": "Your flight live",
+  "@widgetLiveChannel": {
+    "description": "Notification channel name."
+  },
+  "widgetLiveLeave": "Time to go to the airport · {route}",
+  "@widgetLiveLeave": {
+    "description": "Live title.",
+    "placeholders": {
+      "route": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetLiveLeaveBody": "Boarding at {boarding}, departure at {departure}",
+  "@widgetLiveLeaveBody": {
+    "description": "Live body.",
+    "placeholders": {
+      "boarding": {
+        "type": "String"
+      },
+      "departure": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetLiveBoarding": "Boarding now · {route}",
+  "@widgetLiveBoarding": {
+    "description": "Live title.",
+    "placeholders": {
+      "route": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetLiveBoardingGate": "Boarding now · gate {gate}",
+  "@widgetLiveBoardingGate": {
+    "description": "Live title.",
+    "placeholders": {
+      "gate": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetLiveInFlight": "In flight · {route}",
+  "@widgetLiveInFlight": {
+    "description": "Live title.",
+    "placeholders": {
+      "route": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetLiveArrived": "Welcome to {city}!",
+  "@widgetLiveArrived": {
+    "description": "Live title.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetsTitle": "Widgets",
+  "@widgetsTitle": {
+    "description": "Widgets screen title."
+  },
+  "widgetsIntro": "NomadIQ outside the app: on your home screen, in notifications and on your watch.",
+  "@widgetsIntro": {
+    "description": "Intro."
+  },
+  "widgetsYourFlight": "Your next flight",
+  "@widgetsYourFlight": {
+    "description": "Section."
+  },
+  "widgetsNoFlight": "Add your flight: the widget counts down to boarding, follows the flight and welcomes you on arrival.",
+  "@widgetsNoFlight": {
+    "description": "No flight."
+  },
+  "widgetsAddFlight": "Add flight",
+  "@widgetsAddFlight": {
+    "description": "Add flight."
+  },
+  "widgetsEditFlight": "Change flight",
+  "@widgetsEditFlight": {
+    "description": "Edit flight."
+  },
+  "widgetsSameAsEasy": "It is the same flight as in Easy mode, and it stays only on this phone.",
+  "@widgetsSameAsEasy": {
+    "description": "Hint."
+  },
+  "widgetsUnknownAirport": "We do not know one of those airports. Check the 3-letter codes.",
+  "@widgetsUnknownAirport": {
+    "description": "Airport not found."
+  },
+  "widgetsHome": "Home screen",
+  "@widgetsHome": {
+    "description": "Section."
+  },
+  "widgetsFlightName": "Your flight",
+  "@widgetsFlightName": {
+    "description": "Widget name."
+  },
+  "widgetsDealName": "Deal of the day",
+  "@widgetsDealName": {
+    "description": "Widget name."
+  },
+  "widgetsBudgetName": "Budget",
+  "@widgetsBudgetName": {
+    "description": "Widget name."
+  },
+  "widgetsAdd": "Add to home screen",
+  "@widgetsAdd": {
+    "description": "Pin widget."
+  },
+  "widgetsHowTo": "Touch and hold an empty spot on your home screen, tap Widgets and look for NomadIQ.",
+  "@widgetsHowTo": {
+    "description": "Manual instructions."
+  },
+  "widgetsUpdates": "They change by themselves at the right moment, even without internet.",
+  "@widgetsUpdates": {
+    "description": "Hint."
+  },
+  "widgetsLive": "Live notification on flight day",
+  "@widgetsLive": {
+    "description": "Live switch."
+  },
+  "widgetsLiveHint": "It appears when it is time to leave, at boarding, during the flight and on arrival. It is scheduled on your phone, so it works in airplane mode.",
+  "@widgetsLiveHint": {
+    "description": "Live hint."
+  },
+  "widgetsWatch": "Watch",
+  "@widgetsWatch": {
+    "description": "Section."
+  },
+  "widgetsWatchHint": "If you wear a Wear OS watch, these notifications appear on it too and it vibrates when something changes. No extra app needed.",
+  "@widgetsWatchHint": {
+    "description": "Watch hint."
+  },
+  "widgetsPhaseBefore": "Before",
+  "@widgetsPhaseBefore": {
+    "description": "Preview phase."
+  },
+  "widgetsPhaseFlight": "In flight",
+  "@widgetsPhaseFlight": {
+    "description": "Preview phase."
+  },
+  "widgetsPhaseLanded": "Landed",
+  "@widgetsPhaseLanded": {
+    "description": "Preview phase."
+  },
+  "widgetsPreviewHint": "Preview: what you will see at each moment of the trip.",
+  "@widgetsPreviewHint": {
+    "description": "Preview hint."
+  },
+  "stopTitle": "Free stopover",
+  "@stopTitle": {
+    "description": "Stopover screen title."
+  },
+  "stopTagline": "Two trips for the price of one",
+  "@stopTagline": {
+    "description": "Tagline."
+  },
+  "stopHow": "Some airlines let you stay a few days in their home city on the way to your destination, without raising the ticket price or with hotels for free or discounted.",
+  "@stopHow": {
+    "description": "How it works."
+  },
+  "stopFrom": "From",
+  "@stopFrom": {
+    "description": "Origin field."
+  },
+  "stopTo": "To",
+  "@stopTo": {
+    "description": "Destination field."
+  },
+  "stopCodeHint": "3-letter code, e.g. HND",
+  "@stopCodeHint": {
+    "description": "IATA hint."
+  },
+  "stopFind": "Find stopovers",
+  "@stopFind": {
+    "description": "Find stopovers."
+  },
+  "stopUnknown": "We do not know one of those airports. Check the 3-letter codes.",
+  "@stopUnknown": {
+    "description": "Unknown airport."
+  },
+  "stopNone": "No stopover program is on the way for this trip without a big detour.",
+  "@stopNone": {
+    "description": "No stopover fits."
+  },
+  "stopDetour": "+{km} km compared with flying direct",
+  "@stopDetour": {
+    "description": "Extra distance.",
+    "placeholders": {
+      "km": {
+        "type": "int"
+      }
+    }
+  },
+  "stopNightsTitle": "Stopover nights",
+  "@stopNightsTitle": {
+    "description": "Nights selector."
+  },
+  "stopNoNights": "No",
+  "@stopNoNights": {
+    "description": "Zero nights."
+  },
+  "stopNights": "{n, plural, =0{a short layover} =1{1 night} other{{n} nights}}",
+  "@stopNights": {
+    "description": "Nights label.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "stopMaxNights": "Up to {n} nights",
+  "@stopMaxNights": {
+    "description": "Max nights.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "stopRuleSameFare": "On most fares the ticket costs the same if you stop in its city. The hotel is on you.",
+  "@stopRuleSameFare": {
+    "description": "Rule."
+  },
+  "stopRuleFreeHotel": "The airline may give you the hotel for free (usually 1 or 2 nights, depending on the fare and layover hours).",
+  "@stopRuleFreeHotel": {
+    "description": "Rule."
+  },
+  "stopRuleHotelDeal": "The airline's stopover programme sells hotels and tours at special prices. Check the flight price on their website.",
+  "@stopRuleHotelDeal": {
+    "description": "Stopover rule: airline sells hotels and tours at special prices."
+  },
+  "stopCheck": "Conditions change: check them on the airline's page before booking.",
+  "@stopCheck": {
+    "description": "Disclaimer."
+  },
+  "stopDate": "Departure {date}",
+  "@stopDate": {
+    "description": "Date chip.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "stopSeePrice": "See price",
+  "@stopSeePrice": {
+    "description": "See price."
+  },
+  "stopCheapest": "Cheapest flight that day: {price}",
+  "@stopCheapest": {
+    "description": "Cheapest offer.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "stopWithAirline": "With {airline}, with a short layover: {price}",
+  "@stopWithAirline": {
+    "description": "Airline offer.",
+    "placeholders": {
+      "airline": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "stopNoAirline": "No {airline} flight found that day. Try another date or check its website.",
+  "@stopNoAirline": {
+    "description": "No airline offer.",
+    "placeholders": {
+      "airline": {
+        "type": "String"
+      }
+    }
+  },
+  "stopSamePrice": "With {nights} in {city}: usually the same price",
+  "@stopSamePrice": {
+    "description": "Stopover price note.",
+    "placeholders": {
+      "nights": {
+        "type": "String"
+      },
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "stopBookDirect": "Book without stopping",
+  "@stopBookDirect": {
+    "description": "CTA."
+  },
+  "stopBookWith": "Book with {nights} in {city}",
+  "@stopBookWith": {
+    "description": "CTA.",
+    "placeholders": {
+      "nights": {
+        "type": "String"
+      },
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "stopBookHint": "A flight with a stop of several days is booked on the airline's page (multi-city).",
+  "@stopBookHint": {
+    "description": "Booking hint."
+  },
+  "stopBusy": "Many people are searching right now. Try again in a few seconds.",
+  "@stopBusy": {
+    "description": "Search rate-limited."
+  },
+  "airportTitle": "Airport",
+  "@airportTitle": {
+    "description": "Airport guide title."
+  },
+  "airportPick": "Which airport are you at?",
+  "@airportPick": {
+    "description": "Choose airport."
+  },
+  "airportCode": "Airport code (MAD, LHR...)",
+  "@airportCode": {
+    "description": "Airport code field."
+  },
+  "airportOpen": "Open",
+  "@airportOpen": {
+    "description": "Open guide."
+  },
+  "airportEmpty": "The inside of this airport is not drawn on OpenStreetMap yet. Follow the airport signs.",
+  "@airportEmpty": {
+    "description": "No data."
+  },
+  "airportBusy": "Too many people asking right now. Try again in a minute.",
+  "@airportBusy": {
+    "description": "Busy."
+  },
+  "airportUnknown": "We do not know that airport. Check the 3-letter code.",
+  "@airportUnknown": {
+    "description": "Unknown airport."
+  },
+  "airportGateField": "Your gate (e.g. K42)",
+  "@airportGateField": {
+    "description": "Gate field."
+  },
+  "airportGateNotFound": "Gate {gate} is not on the map of this airport. Follow the signs to it.",
+  "@airportGateNotFound": {
+    "description": "Gate missing.",
+    "placeholders": {
+      "gate": {
+        "type": "String"
+      }
+    }
+  },
+  "airportKindGate": "Gate",
+  "@airportKindGate": {
+    "description": "Spot kind."
+  },
+  "airportKindToilets": "Toilets",
+  "@airportKindToilets": {
+    "description": "Spot kind."
+  },
+  "airportKindCafe": "Café",
+  "@airportKindCafe": {
+    "description": "Spot kind."
+  },
+  "airportKindFood": "Food",
+  "@airportKindFood": {
+    "description": "Spot kind."
+  },
+  "airportKindPharmacy": "Pharmacy",
+  "@airportKindPharmacy": {
+    "description": "Spot kind."
+  },
+  "airportKindAtm": "ATM",
+  "@airportKindAtm": {
+    "description": "Spot kind."
+  },
+  "airportKindWater": "Water",
+  "@airportKindWater": {
+    "description": "Spot kind."
+  },
+  "airportKindInfo": "Information",
+  "@airportKindInfo": {
+    "description": "Spot kind."
+  },
+  "airportKindCharging": "Charging",
+  "@airportKindCharging": {
+    "description": "Spot kind."
+  },
+  "airportKindLounge": "Lounge",
+  "@airportKindLounge": {
+    "description": "Spot kind."
+  },
+  "airportStraight": "Go straight {m} m",
+  "@airportStraight": {
+    "description": "Instruction.",
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "airportLeft": "Turn left",
+  "@airportLeft": {
+    "description": "Instruction."
+  },
+  "airportRight": "Turn right",
+  "@airportRight": {
+    "description": "Instruction."
+  },
+  "airportBack": "Turn around",
+  "@airportBack": {
+    "description": "Instruction."
+  },
+  "airportArrived": "You are there",
+  "@airportArrived": {
+    "description": "Instruction."
+  },
+  "airportDistance": "{min} min · {m} m",
+  "@airportDistance": {
+    "description": "Distance.",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "airportLevel": "Floor {level}",
+  "@airportLevel": {
+    "description": "Floor.",
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "airportBoarding": "Boarding {time}",
+  "@airportBoarding": {
+    "description": "Boarding time.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "airportInTime": "You have time",
+  "@airportInTime": {
+    "description": "Enough time."
+  },
+  "airportHurry": "Hurry: boarding soon",
+  "@airportHurry": {
+    "description": "Not much time."
+  },
+  "airportNoGps": "Turn on location to see the arrow and the distance.",
+  "@airportNoGps": {
+    "description": "No location."
+  },
+  "airportAllowGps": "Turn on location",
+  "@airportAllowGps": {
+    "description": "Allow location."
+  },
+  "airportGpsNote": "Inside buildings the GPS can be off by a few dozen meters: follow the airport signs too.",
+  "@airportGpsNote": {
+    "description": "Accuracy note."
+  },
+  "airportNone": "There is none on the map of this airport.",
+  "@airportNone": {
+    "description": "No spot of kind."
+  },
+  "airportChange": "Change airport",
+  "@airportChange": {
+    "description": "Change airport."
+  },
+  "visaTitle": "Visa",
+  "@visaTitle": {
+    "description": "Visa screen title."
+  },
+  "visaSubtitle": "What you need to enter another country with your passport, and how to apply on the official website.",
+  "@visaSubtitle": {
+    "description": "Visa subtitle."
+  },
+  "visaNoData": "Could not load the visa data. Restart the app.",
+  "@visaNoData": {
+    "description": "Data failed to load."
+  },
+  "visaPassport": "Your passport",
+  "@visaPassport": {
+    "description": "Passport country field."
+  },
+  "visaDestination": "Destination",
+  "@visaDestination": {
+    "description": "Destination field."
+  },
+  "visaPickCountry": "Choose a country",
+  "@visaPickCountry": {
+    "description": "Hint."
+  },
+  "visaSearch": "Search country",
+  "@visaSearch": {
+    "description": "Search field."
+  },
+  "visaSameCountry": "It's your own country: you don't need anything.",
+  "@visaSameCountry": {
+    "description": "Same country."
+  },
+  "visaFree": "No visa needed",
+  "@visaFree": {
+    "description": "Verdict."
+  },
+  "visaFreeMore": "Bring a valid passport. Some places ask for a return ticket or an online arrival form.",
+  "@visaFreeMore": {
+    "description": "Explanation."
+  },
+  "visaOnArrival": "Visa on arrival",
+  "@visaOnArrival": {
+    "description": "Verdict."
+  },
+  "visaOnArrivalMore": "You get it at the airport when you land. Sometimes you pay a fee there, often in cash.",
+  "@visaOnArrivalMore": {
+    "description": "Explanation."
+  },
+  "visaEta": "You need an electronic travel authorisation",
+  "@visaEta": {
+    "description": "Verdict."
+  },
+  "visaEtaNamed": "You need the {scheme}",
+  "@visaEtaNamed": {
+    "description": "Verdict with scheme name.",
+    "placeholders": {
+      "scheme": {
+        "type": "String"
+      }
+    }
+  },
+  "visaEtaMore": "You apply online in minutes and it usually arrives within 72 hours. Apply at least 3 days before you fly.",
+  "@visaEtaMore": {
+    "description": "Explanation."
+  },
+  "visaEVisa": "You need an e-visa",
+  "@visaEVisa": {
+    "description": "Verdict."
+  },
+  "visaEVisaMore": "You apply online, with more documents, and it can take several days. Do it well in advance.",
+  "@visaEVisaMore": {
+    "description": "Explanation."
+  },
+  "visaEmbassy": "You need a visa from the embassy",
+  "@visaEmbassy": {
+    "description": "Verdict."
+  },
+  "visaEmbassyMore": "You need an appointment at the embassy or consulate. Start weeks ahead.",
+  "@visaEmbassyMore": {
+    "description": "Explanation."
+  },
+  "visaRefused": "Entry is not allowed with this passport right now",
+  "@visaRefused": {
+    "description": "Verdict."
+  },
+  "visaRefusedMore": "Check the official website or the embassy before you buy anything.",
+  "@visaRefusedMore": {
+    "description": "Explanation."
+  },
+  "visaUnknown": "We don't have data for this country",
+  "@visaUnknown": {
+    "description": "Verdict."
+  },
+  "visaUnknownMore": "Check the website of its government or embassy.",
+  "@visaUnknownMore": {
+    "description": "Explanation."
+  },
+  "visaDays": "Up to {days} days",
+  "@visaDays": {
+    "description": "Days allowed.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "visaSource": "Data from passportindex.org ({date}). Rules change: always check the official website.",
+  "@visaSource": {
+    "description": "Data source and date.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "visaGenericScheme": "visa",
+  "@visaGenericScheme": {
+    "description": "Generic name of the permit."
+  },
+  "visaApplyTitle": "Apply for the {scheme}",
+  "@visaApplyTitle": {
+    "description": "Apply card title.",
+    "placeholders": {
+      "scheme": {
+        "type": "String"
+      }
+    }
+  },
+  "visaStepPassport": "Passport",
+  "@visaStepPassport": {
+    "description": "Step."
+  },
+  "visaStepReview": "Review",
+  "@visaStepReview": {
+    "description": "Step."
+  },
+  "visaStepSend": "Send",
+  "@visaStepSend": {
+    "description": "Step."
+  },
+  "visaReadTitle": "Use the photo of your passport in the Vault",
+  "@visaReadTitle": {
+    "description": "Read passport title."
+  },
+  "visaReadBody": "We read the two lines at the bottom of the photo page (the ones with <<<<) on your phone. Your data stays here until you paste it on the official website.",
+  "@visaReadBody": {
+    "description": "Explanation of MRZ reading."
+  },
+  "visaRead": "Read my passport",
+  "@visaRead": {
+    "description": "Button."
+  },
+  "visaManual": "I'll fill it in by hand",
+  "@visaManual": {
+    "description": "Button."
+  },
+  "visaNoPassport": "There is no passport photo in the Vault that we can read. Add a sharp photo of the photo page, with the two bottom lines visible.",
+  "@visaNoPassport": {
+    "description": "No MRZ found."
+  },
+  "visaAddToVault": "Add it to the Vault",
+  "@visaAddToVault": {
+    "description": "Button."
+  },
+  "visaFieldSurname": "SURNAME",
+  "@visaFieldSurname": {
+    "description": "Field label."
+  },
+  "visaFieldName": "GIVEN NAMES",
+  "@visaFieldName": {
+    "description": "Field label."
+  },
+  "visaFieldNumber": "PASSPORT NUMBER",
+  "@visaFieldNumber": {
+    "description": "Field label."
+  },
+  "visaFieldBirth": "DATE OF BIRTH",
+  "@visaFieldBirth": {
+    "description": "Field label."
+  },
+  "visaFieldNationality": "NATIONALITY",
+  "@visaFieldNationality": {
+    "description": "Field label."
+  },
+  "visaFieldExpiry": "EXPIRY DATE",
+  "@visaFieldExpiry": {
+    "description": "Field label."
+  },
+  "visaFieldAddress": "ADDRESS THERE (HOTEL)",
+  "@visaFieldAddress": {
+    "description": "Field label."
+  },
+  "visaFieldEmergency": "EMERGENCY CONTACT",
+  "@visaFieldEmergency": {
+    "description": "Field label."
+  },
+  "visaFieldJob": "EMPLOYMENT",
+  "@visaFieldJob": {
+    "description": "Field label."
+  },
+  "visaFromPassport": "Passport",
+  "@visaFromPassport": {
+    "description": "Source chip."
+  },
+  "visaYours": "You fill it",
+  "@visaYours": {
+    "description": "Source chip: you fill it."
+  },
+  "visaCopy": "Copy",
+  "@visaCopy": {
+    "description": "Tooltip."
+  },
+  "visaCopied": "Copied. It will be removed from the clipboard in 1 minute.",
+  "@visaCopied": {
+    "description": "Snackbar."
+  },
+  "visaExpiresSoon": "Your passport expires on {date}: many countries ask for 6 months of validity.",
+  "@visaExpiresSoon": {
+    "description": "Short passport validity.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "visaYouAnswer": "Questions about health, criminal record and past trips can only be answered by you.",
+  "@visaYouAnswer": {
+    "description": "Questions only you can answer."
+  },
+  "visaAllGood": "All correct, continue",
+  "@visaAllGood": {
+    "description": "Button."
+  },
+  "visaReadyTitle": "Ready to send",
+  "@visaReadyTitle": {
+    "description": "Ready title."
+  },
+  "visaReadyBody": "Open the official {scheme} website, paste your details, pay the fee there and submit it.",
+  "@visaReadyBody": {
+    "description": "Ready explanation.",
+    "placeholders": {
+      "scheme": {
+        "type": "String"
+      }
+    }
+  },
+  "visaNoOfficial": "We don't have the official website for this country: look for it on its government or embassy site (they usually end in .gov or .gob).",
+  "@visaNoOfficial": {
+    "description": "No official link known."
+  },
+  "visaTipOfficial": "Never use websites that charge extra: only the official one.",
+  "@visaTipOfficial": {
+    "description": "Tip."
+  },
+  "visaTipWait": "It usually arrives by email within 72 hours.",
+  "@visaTipWait": {
+    "description": "Tip."
+  },
+  "visaTipSave": "When it arrives, save it in the Vault as a Visa.",
+  "@visaTipSave": {
+    "description": "Tip."
+  },
+  "visaOpenOfficial": "Open the official website",
+  "@visaOpenOfficial": {
+    "description": "Button."
+  },
+  "visaSaveApproval": "Save the approval",
+  "@visaSaveApproval": {
+    "description": "Button."
+  },
+  "visaCheck": "What do I need to enter?",
+  "@visaCheck": {
+    "description": "Link from Papers to the Visa screen."
+  },
+  "plansTitle": "Choose plans",
+  "@plansTitle": {
+    "description": "Plans screen title."
+  },
+  "plansOpen": "Choose plans together",
+  "@plansOpen": {
+    "description": "Button in group trip."
+  },
+  "plansSwipeHint": "swipe: right yes, left no",
+  "@plansSwipeHint": {
+    "description": "Swipe hint."
+  },
+  "plansProgress": "Plan {n} of {total}",
+  "@plansProgress": {
+    "description": "Card progress.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "plansYes": "YES",
+  "@plansYes": {
+    "description": "Yes stamp."
+  },
+  "plansNo": "NO",
+  "@plansNo": {
+    "description": "No stamp."
+  },
+  "plansEmpty": "No plans yet. Add yours or the city's ideas.",
+  "@plansEmpty": {
+    "description": "No plans yet."
+  },
+  "plansMatch": "It's a match!",
+  "@plansMatch": {
+    "description": "Match title."
+  },
+  "plansMatchBody": "All {n} of you like these plans.",
+  "@plansMatchBody": {
+    "description": "Match body.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "plansAllVoted": "You've voted on everything",
+  "@plansAllVoted": {
+    "description": "You voted everything."
+  },
+  "plansWaiting": "No plan has a yes from all {n} yet. When the others vote, matches will appear here.",
+  "@plansWaiting": {
+    "description": "No matches yet.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "plansRestart": "Start again",
+  "@plansRestart": {
+    "description": "Revote."
+  },
+  "plansAddTitle": "Add plans",
+  "@plansAddTitle": {
+    "description": "Add section."
+  },
+  "plansAddMine": "My plan",
+  "@plansAddMine": {
+    "description": "Add own plan."
+  },
+  "plansAddIdeas": "City ideas",
+  "@plansAddIdeas": {
+    "description": "Add city ideas."
+  },
+  "plansAirport": "Destination airport code (e.g. LIS)",
+  "@plansAirport": {
+    "description": "Airport field."
+  },
+  "plansNoIdeas": "We have no ideas for that city yet.",
+  "@plansNoIdeas": {
+    "description": "No attractions found."
+  },
+  "plansFieldTitle": "What?",
+  "@plansFieldTitle": {
+    "description": "Field."
+  },
+  "plansFieldNote": "When, how much... (optional)",
+  "@plansFieldNote": {
+    "description": "Field."
+  },
+  "plansFieldNoteHint": "Tonight · 21:30 · about 25 €",
+  "@plansFieldNoteHint": {
+    "description": "Hint."
+  },
+  "plansAdd": "Add",
+  "@plansAdd": {
+    "description": "Button."
+  },
+  "plansAll": "All plans",
+  "@plansAll": {
+    "description": "All plans section."
+  },
+  "plansVotes": "{yes} yes · {voted} of {members} voted",
+  "@plansVotes": {
+    "description": "Vote counts.",
+    "placeholders": {
+      "yes": {
+        "type": "int"
+      },
+      "voted": {
+        "type": "int"
+      },
+      "members": {
+        "type": "int"
+      }
+    }
+  },
+  "plansRemove": "Remove my plan",
+  "@plansRemove": {
+    "description": "Tooltip."
+  },
+  "plansTooMany": "This trip already has too many plans. Remove some first.",
+  "@plansTooMany": {
+    "description": "Limit reached."
+  },
+  "nearbyTitle": "Near you",
+  "@nearbyTitle": {
+    "description": "Nearby screen title."
+  },
+  "nearbyFree": "Free",
+  "@nearbyFree": {
+    "description": "Tab."
+  },
+  "nearbyWalk": "I have time",
+  "@nearbyWalk": {
+    "description": "Tab."
+  },
+  "nearbyWater": "Drinking water",
+  "@nearbyWater": {
+    "description": "Kind."
+  },
+  "nearbyToilets": "Toilets",
+  "@nearbyToilets": {
+    "description": "Kind."
+  },
+  "nearbyWifi": "Free wifi",
+  "@nearbyWifi": {
+    "description": "Kind."
+  },
+  "nearbyCharging": "Phone charging",
+  "@nearbyCharging": {
+    "description": "Kind."
+  },
+  "nearbyNone": "Nothing of this kind on the map around here. Volunteers draw it on OpenStreetMap: maybe soon!",
+  "@nearbyNone": {
+    "description": "Nothing found."
+  },
+  "nearbyMeters": "{m} m",
+  "@nearbyMeters": {
+    "description": "Distance.",
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "nearbyPaid": "paid",
+  "@nearbyPaid": {
+    "description": "Costs money."
+  },
+  "nearbyNoFee": "free",
+  "@nearbyNoFee": {
+    "description": "Free of charge."
+  },
+  "nearbyGo": "Go",
+  "@nearbyGo": {
+    "description": "Button."
+  },
+  "nearbyWalkIntro": "A walk that starts here, passes by things to see and brings you back on time.",
+  "@nearbyWalkIntro": {
+    "description": "Walk intro."
+  },
+  "nearbyHours": "{h} h",
+  "@nearbyHours": {
+    "description": "Hours chip.",
+    "placeholders": {
+      "h": {
+        "type": "int"
+      }
+    }
+  },
+  "nearbyWalkNone": "There are no well-known sights close enough for that time. Try with more time.",
+  "@nearbyWalkNone": {
+    "description": "No sights."
+  },
+  "nearbyWalkTotal": "{stops} stops · {min} min in total",
+  "@nearbyWalkTotal": {
+    "description": "Walk summary.",
+    "placeholders": {
+      "stops": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "nearbyStartEnd": "START AND FINISH",
+  "@nearbyStartEnd": {
+    "description": "Start and end."
+  },
+  "nearbyYou": "You are here",
+  "@nearbyYou": {
+    "description": "You are here."
+  },
+  "nearbyStopDetail": "{walk} min walking · {stay} min there",
+  "@nearbyStopDetail": {
+    "description": "Stop detail.",
+    "placeholders": {
+      "walk": {
+        "type": "int"
+      },
+      "stay": {
+        "type": "int"
+      }
+    }
+  },
+  "nearbyBack": "{min} min walking back",
+  "@nearbyBack": {
+    "description": "Back to start.",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "nearbyOpenWalk": "Open the walk in the map",
+  "@nearbyOpenWalk": {
+    "description": "Button."
+  },
+  "meetupsShort": "Meetups",
+  "@meetupsShort": {
+    "description": "Home shortcut to traveller meetups."
+  },
+  "meetupsTitle": "Traveller meetups",
+  "@meetupsTitle": {
+    "description": "Meetups screen title."
+  },
+  "meetupsSolo": "Travelling solo · {city}",
+  "@meetupsSolo": {
+    "description": "Header with the city name.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "meetupsChangeCity": "Change city",
+  "@meetupsChangeCity": {
+    "description": "Button to change the city."
+  },
+  "meetupsSafety": "Only people with an account, always in public places, and your exact location is never shared.",
+  "@meetupsSafety": {
+    "description": "Safety note."
+  },
+  "meetupsPickCity": "Which city are you in? Type its airport code (LIS, KIX...).",
+  "@meetupsPickCity": {
+    "description": "Asks for the city."
+  },
+  "meetupsSignIn": "Sign in with your account to see and propose meetups.",
+  "@meetupsSignIn": {
+    "description": "Guest message."
+  },
+  "meetupsUnknownCity": "We don't know that city. Try its airport code.",
+  "@meetupsUnknownCity": {
+    "description": "Unknown airport code."
+  },
+  "meetupsAll": "All",
+  "@meetupsAll": {
+    "description": "Filter: all."
+  },
+  "meetupsFood": "Eat",
+  "@meetupsFood": {
+    "description": "Kind: food."
+  },
+  "meetupsWalk": "Walk",
+  "@meetupsWalk": {
+    "description": "Kind: walk."
+  },
+  "meetupsDrinks": "Drinks",
+  "@meetupsDrinks": {
+    "description": "Kind: drinks."
+  },
+  "meetupsCulture": "Culture",
+  "@meetupsCulture": {
+    "description": "Kind: culture."
+  },
+  "meetupsOther": "Other",
+  "@meetupsOther": {
+    "description": "Kind: other."
+  },
+  "meetupsNone": "No meetups here yet. Propose the first one!",
+  "@meetupsNone": {
+    "description": "Empty list."
+  },
+  "meetupsPropose": "Propose a meetup",
+  "@meetupsPropose": {
+    "description": "Button / dialog title."
+  },
+  "meetupsVisible": "Visible to others",
+  "@meetupsVisible": {
+    "description": "Visibility toggle: visible."
+  },
+  "meetupsHidden": "I'm hidden",
+  "@meetupsHidden": {
+    "description": "Visibility toggle: hidden."
+  },
+  "meetupsToday": "Today {time}",
+  "@meetupsToday": {
+    "description": "Time today.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "meetupsTomorrow": "Tomorrow {time}",
+  "@meetupsTomorrow": {
+    "description": "Time tomorrow.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "meetupsSeats": "{going} of {capacity} places",
+  "@meetupsSeats": {
+    "description": "Seats taken.",
+    "placeholders": {
+      "going": {
+        "type": "int"
+      },
+      "capacity": {
+        "type": "int"
+      }
+    }
+  },
+  "meetupsSomeone": "Someone",
+  "@meetupsSomeone": {
+    "description": "Name shown for hidden people."
+  },
+  "meetupsMore": "More options",
+  "@meetupsMore": {
+    "description": "Menu tooltip."
+  },
+  "meetupsDirections": "How to get there",
+  "@meetupsDirections": {
+    "description": "Open maps."
+  },
+  "meetupsCancel": "Cancel meetup",
+  "@meetupsCancel": {
+    "description": "Cancel my meetup."
+  },
+  "meetupsReport": "Report",
+  "@meetupsReport": {
+    "description": "Report a meetup."
+  },
+  "meetupsYours": "Yours",
+  "@meetupsYours": {
+    "description": "Badge: my meetup."
+  },
+  "meetupsGoing": "Going",
+  "@meetupsGoing": {
+    "description": "Button when joined."
+  },
+  "meetupsJoin": "Join",
+  "@meetupsJoin": {
+    "description": "Join button."
+  },
+  "meetupsFull": "Full",
+  "@meetupsFull": {
+    "description": "Meetup is full."
+  },
+  "meetupsYourName": "Your name for others",
+  "@meetupsYourName": {
+    "description": "Ask the user's display name."
+  },
+  "meetupsWhat": "What (e.g. ramen dinner)",
+  "@meetupsWhat": {
+    "description": "Title field."
+  },
+  "meetupsWhere": "Where you meet",
+  "@meetupsWhere": {
+    "description": "Place field."
+  },
+  "meetupsPublicPlace": "Always a public place: a square, a station, a museum entrance.",
+  "@meetupsPublicPlace": {
+    "description": "Safety hint under the place field."
+  },
+  "meetupsCapacity": "Places: {count}",
+  "@meetupsCapacity": {
+    "description": "Places slider label.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "meetupsPublish": "Publish",
+  "@meetupsPublish": {
+    "description": "Publish button."
+  },
+  "meetupsProposed": "Meetup published.",
+  "@meetupsProposed": {
+    "description": "Snack after publishing."
+  },
+  "meetupsConflict": "It's full, or you already have too many meetups at once.",
+  "@meetupsConflict": {
+    "description": "409 error."
+  },
+  "meetupsGone": "That meetup no longer exists.",
+  "@meetupsGone": {
+    "description": "404 on an action."
+  },
+  "meetupsCancelTitle": "Cancel the meetup?",
+  "@meetupsCancelTitle": {
+    "description": "Cancel confirm title."
+  },
+  "meetupsCancelBody": "It disappears for everyone who had joined.",
+  "@meetupsCancelBody": {
+    "description": "Cancel confirm body."
+  },
+  "meetupsReportTitle": "Report this meetup?",
+  "@meetupsReportTitle": {
+    "description": "Report confirm title."
+  },
+  "meetupsReportBody": "If it looks dangerous, fake or like an ad. With three reports it is hidden for everyone.",
+  "@meetupsReportBody": {
+    "description": "Report confirm body."
+  },
+  "meetupsReported": "Thanks. We won't show it to you anymore.",
+  "@meetupsReported": {
+    "description": "Snack after reporting."
+  },
+  "driveShort": "Car",
+  "@driveShort": {
+    "description": "Home shortcut to car mode."
+  },
+  "driveTitle": "Car mode",
+  "@driveTitle": {
+    "description": "Car mode title."
+  },
+  "driveVoiceOn": "Read aloud",
+  "@driveVoiceOn": {
+    "description": "Tooltip: turn voice on."
+  },
+  "driveVoiceOff": "Mute voice",
+  "@driveVoiceOff": {
+    "description": "Tooltip: turn voice off."
+  },
+  "driveGuide": "Audio guide",
+  "@driveGuide": {
+    "description": "Mode: audioguide."
+  },
+  "driveFuel": "Fuel",
+  "@driveFuel": {
+    "description": "Mode: fuel."
+  },
+  "drivePark": "Park",
+  "@drivePark": {
+    "description": "Mode: parking."
+  },
+  "driveLez": "ZTL zone",
+  "@driveLez": {
+    "description": "Mode: restricted traffic zones."
+  },
+  "driveElectric": "Electric",
+  "@driveElectric": {
+    "description": "Chip: EV chargers."
+  },
+  "driveGuideTitle": "Audio guides while you drive",
+  "@driveGuideTitle": {
+    "description": "Audioguide mode heading."
+  },
+  "driveGuideBody": "With travel mode on, we let you know each time you pass a place with an audio guide. It plays through the car speakers (Bluetooth or Android Auto).",
+  "@driveGuideBody": {
+    "description": "Audioguide mode explanation."
+  },
+  "driveGuideSwitch": "Notifies you on entering each zone",
+  "@driveGuideSwitch": {
+    "description": "Subtitle of the travel mode switch."
+  },
+  "driveAndroidAuto": "In Android Auto, NomadIQ appears among the audio apps: the guide you are listening to is controlled from the car screen. For directions we open Google Maps.",
+  "@driveAndroidAuto": {
+    "description": "Android Auto note."
+  },
+  "driveNone": "None nearby.",
+  "@driveNone": {
+    "description": "Nothing of this kind nearby."
+  },
+  "driveLezNone": "We see no restricted traffic zones nearby. OpenStreetMap doesn't have them all: watch the signs.",
+  "@driveLezNone": {
+    "description": "No restricted zones nearby."
+  },
+  "driveFuelAt": "Fuel station {km} away",
+  "@driveFuelAt": {
+    "description": "Nearest fuel station.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "driveEvAt": "Charger {km} away",
+  "@driveEvAt": {
+    "description": "Nearest EV charger.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "driveParkAt": "{name} · {km} away",
+  "@driveParkAt": {
+    "description": "Nearest car park.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "driveLezAt": "{name} · {km} away",
+  "@driveLezAt": {
+    "description": "Nearest restricted zone.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "driveParking": "Car park",
+  "@driveParking": {
+    "description": "Generic car park name."
+  },
+  "driveGo": "Go",
+  "@driveGo": {
+    "description": "Navigate button."
+  },
+  "driveLezWeb": "Official website",
+  "@driveLezWeb": {
+    "description": "Open official zone website."
+  },
+  "driveLezWarning": "Driving in without a permit can mean a fine (often around €100) that reaches the rental company weeks later. If your hotel is inside, ask them to register your number plate.",
+  "@driveLezWarning": {
+    "description": "Restricted zone warning."
+  },
+  "driveLezEurope": "See zones across Europe",
+  "@driveLezEurope": {
+    "description": "Link to the European zones website."
+  },
+  "driveCapacity": "{count} spaces",
+  "@driveCapacity": {
+    "description": "Total spaces.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "driveAlwaysOpen": "Open 24 h",
+  "@driveAlwaysOpen": {
+    "description": "Open 24 hours."
+  },
+  "driveKm": "{km} km",
+  "@driveKm": {
+    "description": "A distance in km.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "troubleShort": "If something goes wrong",
+  "@troubleShort": {
+    "description": "Home shortcut."
+  },
+  "troubleTitle": "If something goes wrong",
+  "@troubleTitle": {
+    "description": "Screen title."
+  },
+  "troubleBagTab": "My bag",
+  "@troubleBagTab": {
+    "description": "Tab: my bag."
+  },
+  "troubleConnTab": "Missed connection",
+  "@troubleConnTab": {
+    "description": "Tab: missed connection."
+  },
+  "troubleBagDelayed": "It didn't arrive",
+  "@troubleBagDelayed": {
+    "description": "Bag did not arrive."
+  },
+  "troubleBagDamaged": "It arrived damaged",
+  "@troubleBagDamaged": {
+    "description": "Bag arrived damaged."
+  },
+  "troubleNeedDate": "Add the day you landed to work out your deadline.",
+  "@troubleNeedDate": {
+    "description": "Ask for landing date."
+  },
+  "troubleDeadlineDamaged": "Claim in writing before {date}",
+  "@troubleDeadlineDamaged": {
+    "description": "Deadline for damaged bags.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "troubleDeadlineDelayed": "Claim your expenses before {date}",
+  "@troubleDeadlineDelayed": {
+    "description": "Deadline for delayed bags.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "troubleDeadlineLost": "If it hasn't turned up by {date}, it counts as lost",
+  "@troubleDeadlineLost": {
+    "description": "When it counts as lost.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "troubleDaysLeft": "Days left: {count}",
+  "@troubleDaysLeft": {
+    "description": "Days left (number).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "troubleDaysPast": "That day has passed: claim now.",
+  "@troubleDaysPast": {
+    "description": "Deadline passed."
+  },
+  "troubleLimit": "The airline is liable up to 1,519 SDR (about €1,800) per passenger (Montreal Convention).",
+  "@troubleLimit": {
+    "description": "Liability limit."
+  },
+  "troubleStepPir": "Before leaving the baggage hall, go to the baggage desk and ask for the report (PIR).",
+  "@troubleStepPir": {
+    "description": "Checklist step."
+  },
+  "troubleStepSave": "Write down the report reference and the bag tag number here.",
+  "@troubleStepSave": {
+    "description": "Checklist step."
+  },
+  "troubleStepReceipts": "Keep the receipts for basics you buy (toothbrush, clothes...).",
+  "@troubleStepReceipts": {
+    "description": "Checklist step."
+  },
+  "troubleStepClaim": "Send the written claim before the deadline.",
+  "@troubleStepClaim": {
+    "description": "Checklist step."
+  },
+  "troubleArrived": "I landed",
+  "@troubleArrived": {
+    "description": "Chip: landing day."
+  },
+  "troubleDelivered": "I got it back",
+  "@troubleDelivered": {
+    "description": "Chip: bag delivered day."
+  },
+  "troubleAirline": "Airline",
+  "@troubleAirline": {
+    "description": "Field."
+  },
+  "troubleFlight": "Flight (e.g. IB3170)",
+  "@troubleFlight": {
+    "description": "Field."
+  },
+  "troubleReference": "Report reference (PIR)",
+  "@troubleReference": {
+    "description": "Field."
+  },
+  "troubleTag": "Bag tag number",
+  "@troubleTag": {
+    "description": "Field."
+  },
+  "troubleTracker": "Link from your AirTag / SmartTag / Tile",
+  "@troubleTracker": {
+    "description": "Field."
+  },
+  "troubleTrackerHelp": "In its app, \"Share item location\". Many airlines accept it.",
+  "@troubleTrackerHelp": {
+    "description": "Field help."
+  },
+  "troubleSpent": "What you've spent so far",
+  "@troubleSpent": {
+    "description": "Field."
+  },
+  "troubleSpentHelp": "For example \"€85\". Attach the receipts to the email.",
+  "@troubleSpentHelp": {
+    "description": "Field help."
+  },
+  "troubleWriteClaim": "Write the claim",
+  "@troubleWriteClaim": {
+    "description": "Button."
+  },
+  "troubleLogExpenses": "Log expenses in Money",
+  "@troubleLogExpenses": {
+    "description": "Button."
+  },
+  "troubleConnIntro": "Your first flight was late and you missed the next one. What happens depends on how you bought the tickets.",
+  "@troubleConnIntro": {
+    "description": "Missed connection intro."
+  },
+  "troubleOneBooking": "All on one booking",
+  "@troubleOneBooking": {
+    "description": "Switch."
+  },
+  "troubleOneBookingHelp": "One booking code for both flights.",
+  "@troubleOneBookingHelp": {
+    "description": "Switch help."
+  },
+  "troubleRebookTitle": "Don't buy another ticket",
+  "@troubleRebookTitle": {
+    "description": "Card title."
+  },
+  "troubleRebookBody": "The airline must take you to your destination on the next flight at no cost. Go to the transfer desk or use its app.",
+  "@troubleRebookBody": {
+    "description": "Card body."
+  },
+  "troubleSelfTitle": "Nobody has to rebook you",
+  "@troubleSelfTitle": {
+    "description": "Card title."
+  },
+  "troubleSelfBody": "With separate tickets, the second flight knows nothing about the first. Look for the next flight now: the sooner, the cheaper.",
+  "@troubleSelfBody": {
+    "description": "Card body."
+  },
+  "troubleRightsTitle": "Your rights right now",
+  "@troubleRightsTitle": {
+    "description": "Card title."
+  },
+  "troubleRightsBody": "If you depart from the EU or fly a European airline, you are owed food and drink while you wait, and a hotel with transfer if you stay overnight. If you reach your destination more than 3 h late, you can claim €250 to €600.",
+  "@troubleRightsBody": {
+    "description": "Card body."
+  },
+  "troubleSayTitle": "What to say at the desk (in English)",
+  "@troubleSayTitle": {
+    "description": "Heading."
+  },
+  "troubleWhereNow": "Where you are (airport)",
+  "@troubleWhereNow": {
+    "description": "Field: current airport."
+  },
+  "troubleFinal": "Final destination",
+  "@troubleFinal": {
+    "description": "Field: final destination."
+  },
+  "troubleSearchNext": "Search today's flights",
+  "@troubleSearchNext": {
+    "description": "Button."
+  },
+  "troubleClaimDelay": "Claim for the delay (Papers)",
+  "@troubleClaimDelay": {
+    "description": "Button."
+  },
+  "assistantTitle": "Assistant",
+  "@assistantTitle": {
+    "description": "Assistant title."
+  },
+  "assistantTalk": "Conversation",
+  "@assistantTalk": {
+    "description": "Tab: conversation."
+  },
+  "assistantAsk": "Ask",
+  "@assistantAsk": {
+    "description": "Tab: ask."
+  },
+  "assistantTheirLanguage": "Their language",
+  "@assistantTheirLanguage": {
+    "description": "Button: change the other person's language."
+  },
+  "assistantDownload": "Download {languages} to translate without internet (about 30 MB each, on wifi).",
+  "@assistantDownload": {
+    "description": "Banner to download offline models.",
+    "placeholders": {
+      "languages": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantDownloadButton": "Download",
+  "@assistantDownloadButton": {
+    "description": "Download button tooltip."
+  },
+  "assistantDownloadFailed": "Couldn't download. Connect to wifi and try again.",
+  "@assistantDownloadFailed": {
+    "description": "Download failed."
+  },
+  "assistantNeedModels": "Download the languages first (above).",
+  "@assistantNeedModels": {
+    "description": "Translation not available."
+  },
+  "assistantDidntHear": "I didn't hear you. Try again or type it.",
+  "@assistantDidntHear": {
+    "description": "Speech recognised nothing."
+  },
+  "assistantType": "Type",
+  "@assistantType": {
+    "description": "Type instead of speaking."
+  },
+  "assistantTranslate": "Translate",
+  "@assistantTranslate": {
+    "description": "Translate button."
+  },
+  "assistantSpeak": "Speak",
+  "@assistantSpeak": {
+    "description": "Mic tooltip."
+  },
+  "assistantHint": "Tap the mic and speak. The other person reads and hears the translation on their half of the screen.",
+  "@assistantHint": {
+    "description": "Empty conversation hint."
+  },
+  "assistantAskTitle": "What is this?",
+  "@assistantAskTitle": {
+    "description": "Ask tab heading."
+  },
+  "assistantAskBody": "Point the camera at a building or monument and Flyra tells you about it. Or ask her anything.",
+  "@assistantAskBody": {
+    "description": "Ask tab text."
+  },
+  "assistantPointCamera": "Point the camera",
+  "@assistantPointCamera": {
+    "description": "Button."
+  },
+  "assistantAskFlyra": "Ask Flyra",
+  "@assistantAskFlyra": {
+    "description": "Heading."
+  },
+  "assistantChipInside": "What's inside?",
+  "@assistantChipInside": {
+    "description": "Suggested question."
+  },
+  "assistantChipPhoto": "Where's the best photo spot?",
+  "@assistantChipPhoto": {
+    "description": "Suggested question."
+  },
+  "assistantChipMore": "Tell me more",
+  "@assistantChipMore": {
+    "description": "Suggested question."
+  },
+  "voiceTitle": "Talk to Flyra",
+  "@voiceTitle": {
+    "description": "Voice screen title."
+  },
+  "voiceSubtitle": "Ask anything about your trip or the app",
+  "@voiceSubtitle": {
+    "description": "Voice screen subtitle."
+  },
+  "voiceTapToAsk": "Tap the mic and ask",
+  "@voiceTapToAsk": {
+    "description": "Mic idle hint."
+  },
+  "voiceListening": "I'm listening…",
+  "@voiceListening": {
+    "description": "Mic listening."
+  },
+  "voiceNotHeard": "I didn't catch that. Try again or type it below.",
+  "@voiceNotHeard": {
+    "description": "Nothing recognized."
+  },
+  "voiceTypeHint": "Or type your question",
+  "@voiceTypeHint": {
+    "description": "Text field hint."
+  },
+  "voiceTryAsking": "Try asking",
+  "@voiceTryAsking": {
+    "description": "Examples header."
+  },
+  "voiceExFlight": "What time does my plane leave?",
+  "@voiceExFlight": {
+    "description": "Example question."
+  },
+  "voiceExMoney": "How much have we spent?",
+  "@voiceExMoney": {
+    "description": "Example question."
+  },
+  "voiceExHotel": "Take me to the hotel",
+  "@voiceExHotel": {
+    "description": "Example question."
+  },
+  "voiceExVisa": "Do I need a visa for the US?",
+  "@voiceExVisa": {
+    "description": "Example question."
+  },
+  "voiceExLanguage": "How do I change the language?",
+  "@voiceExLanguage": {
+    "description": "Example question."
+  },
+  "voiceFlightAt": "Your flight {from} → {to} leaves on {date} at {time}.",
+  "@voiceFlightAt": {
+    "description": "Flight answer.",
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceGate": "Gate {gate}.",
+  "@voiceGate": {
+    "description": "Gate suffix.",
+    "placeholders": {
+      "gate": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceNoFlight": "You haven't told me your flight yet. Add it and I'll remind you.",
+  "@voiceNoFlight": {
+    "description": "No flight saved."
+  },
+  "voiceNoHotel": "I don't have your hotel's address yet. Add it and I'll take you there.",
+  "@voiceNoHotel": {
+    "description": "No hotel saved."
+  },
+  "voiceAddTrip": "Add my trip",
+  "@voiceAddTrip": {
+    "description": "Button: add flight/hotel."
+  },
+  "voiceHotel": "Let's go to {hotel}. I'll open the route in Maps.",
+  "@voiceHotel": {
+    "description": "Hotel answer.",
+    "placeholders": {
+      "hotel": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceTakeMe": "Take me",
+  "@voiceTakeMe": {
+    "description": "Button: open directions."
+  },
+  "voiceOpen": "Open",
+  "@voiceOpen": {
+    "description": "Generic open button."
+  },
+  "voiceMoney": "Here's what you've spent and who owes whom.",
+  "@voiceMoney": {
+    "description": "Money answer."
+  },
+  "voiceVisa": "Let's check what they ask you for to enter (visa, ESTA, eTA…).",
+  "@voiceVisa": {
+    "description": "Visa answer."
+  },
+  "voiceLanguage": "You can change the app's language here.",
+  "@voiceLanguage": {
+    "description": "Language answer."
+  },
+  "voiceSos": "Opening emergencies: the local number, your location and your medical card.",
+  "@voiceSos": {
+    "description": "SOS answer."
+  },
+  "voiceNearby": "Here's the nearest water, toilets, wifi and places to charge.",
+  "@voiceNearby": {
+    "description": "Nearby answer."
+  },
+  "voiceTranslate": "Open the interpreter: each person speaks in their language, even without internet.",
+  "@voiceTranslate": {
+    "description": "Translate answer."
+  },
+  "voiceMeetups": "Here are open plans with other travellers in your city.",
+  "@voiceMeetups": {
+    "description": "Meetups answer."
+  },
+  "voiceDrive": "Car mode: fuel, parking and low-emission zones around you.",
+  "@voiceDrive": {
+    "description": "Drive answer."
+  },
+  "voiceTrouble": "Don't worry: here's what to do and the claim, step by step.",
+  "@voiceTrouble": {
+    "description": "Trouble answer."
+  },
+  "voiceUnknown": "I can't do that from here, but I'll answer you in the chat.",
+  "@voiceUnknown": {
+    "description": "Unknown question answer."
+  },
+  "voiceAskFlyra": "Ask Flyra in the chat",
+  "@voiceAskFlyra": {
+    "description": "Button: ask in chat."
+  },
+  "chatTitle": "Trip chat",
+  "@chatTitle": {
+    "description": "Group chat title."
+  },
+  "chatYou": "You",
+  "@chatYou": {
+    "description": "You (member list)."
+  },
+  "chatFlyraProfile": "Flyra's profile",
+  "@chatFlyraProfile": {
+    "description": "Tooltip: Flyra profile."
+  },
+  "chatInviteTitle": "Add to the chat",
+  "@chatInviteTitle": {
+    "description": "Menu: add someone."
+  },
+  "chatInviteText": "They type it in NomadIQ, in Group → Join with a code.",
+  "@chatInviteText": {
+    "description": "Invite explanation."
+  },
+  "chatInviteCopy": "Copy code",
+  "@chatInviteCopy": {
+    "description": "Copy invite code."
+  },
+  "chatInviteAskOrganizer": "Ask whoever created the trip for the code.",
+  "@chatInviteAskOrganizer": {
+    "description": "No code available."
+  },
+  "chatMyName": "Your name in the chat",
+  "@chatMyName": {
+    "description": "Menu: my chat name."
+  },
+  "chatMyNameHelp": "This is how the others see you (empty = your alias).",
+  "@chatMyNameHelp": {
+    "description": "Name helper."
+  },
+  "chatKindTitle": "Who are you going with?",
+  "@chatKindTitle": {
+    "description": "Trip type sheet title."
+  },
+  "chatKindIntro": "Flyra adapts: plans, pace and how you split the costs.",
+  "@chatKindIntro": {
+    "description": "Trip type intro."
+  },
+  "chatKindSolo": "Solo",
+  "@chatKindSolo": {
+    "description": "Kind: solo."
+  },
+  "chatKindSoloText": "You and Flyra, in a private chat",
+  "@chatKindSoloText": {
+    "description": "Kind: solo description."
+  },
+  "chatKindFriends": "Friends",
+  "@chatKindFriends": {
+    "description": "Kind: friends."
+  },
+  "chatKindFriendsText": "Shared kitty and voting on plans",
+  "@chatKindFriendsText": {
+    "description": "Kind: friends description."
+  },
+  "chatKindCouple": "Couple",
+  "@chatKindCouple": {
+    "description": "Kind: couple."
+  },
+  "chatKindCoupleText": "Plans for two and costs split in half",
+  "@chatKindCoupleText": {
+    "description": "Kind: couple description."
+  },
+  "chatKindFamily": "Family",
+  "@chatKindFamily": {
+    "description": "Kind: family."
+  },
+  "chatKindFamilyText": "Relaxed pace and no steep climbs",
+  "@chatKindFamilyText": {
+    "description": "Kind: family description."
+  },
+  "chatEndTrip": "End trip",
+  "@chatEndTrip": {
+    "description": "Menu: end trip."
+  },
+  "chatLoadFailed": "Couldn't open the chat. Check your connection.",
+  "@chatLoadFailed": {
+    "description": "Load error."
+  },
+  "chatRetry": "Try again",
+  "@chatRetry": {
+    "description": "Retry."
+  },
+  "chatEmpty": "No messages yet. Say hi to the group or ask @Flyra.",
+  "@chatEmpty": {
+    "description": "Empty chat."
+  },
+  "chatFlyraTyping": "Flyra is typing…",
+  "@chatFlyraTyping": {
+    "description": "Flyra typing."
+  },
+  "chatQuickDinner": "@Flyra where shall we have dinner?",
+  "@chatQuickDinner": {
+    "description": "Quick question."
+  },
+  "chatQuickTomorrow": "@Flyra plan for tomorrow",
+  "@chatQuickTomorrow": {
+    "description": "Quick question."
+  },
+  "chatQuickRain": "@Flyra plan if it rains",
+  "@chatQuickRain": {
+    "description": "Quick question."
+  },
+  "chatMentionFlyra": "Ask Flyra",
+  "@chatMentionFlyra": {
+    "description": "Tooltip: mention Flyra."
+  },
+  "chatHint": "Write to the group…",
+  "@chatHint": {
+    "description": "Input hint."
+  },
+  "chatSend": "Send",
+  "@chatSend": {
+    "description": "Tooltip: send."
+  },
+  "chatFlyraQuota": "Flyra can't answer you any more today (daily limit). Come back tomorrow.",
+  "@chatFlyraQuota": {
+    "description": "Flyra quota used."
+  },
+  "chatFlyraBusy": "Flyra is busy right now. Try again in a while.",
+  "@chatFlyraBusy": {
+    "description": "Flyra busy."
+  },
+  "chatTooMany": "You've written a lot of messages today in this trip. Carry on tomorrow.",
+  "@chatTooMany": {
+    "description": "Daily message limit."
+  },
+  "chatSendFailed": "Couldn't send. Check your connection.",
+  "@chatSendFailed": {
+    "description": "Send error."
+  },
+  "chatFlyraRole": "Your NomadIQ travel agent",
+  "@chatFlyraRole": {
+    "description": "Flyra role."
+  },
+  "chatFlyraLanguages": "Understands you in your language",
+  "@chatFlyraLanguages": {
+    "description": "Flyra feature."
+  },
+  "chatFlyraKnowsTrip": "Knows what kind of trip it is and reads the latest messages",
+  "@chatFlyraKnowsTrip": {
+    "description": "Flyra feature."
+  },
+  "chatFlyraNoSelling": "Doesn't sell your data",
+  "@chatFlyraNoSelling": {
+    "description": "Flyra feature."
+  },
+  "chatFlyraHint": "Write @Flyra in the chat. She can make mistakes: check prices and times before paying.",
+  "@chatFlyraHint": {
+    "description": "Flyra hint."
+  },
+  "chatTripOver": "TRIP OVER",
+  "@chatTripOver": {
+    "description": "End banner."
+  },
+  "chatWhatATrip": "{trip}, what a trip!",
+  "@chatWhatATrip": {
+    "description": "End title.",
+    "placeholders": {
+      "trip": {
+        "type": "String"
+      }
+    }
+  },
+  "chatStatPeople": "people",
+  "@chatStatPeople": {
+    "description": "Stat label."
+  },
+  "chatStatMessages": "messages",
+  "@chatStatMessages": {
+    "description": "Stat label."
+  },
+  "chatStatFlyra": "Flyra answers",
+  "@chatStatFlyra": {
+    "description": "Stat label."
+  },
+  "chatHowWasIt": "How was your experience?",
+  "@chatHowWasIt": {
+    "description": "Rating question."
+  },
+  "chatStarsLabel": "Rating: {n} out of 5",
+  "@chatStarsLabel": {
+    "description": "Star tooltip.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "chatStarsTap": "Tap the stars",
+  "@chatStarsTap": {
+    "description": "Rating hint."
+  },
+  "chatStarsBad": "We're sorry it didn't go well",
+  "@chatStarsBad": {
+    "description": "Low rating reply."
+  },
+  "chatStarsOk": "Thanks, it helps us improve",
+  "@chatStarsOk": {
+    "description": "Mid rating reply."
+  },
+  "chatStarsGreat": "Great! Will you say so on Google Play?",
+  "@chatStarsGreat": {
+    "description": "Top rating reply."
+  },
+  "chatRatePlay": "Rate on Google Play",
+  "@chatRatePlay": {
+    "description": "Rate on Play button."
+  },
+  "chatSeeVideo": "See the trip summary video",
+  "@chatSeeVideo": {
+    "description": "Video link."
+  },
+  "pushChannelGroup": "Group trips",
+  "@pushChannelGroup": {
+    "description": "Notification channel name."
+  },
+  "pushGroupChatTitle": "New messages in your trip",
+  "@pushGroupChatTitle": {
+    "description": "Push title: new chat messages."
+  },
+  "pushGroupChatBody": "Open the chat to read them.",
+  "@pushGroupChatBody": {
+    "description": "Push body: new chat messages."
+  },
+  "pushGroupResultTitle": "Your group has a destination!",
+  "@pushGroupResultTitle": {
+    "description": "Push title: destination chosen."
+  },
+  "pushGroupResultBody": "The group's agents reached an agreement. Tap to see it.",
+  "@pushGroupResultBody": {
+    "description": "Push body: destination chosen."
+  },
+  "privacyGroup": "Group trips",
+  "@privacyGroup": {
+    "description": "Privacy toggle: group trips."
+  },
+  "privacyGroupSub": "New chat messages and the chosen destination.",
+  "@privacyGroupSub": {
+    "description": "Privacy toggle subtitle."
+  },
+  "staysTitle": "Sleep for less",
+  "@staysTitle": {
+    "description": "Cheap sleep title."
+  },
+  "staysSubtitle": "Flyra looks further out if it pays off",
+  "@staysSubtitle": {
+    "description": "Subtitle."
+  },
+  "staysWhere": "Where are you going? Choose the place",
+  "@staysWhere": {
+    "description": "No target yet."
+  },
+  "staysPoint": "Chosen point ({lat}, {lon})",
+  "@staysPoint": {
+    "description": "Chosen point.",
+    "placeholders": {
+      "lat": {
+        "type": "String"
+      },
+      "lon": {
+        "type": "String"
+      }
+    }
+  },
+  "staysNearMe": "Near me",
+  "@staysNearMe": {
+    "description": "Button: near me."
+  },
+  "staysOnMap": "On the map",
+  "@staysOnMap": {
+    "description": "Button: pick on map."
+  },
+  "staysNoLocation": "No location: choose the place on the map.",
+  "@staysNoLocation": {
+    "description": "No GPS."
+  },
+  "staysNights": "{count, plural, =1{1 night} other{{count} nights}}",
+  "@staysNights": {
+    "description": "Nights count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "staysFewer": "One person fewer",
+  "@staysFewer": {
+    "description": "Tooltip: one person fewer."
+  },
+  "staysMore": "One more person",
+  "@staysMore": {
+    "description": "Tooltip: one more person."
+  },
+  "staysAdults": "{count, plural, =1{1 adult} other{{count} adults}}",
+  "@staysAdults": {
+    "description": "Adults count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "staysRadiusNear": "Near only",
+  "@staysRadiusNear": {
+    "description": "Radius: near only."
+  },
+  "staysRadiusKm": "Up to {km} km",
+  "@staysRadiusKm": {
+    "description": "Radius in km.",
+    "placeholders": {
+      "km": {
+        "type": "int"
+      }
+    }
+  },
+  "staysOffline": "No internet. Try again when you're connected.",
+  "@staysOffline": {
+    "description": "No internet."
+  },
+  "staysUnavailable": "Can't search right now. Try again in a minute.",
+  "@staysUnavailable": {
+    "description": "Server busy."
+  },
+  "staysNone": "No areas with accommodation within this radius.",
+  "@staysNone": {
+    "description": "No zones."
+  },
+  "staysNearSite": "Next to the place",
+  "@staysNearSite": {
+    "description": "Zone: next to the place."
+  },
+  "staysWalkMeta": "On foot · ~{min} min",
+  "@staysWalkMeta": {
+    "description": "Walk zone meta.",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "staysTrainMeta": "{km} km · ~{min} min by train or metro",
+  "@staysTrainMeta": {
+    "description": "Train zone meta.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "staysLodgings": "{n} places to stay · {budget} budget (hostels, guesthouses)",
+  "@staysLodgings": {
+    "description": "Lodgings count.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "budget": {
+        "type": "int"
+      }
+    }
+  },
+  "staysSeePrices": "See prices",
+  "@staysSeePrices": {
+    "description": "Button: see prices."
+  },
+  "staysOnGoogleMaps": "See on Google Maps",
+  "@staysOnGoogleMaps": {
+    "description": "Tooltip: Google Maps."
+  },
+  "staysCalcTitle": "Work out the real total",
+  "@staysCalcTitle": {
+    "description": "Calculator title."
+  },
+  "staysNightPrice": "Price per night",
+  "@staysNightPrice": {
+    "description": "Field: price per night."
+  },
+  "staysFare": "Ticket per trip",
+  "@staysFare": {
+    "description": "Field: fare per trip."
+  },
+  "staysTotal": "Real total: {total}",
+  "@staysTotal": {
+    "description": "Real total.",
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "staysTotalParts": "Stay {hotel} + trains {transport} ({trips} trips)",
+  "@staysTotalParts": {
+    "description": "Total breakdown.",
+    "placeholders": {
+      "hotel": {
+        "type": "String"
+      },
+      "transport": {
+        "type": "String"
+      },
+      "trips": {
+        "type": "int"
+      }
+    }
+  },
+  "staysSave": "You save {amount} compared with sleeping next to it",
+  "@staysSave": {
+    "description": "Savings.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "staysNoSave": "Here it doesn't pay off compared with sleeping next to it",
+  "@staysNoSave": {
+    "description": "No savings."
+  },
+  "staysTipWiden": "There are {n} places to stay next to it. Widen the radius: a few train stops away there's usually more choice and lower prices.",
+  "@staysTipWiden": {
+    "description": "Tip: widen radius.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "staysTipOnlyNear": "There are no stations with accommodation nearby: your best bet is next to the place ({n} places to stay).",
+  "@staysTipOnlyNear": {
+    "description": "Tip: no stations.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "staysTipBest": "Most choice: {name}, with {n} places to stay ~{min} min away by train. Check prices there and compare the real total.",
+  "@staysTipBest": {
+    "description": "Tip: best zone.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      },
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "staysFactorsTitle": "Flyra takes into account",
+  "@staysFactorsTitle": {
+    "description": "Factors header."
+  },
+  "staysFactorTime": "Distance and minutes to the place",
+  "@staysFactorTime": {
+    "description": "Factor."
+  },
+  "staysFactorOffer": "How many places to stay there are (more supply, better prices)",
+  "@staysFactorOffer": {
+    "description": "Factor."
+  },
+  "staysFactorBudget": "Hostels and guesthouses nearby",
+  "@staysFactorBudget": {
+    "description": "Factor."
+  },
+  "staysFactorTotal": "The total with the train tickets you enter",
+  "@staysFactorTotal": {
+    "description": "Factor."
+  },
+  "staysEstimateNote": "Minutes are estimates; check timetables and the last train back.",
+  "@staysEstimateNote": {
+    "description": "Estimate note."
+  },
+  "staysPickTitle": "Where are you going?",
+  "@staysPickTitle": {
+    "description": "Picker title."
+  },
+  "staysPickHint": "Move the map until the pin is over the place.",
+  "@staysPickHint": {
+    "description": "Picker hint."
+  },
+  "staysPickUse": "Search around here",
+  "@staysPickUse": {
+    "description": "Picker button."
+  },
+  "transportTitle": "Getting around",
+  "@transportTitle": {
+    "description": "Getting around title."
+  },
+  "transportSubtitle": "routes, passes and tickets",
+  "@transportSubtitle": {
+    "description": "Subtitle."
+  },
+  "transportTabRoutes": "Routes",
+  "@transportTabRoutes": {
+    "description": "Tab routes."
+  },
+  "transportTabPasses": "Passes",
+  "@transportTabPasses": {
+    "description": "Tab passes."
+  },
+  "transportTabTickets": "My tickets",
+  "@transportTabTickets": {
+    "description": "Tab my tickets."
+  },
+  "transportAirport": "Airport {code}",
+  "@transportAirport": {
+    "description": "Arrival airport.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "transportNoAirport": "Which airport do you land at?",
+  "@transportNoAirport": {
+    "description": "No airport chosen."
+  },
+  "transportPickAirport": "Choose airport",
+  "@transportPickAirport": {
+    "description": "Button choose airport."
+  },
+  "transportChange": "Change",
+  "@transportChange": {
+    "description": "Button change."
+  },
+  "transportTo": "Where are you going",
+  "@transportTo": {
+    "description": "Destination field label."
+  },
+  "transportHotelHint": "Your hotel's address",
+  "@transportHotelHint": {
+    "description": "Destination hint."
+  },
+  "transportWaysOut": "How to get out of the airport",
+  "@transportWaysOut": {
+    "description": "Section: ways out of the airport."
+  },
+  "transportWaysNone": "OpenStreetMap doesn't have this airport's stations mapped yet.",
+  "@transportWaysNone": {
+    "description": "No stations mapped."
+  },
+  "transportWaysError": "Couldn't load the stations. The routes below still work.",
+  "@transportWaysError": {
+    "description": "Stations failed."
+  },
+  "transportModeTrain": "Train",
+  "@transportModeTrain": {
+    "description": "Mode train."
+  },
+  "transportModeMetro": "Metro",
+  "@transportModeMetro": {
+    "description": "Mode metro."
+  },
+  "transportModeTram": "Tram",
+  "@transportModeTram": {
+    "description": "Mode tram."
+  },
+  "transportModeBus": "Bus",
+  "@transportModeBus": {
+    "description": "Mode bus."
+  },
+  "transportModeTaxi": "Taxi",
+  "@transportModeTaxi": {
+    "description": "Mode taxi."
+  },
+  "transportModeFerry": "Ferry",
+  "@transportModeFerry": {
+    "description": "Mode ferry."
+  },
+  "transportRouteTransit": "Public transport",
+  "@transportRouteTransit": {
+    "description": "Route public transport."
+  },
+  "transportRouteTransitNote": "Timetables, changes and fares from each operator, in Google Maps",
+  "@transportRouteTransitNote": {
+    "description": "Transit note."
+  },
+  "transportRouteTaxi": "Taxi or car",
+  "@transportRouteTaxi": {
+    "description": "Route taxi."
+  },
+  "transportRouteTaxiNote": "Easiest with big suitcases or late at night",
+  "@transportRouteTaxiNote": {
+    "description": "Taxi note."
+  },
+  "transportGo": "See route",
+  "@transportGo": {
+    "description": "Tooltip open route."
+  },
+  "transportNeedHotel": "Type your hotel's address to see the routes.",
+  "@transportNeedHotel": {
+    "description": "Need hotel address."
+  },
+  "transportRoutesNote": "Routes, timetables and fares are worked out by Google Maps with each operator's data.",
+  "@transportRoutesNote": {
+    "description": "Routes footnote."
+  },
+  "transportDays": "{count, plural, =1{1 day in the city} other{{count} days in the city}}",
+  "@transportDays": {
+    "description": "Days count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "transportRides": "{count, plural, =1{1 ride a day} other{{count} rides a day}}",
+  "@transportRides": {
+    "description": "Rides per day.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "transportCardWhat": "Top-up card: tap it (or your phone) on metro, buses and more.",
+  "@transportCardWhat": {
+    "description": "Top-up card description."
+  },
+  "transportMustHave": "Must have",
+  "@transportMustHave": {
+    "description": "Verdict must have."
+  },
+  "transportIfMuseums": "Only if you visit museums",
+  "@transportIfMuseums": {
+    "description": "Verdict city card."
+  },
+  "transportOfficial": "Official website",
+  "@transportOfficial": {
+    "description": "Official website."
+  },
+  "transportHaveIt": "I have it",
+  "@transportHaveIt": {
+    "description": "I have it."
+  },
+  "transportNoCity": "We don't have this city's passes yet. Look on its transport website for the top-up card and tourist passes.",
+  "@transportNoCity": {
+    "description": "No pass data for this city."
+  },
+  "transportActive": "ACTIVE",
+  "@transportActive": {
+    "description": "Pass active."
+  },
+  "transportExpired": "EXPIRED",
+  "@transportExpired": {
+    "description": "Pass expired."
+  },
+  "transportPassHours": "{hours}-hour pass",
+  "@transportPassHours": {
+    "description": "Pass hours.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "transportLeftHours": "{hours} h left",
+  "@transportLeftHours": {
+    "description": "Hours left.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "transportLeftMinutes": "{minutes} min left",
+  "@transportLeftMinutes": {
+    "description": "Minutes left.",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "transportBalance": "Balance {amount}",
+  "@transportBalance": {
+    "description": "Card balance.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "transportBalanceUnknown": "No balance noted yet",
+  "@transportBalanceUnknown": {
+    "description": "No balance noted."
+  },
+  "transportEditBalance": "Note balance",
+  "@transportEditBalance": {
+    "description": "Note balance."
+  },
+  "transportTopUp": "Top up",
+  "@transportTopUp": {
+    "description": "Top up."
+  },
+  "transportDelete": "Remove",
+  "@transportDelete": {
+    "description": "Remove ticket."
+  },
+  "transportNoTickets": "No tickets yet. In Passes, tap “I have it”, or add one here.",
+  "@transportNoTickets": {
+    "description": "No tickets."
+  },
+  "transportAdd": "Add ticket",
+  "@transportAdd": {
+    "description": "Add ticket."
+  },
+  "transportName": "Name",
+  "@transportName": {
+    "description": "Ticket name."
+  },
+  "transportHoursField": "Hours (empty = top-up card)",
+  "@transportHoursField": {
+    "description": "Hours field."
+  },
+  "transportSave": "Save",
+  "@transportSave": {
+    "description": "Save."
+  },
+  "transportCancel": "Cancel",
+  "@transportCancel": {
+    "description": "Cancel."
+  },
+  "transportTicketsNote": "Saved only on your phone. To go through the gates, use the ticket or the operator's app.",
+  "@transportTicketsNote": {
+    "description": "Tickets footnote."
+  },
+  "transportUnlimited": "Unlimited rides for a set number of hours",
+  "@transportUnlimited": {
+    "description": "Pass type: unlimited rides."
+  },
+  "transportCityCard": "Transport + museums: only pays off if you visit museums",
+  "@transportCityCard": {
+    "description": "Pass type: city card."
+  },
+  "transportCapInfo": "Paying by card or phone has a cap: once you reach it, the rest of the rides that day (or week) are free. Check the amount on the official website.",
+  "@transportCapInfo": {
+    "description": "Fare capping info."
+  },
+  "transportCalcTitle": "Does a pass pay off?",
+  "@transportCalcTitle": {
+    "description": "Calculator title."
+  },
+  "transportCalcHint": "Look up the prices on the official website and enter them here: I'll tell you whether the pass pays off for your trip.",
+  "@transportCalcHint": {
+    "description": "Calculator hint from Flyra."
+  },
+  "transportSingleField": "Price of a single ride",
+  "@transportSingleField": {
+    "description": "Field single price."
+  },
+  "transportPassField": "Price of the pass",
+  "@transportPassField": {
+    "description": "Field pass price."
+  },
+  "transportPassHoursField": "Pass length (hours)",
+  "@transportPassHoursField": {
+    "description": "Field pass hours."
+  },
+  "transportCalcWorth": "The pass pays off: {pass} in passes against {singles} in single rides.",
+  "@transportCalcWorth": {
+    "description": "Result: pass pays off.",
+    "placeholders": {
+      "pass": {
+        "type": "String"
+      },
+      "singles": {
+        "type": "String"
+      }
+    }
+  },
+  "transportCalcNotWorth": "Single rides are cheaper: {singles} against {pass} in passes.",
+  "@transportCalcNotWorth": {
+    "description": "Result: singles cheaper.",
+    "placeholders": {
+      "pass": {
+        "type": "String"
+      },
+      "singles": {
+        "type": "String"
+      }
+    }
+  },
+  "transportHowManyHours": "How many hours is your pass? It starts counting now.",
+  "@transportHowManyHours": {
+    "description": "Dialog: how many hours."
+  },
+  "eventsTitle": "What's on in your dates",
+  "@eventsTitle": {
+    "description": "Events title."
+  },
+  "eventsPickCity": "Choose city",
+  "@eventsPickCity": {
+    "description": "Choose city button."
+  },
+  "eventsNoCity": "Choose the city (its airport) to see holidays and events on your dates.",
+  "@eventsNoCity": {
+    "description": "No city."
+  },
+  "eventsOffline": "No internet. Try again when you're connected.",
+  "@eventsOffline": {
+    "description": "No internet."
+  },
+  "eventsUnavailable": "Can't load the events right now. Try again in a minute.",
+  "@eventsUnavailable": {
+    "description": "Server problem."
+  },
+  "eventsNone": "No holidays or published events on these dates.",
+  "@eventsNone": {
+    "description": "Nothing found."
+  },
+  "eventsSummary": "On your dates: {holidays} and {events}. Tap a day to see only that day.",
+  "@eventsSummary": {
+    "description": "Summary.",
+    "placeholders": {
+      "holidays": {
+        "type": "String"
+      },
+      "events": {
+        "type": "String"
+      }
+    }
+  },
+  "eventsHolidaysCount": "{count, plural, =0{no holidays} =1{1 holiday} other{{count} holidays}}",
+  "@eventsHolidaysCount": {
+    "description": "Holiday count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eventsEventsCount": "{count, plural, =0{no events} =1{1 event} other{{count} events}}",
+  "@eventsEventsCount": {
+    "description": "Event count.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eventsOnlyHolidays": "Showing official holidays only: concerts and matches aren't available right now.",
+  "@eventsOnlyHolidays": {
+    "description": "Only holidays available."
+  },
+  "eventsSaved": "Saved ({count})",
+  "@eventsSaved": {
+    "description": "Saved filter.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eventsSources": "Sources: {names}",
+  "@eventsSources": {
+    "description": "Data sources.",
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "eventsFrom": "From {price} (organizer's price)",
+  "@eventsFrom": {
+    "description": "Price from organizer.",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "eventsHoliday": "Public holiday: some shops and museums may close",
+  "@eventsHoliday": {
+    "description": "Holiday label."
+  },
+  "eventsHolidayRegional": "Holiday in part of the country only",
+  "@eventsHolidayRegional": {
+    "description": "Regional holiday."
+  },
+  "eventsTickets": "Tickets",
+  "@eventsTickets": {
+    "description": "Tickets button."
+  },
+  "eventsSave": "Save",
+  "@eventsSave": {
+    "description": "Save tooltip."
+  },
+  "eventsUnsave": "Remove from saved",
+  "@eventsUnsave": {
+    "description": "Unsave tooltip."
+  },
+  "beforePlugsTitle": "Plugs",
+  "@beforePlugsTitle": {
+    "description": "Section plugs."
+  },
+  "beforePlugType": "Type {type}",
+  "@beforePlugType": {
+    "description": "Plug type label.",
+    "placeholders": {
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePlugsNeed": "Buy an adapter for type {types} sockets",
+  "@beforePlugsNeed": {
+    "description": "Need adapter.",
+    "placeholders": {
+      "types": {
+        "type": "String"
+      }
+    }
+  },
+  "beforePlugsNoNeed": "Your chargers fit: no adapter needed",
+  "@beforePlugsNoNeed": {
+    "description": "No adapter needed."
+  },
+  "beforePlugsVolts": "Mains voltage there: {volts} V",
+  "@beforePlugsVolts": {
+    "description": "Mains voltage.",
+    "placeholders": {
+      "volts": {
+        "type": "int"
+      }
+    }
+  },
+  "beforePlugsTransformer": "The voltage is different there. Check your charger's label: if it says 100-240 V it works; if not, you need a voltage converter.",
+  "@beforePlugsTransformer": {
+    "description": "Transformer warning."
+  },
+  "beforePlugsTip": "Tip: a universal adapter works in most countries.",
+  "@beforePlugsTip": {
+    "description": "Universal adapter tip."
+  },
+  "beforePlugsUnknown": "We don't have this country's plug type: check it before you travel.",
+  "@beforePlugsUnknown": {
+    "description": "Unknown country plugs."
+  },
+  "fxEurozone": "Euro area",
+  "@fxEurozone": {
+    "description": "Euro area name."
+  },
+  "fxNotesTitle": "In banknotes",
+  "@fxNotesTitle": {
+    "description": "Banknotes card title."
+  },
+  "fxNotesOr": "or",
+  "@fxNotesOr": {
+    "description": "Alternative mix."
+  },
+  "fxNotesCoins": "+ {amount} in coins",
+  "@fxNotesCoins": {
+    "description": "Coins remainder.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "fxNotesSource": "Banknotes according to the central bank",
+  "@fxNotesSource": {
+    "description": "Official notes source link."
+  },
+  "radarTitle": "Local radar",
+  "@radarTitle": {
+    "description": "Radar screen title."
+  },
+  "radarNowIn": "Now in {city}",
+  "@radarNowIn": {
+    "description": "Header: city where the user is now.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "radarRainTitle": "Rain in the next hours",
+  "@radarRainTitle": {
+    "description": "Card title: rain in the next hours."
+  },
+  "radarNoLocation": "Turn on location to see the radar where you are.",
+  "@radarNoLocation": {
+    "description": "No GPS permission or position."
+  },
+  "radarRainFailed": "Could not load the rain forecast. Try again later.",
+  "@radarRainFailed": {
+    "description": "Rain forecast could not be loaded."
+  },
+  "radarNoRain": "No rain expected in the next {hours} hours",
+  "@radarNoRain": {
+    "description": "No rain expected in the next N hours.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "radarRainAt": "Rain from {time} ({mm} mm/h)",
+  "@radarRainAt": {
+    "description": "Rain starts at a time with mm per hour.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "mm": {
+        "type": "String"
+      }
+    }
+  },
+  "radarFindShelter": "Find a café nearby",
+  "@radarFindShelter": {
+    "description": "Button: find a café nearby to shelter."
+  },
+  "radarScamsTitle": "Scams reported by travellers",
+  "@radarScamsTitle": {
+    "description": "Section: scams other travellers reported."
+  },
+  "radarNoCity": "You are not near any city we know, so there is no traveller radar here.",
+  "@radarNoCity": {
+    "description": "No airport city within reach of the user."
+  },
+  "radarSignIn": "Sign in to see and share what other travellers report.",
+  "@radarSignIn": {
+    "description": "Guest: sign in to see and share reports."
+  },
+  "radarNoScams": "No scam reported by enough travellers yet. We only show one when at least 3 people report it.",
+  "@radarNoScams": {
+    "description": "No scam reported by enough travellers."
+  },
+  "radarReportedBy": "{count, plural, =1{Reported by 1 traveller (last 90 days)} other{Reported by {count} travellers (last 90 days)}}",
+  "@radarReportedBy": {
+    "description": "How many travellers reported a scam (last 90 days).",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "radarReportHint": "Did something happen to you here? Tap to warn others (tap again to withdraw). Nobody sees who reported.",
+  "@radarReportHint": {
+    "description": "Hint: tap a chip to report a scam you saw."
+  },
+  "radarScamTouts": "Pushy street sellers",
+  "@radarScamTouts": {
+    "description": "Scam category name."
+  },
+  "radarScamToutsWhy": "They give you a 'gift' and then ask for money. Say no and keep walking.",
+  "@radarScamToutsWhy": {
+    "description": "Short explanation of how this scam works and how to avoid it."
+  },
+  "radarScamTaxi": "Taxi overcharging",
+  "@radarScamTaxi": {
+    "description": "Scam category name."
+  },
+  "radarScamTaxiWhy": "No meter or a 'broken' meter. Use the official rank or an app and agree the price first.",
+  "@radarScamTaxiWhy": {
+    "description": "Short explanation of how this scam works and how to avoid it."
+  },
+  "radarScamPolice": "Fake police",
+  "@radarScamPolice": {
+    "description": "Scam category name."
+  },
+  "radarScamPoliceWhy": "They ask to 'check' your wallet. Never hand it over; offer to go to the police station.",
+  "@radarScamPoliceWhy": {
+    "description": "Short explanation of how this scam works and how to avoid it."
+  },
+  "radarScamBracelet": "Bracelet or petition trick",
+  "@radarScamBracelet": {
+    "description": "Scam category name."
+  },
+  "radarScamBraceletWhy": "They tie something on your wrist or ask you to sign, then demand money or pickpocket you.",
+  "@radarScamBraceletWhy": {
+    "description": "Short explanation of how this scam works and how to avoid it."
+  },
+  "radarScamAtm": "ATM tricks",
+  "@radarScamAtm": {
+    "description": "Scam category name."
+  },
+  "radarScamAtmWhy": "Someone 'helps' you or the machine has a fake slot. Use ATMs inside banks and cover your PIN.",
+  "@radarScamAtmWhy": {
+    "description": "Short explanation of how this scam works and how to avoid it."
+  },
+  "radarScamPickpockets": "Pickpockets",
+  "@radarScamPickpockets": {
+    "description": "Scam category name."
+  },
+  "radarScamPickpocketsWhy": "Crowds, metro doors and terraces. Keep your phone and wallet in front pockets.",
+  "@radarScamPickpocketsWhy": {
+    "description": "Short explanation of how this scam works and how to avoid it."
+  },
+  "radarScamTickets": "Fake tickets",
+  "@radarScamTickets": {
+    "description": "Scam category name."
+  },
+  "radarScamTicketsWhy": "Sellers outside monuments or stations. Buy only at the official website or ticket office.",
+  "@radarScamTicketsWhy": {
+    "description": "Short explanation of how this scam works and how to avoid it."
+  },
+  "radarScamExchange": "Bad currency exchange",
+  "@radarScamExchange": {
+    "description": "Scam category name."
+  },
+  "radarScamExchangeWhy": "'0% commission' with a terrible rate, or paying in euros by card. Compare with the converter and pay in local currency.",
+  "@radarScamExchangeWhy": {
+    "description": "Short explanation of how this scam works and how to avoid it."
+  },
+  "radarItemCoffee": "Coffee",
+  "@radarItemCoffee": {
+    "description": "Price check item."
+  },
+  "radarItemBeer": "Beer",
+  "@radarItemBeer": {
+    "description": "Price check item."
+  },
+  "radarItemWater": "Bottle of water",
+  "@radarItemWater": {
+    "description": "Price check item."
+  },
+  "radarItemMeal": "Simple meal",
+  "@radarItemMeal": {
+    "description": "Price check item."
+  },
+  "radarItemTaxi": "Short taxi ride",
+  "@radarItemTaxi": {
+    "description": "Price check item."
+  },
+  "radarPriceTitle": "Is this price fair?",
+  "@radarPriceTitle": {
+    "description": "Section: is this price fair?"
+  },
+  "radarAsked": "Price they ask you",
+  "@radarAsked": {
+    "description": "Field: price they are asking you."
+  },
+  "radarNoPrices": "Not enough travellers have shared what they paid here yet (we need at least 5).",
+  "@radarNoPrices": {
+    "description": "Not enough real prices reported yet."
+  },
+  "radarNormalRange": "Travellers paid {low} to {high} ({count} reports in the last year)",
+  "@radarNormalRange": {
+    "description": "Normal price range from real traveller reports.",
+    "placeholders": {
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "radarVerdictFine": "Normal price",
+  "@radarVerdictFine": {
+    "description": "Verdict: price is within normal."
+  },
+  "radarVerdictBitHigh": "A bit high",
+  "@radarVerdictBitHigh": {
+    "description": "Verdict: price a bit above normal."
+  },
+  "radarVerdictOver": "Much higher than what others paid",
+  "@radarVerdictOver": {
+    "description": "Verdict: clearly overcharged."
+  },
+  "radarIPaid": "Save what I paid",
+  "@radarIPaid": {
+    "description": "Button: save what I actually paid."
+  },
+  "radarPricesNote": "These prices are what real travellers wrote down, not our estimate. Write only what you actually paid.",
+  "@radarPricesNote": {
+    "description": "Note: prices come from real travellers, not from us."
+  },
+  "radarTooMany": "You have sent many reports today. Try again tomorrow.",
+  "@radarTooMany": {
+    "description": "Daily limit of reports reached."
+  },
+  "radarSendFailed": "Could not send it. Check your connection.",
+  "@radarSendFailed": {
+    "description": "Report could not be sent."
+  },
+  "radarPriceThanks": "Thanks! It helps other travellers.",
+  "@radarPriceThanks": {
+    "description": "Thanks after saving a price."
+  },
+  "queuesTitle": "No queues",
+  "@queuesTitle": {
+    "description": "Queues screen title."
+  },
+  "queuesSubtitle": "How long the queue is at famous places, as reported by travellers who are there.",
+  "@queuesSubtitle": {
+    "description": "Queues screen subtitle."
+  },
+  "queuesWaitNone": "No queue",
+  "@queuesWaitNone": {
+    "description": "Wait level: no queue."
+  },
+  "queuesWaitShort": "Under 15 min",
+  "@queuesWaitShort": {
+    "description": "Wait level: under 15 minutes."
+  },
+  "queuesWaitMedium": "15 to 30 min",
+  "@queuesWaitMedium": {
+    "description": "Wait level: 15 to 30 minutes."
+  },
+  "queuesWaitLong": "30 to 60 min",
+  "@queuesWaitLong": {
+    "description": "Wait level: 30 to 60 minutes."
+  },
+  "queuesWaitVeryLong": "Over an hour",
+  "@queuesWaitVeryLong": {
+    "description": "Wait level: over an hour."
+  },
+  "queuesNoCity": "Turn on location or add your trip to see the places of your city.",
+  "@queuesNoCity": {
+    "description": "No city known (no GPS, no trip)."
+  },
+  "queuesNoPlaces": "We have no famous places for this city yet.",
+  "@queuesNoPlaces": {
+    "description": "City has no famous places with data."
+  },
+  "queuesSignIn": "Sign in to see and share how long the queues are.",
+  "@queuesSignIn": {
+    "description": "Guest: sign in to see and report queues."
+  },
+  "queuesSeeMaps": "Open in Google Maps (sometimes shows live busyness)",
+  "@queuesSeeMaps": {
+    "description": "Open the place in Google Maps."
+  },
+  "queuesNowBy": "{count, plural, other{Reported by {count} travellers}} · {minutes} min ago",
+  "@queuesNowBy": {
+    "description": "Who reported the current wait and how long ago.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "queuesNowUnknown": "Nobody has said how long the queue is in the last hour and a half.",
+  "@queuesNowUnknown": {
+    "description": "Not enough recent reports."
+  },
+  "queuesNoHours": "There are not enough reports yet to show the quietest hours.",
+  "@queuesNoHours": {
+    "description": "Not enough reports for an hourly chart."
+  },
+  "queuesHoursNote": "By hour: what travellers reported in the last 60 days (only hours with 3 or more reports; grey = no data).",
+  "@queuesHoursNote": {
+    "description": "Explains the hourly bars."
+  },
+  "queuesBest": "Quietest hour later today: {hour} ({wait})",
+  "@queuesBest": {
+    "description": "Best hour from now with its usual wait.",
+    "placeholders": {
+      "hour": {
+        "type": "String"
+      },
+      "wait": {
+        "type": "String"
+      }
+    }
+  },
+  "queuesRemindMe": "Remind me before {hour}",
+  "@queuesRemindMe": {
+    "description": "Button: phone reminder before that hour.",
+    "placeholders": {
+      "hour": {
+        "type": "String"
+      }
+    }
+  },
+  "queuesReminderNote": "It's a reminder on your phone, not a place in the queue.",
+  "@queuesReminderNote": {
+    "description": "Clarifies that the reminder is not a real queue turn."
+  },
+  "queuesReminderBody": "In 10 minutes it's usually the quietest time at {place}.",
+  "@queuesReminderBody": {
+    "description": "Reminder notification text.",
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "queuesReminderChannel": "Reminders",
+  "@queuesReminderChannel": {
+    "description": "Android notification channel name."
+  },
+  "queuesReminderSet": "Reminder set for {time}",
+  "@queuesReminderSet": {
+    "description": "Snack: reminder scheduled.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "queuesReported": "You already reported this hour. Tap again to change it.",
+  "@queuesReported": {
+    "description": "User already reported this hour (can change)."
+  },
+  "queuesAskNow": "Are you there? How long is the queue now?",
+  "@queuesAskNow": {
+    "description": "Ask: are you there, how long is the queue?"
+  },
+  "queuesThanks": "Thanks! Other travellers will see it.",
+  "@queuesThanks": {
+    "description": "Thanks after reporting."
+  },
+  "queuesTablesTitle": "Table for dinner",
+  "@queuesTablesTitle": {
+    "description": "Section: restaurants nearby that take bookings."
+  },
+  "queuesTablesNoLocation": "Turn on location to see nearby restaurants that take bookings.",
+  "@queuesTablesNoLocation": {
+    "description": "Restaurants need location."
+  },
+  "queuesNoTables": "No nearby restaurants say on OpenStreetMap that they take bookings.",
+  "@queuesNoTables": {
+    "description": "No bookable restaurants nearby."
+  },
+  "queuesReservationRequired": "booking required",
+  "@queuesReservationRequired": {
+    "description": "Restaurant: booking is required."
+  },
+  "queuesBookWeb": "Book on their website",
+  "@queuesBookWeb": {
+    "description": "Tooltip: book on the restaurant's website."
+  },
+  "queuesCall": "Call",
+  "@queuesCall": {
+    "description": "Tooltip: call the restaurant."
+  },
+  "queuesTablesNote": "You book directly with the restaurant: the app does not book or charge anything. Data:",
+  "@queuesTablesNote": {
+    "description": "Note under the restaurant list."
+  },
+  "dataSourceCheck": "Where this comes from (check it)",
+  "@dataSourceCheck": {
+    "description": "Link to the public source of fixed data so users can verify it."
+  },
+  "stopRuleCheckFare": "You can stop in their city; the price depends on the fare, so check it on their website.",
+  "@stopRuleCheckFare": {
+    "description": "Stopover rule: allowed, price depends on fare."
+  },
+  "stopCheckNote": "With {nights} in {city}: check the exact price on their website",
+  "@stopCheckNote": {
+    "description": "Stopover note when price is not the same for sure.",
+    "placeholders": {
+      "nights": {
+        "type": "String"
+      },
+      "city": {
+        "type": "String"
+      }
+    }
   }
 }
