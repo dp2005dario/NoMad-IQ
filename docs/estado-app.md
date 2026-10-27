@@ -70,27 +70,69 @@ fallo de `CameraException` que no sea permiso. Sin verificar en móvil real.
 | Widgets Android, avisos push | Existe | push necesita Firebase (`com.eclipta.app`) |
 | Pasaporte y cromos, recuerdos | Existe | |
 | Cambiar foto de perfil (cámara, galería, 6 avatares, quitar) | Hecho en este PR (solo en el móvil) | ver `docs/guia-ajustes.md`; sin probar en móvil real. Borrar cuenta existe; cambiar contraseña: no encontrado |
-| Wear OS (esfera del reloj) | **No existe** | la maqueta v9 la menciona; es otra app |
+| Wear OS (esfera del reloj) | **No existe** | otra app (ver C1) |
 | Reclamación de retraso (carta + AESA) | Sin verificar | buscar `claim`/`aesa`: solo aparece "claim" en gastos |
 | Traductor de cartas con cámara encima del papel | Sin verificar / probablemente parcial | no hay archivo propio de "carta" |
 | SOS: mantener 3 s y compartir ubicación en vivo | Sin verificar | revisar `sos_screen.dart` |
 | Notificación en vivo con barra Casa→Hotel | Sin verificar | |
 
-## 5. Lo que depende de algo externo (no se arregla solo con código)
+## 5. Lista completa de lo que queda (27-10-2026)
 
-- Servidor (Azure/Oracle) con los servicios en marcha y HTTPS: sin él, nada
-  de login, Flyra, cámara, grupo ni audioguías funciona en un móvil real.
-- Claves: Travelpayouts, Mapillary, Ticketmaster; Firebase para push.
-- IA local (Ollama) para Flyra y el reconocimiento de monumentos.
-- Play Console y testers (fuera del alcance acordado).
+Búsqueda hecha en `mobile/lib`, `services/` e `infrastructure/` de: "pronto",
+TODO/FIXME, stubs, mocks, "Fake", flags apagados y funciones simuladas.
+Resultado: **no hay TODO/FIXME ni clases Fake en el código de producción**
+(los Fake solo viven en `test/`). Quedan estos puntos, clasificados:
 
-## 6. Siguientes pasos (un PR pequeño cada uno)
+### A. Lo hago yo en el PR #26 (5 puntos)
+1. **Entrar con Google es un botón de relleno**: `welcome_screen.dart` solo
+   enseña "El acceso con Google llega pronto" y el `auth-gateway` no sabe
+   validar cuentas de Google. Es lo más importante que falta (la maqueta
+   promete ese botón). La parte de código (app + gateway) es mía; hace falta
+   además el Client ID de Google (ver B1).
+2. **Cambiar contraseña y recuperarla**: no existen ni en la app ni en el
+   `auth-gateway` (la guía del gateway los lista como pendientes).
+3. **Textos muertos**: `comingSoonTitle`, `comingSoonBody` y `moneySoon` en
+   los 25 .arb ya no los usa nadie; se borran.
+4. **Aviso de servidor de emulador**: si el APK se compiló sin
+   `NOMADIQ_API_URL`, avisar con claridad (hoy solo falla "ocupado").
+5. **Comprobar a fondo** los puntos que marqué "sin verificar": el clima del
+   mapa de la maqueta v7 (solo he visto lluvia/clima en `map_screen.dart` y
+   `street_sheet.dart`, sin confirmar el selector Sol/Nubes/Lluvia), el
+   traductor de cartas con cámara y la notificación en vivo. Ya vi que SOS
+   tiene pulsación larga (`_hold`) y que existe `eu261.dart` con la
+   reclamación; falta confirmar la carta y el paso a AESA.
 
-1. Fusionar #24 (nombre e icono ECLIPTA).
-2. Mensajes de error claros ("no llego al servidor" frente a "ocupado") y
-   aviso si la URL del servidor es la de prueba del emulador.
-3. Borrar la pantalla provisional `coming_soon` y las entradas muertas.
-4. Comprobar de punta a punta, con `docker compose`, el login, Flyra, cámara,
-   grupo y gastos, y arreglar lo que falle.
-5. Revisar y completar los puntos "sin verificar" de la tabla (SOS 3 s,
-   reclamación de retraso, traductor de cartas, notificación en vivo).
+Hecho ya en este PR: auditoría, mensaje claro de "servicio no activado" (404),
+cambiar foto de perfil, quitar la pantalla provisional `coming_soon`.
+
+### B. Depende de algo externo (6 puntos)
+1. **Client ID de Google** (Google Cloud Console / Firebase) para el login con
+   Google, y configurar el servidor para que llegue `photo_url`.
+2. **Servidor con HTTPS** (Azure/Oracle): en versión publicada la app exige
+   https (`config.dart`). Sin servidor, nada de login, Flyra, cámara, grupo ni
+   audioguías en un móvil real.
+3. **IA local (Ollama)**: con `LLM_ENABLED=false` Flyra no existe (404) y la
+   cámara no usa el modelo de visión. Hace falta máquina con memoria para el
+   modelo (`make ollama`).
+4. **Claves**: Travelpayouts (precios y comisión), Mapillary (calle real),
+   Ticketmaster (eventos), identificador de afiliado de Booking.
+5. **Firebase** con `com.eclipta.app` y su `google-services.json` para los
+   avisos push; App ID de Meta para "Crear historia" en Instagram.
+6. **Revisión nativa** de las traducciones y comprobar a mano los enlaces
+   oficiales de visados (ver `lo-que-tienes-que-hacer.md`).
+
+### C. Imposible desde aquí o es otra app (3 puntos)
+1. **Wear OS** (esfera del reloj): es otra app, con su propio proyecto.
+2. **Probar de extremo a extremo con `docker compose`**: este entorno no tiene
+   demonio de Docker (`docker ps` falla), así que no he podido levantar los
+   servicios. Hay que hacerlo en el Codespace de DARIO o en el servidor.
+3. **Probar en un móvil real** (cámara, sonido del vídeo, biometría de la
+   bóveda, widgets): solo tengo `flutter analyze` y los tests.
+
+Total: 5 en A (más 4 ya hechos), 6 en B, 3 en C. Play Console y testers
+quedan fuera del alcance acordado.
+
+## 6. Qué se probó y qué no
+- Probado: `flutter analyze` (0 problemas), `dart format` y `flutter test`
+  (373 pruebas, todas bien) en esta rama.
+- No probado: nada contra servidores reales ni en móvil (ver C2 y C3).
