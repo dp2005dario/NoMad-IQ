@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "NomadIQ",
+  "appTitle": "ECLIPTA",
   "@appTitle": {
     "description": "App name. Never translate."
   },
@@ -77,7 +77,7 @@
   "errorEmailTaken": "There's already an account with this email",
   "errorInvalidInput": "That password isn't accepted. Try a longer, less common one.",
   "errorRateLimited": "Too many attempts. Try again in a few minutes.",
-  "errorUnavailable": "NomadIQ is having trouble. Try again shortly.",
+  "errorUnavailable": "ECLIPTA is having trouble. Try again shortly.",
   "errorNetwork": "No connection. Check your internet and try again.",
   "errorSessionExpired": "Your session has ended. Please sign in again.",
   "homeGreetingName": "Hi, {name}",
@@ -119,7 +119,7 @@
   "@mapLocationWhy": {
     "description": "Shown before asking for location permission. Flyra is the in-app AI (female)."
   },
-  "mapLocationDenied": "NomadIQ doesn't have access to your location. You can allow it in Settings.",
+  "mapLocationDenied": "ECLIPTA doesn't have access to your location. You can allow it in Settings.",
   "mapLocationServiceOff": "Your phone's location is turned off.",
   "mapOpenSettings": "Settings",
   "mapZonesLoading": "Loading zones…",
@@ -220,7 +220,7 @@
     }
   },
   "guideAudioFailed": "The audio couldn't play. Check your connection.",
-  "guideSignIn": "Audio guides are for NomadIQ accounts. Sign in to listen.",
+  "guideSignIn": "Audio guides are for ECLIPTA accounts. Sign in to listen.",
   "pushGuideTitle": "Audio guide nearby",
   "pushGuideBody": "You've just entered a zone with an audio guide. Tap to listen.",
   "pushAirportTitle": "Welcome!",
@@ -235,14 +235,14 @@
   "pushFareTargetTitle": "Target price reached",
   "pushFareBody": "{origin} → {destination} · {date}: {price}",
   "pushFareBodyDrop": "{origin} → {destination} · {date}: {price} (−{percent}%)",
-  "travelServiceTitle": "NomadIQ · Travel mode",
+  "travelServiceTitle": "ECLIPTA · Travel mode",
   "travelServiceText": "Flyra is watching for zones you visit. Turn it off from the map.",
   "travelServiceChannel": "Travel mode",
   "travelMode": "Travel mode",
   "travelExplain": "Get audio guide and safety notices even with the app closed.",
   "travelOn": "Travel mode on: I'll let you know even if you close the app.",
   "travelOff": "Travel mode off. Location only while the app is open.",
-  "travelNeedsAccount": "Travel mode is for NomadIQ accounts. Sign in to use it.",
+  "travelNeedsAccount": "Travel mode is for ECLIPTA accounts. Sign in to use it.",
   "travelNeedsNotifications": "Without notification permission I can't let you know. Enable it in Settings.",
   "@pushGuideBody": {
     "description": "Push notification when the server detects the user entered a city/tourist zone. The zone name is NOT available (privacy)."
@@ -1345,7 +1345,7 @@
   "@groupInviteTitle": {
     "description": "Invite card title."
   },
-  "groupInviteText": "Share this code. Whoever types it in NomadIQ joins the trip (up to 8 people).",
+  "groupInviteText": "Share this code. Whoever types it in ECLIPTA joins the trip (up to 8 people).",
   "@groupInviteText": {
     "description": "Invite explanation."
   },
@@ -1689,7 +1689,7 @@
   "@cameraSignIn": {
     "description": "Camera mode needs an account."
   },
-  "cameraPermission": "NomadIQ needs the camera to see the monument you're pointing at.",
+  "cameraPermission": "ECLIPTA needs the camera to see the monument you're pointing at.",
   "@cameraPermission": {
     "description": "Why camera and location permissions are needed."
   },
@@ -2784,7 +2784,7 @@
   "@vaultLockedText": {
     "description": "Locked vault explanation."
   },
-  "vaultUnlockReason": "Open your NomadIQ vault",
+  "vaultUnlockReason": "Open your ECLIPTA vault",
   "@vaultUnlockReason": {
     "description": "System biometric prompt reason."
   },
@@ -3052,7 +3052,7 @@
   "@settingsDeleteAccount": {
     "description": "Destructive row in settings."
   },
-  "settingsFooter": "NomadIQ {version} · Made with love for travellers all over the world",
+  "settingsFooter": "ECLIPTA {version} · Made with love for travellers all over the world",
   "@settingsFooter": {
     "description": "Footer with the app version.",
     "placeholders": {
@@ -3847,7 +3847,7 @@
       }
     }
   },
-  "menuSignIn": "The menu translator is for NomadIQ accounts. Sign in to use it.",
+  "menuSignIn": "The menu translator is for ECLIPTA accounts. Sign in to use it.",
   "@menuSignIn": {
     "description": "Guests cannot use it."
   },
@@ -4069,7 +4069,7 @@
   "@offlineWifiOnlyWhy": {
     "description": "Why the wifi-only switch exists."
   },
-  "offlineUsed": "NomadIQ is using {size}",
+  "offlineUsed": "ECLIPTA is using {size}",
   "@offlineUsed": {
     "description": "Storage used by the app, with the size.",
     "placeholders": {
@@ -4396,7 +4396,7 @@
   "@helpClaimsSub": {
     "description": "What claim experts do."
   },
-  "helpClaimsMore": "They can claim for you and keep a share only if you get paid. NomadIQ may earn a commission if you hire them. If you prefer, write the letter yourself for free in Papers.",
+  "helpClaimsMore": "They can claim for you and keep a share only if you get paid. ECLIPTA may earn a commission if you hire them. If you prefer, write the letter yourself for free in Papers.",
   "@helpClaimsMore": {
     "description": "Details for claim experts, incl. commission disclosure."
   },
@@ -4412,7 +4412,7 @@
   "@helpVisaSub": {
     "description": "What the visa agency does."
   },
-  "helpVisaMore": "A specialist agency checks your papers and books the appointment. They tell you the price before starting. NomadIQ may earn a commission.",
+  "helpVisaMore": "A specialist agency checks your papers and books the appointment. They tell you the price before starting. ECLIPTA may earn a commission.",
   "@helpVisaMore": {
     "description": "Details for the visa agency, incl. commission disclosure."
   },
@@ -4420,17 +4420,17 @@
   "@helpVisaCta": {
     "description": "Button: ask for a quote."
   },
-  "helpSupport": "NomadIQ support",
+  "helpSupport": "ECLIPTA support",
   "@helpSupport": {
-    "description": "Option: NomadIQ support."
+    "description": "Option: ECLIPTA support."
   },
   "helpSupportSub": "A person from the team, by email",
   "@helpSupportSub": {
-    "description": "What NomadIQ support handles."
+    "description": "What ECLIPTA support handles."
   },
   "helpSupportMore": "For problems with the app itself. The email already includes the app version and your language, so you do not have to explain everything.",
   "@helpSupportMore": {
-    "description": "Details for NomadIQ support."
+    "description": "Details for ECLIPTA support."
   },
   "helpSupportCta": "Write to the team",
   "@helpSupportCta": {
@@ -4452,11 +4452,11 @@
   "@helpTagPaid": {
     "description": "Tag: paid."
   },
-  "helpMailSubject": "NomadIQ · Help",
+  "helpMailSubject": "ECLIPTA · Help",
   "@helpMailSubject": {
     "description": "Subject of the support email."
   },
-  "helpMailBody": "Tell us what happened:\n\n\n—\nNomadIQ {version} · {language}",
+  "helpMailBody": "Tell us what happened:\n\n\n—\nECLIPTA {version} · {language}",
   "@helpMailBody": {
     "description": "Body of the support email.",
     "placeholders": {
@@ -5389,7 +5389,7 @@
   "@memNight": {
     "description": "Part of day."
   },
-  "memStickerDay": "NOMADIQ · DAY {day}",
+  "memStickerDay": "ECLIPTA · DAY {day}",
   "@memStickerDay": {
     "description": "Sticker first line.",
     "placeholders": {
@@ -5423,7 +5423,7 @@
   "@memFailed": {
     "description": "Save failed."
   },
-  "memDenied": "NomadIQ has no permission to use the camera. Allow it in your phone settings.",
+  "memDenied": "ECLIPTA has no permission to use the camera. Allow it in your phone settings.",
   "@memDenied": {
     "description": "No camera permission."
   },
@@ -5561,7 +5561,7 @@
   "@memShareStory": {
     "description": "Share story."
   },
-  "memShareText": "{title}: {days} days, {media} photos and videos. Made with NomadIQ.",
+  "memShareText": "{title}: {days} days, {media} photos and videos. Made with ECLIPTA.",
   "@memShareText": {
     "description": "Text shared with the story photos.",
     "placeholders": {
@@ -5749,7 +5749,7 @@
       }
     }
   },
-  "widgetDealCheck": "Check the price in NomadIQ",
+  "widgetDealCheck": "Check the price in ECLIPTA",
   "@widgetDealCheck": {
     "description": "Deal hint."
   },
@@ -5782,15 +5782,15 @@
       }
     }
   },
-  "widgetFlightEmpty": "Add your next flight in NomadIQ",
+  "widgetFlightEmpty": "Add your next flight in ECLIPTA",
   "@widgetFlightEmpty": {
     "description": "Empty flight widget."
   },
-  "widgetDealEmpty": "Open NomadIQ to see today's deal",
+  "widgetDealEmpty": "Open ECLIPTA to see today's deal",
   "@widgetDealEmpty": {
     "description": "Empty deal widget."
   },
-  "widgetBudgetEmpty": "Set a trip budget in NomadIQ, in Money",
+  "widgetBudgetEmpty": "Set a trip budget in ECLIPTA, in Money",
   "@widgetBudgetEmpty": {
     "description": "Empty budget widget."
   },
@@ -5859,7 +5859,7 @@
   "@widgetsTitle": {
     "description": "Widgets screen title."
   },
-  "widgetsIntro": "NomadIQ outside the app: on your home screen, in notifications and on your watch.",
+  "widgetsIntro": "ECLIPTA outside the app: on your home screen, in notifications and on your watch.",
   "@widgetsIntro": {
     "description": "Intro."
   },
@@ -5907,7 +5907,7 @@
   "@widgetsAdd": {
     "description": "Pin widget."
   },
-  "widgetsHowTo": "Touch and hold an empty spot on your home screen, tap Widgets and look for NomadIQ.",
+  "widgetsHowTo": "Touch and hold an empty spot on your home screen, tap Widgets and look for ECLIPTA.",
   "@widgetsHowTo": {
     "description": "Manual instructions."
   },
@@ -7047,7 +7047,7 @@
   "@driveGuideSwitch": {
     "description": "Subtitle of the travel mode switch."
   },
-  "driveAndroidAuto": "In Android Auto, NomadIQ appears among the audio apps: the guide you are listening to is controlled from the car screen. For directions we open Google Maps.",
+  "driveAndroidAuto": "In Android Auto, ECLIPTA appears among the audio apps: the guide you are listening to is controlled from the car screen. For directions we open Google Maps.",
   "@driveAndroidAuto": {
     "description": "Android Auto note."
   },
@@ -7584,7 +7584,7 @@
   "@chatInviteTitle": {
     "description": "Menu: add someone."
   },
-  "chatInviteText": "They type it in NomadIQ, in Group → Join with a code.",
+  "chatInviteText": "They type it in ECLIPTA, in Group → Join with a code.",
   "@chatInviteText": {
     "description": "Invite explanation."
   },
@@ -7704,7 +7704,7 @@
   "@chatSendFailed": {
     "description": "Send error."
   },
-  "chatFlyraRole": "Your NomadIQ travel agent",
+  "chatFlyraRole": "Your ECLIPTA travel agent",
   "@chatFlyraRole": {
     "description": "Flyra role."
   },
@@ -8940,5 +8940,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "welcomeHeadline": "Your next trip is already taking off.",
+  "welcomeMute": "Mute music",
+  "welcomeUnmute": "Turn music on"
 }

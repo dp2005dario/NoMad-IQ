@@ -74,7 +74,7 @@ afiliado: es lo que paga la app).
 
 ## 6. Probarlo desde Visual Studio Code
 
-1. **Archivo → Abrir carpeta…** → `NoMad-IQ`, y **Ver → Terminal**.
+1. **Archivo → Abrir carpeta…** → `ECLIPTA`, y **Ver → Terminal**.
 2. Servidores:
    ```bash
    cd services/flight-ingestor && go test ./...

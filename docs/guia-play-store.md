@@ -1,4 +1,4 @@
-# Guía para principiantes: publicar NomadIQ en Google Play
+# Guía para principiantes: publicar ECLIPTA en Google Play
 
 Esta guía es la lista de pasos para subir la app a la Play Store. Casi todo
 ya está preparado en el código. Lo que queda son cosas que **solo puedes
@@ -101,7 +101,7 @@ como región de Oracle.
 
 ## Paso 5: crear la app en Play Console
 
-**Crear aplicación** → nombre "NomadIQ", idioma predeterminado español,
+**Crear aplicación** → nombre "ECLIPTA", idioma predeterminado español,
 "Aplicación", "Gratis". Después, en el panel, Google te va guiando por estas
 secciones:
 

@@ -2,9 +2,9 @@
 // contacto configurado no salen.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/auth/session.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/features/help/help_contacts.dart';
+import 'package:eclipta/auth/session.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/features/help/help_contacts.dart';
 
 import 'helpers.dart';
 
@@ -48,7 +48,7 @@ void main() {
     expect(find.text('Asistencia de tu seguro de viaje'), findsOneWidget);
     expect(find.text('Expertos en reclamaciones'), findsNothing);
     expect(find.text('Gestor de visados'), findsNothing);
-    expect(find.text('Soporte de NomadIQ'), findsNothing);
+    expect(find.text('Soporte de ECLIPTA'), findsNothing);
 
     // La primera está abierta: lleva a Papeles.
     await tester.tap(find.text('Ver mis derechos'));
@@ -75,8 +75,8 @@ void main() {
     expect(opened.last.host, 'reclama.example');
 
     // La lista es larga: se baja hasta la última opción.
-    await tester.scrollUntilVisible(find.text('Soporte de NomadIQ'), 200);
-    await tester.tap(find.text('Soporte de NomadIQ'));
+    await tester.scrollUntilVisible(find.text('Soporte de ECLIPTA'), 200);
+    await tester.tap(find.text('Soporte de ECLIPTA'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('Escribir al equipo'), 200);
     await tester.tap(find.text('Escribir al equipo'));
@@ -85,6 +85,6 @@ void main() {
     expect(mail.scheme, 'mailto');
     expect(mail.path, 'hola@nomadiq.app');
     expect(mail.toString(), isNot(contains('+')));
-    expect(Uri.decodeComponent(mail.query), contains('NomadIQ 1.0.0 · es'));
+    expect(Uri.decodeComponent(mail.query), contains('ECLIPTA 1.0.0 · es'));
   });
 }

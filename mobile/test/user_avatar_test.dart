@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/widgets/user_avatar.dart';
+import 'package:eclipta/widgets/user_avatar.dart';
 
 // PNG de 1x1 píxel, escrito a mano para no bajar nada.
 final MemoryImage _fake = MemoryImage(

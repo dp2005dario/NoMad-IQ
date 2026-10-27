@@ -1,4 +1,4 @@
-// Mi pasaporte (maqueta "Pasaporte"): un librito con la tapa de NomadIQ.
+// Mi pasaporte (maqueta "Pasaporte"): un librito con la tapa de ECLIPTA.
 // Al abrirlo, una página por país con los sellos de los monumentos que has
 // reconocido con la cámara. Cada sello es un "cromo" con su rareza; al
 // tocarlo se ve su historia, se puede escuchar y abrir en el mapa.
@@ -149,7 +149,7 @@ class _Cover extends StatelessWidget {
                 child: Column(
                   children: <Widget>[
                     const Text(
-                      'NOMADIQ',
+                      'ECLIPTA',
                       style: TextStyle(
                         color: _gold,
                         letterSpacing: 6,

@@ -61,6 +61,7 @@ import '../features/route/places_api.dart';
 import '../features/vault/doc_source.dart';
 import '../features/vault/vault.dart';
 import '../features/vault/vault_store.dart';
+import '../features/welcome/welcome_video.dart';
 import 'api_client.dart';
 import 'launch.dart';
 import 'settings.dart';
@@ -71,6 +72,7 @@ class AppServices {
     required this.location,
     required this.mapSurface,
     required this.newPlayer,
+    this.newWelcomeVideo,
     required this.tilesUrl,
     required this.glyphsUrl,
     this.notices = const SilentNotices(),
@@ -250,6 +252,10 @@ class AppServices {
 
   /// Crea un reproductor nuevo para cada audioguía que se abre.
   final GuidePlayerFactory newPlayer;
+
+  /// El vídeo de fondo de la Bienvenida. Si es null (o falla), se ve un fondo
+  /// oscuro estático.
+  final WelcomeVideoFactory? newWelcomeVideo;
 
   /// Los perfiles de familia (cifrados en el Keystore del móvil).
   final FamilyStore family;

@@ -36,7 +36,7 @@ class StayCost {
 
 /// "Ver precios": Booking.com en esa zona, con tus fechas y personas,
 /// ordenado de más barato a más caro. [affiliateId] (opcional) es el código
-/// de afiliado de NomadIQ: si lo hay, Booking nos paga una comisión cuando
+/// de afiliado de ECLIPTA: si lo hay, Booking nos paga una comisión cuando
 /// alguien reserva, sin que a ti te cueste más.
 Uri bookingSearch({
   required GeoPoint at,

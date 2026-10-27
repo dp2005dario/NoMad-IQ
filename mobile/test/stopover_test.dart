@@ -3,10 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/features/flights/fares_api.dart';
-import 'package:nomadiq/features/route/world_data.dart';
-import 'package:nomadiq/features/stopover/stopover.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/features/flights/fares_api.dart';
+import 'package:eclipta/features/route/world_data.dart';
+import 'package:eclipta/features/stopover/stopover.dart';
 
 import 'helpers.dart';
 

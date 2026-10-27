@@ -3,14 +3,14 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/auth/session.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/core/settings.dart';
-import 'package:nomadiq/features/camera/stamps.dart';
-import 'package:nomadiq/features/passport/passport.dart';
-import 'package:nomadiq/features/route/flight3d.dart' show CountryCodes;
-import 'package:nomadiq/features/route/geo.dart';
-import 'package:nomadiq/features/route/world_data.dart';
+import 'package:eclipta/auth/session.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/camera/stamps.dart';
+import 'package:eclipta/features/passport/passport.dart';
+import 'package:eclipta/features/route/flight3d.dart' show CountryCodes;
+import 'package:eclipta/features/route/geo.dart';
+import 'package:eclipta/features/route/world_data.dart';
 
 import 'camera_test.dart' show FakeSpeaker;
 import 'helpers.dart';

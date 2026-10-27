@@ -22,7 +22,7 @@ Se entra desde **Inicio**, en los atajos ("Coche").
 
 ## Android Auto
 
-NomadIQ se declara como **app de audio** para Android Auto
+ECLIPTA se declara como **app de audio** para Android Auto
 (`android/app/src/main/res/xml/automotive_app_desc.xml`). Así la audioguía
 que estás escuchando sale en la pantalla del coche con sus botones, usando el
 mismo reproductor de siempre. No hace falta pedir nada especial a Google:

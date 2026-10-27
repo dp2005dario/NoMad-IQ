@@ -1,9 +1,9 @@
 // Cámara de viaje (maqueta "Recuerdo"): foto o vídeo, con la pegatina del
-// viaje ("NOMADIQ · DÍA 2 · MADRID · 22 oct · atardecer") pintada en la foto.
+// viaje ("ECLIPTA · DÍA 2 · MADRID · 22 oct · atardecer") pintada en la foto.
 // Lo que haces se guarda solo en tus Recuerdos (en este móvil) y "Compartir"
 // abre el menú del móvil: de ahí a una historia de Instagram, WhatsApp...
 //
-// La música, los stickers y el texto se ponen en Instagram: NomadIQ solo le
+// La música, los stickers y el texto se ponen en Instagram: ECLIPTA solo le
 // pasa la foto o el vídeo.
 import 'dart:async';
 import 'dart:typed_data';

@@ -6,12 +6,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:nomadiq/auth/session.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/core/settings.dart';
-import 'package:nomadiq/features/flights/fares_api.dart';
-import 'package:nomadiq/features/flights/flight_format.dart';
-import 'package:nomadiq/features/flights/price_chart.dart';
+import 'package:eclipta/auth/session.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/flights/fares_api.dart';
+import 'package:eclipta/features/flights/flight_format.dart';
+import 'package:eclipta/features/flights/price_chart.dart';
 
 import 'helpers.dart';
 

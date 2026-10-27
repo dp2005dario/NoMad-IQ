@@ -26,7 +26,7 @@ alguien hace cuentas con calculadora. Esta pantalla es esa libreta, pero:
 | **Saldo** | Lo que has pagado menos lo que te toca. Positivo = te deben; negativo = debes |
 | **Resto mayor** | Cómo se reparten 10 € entre 3 sin perder céntimos: 3,34 + 3,33 + 3,33. El céntimo que sobra va a quien tenía "más decimales" |
 | **OCR** | Leer el texto de una foto. Aquí lo hace **ML Kit** dentro del móvil, gratis y sin red |
-| **Saldar** | Apuntar que ya le pagaste a alguien. NomadIQ **no mueve dinero**: le pagas como siempre (efectivo, Bizum...) y lo apuntas |
+| **Saldar** | Apuntar que ya le pagaste a alguien. ECLIPTA **no mueve dinero**: le pagas como siempre (efectivo, Bizum...) y lo apuntas |
 
 ## 2. El viaje de "escanear la cena"
 
@@ -77,7 +77,7 @@ diferencia se reparte en proporción a lo que tomó cada uno.
 
 ## 5. Probarlo desde Visual Studio Code
 
-1. **Archivo → Abrir carpeta…** → `NoMad-IQ`, y **Ver → Terminal**.
+1. **Archivo → Abrir carpeta…** → `ECLIPTA`, y **Ver → Terminal**.
 2. Servidor:
    ```bash
    cd services/ai-orchestrator

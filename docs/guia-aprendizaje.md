@@ -9,7 +9,7 @@ para aprender, no solo para usar. Léela en orden: cada parte se apoya en la ant
 
 ## 0. La idea en un minuto
 
-NomadIQ está formado por varios programas pequeños (microservicios), cada uno
+ECLIPTA está formado por varios programas pequeños (microservicios), cada uno
 escrito en el lenguaje que mejor encaja con su tarea. Para que colaboren
 necesitan tres cosas:
 

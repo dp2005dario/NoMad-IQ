@@ -1,7 +1,7 @@
 // Billetes: las formas de juntar una cantidad, y banderas de las monedas.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/features/money/banknotes.dart';
-import 'package:nomadiq/features/money/currency_info.dart';
+import 'package:eclipta/features/money/banknotes.dart';
+import 'package:eclipta/features/money/currency_info.dart';
 
 void main() {
   test('50 € = 1 de 50, o 2 de 20 y 1 de 10, o 5 de 10', () {

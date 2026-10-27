@@ -1,5 +1,5 @@
 // Zonas de ejemplo para los tests, con la forma del GeoJSON del geo-engine.
-import 'package:nomadiq/features/map/geo.dart';
+import 'package:eclipta/features/map/geo.dart';
 
 /// Un cuadrado de lado 2×[half] grados alrededor de (lat, lon), con un
 /// agujero opcional en el centro.

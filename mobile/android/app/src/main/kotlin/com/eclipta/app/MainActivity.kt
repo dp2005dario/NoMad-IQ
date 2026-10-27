@@ -1,4 +1,4 @@
-package com.nomadiq.app
+package com.eclipta.app
 
 import android.view.WindowManager
 import com.ryanheise.audioservice.AudioServiceFragmentActivity

@@ -1,11 +1,11 @@
 // Tests del rastreador de ubicación y del "modo viaje", con GPS falso.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/auth/session.dart';
-import 'package:nomadiq/core/settings.dart';
-import 'package:nomadiq/features/map/geo.dart';
-import 'package:nomadiq/features/map/location.dart';
-import 'package:nomadiq/features/map/location_tracker.dart';
-import 'package:nomadiq/features/map/position_reporter.dart';
+import 'package:eclipta/auth/session.dart';
+import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/map/geo.dart';
+import 'package:eclipta/features/map/location.dart';
+import 'package:eclipta/features/map/location_tracker.dart';
+import 'package:eclipta/features/map/position_reporter.dart';
 
 import 'helpers.dart';
 

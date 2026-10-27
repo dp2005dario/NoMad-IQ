@@ -1,7 +1,7 @@
 # Guía de las audioguías por zona (y de la histéresis del geofencing), explicada desde cero
 
 Esta guía es para alguien que **no ha programado nunca** y quiere entender cómo
-NomadIQ consigue que, al llegar a la Plaza Mayor o al Louvre, el viajero tenga
+ECLIPTA consigue que, al llegar a la Plaza Mayor o al Louvre, el viajero tenga
 una audioguía lista para escuchar, sin que el sistema se caiga cuando llega un
 autobús entero de turistas y sin que la IA sepa quién es nadie.
 
@@ -444,7 +444,7 @@ audioguía de `madrid-centro` a la API (sin Ollama: sale por reglas).
 
 ## 6. Cómo probarlo en tu ordenador con Visual Studio Code
 
-1. Abre VS Code → **Archivo → Abrir carpeta…** → elige la carpeta `NoMad-IQ`.
+1. Abre VS Code → **Archivo → Abrir carpeta…** → elige la carpeta `ECLIPTA`.
 2. Extensiones recomendadas (VS Code te las ofrece al abrir la carpeta):
    **rust-analyzer** (Rust), **Python** y **Pylance**, **Docker**, **Buf** (protobuf).
 3. Abre la terminal integrada: **Terminal → Nuevo terminal** (o `` Ctrl+ñ `` /

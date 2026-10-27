@@ -4,11 +4,11 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:nomadiq/auth/session.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/features/menu/menu_api.dart';
-import 'package:nomadiq/features/menu/menu_screen.dart';
-import 'package:nomadiq/features/money/receipt_scanner.dart';
+import 'package:eclipta/auth/session.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/features/menu/menu_api.dart';
+import 'package:eclipta/features/menu/menu_screen.dart';
+import 'package:eclipta/features/money/receipt_scanner.dart';
 
 import 'camera_test.dart' show FakeSpeaker;
 import 'helpers.dart';
@@ -161,7 +161,7 @@ void main() {
 
   testWidgets('un invitado tiene que entrar', (WidgetTester tester) async {
     await open(tester, scanner: FakeScanner(carta), guest: true);
-    expect(find.textContaining('es para cuentas de NomadIQ'), findsOneWidget);
+    expect(find.textContaining('es para cuentas de ECLIPTA'), findsOneWidget);
     expect(find.text('Fotografiar la carta'), findsNothing);
   });
 }

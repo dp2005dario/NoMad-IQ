@@ -14,8 +14,8 @@ import 'features/map/location.dart';
 import 'features/widgets/widget_sync.dart';
 import 'l10n/generated/app_localizations.dart';
 
-class NomadIqApp extends StatefulWidget {
-  const NomadIqApp({
+class EcliptaApp extends StatefulWidget {
+  const EcliptaApp({
     super.key,
     required this.settings,
     required this.session,
@@ -33,10 +33,10 @@ class NomadIqApp extends StatefulWidget {
   final GoRouter? router;
 
   @override
-  State<NomadIqApp> createState() => _NomadIqAppState();
+  State<EcliptaApp> createState() => _EcliptaAppState();
 }
 
-class _NomadIqAppState extends State<NomadIqApp> {
+class _EcliptaAppState extends State<EcliptaApp> {
   // Se crea UNA vez: si se recreara en cada dibujado, se perdería la pantalla actual.
   late final GoRouter _router =
       widget.router ?? buildRouter(session: widget.session);

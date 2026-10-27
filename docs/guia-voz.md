@@ -51,7 +51,7 @@ el chat". No se guarda ninguna grabación.
 
 ## Para tocarlo en VS Code
 
-1. Abre la carpeta `NoMad-IQ` (Archivo → Abrir carpeta).
+1. Abre la carpeta `ECLIPTA` (Archivo → Abrir carpeta).
 2. El código está en `mobile/lib/features/voice/`.
 3. Para añadir una palabra clave, edítala en `voice_intents.dart` (sin
    tildes) y prueba en la terminal (Terminal → Nuevo terminal):

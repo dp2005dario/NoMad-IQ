@@ -69,7 +69,7 @@ Se entra desde el **Mapa**, en los atajos ("Radar").
 
 ## Probarlo en VS Code
 
-Abre la carpeta `NoMad-IQ` (Archivo → Abrir carpeta) y en la terminal
+Abre la carpeta `ECLIPTA` (Archivo → Abrir carpeta) y en la terminal
 (Ver → Terminal):
 
 ```bash

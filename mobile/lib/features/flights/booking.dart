@@ -1,6 +1,6 @@
 // Abrir la web de reserva de un vuelo.
 //
-// La reserva NO se hace dentro de NomadIQ: se abre la web del buscador
+// La reserva NO se hace dentro de ECLIPTA: se abre la web del buscador
 // (Aviasales) en el navegador, con nuestro identificador de afiliado en el
 // enlace. Si el viajero compra, nos llevamos una comisión (sin pagar él más).
 import 'package:url_launcher/url_launcher.dart';

@@ -1,4 +1,4 @@
-# NomadIQ — app móvil (Flutter)
+# ECLIPTA — app móvil (Flutter)
 
 La app que usan los viajeros: Android (Google Play) e iOS desde el mismo código.
 Guía paso a paso para principiantes: [`docs/guia-app-movil.md`](../docs/guia-app-movil.md).

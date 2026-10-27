@@ -1,8 +1,9 @@
 // Tests de pantallas: comprueban lo que VE el usuario, como si tocara el móvil.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/core/settings.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/auth/session.dart';
+import 'package:eclipta/core/settings.dart';
 
 import 'helpers.dart';
 
@@ -17,7 +18,7 @@ void main() {
     setDeviceLocale(tester, 'es');
     await pumpWelcome(tester);
     expect(find.text('Entrar como invitado'), findsOneWidget);
-    expect(find.textContaining('soy Flyra'), findsOneWidget);
+    expect(find.text('Tu próximo viaje ya está despegando.'), findsOneWidget);
   });
 
   testWidgets('un idioma que no tenemos cae en inglés', (
@@ -36,8 +37,52 @@ void main() {
     expect(Directionality.of(context), TextDirection.rtl);
   });
 
+  testWidgets('la bienvenida tiene vídeo y se puede silenciar', (
+    WidgetTester tester,
+  ) async {
+    final List<FakeWelcomeVideo> videos = <FakeWelcomeVideo>[];
+    final SessionController s = newSession();
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: s,
+      services: fakeServices(
+        s,
+        welcomeVideo: () {
+          final FakeWelcomeVideo v = FakeWelcomeVideo();
+          videos.add(v);
+          return v;
+        },
+      ),
+    );
+    expect(find.byKey(const Key('fake-welcome-video')), findsOneWidget);
+    await tester.tap(find.byTooltip('Silenciar música'));
+    await tester.pump();
+    expect(videos.single.muted, isTrue);
+    expect(find.byTooltip('Activar música'), findsOneWidget);
+  });
+
+  testWidgets('si el vídeo falla, fondo oscuro y todo sigue funcionando', (
+    WidgetTester tester,
+  ) async {
+    final SessionController s = newSession();
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: s,
+      services: fakeServices(
+        s,
+        welcomeVideo: () => FakeWelcomeVideo(works: false),
+      ),
+    );
+    expect(find.byKey(const Key('fake-welcome-video')), findsNothing);
+    expect(find.byTooltip('Silenciar música'), findsNothing);
+    expect(find.text('Entrar como invitado'), findsOneWidget);
+  });
+
   testWidgets('Google avisa de que llega pronto', (WidgetTester tester) async {
     await pumpWelcome(tester, locale: 'es');
+    await tester.ensureVisible(find.text('Continuar con Google'));
     await tester.tap(find.text('Continuar con Google'));
     await tester.pump();
     expect(find.byType(SnackBar), findsOneWidget);
@@ -45,6 +90,7 @@ void main() {
 
   testWidgets('invitado -> Inicio -> pestañas', (WidgetTester tester) async {
     await pumpWelcome(tester, locale: 'es');
+    await tester.ensureVisible(find.text('Entrar como invitado'));
     await tester.tap(find.text('Entrar como invitado'));
     await tester.pumpAndSettle();
     expect(find.text('Hola, viajero'), findsOneWidget);

@@ -30,7 +30,7 @@ Abajo hay dos cosas más:
 
 - **Descargar solo con wifi** (activado de serie): con datos del móvil, la
   descarga espera. Así nadie se gasta la tarifa en el extranjero sin querer.
-- **NomadIQ ocupa …**: lo que suman todas las ciudades descargadas.
+- **ECLIPTA ocupa …**: lo que suman todas las ciudades descargadas.
 
 ## Cosas que conviene entender
 
@@ -66,7 +66,7 @@ pasa como `file://…`.
 
 ## Cómo probarlo en Visual Studio Code
 
-1. Abre la carpeta `NoMad-IQ` (`Archivo > Abrir carpeta...`).
+1. Abre la carpeta `ECLIPTA` (`Archivo > Abrir carpeta...`).
 2. Terminal (`Terminal > Nuevo terminal`) y escribe:
 
    ```bash

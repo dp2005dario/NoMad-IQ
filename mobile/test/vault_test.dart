@@ -5,12 +5,12 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/features/money/money_screen.dart';
-import 'package:nomadiq/features/vault/doc_source.dart';
-import 'package:nomadiq/features/vault/policy_search.dart';
-import 'package:nomadiq/features/vault/vault.dart';
-import 'package:nomadiq/features/vault/vault_store.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/features/money/money_screen.dart';
+import 'package:eclipta/features/vault/doc_source.dart';
+import 'package:eclipta/features/vault/policy_search.dart';
+import 'package:eclipta/features/vault/vault.dart';
+import 'package:eclipta/features/vault/vault_store.dart';
 
 import 'helpers.dart';
 import 'money_test.dart' show pumpMoney;

@@ -6,8 +6,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/features/group_chat/chat_api.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/features/group_chat/chat_api.dart';
 
 import 'helpers.dart';
 

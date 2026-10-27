@@ -3,12 +3,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/core/settings.dart';
-import 'package:nomadiq/features/airport/airport_guide.dart';
-import 'package:nomadiq/features/easy/easy_mode.dart';
-import 'package:nomadiq/features/map/geo.dart';
-import 'package:nomadiq/features/map/location.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/airport/airport_guide.dart';
+import 'package:eclipta/features/easy/easy_mode.dart';
+import 'package:eclipta/features/map/geo.dart';
+import 'package:eclipta/features/map/location.dart';
 
 import 'helpers.dart';
 

@@ -1,4 +1,4 @@
-NomadIQ 在旅行前、旅行中和旅行后陪伴你，还有它的 AI 助手 Flyra。
+ECLIPTA 在旅行前、旅行中和旅行后陪伴你，还有它的 AI 助手 Flyra。
 
 ✈️ 机票
 • 搜索航班，查看 Aviasales（Travelpayouts）的价格。

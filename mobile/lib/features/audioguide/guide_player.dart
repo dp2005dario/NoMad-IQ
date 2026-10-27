@@ -151,11 +151,11 @@ class JustAudioGuidePlayer implements GuidePlayer {
               // Es obligatoria en cada parte.
               tag: MediaItem(
                 id: parts[i].toString(),
-                album: info?.album ?? 'NomadIQ',
+                album: info?.album ?? 'ECLIPTA',
                 title: i < (info?.titles.length ?? 0)
                     ? info!.titles[i]
-                    : 'NomadIQ',
-                artist: 'NomadIQ · Flyra',
+                    : 'ECLIPTA',
+                artist: 'ECLIPTA · Flyra',
               ),
             ),
         ],

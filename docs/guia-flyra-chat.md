@@ -1,6 +1,6 @@
 # Guía del chat con Flyra (para principiantes)
 
-Flyra es la IA de NomadIQ. En el chat le puedes preguntar **lo que quieras**:
+Flyra es la IA de ECLIPTA. En el chat le puedes preguntar **lo que quieras**:
 qué ver en una ciudad, qué meter en la maleta, cómo ir del aeropuerto al
 centro, frases útiles en otro idioma… o cualquier curiosidad.
 
@@ -64,7 +64,7 @@ Necesita `LLM_ENABLED=true` (Ollama) y Redis (`REDIS_HOST`, `REDIS_PASSWORD`).
 
 ## 5. Probarlo desde Visual Studio Code
 
-1. Abre la carpeta del proyecto: **Archivo → Abrir carpeta…** → `NoMad-IQ`.
+1. Abre la carpeta del proyecto: **Archivo → Abrir carpeta…** → `ECLIPTA`.
 2. Abre el terminal: **Ver → Terminal** (o `` Ctrl+` ``).
 3. Pruebas del servidor:
    ```bash

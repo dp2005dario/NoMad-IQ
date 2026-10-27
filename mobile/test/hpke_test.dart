@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/features/push/hpke.dart';
+import 'package:eclipta/features/push/hpke.dart';
 
 Uint8List b64(String s) => base64Url.decode(base64Url.normalize(s));
 

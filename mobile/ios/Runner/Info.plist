@@ -4,7 +4,7 @@
 <dict>
 	<!-- Por qué pedimos la ubicación (lo enseña iOS en la pregunta del permiso). -->
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>NomadIQ uses your location while the map is open, or while you have travel mode on, to show where you are and tell you when you enter a zone with an audio guide.</string>
+	<string>ECLIPTA uses your location while the map is open, or while you have travel mode on, to show where you are and tell you when you enter a zone with an audio guide.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
@@ -14,7 +14,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>NomadIQ</string>
+	<string>ECLIPTA</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -22,7 +22,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>nomadiq</string>
+	<string>eclipta</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

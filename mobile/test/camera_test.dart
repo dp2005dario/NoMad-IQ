@@ -7,16 +7,16 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:nomadiq/auth/session.dart';
-import 'package:nomadiq/core/api_client.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/core/settings.dart';
-import 'package:nomadiq/features/camera/camera_device.dart';
-import 'package:nomadiq/features/camera/landmarks_api.dart';
-import 'package:nomadiq/features/camera/speaker.dart';
-import 'package:nomadiq/features/camera/stamps.dart';
-import 'package:nomadiq/features/map/geo.dart';
-import 'package:nomadiq/features/map/location.dart';
+import 'package:eclipta/auth/session.dart';
+import 'package:eclipta/core/api_client.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/camera/camera_device.dart';
+import 'package:eclipta/features/camera/landmarks_api.dart';
+import 'package:eclipta/features/camera/speaker.dart';
+import 'package:eclipta/features/camera/stamps.dart';
+import 'package:eclipta/features/map/geo.dart';
+import 'package:eclipta/features/map/location.dart';
 
 import 'helpers.dart';
 

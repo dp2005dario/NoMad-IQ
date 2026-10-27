@@ -14,9 +14,9 @@ import 'widget_snapshots.dart';
 
 /// Los tres widgets y su clase en Android (NomadWidgets.kt).
 enum HomeWidgetKind {
-  flight('com.nomadiq.app.FlightWidget'),
-  deal('com.nomadiq.app.DealWidget'),
-  budget('com.nomadiq.app.BudgetWidget');
+  flight('com.eclipta.app.FlightWidget'),
+  deal('com.eclipta.app.DealWidget'),
+  budget('com.eclipta.app.BudgetWidget');
 
   const HomeWidgetKind(this.androidClass);
 
@@ -25,7 +25,7 @@ enum HomeWidgetKind {
 
 abstract interface class HomeWidgets {
   /// Deja preparadas las fotos fijas de un widget y lo redibuja.
-  /// [empty] = la frase cuando no hay nada ("Añade tu vuelo en NomadIQ").
+  /// [empty] = la frase cuando no hay nada ("Añade tu vuelo en ECLIPTA").
   Future<void> publish(
     HomeWidgetKind kind,
     List<WidgetSnapshot> snapshots, {

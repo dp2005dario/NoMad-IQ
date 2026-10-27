@@ -2,11 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:nomadiq/auth/session.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/features/flights/climate_api.dart';
-import 'package:nomadiq/features/flights/explore_screen.dart';
-import 'package:nomadiq/features/flights/fares_api.dart';
+import 'package:eclipta/auth/session.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/features/flights/climate_api.dart';
+import 'package:eclipta/features/flights/explore_screen.dart';
+import 'package:eclipta/features/flights/fares_api.dart';
 
 import 'helpers.dart';
 

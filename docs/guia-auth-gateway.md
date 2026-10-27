@@ -204,7 +204,7 @@ Además, cosas que no estaban en la lista pero que un comité de seguridad pregu
 
 ### Abrir el proyecto
 
-- `Archivo → Abrir carpeta...` y elige la carpeta **raíz** `NoMad-IQ` (no la
+- `Archivo → Abrir carpeta...` y elige la carpeta **raíz** `ECLIPTA` (no la
   del servicio): así VS Code ve también los servicios Go.
 - La primera vez, la extensión de Java tarda 1-2 minutos en "importar el
   proyecto Maven" (verás una ruedita abajo con *"Java: Importing..."*).

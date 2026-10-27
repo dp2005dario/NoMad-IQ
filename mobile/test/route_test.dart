@@ -7,17 +7,17 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/core/api_client.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/core/theme.dart';
-import 'package:nomadiq/features/route/city_sheet.dart';
-import 'package:nomadiq/features/route/flight3d.dart';
-import 'package:nomadiq/features/route/flight_route_screen.dart';
-import 'package:nomadiq/features/flights/booking.dart';
-import 'package:nomadiq/features/route/geo.dart';
-import 'package:nomadiq/features/route/places_api.dart';
-import 'package:nomadiq/features/route/world_data.dart';
-import 'package:nomadiq/l10n/generated/app_localizations.dart';
+import 'package:eclipta/core/api_client.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/theme.dart';
+import 'package:eclipta/features/route/city_sheet.dart';
+import 'package:eclipta/features/route/flight3d.dart';
+import 'package:eclipta/features/route/flight_route_screen.dart';
+import 'package:eclipta/features/flights/booking.dart';
+import 'package:eclipta/features/route/geo.dart';
+import 'package:eclipta/features/route/places_api.dart';
+import 'package:eclipta/features/route/world_data.dart';
+import 'package:eclipta/l10n/generated/app_localizations.dart';
 
 import 'helpers.dart';
 

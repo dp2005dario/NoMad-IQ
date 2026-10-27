@@ -82,7 +82,7 @@ por nuestro servidor, así no gastamos ancho de banda).
 | Variable | Por defecto | Para qué |
 |---|---|---|
 | `PLACES_ENABLED` | `true` | Encender o apagar las fichas (necesitan Redis) |
-| `WIKIMEDIA_USER_AGENT` | `NomadIQ/0.1 (https://github.com/dp2005dario/NoMad-IQ)` | Quién llama a Wikimedia |
+| `WIKIMEDIA_USER_AGENT` | `ECLIPTA/0.1 (https://github.com/dp2005dario/NoMad-IQ)` | Quién llama a Wikimedia |
 | `WIKIMEDIA_RATE_PER_SECOND` / `WIKIMEDIA_BURST` | `5` / `10` | Ritmo máximo hacia Wikimedia |
 | `WIKIMEDIA_TIMEOUT_SECONDS` | `15` | Espera máxima por petición |
 | `PLACE_TTL_SECONDS` | `604800` (7 días) | Cuánto vive una ficha en Redis |
@@ -169,7 +169,7 @@ Para regenerarlos (casi nunca hace falta):
 
 ## Probarlo en VS Code
 
-1. **Archivo → Abrir carpeta…** y elige `NoMad-IQ/mobile`.
+1. **Archivo → Abrir carpeta…** y elige `ECLIPTA/mobile`.
 2. Ten instaladas las extensiones **Flutter** y **Dart**.
 3. Abre la terminal (**Ver → Terminal** o `Ctrl+ñ`) y ejecuta:
 

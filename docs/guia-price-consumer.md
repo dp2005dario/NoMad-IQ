@@ -42,7 +42,7 @@ Vuelve aquí siempre que una palabra te suene a chino.
 
 | Palabra | Qué significa, en sencillo |
 |---|---|
-| **Microservicio** | Un programa pequeño que hace UNA cosa. NomadIQ son varios programas que colaboran. |
+| **Microservicio** | Un programa pequeño que hace UNA cosa. ECLIPTA son varios programas que colaboran. |
 | **Evento / mensaje** | Un aviso de que "algo ha pasado": "se ha visto este precio". |
 | **Kafka** | La cinta transportadora de mensajes entre servicios. |
 | **Topic** | Una cinta concreta, con nombre. Ej.: `flights.price-observed.v1`. |
@@ -208,7 +208,7 @@ Todos los umbrales se cambian con variables de entorno, sin tocar código
 1. Clona el repositorio: en VS Code, `Ctrl+Shift+P` → escribe
    **"Git: Clone"** → pega `https://github.com/dp2005dario/NoMad-IQ` → elige
    una carpeta. O, si ya lo tienes, **File → Open Folder** y elige la carpeta
-   `NoMad-IQ` (la raíz, no una subcarpeta).
+   `ECLIPTA` (la raíz, no una subcarpeta).
 2. Abajo a la derecha aparecerá: *"Este espacio de trabajo tiene extensiones
    recomendadas"* → **Instalar todas**. Son las de `.vscode/extensions.json`:
    - **Go**: autocompletado, errores en rojo mientras escribes, botón para

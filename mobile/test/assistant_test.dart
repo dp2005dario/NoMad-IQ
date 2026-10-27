@@ -1,9 +1,9 @@
 // Asistente: el intérprete cara a cara (traductor y micro de mentira).
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomadiq/core/router.dart';
-import 'package:nomadiq/core/settings.dart';
-import 'package:nomadiq/features/assistant/interpreter.dart';
+import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/assistant/interpreter.dart';
 
 import 'helpers.dart';
 

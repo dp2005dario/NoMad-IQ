@@ -60,7 +60,7 @@ de la maleta se guarda **solo en tu teléfono**.
 
 ## Cómo verlo en Visual Studio Code
 
-1. Abre la carpeta `NoMad-IQ` (menú `Archivo > Abrir carpeta...`).
+1. Abre la carpeta `ECLIPTA` (menú `Archivo > Abrir carpeta...`).
 2. Si es la primera vez, instala la extensión **Flutter** (icono de los
    cuadrados en la barra izquierda, busca "Flutter" y pulsa *Install*).
 3. Abre un terminal dentro de VS Code: menú `Terminal > Nuevo terminal`.

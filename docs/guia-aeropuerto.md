@@ -51,7 +51,7 @@ GET /v1/airports/MAD/spots
 
 Si un aeropuerto no tiene el interior dibujado en OpenStreetMap, la app lo
 dice. Cualquiera puede añadirlo en openstreetmap.org y en una semana aparece
-en NomadIQ.
+en ECLIPTA.
 
 ## Dónde está el código
 

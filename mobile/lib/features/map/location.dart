@@ -16,7 +16,7 @@ enum LocationAccess {
 abstract interface class LocationSource {
   Future<LocationAccess> check();
 
-  /// Muestra la pregunta del sistema ("¿Permitir que NomadIQ acceda a tu
+  /// Muestra la pregunta del sistema ("¿Permitir que ECLIPTA acceda a tu
   /// ubicación?"). Solo se llama cuando el usuario pulsa "Activar ubicación",
   /// nunca nada más abrir la app: así entiende por qué se le pregunta.
   Future<LocationAccess> request();

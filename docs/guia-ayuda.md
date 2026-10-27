@@ -13,7 +13,7 @@ Ajustes → Ayuda.
 | Asistencia de tu seguro | abre la Bóveda, donde está tu póliza con el teléfono 24 h | sí |
 | Expertos en reclamaciones | abre la web del socio | solo si hay socio configurado |
 | Gestor de visados | abre la web del socio | solo si hay socio configurado |
-| Soporte de NomadIQ | abre tu correo con un mensaje al equipo | solo si hay correo configurado |
+| Soporte de ECLIPTA | abre tu correo con un mensaje al equipo | solo si hay correo configurado |
 
 Las opciones de pago o con comisión **lo dicen claramente** en su tarjeta. Las
 que no tienen contacto configurado no salen, para no llevarte a un sitio vacío.

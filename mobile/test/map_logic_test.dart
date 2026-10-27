@@ -6,16 +6,16 @@ import 'dart:typed_data';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:nomadiq/auth/session.dart';
-import 'package:nomadiq/core/api_client.dart';
-import 'package:nomadiq/features/map/geo.dart';
-import 'package:nomadiq/features/map/geo_api.dart';
-import 'package:nomadiq/features/map/location.dart';
-import 'package:nomadiq/features/map/map_model.dart';
-import 'package:nomadiq/features/map/map_patterns.dart';
-import 'package:nomadiq/features/map/map_style.dart';
-import 'package:nomadiq/features/map/position_reporter.dart';
-import 'package:nomadiq/features/map/zone_watcher.dart';
+import 'package:eclipta/auth/session.dart';
+import 'package:eclipta/core/api_client.dart';
+import 'package:eclipta/features/map/geo.dart';
+import 'package:eclipta/features/map/geo_api.dart';
+import 'package:eclipta/features/map/location.dart';
+import 'package:eclipta/features/map/map_model.dart';
+import 'package:eclipta/features/map/map_patterns.dart';
+import 'package:eclipta/features/map/map_style.dart';
+import 'package:eclipta/features/map/position_reporter.dart';
+import 'package:eclipta/features/map/zone_watcher.dart';
 
 import 'helpers.dart';
 import 'zones_fixture.dart';
@@ -230,7 +230,7 @@ void main() {
       );
     });
 
-    test('rotula en tu idioma y trae las capas de NomadIQ', () {
+    test('rotula en tu idioma y trae las capas de ECLIPTA', () {
       final Map<String, Object?> style = buildMapStyle(
         look: MapLook.night,
         language: 'ja',

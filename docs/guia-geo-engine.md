@@ -205,7 +205,7 @@ rustup lee `rust-toolchain.toml` y descarga Rust 1.97.0 automáticamente.
 
 ### Abrir el proyecto
 
-*Archivo → Abrir carpeta…* y elige la carpeta raíz `NoMad-IQ`. El fichero
+*Archivo → Abrir carpeta…* y elige la carpeta raíz `ECLIPTA`. El fichero
 `.vscode/settings.json` ya le dice a rust-analyzer dónde está el `Cargo.toml`.
 La primera vez tarda unos minutos en analizar (abajo verás "rust-analyzer: indexing").
 
