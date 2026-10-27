@@ -131,7 +131,48 @@ clima del mapa (Sol/Nubes/Lluvia), que NO existe hoy (lo había dado por
 Total aproximado: A con 2 puntos pendientes, B con 7, C con 3. Play Console y testers quedan fuera del alcance acordado.
 quedan fuera del alcance acordado.
 
-## 6. Qué se probó y qué no
-- Probado: `flutter analyze` (0 problemas), `dart format` y `flutter test`
-  (373 pruebas, todas bien) en esta rama.
-- No probado: nada contra servidores reales ni en móvil (ver C2 y C3).
+## 6. Revisión total del repo (27-10-2026)
+
+Qué miré y qué encontré:
+- **Rutas app -> edge -> servicios**: saqué las 45 rutas `/v1/...` que usa la
+  app y las comparé con `infrastructure/edge/dynamic.yml` (Traefik) y con el
+  código de los servicios. Todas tienen regla de entrada y un manejador en
+  algún servicio (comprobación por texto, no una llamada real).
+- **TODO/FIXME/stubs** en servicios Go, Rust, Java y Python: ninguno propio
+  (solo aparecen en librerías de `.venv`). En la app: ninguno.
+- **Secretos**: ninguna clave ni llave privada en git. `key.properties`,
+  `*.env` y `secrets.env` están en `.gitignore`.
+- **Pruebas que SÍ ejecuté aquí**: `flutter analyze` + 380 tests de la app;
+  `go vet`/`go test` en flight-ingestor, notifier y price-consumer; 401 tests de
+  ai-orchestrator (`pytest`); 32 tests unitarios del auth-gateway
+  (`mvn test`); `cargo test --locked` de geo-engine (todo en verde).
+- **Arreglado en esta revisión**: pantalla provisional muerta, mensajes
+  engañosos "ocupado", Google (código completo), cambiar contraseña, foto de
+  perfil, clima del mapa, paso a AESA, `GOOGLE_CLIENT_ID` en compose y en
+  producción (opcional), migración V2.
+
+### Lo que NO se puede ejecutar o hacer aquí (y por qué)
+1. `AuthGatewayIT` (tests de integración del auth-gateway con PostgreSQL y
+   Redis reales): necesita Docker y aquí no hay demonio. Escribí los tests
+   nuevos (cambiar contraseña, Google 503) pero solo los verifica el CI.
+2. Flujo real app -> servidor con `docker compose`: igual, sin Docker. El CI
+   ("Integración (docker compose + Kafka real)") lo hace en GitHub. Un fallo
+   suyo en este PR (27-10, 17:32) fue al **descargar la imagen de Traefik** del
+   espejo `mirror.gcr.io` ("could not fetch content descriptor ... not found"),
+   antes de arrancar nada nuestro: un fallo de la red de imágenes, no del código.
+3. Probar en móvil real: cámara, vídeo con sonido, Google, huella de la bóveda,
+   widgets, notificación en directo, SOS con SMS.
+4. Compartir la ubicación **en vivo** del SOS (la maqueta v9 lo promete): hoy el
+   SOS manda un SMS con tu ubicación en ese momento, no un seguimiento continuo;
+   un seguimiento en vivo necesita servidor y que el contacto tenga la app o
+   un enlace web: no está hecho.
+5. Wear OS (otra app), recuperar contraseña por correo (falta un servicio de
+   correo), enlace oficial de AESA y de los visados (no pude abrir webs de
+   fuera: revisar a mano; el de AESA es solo la página de inicio).
+6. Play Billing: no hay compras dentro de la app en el código (el modelo es
+   afiliados, 0 €); no lo implementé porque no se prometió en las maquetas.
+7. Todo lo marcado B (servidor HTTPS, Ollama, claves, Firebase, Client ID).
+
+## 7. Qué se probó y qué no
+- Probado aquí: lo listado en la sección 6.
+- No probado: nada contra servidores reales ni en móvil.
