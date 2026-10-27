@@ -1895,5 +1895,6 @@
   "stopCheckNote": "Met {nights} in {city}: controleer de exacte prijs op hun website",
   "welcomeHeadline": "Je volgende reis stijgt al op.",
   "welcomeMute": "Muziek dempen",
-  "welcomeUnmute": "Muziek aanzetten"
+  "welcomeUnmute": "Muziek aanzetten",
+  "errorFeatureOff": "Deze functie staat nog niet aan op de server. Probeer het later opnieuw."
 }

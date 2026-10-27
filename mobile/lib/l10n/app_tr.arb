@@ -1895,5 +1895,6 @@
   "stopCheckNote": "{city} şehrinde {nights} ile: kesin fiyatı web sitelerinden kontrol et",
   "welcomeHeadline": "Bir sonraki yolculuğun şimdiden havalanıyor.",
   "welcomeMute": "Müziği sessize al",
-  "welcomeUnmute": "Müziği aç"
+  "welcomeUnmute": "Müziği aç",
+  "errorFeatureOff": "Bu özellik sunucuda henüz açık değil. Daha sonra tekrar dene."
 }

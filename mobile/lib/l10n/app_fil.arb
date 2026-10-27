@@ -1895,5 +1895,6 @@
   "stopCheckNote": "Sa {nights} sa {city}: tingnan ang eksaktong presyo sa website nila",
   "welcomeHeadline": "Papaalis na ang susunod mong biyahe.",
   "welcomeMute": "I-mute ang musika",
-  "welcomeUnmute": "I-on ang musika"
+  "welcomeUnmute": "I-on ang musika",
+  "errorFeatureOff": "Hindi pa naka-on ang feature na ito sa server. Subukan ulit mamaya."
 }

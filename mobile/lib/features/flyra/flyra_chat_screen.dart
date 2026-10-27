@@ -33,7 +33,7 @@ class FlyraChatScreen extends StatefulWidget {
 }
 
 /// Qué aviso enseñar debajo del chat cuando algo no sale bien.
-enum _Problem { busy, outOfQuestions, network }
+enum _Problem { busy, outOfQuestions, network, off }
 
 class _FlyraChatScreenState extends State<FlyraChatScreen> {
   late final AppServices _services = ServicesScope.of(context);
@@ -112,6 +112,8 @@ class _FlyraChatScreenState extends State<FlyraChatScreen> {
         _problem = switch (e.error) {
           ApiError.rateLimited => _Problem.outOfQuestions,
           ApiError.network => _Problem.network,
+          // 404: el servidor no tiene a Flyra encendida (p. ej. sin Ollama).
+          ApiError.notFound => _Problem.off,
           _ => _Problem.busy,
         };
         if (e.error == ApiError.rateLimited) _remaining = 0;
@@ -204,6 +206,7 @@ class _FlyraChatScreenState extends State<FlyraChatScreen> {
                     _Problem.busy => t.flyraBusy,
                     _Problem.outOfQuestions => t.flyraOutOfQuestions,
                     _Problem.network => t.errorNetwork,
+                    _Problem.off => t.errorFeatureOff,
                   },
                 ),
               _Composer(

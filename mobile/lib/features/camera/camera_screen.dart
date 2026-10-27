@@ -30,7 +30,7 @@ import 'stamps.dart';
 
 enum _Phase { starting, noAccess, noCamera, aiming, working, result }
 
-enum _Problem { outOfScans, busy, network, noLocation }
+enum _Problem { outOfScans, busy, network, noLocation, off }
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -209,6 +209,8 @@ class _CameraScreenState extends State<CameraScreen>
         _problem = switch (e.error) {
           ApiError.rateLimited => _Problem.outOfScans,
           ApiError.network => _Problem.network,
+          ApiError.notFound =>
+            _Problem.off, // el servidor no tiene este servicio
           _ => _Problem.busy,
         };
       });
@@ -396,6 +398,7 @@ class _CameraScreenState extends State<CameraScreen>
                                   _Problem.busy => t.cameraBusy,
                                   _Problem.network => t.errorNetwork,
                                   _Problem.noLocation => t.cameraNoLocation,
+                                  _Problem.off => t.errorFeatureOff,
                                 },
                           shootLabel: t.cameraShoot,
                           working: _phase == _Phase.working,

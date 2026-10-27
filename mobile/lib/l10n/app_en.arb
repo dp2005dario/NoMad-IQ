@@ -8943,5 +8943,9 @@
   },
   "welcomeHeadline": "Your next trip is already taking off.",
   "welcomeMute": "Mute music",
-  "welcomeUnmute": "Turn music on"
+  "welcomeUnmute": "Turn music on",
+  "errorFeatureOff": "This feature isn't switched on in the server yet. Try again later.",
+  "@errorFeatureOff": {
+    "description": "The server answered 404: that service is not switched on (for example Flyra with LLM_ENABLED=false)."
+  }
 }

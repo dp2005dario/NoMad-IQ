@@ -1895,5 +1895,6 @@
   "stopCheckNote": "Với {nights} ở {city}: kiểm tra giá chính xác trên trang web của họ",
   "welcomeHeadline": "Chuyến đi tiếp theo của bạn đang cất cánh.",
   "welcomeMute": "Tắt nhạc",
-  "welcomeUnmute": "Bật nhạc"
+  "welcomeUnmute": "Bật nhạc",
+  "errorFeatureOff": "Tính năng này chưa được bật trên máy chủ. Hãy thử lại sau."
 }

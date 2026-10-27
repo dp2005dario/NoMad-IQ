@@ -1895,5 +1895,6 @@
   "stopCheckNote": "Con {nights} a {city}: controlla il prezzo esatto sul loro sito",
   "welcomeHeadline": "Il tuo prossimo viaggio sta già decollando.",
   "welcomeMute": "Silenzia la musica",
-  "welcomeUnmute": "Attiva la musica"
+  "welcomeUnmute": "Attiva la musica",
+  "errorFeatureOff": "Questa funzione non è ancora attiva sul server. Riprova più tardi."
 }

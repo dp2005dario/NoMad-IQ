@@ -1895,5 +1895,6 @@
   "stopCheckNote": "Dengan {nights} di {city}: cek harga pastinya di situs web mereka",
   "welcomeHeadline": "Perjalanan berikutnya sudah lepas landas.",
   "welcomeMute": "Matikan musik",
-  "welcomeUnmute": "Nyalakan musik"
+  "welcomeUnmute": "Nyalakan musik",
+  "errorFeatureOff": "Fitur ini belum diaktifkan di server. Coba lagi nanti."
 }

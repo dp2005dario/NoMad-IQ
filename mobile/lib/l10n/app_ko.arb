@@ -1895,5 +1895,6 @@
   "stopCheckNote": "{city}에서 {nights}: 정확한 가격은 웹사이트에서 확인하세요",
   "welcomeHeadline": "다음 여행이 지금 이륙하고 있어요.",
   "welcomeMute": "음악 끄기",
-  "welcomeUnmute": "음악 켜기"
+  "welcomeUnmute": "음악 켜기",
+  "errorFeatureOff": "이 기능은 아직 서버에서 켜져 있지 않습니다. 나중에 다시 시도하세요."
 }

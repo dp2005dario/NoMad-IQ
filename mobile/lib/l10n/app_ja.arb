@@ -1895,5 +1895,6 @@
   "stopCheckNote": "{city}で{nights}：正確な料金は公式サイトで確認",
   "welcomeHeadline": "次の旅は、もう離陸しています。",
   "welcomeMute": "音楽をミュート",
-  "welcomeUnmute": "音楽をオンにする"
+  "welcomeUnmute": "音楽をオンにする",
+  "errorFeatureOff": "この機能はサーバーでまだ有効になっていません。あとでもう一度お試しください。"
 }

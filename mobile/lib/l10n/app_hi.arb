@@ -1895,5 +1895,6 @@
   "stopCheckNote": "{city} में {nights} के साथ: सही क़ीमत उनकी वेबसाइट पर देखें",
   "welcomeHeadline": "आपकी अगली यात्रा उड़ान भर रही है।",
   "welcomeMute": "संगीत बंद करें",
-  "welcomeUnmute": "संगीत चालू करें"
+  "welcomeUnmute": "संगीत चालू करें",
+  "errorFeatureOff": "यह सुविधा सर्वर पर अभी चालू नहीं है। बाद में फिर कोशिश करें।"
 }

@@ -154,6 +154,21 @@ void main() {
     );
   });
 
+  testWidgets('Flyra apagada en el servidor (404): lo dice claro', (
+    WidgetTester tester,
+  ) async {
+    final FlyraBackend b = FlyraBackend()..failWith = 404;
+    await pumpFlyra(tester, backend: b);
+    await tester.enterText(find.byType(TextField), 'hola');
+    await tester.tap(find.byTooltip('Enviar'));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('no está activada en el servidor'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('muy ocupada'), findsNothing);
+  });
+
   testWidgets('invitado: pide iniciar sesión y no llama al servidor', (
     WidgetTester tester,
   ) async {

@@ -1895,5 +1895,6 @@
   "stopCheckNote": "مع {nights} في {city}: تحقق من السعر الدقيق على موقعهم",
   "welcomeHeadline": "رحلتك القادمة تقلع الآن.",
   "welcomeMute": "كتم الموسيقى",
-  "welcomeUnmute": "تشغيل الموسيقى"
+  "welcomeUnmute": "تشغيل الموسيقى",
+  "errorFeatureOff": "هذه الميزة غير مفعّلة في الخادم بعد. حاول لاحقًا."
 }

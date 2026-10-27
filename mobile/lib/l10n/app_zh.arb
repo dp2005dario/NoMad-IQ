@@ -1895,5 +1895,6 @@
   "stopCheckNote": "在{city}停留{nights}：请在其官网查看确切价格",
   "welcomeHeadline": "你的下一段旅程正在起飞。",
   "welcomeMute": "静音音乐",
-  "welcomeUnmute": "开启音乐"
+  "welcomeUnmute": "开启音乐",
+  "errorFeatureOff": "此功能在服务器上尚未开启。请稍后再试。"
 }
