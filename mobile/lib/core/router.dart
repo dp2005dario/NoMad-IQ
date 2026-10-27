@@ -5,11 +5,11 @@ import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../auth/session.dart';
+import '../features/home/home_screen.dart';
 import '../features/vault/vault_screen.dart';
 import '../features/audioguide/audioguide_screen.dart';
 import '../features/camera/camera_screen.dart';
 import '../features/auth/sign_in_screen.dart';
-import '../features/coming_soon/coming_soon_screen.dart';
 import '../features/flights/explore_screen.dart';
 import '../features/flights/fare_alerts_screen.dart';
 import '../features/flights/fare_route_screen.dart';
@@ -23,7 +23,6 @@ import '../features/group/trip_create_screen.dart';
 import '../features/group/trip_screen.dart';
 import '../features/plans/plans_screen.dart';
 import '../features/group_chat/chat_screen.dart';
-import '../features/home/home_screen.dart';
 import '../features/map/map_screen.dart';
 import '../features/money/expense_group_screen.dart';
 import '../features/money/money_screen.dart';
@@ -244,7 +243,6 @@ abstract final class Routes {
       '/money/group/${Uri.encodeComponent(id)}';
 
   /// Pantalla "Muy pronto" de una función aún sin construir.
-  static String soon(Feature feature) => '/soon/${feature.name}';
 }
 
 /// "2026-12-15" → fecha (solo ese formato; cualquier otra cosa, null).
@@ -268,6 +266,10 @@ GoRouter buildRouter({
   // Cada vez que la sesión cambia (entrar, salir, caducar), el router
   // vuelve a pasar por "redirect" y lleva a la pantalla que toca.
   refreshListenable: session,
+  // Si alguien escribe una dirección inventada, se va a Inicio en vez de
+  // enseñar una pantalla de error.
+  errorBuilder: (BuildContext context, GoRouterState state) =>
+      const HomeScreen(),
   redirect: (BuildContext context, GoRouterState state) =>
       sessionRedirect(session.status, state.matchedLocation),
   routes: <RouteBase>[
@@ -589,18 +591,6 @@ GoRouter buildRouter({
       path: Routes.vault,
       builder: (BuildContext context, GoRouterState state) =>
           const VaultScreen(),
-    ),
-    GoRoute(
-      path: '/soon/:feature',
-      builder: (BuildContext context, GoRouterState state) {
-        // Si alguien escribe una dirección inventada, se va a Inicio
-        // en vez de romper la app.
-        final Feature? feature = Feature.values
-            .asNameMap()[state.pathParameters['feature']];
-        return feature == null
-            ? const HomeScreen()
-            : ComingSoonScreen(feature: feature, standalone: true);
-      },
     ),
   ],
 );

@@ -8,7 +8,7 @@ import '../../core/theme.dart';
 import '../../widgets/user_avatar.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
-import '../coming_soon/coming_soon_screen.dart';
+import 'feature.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});

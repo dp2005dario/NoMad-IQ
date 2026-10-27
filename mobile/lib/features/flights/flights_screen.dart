@@ -14,7 +14,7 @@ import '../../core/router.dart';
 import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../coming_soon/coming_soon_screen.dart';
+import '../home/feature.dart';
 import 'fares_api.dart';
 import 'flight_format.dart';
 import 'watch_sheet.dart';
@@ -517,7 +517,7 @@ class _PlanShortcuts extends StatelessWidget {
               Feature.copyTrip => Routes.copyTrip(),
               Feature.cheapSleep => Routes.stays(),
               Feature.events => Routes.events(),
-              _ => Routes.soon(f),
+              _ => Routes.home,
             }),
           ),
       ],

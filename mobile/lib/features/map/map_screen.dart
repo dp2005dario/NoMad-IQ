@@ -16,7 +16,7 @@ import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
-import '../coming_soon/coming_soon_screen.dart';
+import '../home/feature.dart';
 import 'geo.dart';
 import 'location.dart';
 import 'location_tracker.dart';
@@ -861,7 +861,7 @@ class _MapShortcuts extends StatelessWidget {
                     Feature.radar => Routes.radar(),
                     Feature.queues => Routes.queues(),
                     Feature.assistant => Routes.assistant,
-                    _ => Routes.soon(f),
+                    _ => Routes.home,
                   }),
                 ),
               ),
