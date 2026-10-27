@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "رحلتك القادمة تقلع الآن.",
   "welcomeMute": "كتم الموسيقى",
   "welcomeUnmute": "تشغيل الموسيقى",
-  "errorFeatureOff": "هذه الميزة غير مفعّلة في الخادم بعد. حاول لاحقًا."
+  "errorFeatureOff": "هذه الميزة غير مفعّلة في الخادم بعد. حاول لاحقًا.",
+  "profilePhotoChange": "تغيير صورة الملف الشخصي",
+  "profilePhotoTake": "التقاط صورة",
+  "profilePhotoGallery": "اختيار من المعرض",
+  "profilePhotoAvatars": "أو اختر صورة رمزية لمسافر",
+  "profilePhotoRemove": "إزالة الصورة"
 }

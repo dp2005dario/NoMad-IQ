@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "ทริปถัดไปของคุณกำลังออกเดินทาง",
   "welcomeMute": "ปิดเสียงเพลง",
   "welcomeUnmute": "เปิดเสียงเพลง",
-  "errorFeatureOff": "ฟีเจอร์นี้ยังไม่ได้เปิดใช้งานบนเซิร์ฟเวอร์ ลองใหม่ภายหลัง"
+  "errorFeatureOff": "ฟีเจอร์นี้ยังไม่ได้เปิดใช้งานบนเซิร์ฟเวอร์ ลองใหม่ภายหลัง",
+  "profilePhotoChange": "เปลี่ยนรูปโปรไฟล์",
+  "profilePhotoTake": "ถ่ายรูป",
+  "profilePhotoGallery": "เลือกจากแกลเลอรี",
+  "profilePhotoAvatars": "หรือเลือกอวตารนักเดินทาง",
+  "profilePhotoRemove": "ลบรูป"
 }

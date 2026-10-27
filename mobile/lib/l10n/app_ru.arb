@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "Ваше следующее путешествие уже взлетает.",
   "welcomeMute": "Выключить музыку",
   "welcomeUnmute": "Включить музыку",
-  "errorFeatureOff": "Эта функция пока не включена на сервере. Попробуйте позже."
+  "errorFeatureOff": "Эта функция пока не включена на сервере. Попробуйте позже.",
+  "profilePhotoChange": "Сменить фото профиля",
+  "profilePhotoTake": "Сделать снимок",
+  "profilePhotoGallery": "Выбрать из галереи",
+  "profilePhotoAvatars": "Или выберите аватар путешественника",
+  "profilePhotoRemove": "Удалить фото"
 }

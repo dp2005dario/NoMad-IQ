@@ -69,7 +69,7 @@ fallo de `CameraException` que no sea permiso. Sin verificar en móvil real.
 | SOS, ayuda, problemas, coche, aeropuerto, colas, radar, transporte | Existe | |
 | Widgets Android, avisos push | Existe | push necesita Firebase (`com.eclipta.app`) |
 | Pasaporte y cromos, recuerdos | Existe | |
-| Cambiar foto de perfil (cámara, galería, 6 avatares, quitar) | **No existe** | `settings_screen.dart` solo muestra la foto de Google (`UserAvatar`); `image_picker` no se usa para el perfil. Sí existe borrar cuenta (con contraseña y descarga de datos). Cambiar contraseña: no encontrado |
+| Cambiar foto de perfil (cámara, galería, 6 avatares, quitar) | Hecho en este PR (solo en el móvil) | ver `docs/guia-ajustes.md`; sin probar en móvil real. Borrar cuenta existe; cambiar contraseña: no encontrado |
 | Wear OS (esfera del reloj) | **No existe** | la maqueta v9 la menciona; es otra app |
 | Reclamación de retraso (carta + AESA) | Sin verificar | buscar `claim`/`aesa`: solo aparece "claim" en gastos |
 | Traductor de cartas con cámara encima del papel | Sin verificar / probablemente parcial | no hay archivo propio de "carta" |

@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "Perjalanan seterusnya sudah berlepas.",
   "welcomeMute": "Senyapkan muzik",
   "welcomeUnmute": "Hidupkan muzik",
-  "errorFeatureOff": "Ciri ini belum dihidupkan pada pelayan. Cuba lagi nanti."
+  "errorFeatureOff": "Ciri ini belum dihidupkan pada pelayan. Cuba lagi nanti.",
+  "profilePhotoChange": "Tukar foto profil",
+  "profilePhotoTake": "Ambil gambar",
+  "profilePhotoGallery": "Pilih daripada galeri",
+  "profilePhotoAvatars": "Atau pilih avatar pengembara",
+  "profilePhotoRemove": "Buang foto"
 }

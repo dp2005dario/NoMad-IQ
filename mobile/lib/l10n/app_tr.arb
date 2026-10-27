@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "Bir sonraki yolculuğun şimdiden havalanıyor.",
   "welcomeMute": "Müziği sessize al",
   "welcomeUnmute": "Müziği aç",
-  "errorFeatureOff": "Bu özellik sunucuda henüz açık değil. Daha sonra tekrar dene."
+  "errorFeatureOff": "Bu özellik sunucuda henüz açık değil. Daha sonra tekrar dene.",
+  "profilePhotoChange": "Profil fotoğrafını değiştir",
+  "profilePhotoTake": "Fotoğraf çek",
+  "profilePhotoGallery": "Galeriden seç",
+  "profilePhotoAvatars": "Ya da bir gezgin avatarı seç",
+  "profilePhotoRemove": "Fotoğrafı kaldır"
 }

@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "آپ کا اگلا سفر ابھی پرواز بھر رہا ہے۔",
   "welcomeMute": "موسیقی بند کریں",
   "welcomeUnmute": "موسیقی چالو کریں",
-  "errorFeatureOff": "یہ خصوصیت سرور پر ابھی فعال نہیں ہے۔ بعد میں دوبارہ کوشش کریں۔"
+  "errorFeatureOff": "یہ خصوصیت سرور پر ابھی فعال نہیں ہے۔ بعد میں دوبارہ کوشش کریں۔",
+  "profilePhotoChange": "پروفائل تصویر تبدیل کریں",
+  "profilePhotoTake": "تصویر کھینچیں",
+  "profilePhotoGallery": "گیلری سے منتخب کریں",
+  "profilePhotoAvatars": "یا مسافر اوتار چنیں",
+  "profilePhotoRemove": "تصویر ہٹائیں"
 }

@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "Je volgende reis stijgt al op.",
   "welcomeMute": "Muziek dempen",
   "welcomeUnmute": "Muziek aanzetten",
-  "errorFeatureOff": "Deze functie staat nog niet aan op de server. Probeer het later opnieuw."
+  "errorFeatureOff": "Deze functie staat nog niet aan op de server. Probeer het later opnieuw.",
+  "profilePhotoChange": "Profielfoto wijzigen",
+  "profilePhotoTake": "Foto maken",
+  "profilePhotoGallery": "Kiezen uit galerij",
+  "profilePhotoAvatars": "Of kies een reizigersavatar",
+  "profilePhotoRemove": "Foto verwijderen"
 }

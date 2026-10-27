@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "Papaalis na ang susunod mong biyahe.",
   "welcomeMute": "I-mute ang musika",
   "welcomeUnmute": "I-on ang musika",
-  "errorFeatureOff": "Hindi pa naka-on ang feature na ito sa server. Subukan ulit mamaya."
+  "errorFeatureOff": "Hindi pa naka-on ang feature na ito sa server. Subukan ulit mamaya.",
+  "profilePhotoChange": "Palitan ang larawan sa profile",
+  "profilePhotoTake": "Kumuha ng litrato",
+  "profilePhotoGallery": "Pumili sa gallery",
+  "profilePhotoAvatars": "O pumili ng avatar ng manlalakbay",
+  "profilePhotoRemove": "Alisin ang larawan"
 }

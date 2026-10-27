@@ -12,6 +12,7 @@ import 'auth/session.dart';
 import 'auth/token_store.dart';
 import 'core/api_client.dart';
 import 'core/config.dart';
+import 'features/settings/profile_photo.dart';
 import 'core/services.dart';
 import 'features/vault/doc_source.dart';
 import 'features/vault/vault.dart';
@@ -144,6 +145,8 @@ Future<void> main() async {
     // por falta de red, aquí se reintenta). Casi siempre no hace nada.
     AppLifecycleListener(onResume: () => unawaited(registrar.sync()));
   }
+  // La foto de perfil elegida en este móvil (si hay).
+  unawaited(ProfilePhotoController.instance.load());
   runApp(
     EcliptaApp(
       settings: SettingsController(store),

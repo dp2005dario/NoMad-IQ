@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "Twoja następna podróż już startuje.",
   "welcomeMute": "Wycisz muzykę",
   "welcomeUnmute": "Włącz muzykę",
-  "errorFeatureOff": "Ta funkcja nie jest jeszcze włączona na serwerze. Spróbuj ponownie później."
+  "errorFeatureOff": "Ta funkcja nie jest jeszcze włączona na serwerze. Spróbuj ponownie później.",
+  "profilePhotoChange": "Zmień zdjęcie profilowe",
+  "profilePhotoTake": "Zrób zdjęcie",
+  "profilePhotoGallery": "Wybierz z galerii",
+  "profilePhotoAvatars": "Albo wybierz awatar podróżnika",
+  "profilePhotoRemove": "Usuń zdjęcie"
 }

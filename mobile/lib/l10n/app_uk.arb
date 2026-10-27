@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "Ваша наступна подорож уже злітає.",
   "welcomeMute": "Вимкнути музику",
   "welcomeUnmute": "Увімкнути музику",
-  "errorFeatureOff": "Ця функція ще не ввімкнена на сервері. Спробуйте пізніше."
+  "errorFeatureOff": "Ця функція ще не ввімкнена на сервері. Спробуйте пізніше.",
+  "profilePhotoChange": "Змінити фото профілю",
+  "profilePhotoTake": "Зробити фото",
+  "profilePhotoGallery": "Вибрати з галереї",
+  "profilePhotoAvatars": "Або виберіть аватар мандрівника",
+  "profilePhotoRemove": "Видалити фото"
 }

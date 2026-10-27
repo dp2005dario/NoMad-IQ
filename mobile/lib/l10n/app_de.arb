@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "Deine nächste Reise hebt schon ab.",
   "welcomeMute": "Musik stummschalten",
   "welcomeUnmute": "Musik einschalten",
-  "errorFeatureOff": "Diese Funktion ist auf dem Server noch nicht eingeschaltet. Versuche es später noch einmal."
+  "errorFeatureOff": "Diese Funktion ist auf dem Server noch nicht eingeschaltet. Versuche es später noch einmal.",
+  "profilePhotoChange": "Profilfoto ändern",
+  "profilePhotoTake": "Foto aufnehmen",
+  "profilePhotoGallery": "Aus der Galerie wählen",
+  "profilePhotoAvatars": "Oder wähle einen Reise-Avatar",
+  "profilePhotoRemove": "Foto entfernen"
 }

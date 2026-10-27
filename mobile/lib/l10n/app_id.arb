@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "Perjalanan berikutnya sudah lepas landas.",
   "welcomeMute": "Matikan musik",
   "welcomeUnmute": "Nyalakan musik",
-  "errorFeatureOff": "Fitur ini belum diaktifkan di server. Coba lagi nanti."
+  "errorFeatureOff": "Fitur ini belum diaktifkan di server. Coba lagi nanti.",
+  "profilePhotoChange": "Ganti foto profil",
+  "profilePhotoTake": "Ambil foto",
+  "profilePhotoGallery": "Pilih dari galeri",
+  "profilePhotoAvatars": "Atau pilih avatar pelancong",
+  "profilePhotoRemove": "Hapus foto"
 }

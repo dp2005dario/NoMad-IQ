@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "आपकी अगली यात्रा उड़ान भर रही है।",
   "welcomeMute": "संगीत बंद करें",
   "welcomeUnmute": "संगीत चालू करें",
-  "errorFeatureOff": "यह सुविधा सर्वर पर अभी चालू नहीं है। बाद में फिर कोशिश करें।"
+  "errorFeatureOff": "यह सुविधा सर्वर पर अभी चालू नहीं है। बाद में फिर कोशिश करें।",
+  "profilePhotoChange": "प्रोफ़ाइल फ़ोटो बदलें",
+  "profilePhotoTake": "फ़ोटो खींचें",
+  "profilePhotoGallery": "गैलरी से चुनें",
+  "profilePhotoAvatars": "या कोई यात्री अवतार चुनें",
+  "profilePhotoRemove": "फ़ोटो हटाएँ"
 }

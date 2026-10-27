@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "Il tuo prossimo viaggio sta già decollando.",
   "welcomeMute": "Silenzia la musica",
   "welcomeUnmute": "Attiva la musica",
-  "errorFeatureOff": "Questa funzione non è ancora attiva sul server. Riprova più tardi."
+  "errorFeatureOff": "Questa funzione non è ancora attiva sul server. Riprova più tardi.",
+  "profilePhotoChange": "Cambia foto del profilo",
+  "profilePhotoTake": "Scatta una foto",
+  "profilePhotoGallery": "Scegli dalla galleria",
+  "profilePhotoAvatars": "Oppure scegli un avatar da viaggiatore",
+  "profilePhotoRemove": "Rimuovi foto"
 }

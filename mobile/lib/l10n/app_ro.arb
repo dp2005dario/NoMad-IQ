@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "Următoarea ta călătorie decolează deja.",
   "welcomeMute": "Oprește muzica",
   "welcomeUnmute": "Pornește muzica",
-  "errorFeatureOff": "Această funcție nu este încă activată pe server. Încearcă din nou mai târziu."
+  "errorFeatureOff": "Această funcție nu este încă activată pe server. Încearcă din nou mai târziu.",
+  "profilePhotoChange": "Schimbă poza de profil",
+  "profilePhotoTake": "Fă o poză",
+  "profilePhotoGallery": "Alege din galerie",
+  "profilePhotoAvatars": "Sau alege un avatar de călător",
+  "profilePhotoRemove": "Șterge poza"
 }

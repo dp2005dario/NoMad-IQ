@@ -18,6 +18,9 @@ import '../../widgets/user_avatar.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../home/home_screen.dart' show displayName;
 import 'account_data.dart';
+import 'profile_photo.dart';
+
+import 'package:image_picker/image_picker.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key, this.saver = const DeviceDataSaver()});
@@ -66,6 +69,79 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// Hoja inferior para cambiar la foto de perfil (solo en este móvil).
+  Future<void> _changePhoto() async {
+    final ProfilePhotoController photo = ProfilePhotoController.instance;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext sheet) {
+        final AppLocalizations t = AppLocalizations.of(sheet);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                ListTile(
+                  leading: const Icon(Icons.photo_camera_rounded),
+                  title: Text(t.profilePhotoTake),
+                  onTap: () {
+                    Navigator.pop(sheet);
+                    unawaited(photo.pick(ImageSource.camera));
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library_rounded),
+                  title: Text(t.profilePhotoGallery),
+                  onTap: () {
+                    Navigator.pop(sheet);
+                    unawaited(photo.pick(ImageSource.gallery));
+                  },
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: Text(t.profilePhotoAvatars),
+                ),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: <Widget>[
+                    for (int i = 0; i < presetAvatars.length; i++)
+                      InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () {
+                          Navigator.pop(sheet);
+                          unawaited(photo.choosePreset(i));
+                        },
+                        child: CircleAvatar(
+                          radius: 26,
+                          backgroundColor: presetAvatars[i].color,
+                          child: Icon(
+                            presetAvatars[i].icon,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                ListTile(
+                  leading: const Icon(Icons.hide_image_rounded),
+                  title: Text(t.profilePhotoRemove),
+                  onTap: () {
+                    Navigator.pop(sheet);
+                    unawaited(photo.remove());
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _askDelete() async {
@@ -151,10 +227,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: <Widget>[
-                      UserAvatar(
-                        name: name,
-                        photoUrl: user?.photoUrl,
-                        size: 60,
+                      // Tocar la foto: hacer foto, galería, avatar o quitar.
+                      Semantics(
+                        button: true,
+                        label: t.profilePhotoChange,
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: _changePhoto,
+                          child: UserAvatar(
+                            name: name,
+                            photoUrl: user?.photoUrl,
+                            size: 60,
+                            isMe: true,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(

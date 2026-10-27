@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "次の旅は、もう離陸しています。",
   "welcomeMute": "音楽をミュート",
   "welcomeUnmute": "音楽をオンにする",
-  "errorFeatureOff": "この機能はサーバーでまだ有効になっていません。あとでもう一度お試しください。"
+  "errorFeatureOff": "この機能はサーバーでまだ有効になっていません。あとでもう一度お試しください。",
+  "profilePhotoChange": "プロフィール写真を変更",
+  "profilePhotoTake": "写真を撮る",
+  "profilePhotoGallery": "ギャラリーから選ぶ",
+  "profilePhotoAvatars": "または旅人のアバターを選ぶ",
+  "profilePhotoRemove": "写真を削除"
 }

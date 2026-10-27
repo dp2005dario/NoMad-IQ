@@ -8947,5 +8947,10 @@
   "errorFeatureOff": "This feature isn't switched on in the server yet. Try again later.",
   "@errorFeatureOff": {
     "description": "The server answered 404: that service is not switched on (for example Flyra with LLM_ENABLED=false)."
-  }
+  },
+  "profilePhotoChange": "Change profile photo",
+  "profilePhotoTake": "Take a photo",
+  "profilePhotoGallery": "Choose from gallery",
+  "profilePhotoAvatars": "Or pick a traveller avatar",
+  "profilePhotoRemove": "Remove photo"
 }

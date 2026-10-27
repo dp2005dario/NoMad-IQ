@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "আপনার পরের ভ্রমণ এখনই শুরু হচ্ছে।",
   "welcomeMute": "গান বন্ধ করুন",
   "welcomeUnmute": "গান চালু করুন",
-  "errorFeatureOff": "এই সুবিধাটি সার্ভারে এখনও চালু করা হয়নি। পরে আবার চেষ্টা করুন।"
+  "errorFeatureOff": "এই সুবিধাটি সার্ভারে এখনও চালু করা হয়নি। পরে আবার চেষ্টা করুন।",
+  "profilePhotoChange": "প্রোফাইল ছবি পরিবর্তন",
+  "profilePhotoTake": "ছবি তুলুন",
+  "profilePhotoGallery": "গ্যালারি থেকে বাছুন",
+  "profilePhotoAvatars": "অথবা একটি ভ্রমণকারী অবতার বাছুন",
+  "profilePhotoRemove": "ছবি সরান"
 }

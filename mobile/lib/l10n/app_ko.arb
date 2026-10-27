@@ -1896,5 +1896,10 @@
   "welcomeHeadline": "다음 여행이 지금 이륙하고 있어요.",
   "welcomeMute": "음악 끄기",
   "welcomeUnmute": "음악 켜기",
-  "errorFeatureOff": "이 기능은 아직 서버에서 켜져 있지 않습니다. 나중에 다시 시도하세요."
+  "errorFeatureOff": "이 기능은 아직 서버에서 켜져 있지 않습니다. 나중에 다시 시도하세요.",
+  "profilePhotoChange": "프로필 사진 변경",
+  "profilePhotoTake": "사진 찍기",
+  "profilePhotoGallery": "갤러리에서 선택",
+  "profilePhotoAvatars": "또는 여행자 아바타 선택",
+  "profilePhotoRemove": "사진 삭제"
 }
