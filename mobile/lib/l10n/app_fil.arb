@@ -1905,5 +1905,11 @@
   "passwordNew": "Bagong password (12 character o higit pa)",
   "passwordChanged": "Napalitan ang password. Na-sign out ang iba mong device.",
   "passwordWeak": "Kailangan ng bagong password ng hindi bababa sa 12 character at hindi maaaring may email mo.",
-  "serverUrlWarning": "Ginawa ang app na ito nang walang address ng server (nakaturo sa emulator), kaya hindi gagana ang mga online feature. Mag-install ng bersyong may totoong server."
+  "serverUrlWarning": "Ginawa ang app na ito nang walang address ng server (nakaturo sa emulator), kaya hindi gagana ang mga online feature. Mag-install ng bersyong may totoong server.",
+  "papersNoReply": "Walang sagot sa loob ng 30 araw? Maaari kang magreklamo sa pambansang ahensya ng bansang pinaglipadan (sa Spain, AESA).",
+  "papersAesaButton": "Pumunta sa AESA (Spain)",
+  "mapWeatherTitle": "Panahon",
+  "mapWeatherSun": "Araw",
+  "mapWeatherClouds": "Ulap",
+  "mapWeatherRain": "Ulan"
 }

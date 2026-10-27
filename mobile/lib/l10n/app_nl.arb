@@ -1905,5 +1905,11 @@
   "passwordNew": "Nieuw wachtwoord (minstens 12 tekens)",
   "passwordChanged": "Wachtwoord gewijzigd. Je andere apparaten zijn uitgelogd.",
   "passwordWeak": "Het nieuwe wachtwoord moet minstens 12 tekens hebben en mag je e-mail niet bevatten.",
-  "serverUrlWarning": "Deze app is gebouwd zonder serveradres (hij wijst naar de emulator), dus online functies werken niet. Installeer een versie die met de echte server is gebouwd."
+  "serverUrlWarning": "Deze app is gebouwd zonder serveradres (hij wijst naar de emulator), dus online functies werken niet. Installeer een versie die met de echte server is gebouwd.",
+  "papersNoReply": "Geen antwoord binnen 30 dagen? Je kunt klagen bij de nationale handhavingsinstantie van het vertrekland (in Spanje: AESA).",
+  "papersAesaButton": "Naar AESA (Spanje)",
+  "mapWeatherTitle": "Weer",
+  "mapWeatherSun": "Zon",
+  "mapWeatherClouds": "Wolken",
+  "mapWeatherRain": "Regen"
 }

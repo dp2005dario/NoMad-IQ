@@ -1905,5 +1905,11 @@
   "passwordNew": "Kata laluan baharu (12 aksara atau lebih)",
   "passwordChanged": "Kata laluan ditukar. Peranti anda yang lain telah dilog keluar.",
   "passwordWeak": "Kata laluan baharu perlu sekurang-kurangnya 12 aksara dan tidak boleh mengandungi e-mel anda.",
-  "serverUrlWarning": "Apl ini dibina tanpa alamat pelayan (menuju ke emulator), jadi ciri dalam talian tidak akan berfungsi. Pasang versi yang dibina dengan pelayan sebenar."
+  "serverUrlWarning": "Apl ini dibina tanpa alamat pelayan (menuju ke emulator), jadi ciri dalam talian tidak akan berfungsi. Pasang versi yang dibina dengan pelayan sebenar.",
+  "papersNoReply": "Tiada jawapan dalam 30 hari? Anda boleh mengadu kepada badan penguatkuasa negara berlepas (di Sepanyol: AESA).",
+  "papersAesaButton": "Pergi ke AESA (Sepanyol)",
+  "mapWeatherTitle": "Cuaca",
+  "mapWeatherSun": "Cerah",
+  "mapWeatherClouds": "Berawan",
+  "mapWeatherRain": "Hujan"
 }

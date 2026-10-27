@@ -1905,5 +1905,11 @@
   "passwordNew": "Nowe hasło (co najmniej 12 znaków)",
   "passwordChanged": "Hasło zmienione. Twoje pozostałe urządzenia zostały wylogowane.",
   "passwordWeak": "Nowe hasło musi mieć co najmniej 12 znaków i nie może zawierać twojego adresu e-mail.",
-  "serverUrlWarning": "Ta aplikacja została zbudowana bez adresu serwera (wskazuje emulator), więc funkcje online nie zadziałają. Zainstaluj wersję zbudowaną z prawdziwym serwerem."
+  "serverUrlWarning": "Ta aplikacja została zbudowana bez adresu serwera (wskazuje emulator), więc funkcje online nie zadziałają. Zainstaluj wersję zbudowaną z prawdziwym serwerem.",
+  "papersNoReply": "Brak odpowiedzi w 30 dni? Możesz złożyć skargę do krajowego organu kraju wylotu (w Hiszpanii: AESA).",
+  "papersAesaButton": "Przejdź do AESA (Hiszpania)",
+  "mapWeatherTitle": "Pogoda",
+  "mapWeatherSun": "Słońce",
+  "mapWeatherClouds": "Chmury",
+  "mapWeatherRain": "Deszcz"
 }

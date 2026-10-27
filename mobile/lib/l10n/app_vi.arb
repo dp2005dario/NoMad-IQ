@@ -1905,5 +1905,11 @@
   "passwordNew": "Mật khẩu mới (từ 12 ký tự)",
   "passwordChanged": "Đã đổi mật khẩu. Các thiết bị khác của bạn đã bị đăng xuất.",
   "passwordWeak": "Mật khẩu mới cần ít nhất 12 ký tự và không được chứa email của bạn.",
-  "serverUrlWarning": "Ứng dụng này được tạo mà không có địa chỉ máy chủ (trỏ tới trình giả lập) nên các tính năng trực tuyến sẽ không chạy. Hãy cài bản được tạo với máy chủ thật."
+  "serverUrlWarning": "Ứng dụng này được tạo mà không có địa chỉ máy chủ (trỏ tới trình giả lập) nên các tính năng trực tuyến sẽ không chạy. Hãy cài bản được tạo với máy chủ thật.",
+  "papersNoReply": "Không có phản hồi sau 30 ngày? Bạn có thể khiếu nại lên cơ quan thực thi quốc gia của nước khởi hành (ở Tây Ban Nha là AESA).",
+  "papersAesaButton": "Đến AESA (Tây Ban Nha)",
+  "mapWeatherTitle": "Thời tiết",
+  "mapWeatherSun": "Nắng",
+  "mapWeatherClouds": "Mây",
+  "mapWeatherRain": "Mưa"
 }

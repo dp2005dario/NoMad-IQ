@@ -1905,5 +1905,11 @@
   "passwordNew": "Yeni şifre (en az 12 karakter)",
   "passwordChanged": "Şifre değişti. Diğer cihazlarının oturumu kapatıldı.",
   "passwordWeak": "Yeni şifre en az 12 karakter olmalı ve e-postanı içeremez.",
-  "serverUrlWarning": "Bu uygulama sunucu adresi olmadan derlenmiş (emülatörü gösteriyor), bu yüzden çevrimiçi özellikler çalışmaz. Gerçek sunucuyla derlenmiş bir sürüm kur."
+  "serverUrlWarning": "Bu uygulama sunucu adresi olmadan derlenmiş (emülatörü gösteriyor), bu yüzden çevrimiçi özellikler çalışmaz. Gerçek sunucuyla derlenmiş bir sürüm kur.",
+  "papersNoReply": "30 günde yanıt yok mu? Uçuşun kalktığı ülkenin ulusal denetim kurumuna şikâyet edebilirsin (İspanya'da AESA).",
+  "papersAesaButton": "AESA'ya git (İspanya)",
+  "mapWeatherTitle": "Hava",
+  "mapWeatherSun": "Güneş",
+  "mapWeatherClouds": "Bulut",
+  "mapWeatherRain": "Yağmur"
 }

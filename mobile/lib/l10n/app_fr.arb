@@ -1905,5 +1905,11 @@
   "passwordNew": "Nouveau mot de passe (12 caractères ou plus)",
   "passwordChanged": "Mot de passe changé. Tes autres appareils ont été déconnectés.",
   "passwordWeak": "Le nouveau mot de passe doit avoir au moins 12 caractères et ne peut pas contenir ton e-mail.",
-  "serverUrlWarning": "Cette app a été compilée sans adresse de serveur (elle pointe vers l'émulateur) : les fonctions en ligne ne marcheront pas. Installe une version compilée avec le vrai serveur."
+  "serverUrlWarning": "Cette app a été compilée sans adresse de serveur (elle pointe vers l'émulateur) : les fonctions en ligne ne marcheront pas. Installe une version compilée avec le vrai serveur.",
+  "papersNoReply": "Pas de réponse sous 30 jours ? Tu peux saisir l'organisme national du pays de départ du vol (en Espagne, l'AESA).",
+  "papersAesaButton": "Aller sur l'AESA (Espagne)",
+  "mapWeatherTitle": "Météo",
+  "mapWeatherSun": "Soleil",
+  "mapWeatherClouds": "Nuages",
+  "mapWeatherRain": "Pluie"
 }

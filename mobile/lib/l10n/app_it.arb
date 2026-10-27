@@ -1905,5 +1905,11 @@
   "passwordNew": "Nuova password (almeno 12 caratteri)",
   "passwordChanged": "Password cambiata. Gli altri tuoi dispositivi sono stati scollegati.",
   "passwordWeak": "La nuova password deve avere almeno 12 caratteri e non può contenere la tua email.",
-  "serverUrlWarning": "Questa app è stata compilata senza indirizzo del server (punta all'emulatore), quindi le funzioni online non andranno. Installa una versione compilata con il server vero."
+  "serverUrlWarning": "Questa app è stata compilata senza indirizzo del server (punta all'emulatore), quindi le funzioni online non andranno. Installa una versione compilata con il server vero.",
+  "papersNoReply": "Nessuna risposta entro 30 giorni? Puoi rivolgerti all'organismo nazionale del paese di partenza del volo (in Spagna, l'AESA).",
+  "papersAesaButton": "Vai all'AESA (Spagna)",
+  "mapWeatherTitle": "Meteo",
+  "mapWeatherSun": "Sole",
+  "mapWeatherClouds": "Nuvole",
+  "mapWeatherRain": "Pioggia"
 }

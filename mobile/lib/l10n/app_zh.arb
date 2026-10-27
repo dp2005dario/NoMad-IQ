@@ -1905,5 +1905,11 @@
   "passwordNew": "新密码（至少 12 个字符）",
   "passwordChanged": "密码已修改，你的其他设备已退出登录。",
   "passwordWeak": "新密码至少需要 12 个字符，且不能包含你的邮箱。",
-  "serverUrlWarning": "此应用构建时没有服务器地址（指向模拟器），在线功能无法使用。请安装使用真实服务器构建的版本。"
+  "serverUrlWarning": "此应用构建时没有服务器地址（指向模拟器），在线功能无法使用。请安装使用真实服务器构建的版本。",
+  "papersNoReply": "30 天内没有回复？你可以向航班出发国的国家监管机构投诉（西班牙为 AESA）。",
+  "papersAesaButton": "前往 AESA（西班牙）",
+  "mapWeatherTitle": "天气",
+  "mapWeatherSun": "晴",
+  "mapWeatherClouds": "多云",
+  "mapWeatherRain": "雨"
 }

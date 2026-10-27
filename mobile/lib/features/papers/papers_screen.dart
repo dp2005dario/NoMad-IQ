@@ -438,6 +438,19 @@ class _RightsState extends State<_Rights> {
                   t.papersClaimNote,
                   style: text.bodySmall?.copyWith(color: NomadColors.textMuted),
                 ),
+                const SizedBox(height: 12),
+                // Si la aerolínea no contesta: el organismo nacional. Solo
+                // enlazamos la web de AESA (España); otros países, a buscarla.
+                Text(t.papersNoReply, style: text.bodySmall),
+                TextButton.icon(
+                  icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                  label: Text(t.papersAesaButton),
+                  onPressed: () => unawaited(
+                    ServicesScope.of(
+                      context,
+                    ).openLink(Uri.parse('https://www.seguridadaerea.gob.es')),
+                  ),
+                ),
               ] else
                 Text(
                   r.reason == Eu261Reason.notEuRoute

@@ -1905,5 +1905,11 @@
   "passwordNew": "Parola nouă (cel puțin 12 caractere)",
   "passwordChanged": "Parola a fost schimbată. Celelalte dispozitive ale tale au fost deconectate.",
   "passwordWeak": "Parola nouă are nevoie de cel puțin 12 caractere și nu poate conține e-mailul tău.",
-  "serverUrlWarning": "Aplicația a fost construită fără adresa serverului (indică emulatorul), deci funcțiile online nu vor merge. Instalează o versiune construită cu serverul real."
+  "serverUrlWarning": "Aplicația a fost construită fără adresa serverului (indică emulatorul), deci funcțiile online nu vor merge. Instalează o versiune construită cu serverul real.",
+  "papersNoReply": "Niciun răspuns în 30 de zile? Poți reclama la organismul național al țării de plecare a zborului (în Spania, AESA).",
+  "papersAesaButton": "Mergi la AESA (Spania)",
+  "mapWeatherTitle": "Vreme",
+  "mapWeatherSun": "Soare",
+  "mapWeatherClouds": "Nori",
+  "mapWeatherRain": "Ploaie"
 }

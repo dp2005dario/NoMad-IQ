@@ -1905,5 +1905,11 @@
   "passwordNew": "Kata sandi baru (12 karakter atau lebih)",
   "passwordChanged": "Kata sandi diganti. Perangkat Anda yang lain telah dikeluarkan.",
   "passwordWeak": "Kata sandi baru minimal 12 karakter dan tidak boleh berisi email Anda.",
-  "serverUrlWarning": "Aplikasi ini dibuat tanpa alamat server (mengarah ke emulator), jadi fitur online tidak akan berfungsi. Pasang versi yang dibuat dengan server asli."
+  "serverUrlWarning": "Aplikasi ini dibuat tanpa alamat server (mengarah ke emulator), jadi fitur online tidak akan berfungsi. Pasang versi yang dibuat dengan server asli.",
+  "papersNoReply": "Tidak ada balasan dalam 30 hari? Anda dapat mengadu ke lembaga penegak nasional negara keberangkatan (di Spanyol: AESA).",
+  "papersAesaButton": "Buka AESA (Spanyol)",
+  "mapWeatherTitle": "Cuaca",
+  "mapWeatherSun": "Cerah",
+  "mapWeatherClouds": "Berawan",
+  "mapWeatherRain": "Hujan"
 }

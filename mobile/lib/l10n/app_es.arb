@@ -1905,5 +1905,11 @@
   "passwordNew": "Contraseña nueva (12 caracteres o más)",
   "passwordChanged": "Contraseña cambiada. Tus otros dispositivos se han desconectado.",
   "passwordWeak": "La contraseña nueva necesita al menos 12 caracteres y no puede contener tu correo.",
-  "serverUrlWarning": "Esta app se compiló sin dirección de servidor (apunta al emulador), así que las funciones con internet no irán. Instala una versión hecha con el servidor real."
+  "serverUrlWarning": "Esta app se compiló sin dirección de servidor (apunta al emulador), así que las funciones con internet no irán. Instala una versión hecha con el servidor real.",
+  "papersNoReply": "¿No contestan en 30 días? Puedes reclamar ante el organismo nacional del país de salida del vuelo (en España, AESA).",
+  "papersAesaButton": "Ir a AESA (España)",
+  "mapWeatherTitle": "Clima",
+  "mapWeatherSun": "Sol",
+  "mapWeatherClouds": "Nubes",
+  "mapWeatherRain": "Lluvia"
 }

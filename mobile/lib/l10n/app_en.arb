@@ -8945,5 +8945,11 @@
   "passwordNew": "New password (12 characters or more)",
   "passwordChanged": "Password changed. Your other devices were signed out.",
   "passwordWeak": "The new password needs at least 12 characters and can't contain your email.",
-  "serverUrlWarning": "This app was built without a server address (it points at the emulator), so online features won't work. Install a version built with the real server."
+  "serverUrlWarning": "This app was built without a server address (it points at the emulator), so online features won't work. Install a version built with the real server.",
+  "papersNoReply": "No reply within 30 days? You can complain to the national enforcement body of the country where the flight left (in Spain, AESA).",
+  "papersAesaButton": "Go to AESA (Spain)",
+  "mapWeatherTitle": "Weather",
+  "mapWeatherSun": "Sun",
+  "mapWeatherClouds": "Clouds",
+  "mapWeatherRain": "Rain"
 }
