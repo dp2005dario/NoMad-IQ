@@ -37,16 +37,6 @@
   "shortcutExpenses": "Expenses",
   "shortcutAudioguides": "Audio guides",
   "shortcutLanguage": "Language",
-  "comingSoonTitle": "Coming soon",
-  "comingSoonBody": "{feature} is on its way. Flyra is getting it ready.",
-  "@comingSoonBody": {
-    "description": "Body of a screen not built yet. {feature} is the screen name, e.g. Map.",
-    "placeholders": {
-      "feature": {
-        "type": "String"
-      }
-    }
-  },
   "languageTitle": "Language",
   "languageSystem": "Device language",
   "languageSearchHint": "Search language",
@@ -93,7 +83,6 @@
   "accountMenu": "Account",
   "signOut": "Sign out",
   "signInFromGuest": "Sign in or create an account",
-  "googleSoon": "Google sign-in is coming soon. Use your email for now.",
   "mapSearchHint": "Search zone",
   "mapSearchNoResults": "No zone called “{query}” here. Move the map to load more.",
   "@mapSearchNoResults": {
@@ -1825,10 +1814,6 @@
   "moneyTabFx": "Currencies",
   "@moneyTabFx": {
     "description": "Money tab: currency exchange."
-  },
-  "moneySoon": "Coming very soon.",
-  "@moneySoon": {
-    "description": "Placeholder for a money tab not built yet."
   },
   "moneyExpensesIntro": "Share a pot with your friends: snap the receipt, Flyra reads it and tells everyone what they owe.",
   "@moneyExpensesIntro": {
@@ -8952,5 +8937,13 @@
   "profilePhotoTake": "Take a photo",
   "profilePhotoGallery": "Choose from gallery",
   "profilePhotoAvatars": "Or pick a traveller avatar",
-  "profilePhotoRemove": "Remove photo"
+  "profilePhotoRemove": "Remove photo",
+  "googleUnavailable": "Google sign-in isn't available right now. Use your email instead.",
+  "googleFailed": "Couldn't sign in with Google. Try again.",
+  "passwordChangeTitle": "Change password",
+  "passwordCurrent": "Current password",
+  "passwordNew": "New password (12 characters or more)",
+  "passwordChanged": "Password changed. Your other devices were signed out.",
+  "passwordWeak": "The new password needs at least 12 characters and can't contain your email.",
+  "serverUrlWarning": "This app was built without a server address (it points at the emulator), so online features won't work. Install a version built with the real server."
 }

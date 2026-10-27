@@ -102,6 +102,37 @@ class AuthGatewayIT {
     // ------------------------------------------------------------------
 
     @Test
+    void cambiarContrasenaCierraLasOtrasSesionesYDaTokensNuevos() throws Exception {
+        String email = newEmail();
+        post("/v1/auth/register", Map.of("email", email, "password", PASSWORD), null);
+        Resp other = login(email, PASSWORD); // "otro móvil"
+        Resp mine = login(email, PASSWORD);
+        String access = (String) mine.body().get("access_token");
+
+        // Contraseña actual mal: 401 y no se cambia nada.
+        assertThat(post("/v1/auth/password", Map.of("current_password", "no es esta ya",
+                "new_password", "otra contrasena larga 2"), access).status()).isEqualTo(401);
+        // Nueva demasiado floja: 400.
+        assertThat(post("/v1/auth/password", Map.of("current_password", PASSWORD,
+                "new_password", "corta"), access).status()).isEqualTo(400);
+
+        Resp changed = post("/v1/auth/password", Map.of("current_password", PASSWORD,
+                "new_password", "otra contrasena larga 2"), access);
+        assertThat(changed.status()).isEqualTo(200);
+        // Los tokens nuevos funcionan; el otro móvil ya no puede refrescar.
+        assertThat(get("/v1/me", (String) changed.body().get("access_token")).status()).isEqualTo(200);
+        assertThat(post("/v1/auth/refresh", Map.of("refresh_token", other.body().get("refresh_token")), null).status())
+                .isEqualTo(401);
+        assertThat(login(email, PASSWORD).status()).isEqualTo(401);
+        assertThat(login(email, "otra contrasena larga 2").status()).isEqualTo(200);
+    }
+
+    @Test
+    void googleSinClientIdResponde503() throws Exception {
+        assertThat(post("/v1/auth/google", Map.of("id_token", "x.y.z"), null).status()).isEqualTo(503);
+    }
+
+    @Test
     void flujoCompletoRegistroLoginRefrescoYLogout() throws Exception {
         String email = newEmail();
         Resp reg = post("/v1/auth/register", Map.of("email", email.toUpperCase(), "password", PASSWORD), null);

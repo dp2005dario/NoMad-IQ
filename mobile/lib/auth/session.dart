@@ -59,6 +59,29 @@ class SessionController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Entrar con el "id_token" de Google (lo comprueba el servidor).
+  Future<void> signInWithGoogle(String idToken) async {
+    await _accept(await _api.loginWithGoogle(idToken));
+    _status = SessionStatus.signedIn;
+    try {
+      await _loadProfile();
+    } on AuthException {
+      // El perfil es un extra: sin él también se puede entrar.
+    }
+    notifyListeners();
+  }
+
+  /// Cambiar la contraseña. Lanza [AuthException]: invalidCredentials si la
+  /// actual está mal, invalidInput si la nueva es floja.
+  Future<void> changePassword(String current, String next) async {
+    final TokenPair tokens = await _api.changePassword(
+      await accessToken(),
+      current,
+      next,
+    );
+    await _accept(tokens);
+  }
+
   /// Crear cuenta y entrar en un solo paso.
   Future<void> register(String email, String password) async {
     await _api.register(email.trim(), password);

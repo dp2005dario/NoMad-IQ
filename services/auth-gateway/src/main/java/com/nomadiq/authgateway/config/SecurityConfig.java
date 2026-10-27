@@ -44,7 +44,7 @@ public class SecurityConfig {
                 .logout(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         // Públicas: no puedes tener token antes de hacer login.
-                        .requestMatchers(HttpMethod.POST, "/v1/auth/register", "/v1/auth/login", "/v1/auth/refresh").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/v1/auth/register", "/v1/auth/login", "/v1/auth/refresh", "/v1/auth/google").permitAll()
                         .requestMatchers(HttpMethod.GET, "/.well-known/jwks.json").permitAll()
                         // Salud (puerto de gestión) y página de error interna.
                         .requestMatchers("/livez", "/readyz", "/actuator/health/**", "/error").permitAll()

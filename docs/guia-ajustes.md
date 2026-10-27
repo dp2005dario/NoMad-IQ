@@ -128,3 +128,9 @@ móvil (no se sube a ningún servidor): el código está en
 para que pese poco. Si no eliges nada, se ve la de tu cuenta de Google o tu
 inicial. Aparece en tu avatar de Inicio y de Ajustes. Sin probar aún en un móvil
 real (hay tests del guardado y de cómo se ve).
+
+## Cambiar la contraseña
+
+Ajustes > Cuenta > "Cambiar contraseña". Pide la actual y la nueva (12
+caracteres o más, sin tu correo dentro). Los demás móviles con tu cuenta se
+desconectan; este sigue dentro. Detalles en `docs/guia-google-login.md`.

@@ -83,29 +83,26 @@ TODO/FIXME, stubs, mocks, "Fake", flags apagados y funciones simuladas.
 Resultado: **no hay TODO/FIXME ni clases Fake en el código de producción**
 (los Fake solo viven en `test/`). Quedan estos puntos, clasificados:
 
-### A. Lo hago yo en el PR #26 (5 puntos)
-1. **Entrar con Google es un botón de relleno**: `welcome_screen.dart` solo
-   enseña "El acceso con Google llega pronto" y el `auth-gateway` no sabe
-   validar cuentas de Google. Es lo más importante que falta (la maqueta
-   promete ese botón). La parte de código (app + gateway) es mía; hace falta
-   además el Client ID de Google (ver B1).
-2. **Cambiar contraseña y recuperarla**: no existen ni en la app ni en el
-   `auth-gateway` (la guía del gateway los lista como pendientes).
-3. **Textos muertos**: `comingSoonTitle`, `comingSoonBody` y `moneySoon` en
-   los 25 .arb ya no los usa nadie; se borran.
-4. **Aviso de servidor de emulador**: si el APK se compiló sin
-   `NOMADIQ_API_URL`, avisar con claridad (hoy solo falla "ocupado").
-5. **Comprobar a fondo** los puntos que marqué "sin verificar": el clima del
-   mapa de la maqueta v7 (solo he visto lluvia/clima en `map_screen.dart` y
-   `street_sheet.dart`, sin confirmar el selector Sol/Nubes/Lluvia), el
-   traductor de cartas con cámara y la notificación en vivo. Ya vi que SOS
-   tiene pulsación larga (`_hold`) y que existe `eu261.dart` con la
-   reclamación; falta confirmar la carta y el paso a AESA.
+### A. Lo hago yo en el PR #26
+Hecho:
+1. Auditoría, mensajes claros de "servicio no activado" (404), foto de perfil
+   y quitar la pantalla provisional `coming_soon`.
+2. **Entrar con Google**: código completo en app y `auth-gateway`
+   (`POST /v1/auth/google`, migración V2 con `photo_url`), listo para activar
+   con `GOOGLE_CLIENT_ID` (servidor) y `NOMADIQ_GOOGLE_CLIENT_ID` (app). Ver
+   `docs/guia-google-login.md`. Sin el ID, avisa con claridad (503 / "no disponible").
+3. **Cambiar contraseña** (app + `POST /v1/auth/password`).
+4. Aviso en la Bienvenida si el APK apunta al servidor del emulador.
+5. Borrados los textos muertos (`comingSoon*`, `moneySoon`, `googleSoon`).
+6. Comprobado leyendo el código: SOS (pulsación de 3 s + SMS con tu ubicación),
+   carta de reclamación EU261 (`eu261.dart`), traductor de cartas
+   (`menu_screen.dart` + `/v1/menu/translate`), aviso "en directo" (`LiveFlight`).
 
-Hecho ya en este PR: auditoría, mensaje claro de "servicio no activado" (404),
-cambiar foto de perfil, quitar la pantalla provisional `coming_soon`.
+Siguen pendientes en este PR: paso a AESA en la reclamación y el selector de
+clima del mapa (Sol/Nubes/Lluvia), que NO existe hoy (lo había dado por
+"sin verificar": ya lo verifiqué, falta).
 
-### B. Depende de algo externo (6 puntos)
+### B. Depende de algo externo (7 puntos)
 1. **Client ID de Google** (Google Cloud Console / Firebase) para el login con
    Google, y configurar el servidor para que llegue `photo_url`.
 2. **Servidor con HTTPS** (Azure/Oracle): en versión publicada la app exige
@@ -118,7 +115,9 @@ cambiar foto de perfil, quitar la pantalla provisional `coming_soon`.
    Ticketmaster (eventos), identificador de afiliado de Booking.
 5. **Firebase** con `com.eclipta.app` y su `google-services.json` para los
    avisos push; App ID de Meta para "Crear historia" en Instagram.
-6. **Revisión nativa** de las traducciones y comprobar a mano los enlaces
+6. **Correo saliente** (SMTP o servicio de correo) para "recuperar contraseña":
+   sin él no hay forma de enviar el enlace. No está hecho.
+7. **Revisión nativa** de las traducciones y comprobar a mano los enlaces
    oficiales de visados (ver `lo-que-tienes-que-hacer.md`).
 
 ### C. Imposible desde aquí o es otra app (3 puntos)
@@ -129,7 +128,7 @@ cambiar foto de perfil, quitar la pantalla provisional `coming_soon`.
 3. **Probar en un móvil real** (cámara, sonido del vídeo, biometría de la
    bóveda, widgets): solo tengo `flutter analyze` y los tests.
 
-Total: 5 en A (más 4 ya hechos), 6 en B, 3 en C. Play Console y testers
+Total aproximado: A con 2 puntos pendientes, B con 7, C con 3. Play Console y testers quedan fuera del alcance acordado.
 quedan fuera del alcance acordado.
 
 ## 6. Qué se probó y qué no

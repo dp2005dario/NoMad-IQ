@@ -13,7 +13,7 @@ import java.util.UUID;
  * huella no salga del servicio ni por accidente.
  */
 public record UserAccount(UUID id, String email, String passwordHash, List<Role> roles,
-                          Instant createdAt, Instant disabledAt) {
+                          Instant createdAt, Instant disabledAt, String photoUrl) {
 
     public UserAccount {
         Objects.requireNonNull(id, "id");

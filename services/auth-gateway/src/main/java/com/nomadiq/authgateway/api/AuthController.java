@@ -4,6 +4,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 
+import com.nomadiq.authgateway.api.ApiModels.ChangePasswordRequest;
+import com.nomadiq.authgateway.api.ApiModels.GoogleLoginRequest;
 import com.nomadiq.authgateway.api.ApiModels.LoginRequest;
 import com.nomadiq.authgateway.api.ApiModels.LogoutRequest;
 import com.nomadiq.authgateway.api.ApiModels.RefreshRequest;
@@ -34,6 +36,8 @@ import org.springframework.web.bind.annotation.RestController;
  * <pre>
  *  POST /v1/auth/register   crear cuenta                       (público)
  *  POST /v1/auth/login      email + contraseña -> tokens        (público)
+ *  POST /v1/auth/google     id_token de Google -> tokens         (público)
+ *  POST /v1/auth/password   cambiar contraseña                  (token)
  *  POST /v1/auth/refresh    refresh token -> tokens nuevos      (público)
  *  POST /v1/auth/logout     cerrar sesión de este dispositivo   (token)
  *  GET  /v1/auth/verify     validar token para el proxy de borde (token)
@@ -65,6 +69,20 @@ public class AuthController {
     @PostMapping("/login")
     public TokenResponse login(@Valid @RequestBody LoginRequest body, HttpServletRequest request) {
         return toResponse(auth.login(body.email(), body.password(), clientIp(request)));
+    }
+
+    /** Entrar con Google. 503 si el servidor no tiene configurado GOOGLE_CLIENT_ID. */
+    @PostMapping("/google")
+    public TokenResponse google(@Valid @RequestBody GoogleLoginRequest body, HttpServletRequest request) {
+        return toResponse(auth.loginWithGoogle(body.idToken(), clientIp(request)));
+    }
+
+    /** Cambiar la contraseña. Cierra las demás sesiones y devuelve tokens nuevos para esta. */
+    @PostMapping("/password")
+    public TokenResponse changePassword(@AuthenticationPrincipal Jwt jwt,
+                                        @Valid @RequestBody ChangePasswordRequest body, HttpServletRequest request) {
+        return toResponse(auth.changePassword(java.util.UUID.fromString(jwt.getSubject()),
+                body.currentPassword(), body.newPassword(), clientIp(request)));
     }
 
     @PostMapping("/refresh")
@@ -117,6 +135,6 @@ public class AuthController {
     }
 
     static UserResponse toResponse(UserAccount user) {
-        return new UserResponse(user.id(), user.email(), user.roles().stream().map(Role::name).toList(), user.createdAt());
+        return new UserResponse(user.id(), user.email(), user.roles().stream().map(Role::name).toList(), user.createdAt(), user.photoUrl());
     }
 }

@@ -25,7 +25,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class UserRepository {
 
-    private static final String COLUMNS = "id, email, password_hash, roles, created_at, disabled_at";
+    private static final String COLUMNS = "id, email, password_hash, roles, created_at, disabled_at, photo_url";
 
     private final JdbcClient jdbc;
 
@@ -70,6 +70,38 @@ public class UserRepository {
                 .update();
     }
 
+    /** El usuario enlazado a esa cuenta de Google, si existe. */
+    public Optional<UserAccount> findByGoogleSub(String googleSub) {
+        return jdbc.sql("SELECT " + COLUMNS + " FROM users WHERE google_sub = :sub")
+                .param("sub", googleSub)
+                .query(UserRepository::map)
+                .optional();
+    }
+
+    /** Crea un usuario que entra con Google (su contraseña es una huella inservible). */
+    public UserAccount insertGoogle(UUID id, String email, String unusablePasswordHash, String googleSub,
+                                    String photoUrl, Instant now) {
+        return jdbc.sql("INSERT INTO users (id, email, password_hash, created_at, google_sub, photo_url) "
+                        + "VALUES (:id, :email, :hash, :now, :sub, :photo) RETURNING " + COLUMNS)
+                .param("id", id)
+                .param("email", email)
+                .param("hash", unusablePasswordHash)
+                .param("now", Timestamp.from(now))
+                .param("sub", googleSub)
+                .param("photo", photoUrl)
+                .query(UserRepository::map)
+                .single();
+    }
+
+    /** Enlaza una cuenta que ya existía (por email) con Google y guarda su foto si no tenía. */
+    public void linkGoogle(UUID id, String googleSub, String photoUrl) {
+        jdbc.sql("UPDATE users SET google_sub = :sub, photo_url = COALESCE(photo_url, :photo) WHERE id = :id")
+                .param("sub", googleSub)
+                .param("photo", photoUrl)
+                .param("id", id)
+                .update();
+    }
+
     /** Desactiva la cuenta (baneo). Devuelve false si el usuario no existe. */
     public boolean disable(UUID id, Instant now) {
         return jdbc.sql("UPDATE users SET disabled_at = COALESCE(disabled_at, :now) WHERE id = :id")
@@ -98,7 +130,8 @@ public class UserRepository {
                 rs.getString("password_hash"),
                 parseRoles(rs.getArray("roles")),
                 rs.getTimestamp("created_at").toInstant(),
-                disabled == null ? null : disabled.toInstant());
+                disabled == null ? null : disabled.toInstant(),
+                rs.getString("photo_url"));
     }
 
     private static List<Role> parseRoles(Array array) throws SQLException {

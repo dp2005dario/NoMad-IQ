@@ -276,6 +276,8 @@ services:
       REDIS_INSECURE_DEV: "true"
       HTTP_INSECURE_DEV: "true"
       JWT_DEV_EPHEMERAL_KEY: "true"
+      # Login con Google (el Client ID web no es secreto). Vacío = desactivado.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       # La app entra por la puerta "edge": sin esto, el límite de intentos de
       # login vería a TODOS los usuarios con la IP de Traefik. "native" lee la
       # IP real de X-Forwarded-For, que Traefik escribe (y no deja falsificar).

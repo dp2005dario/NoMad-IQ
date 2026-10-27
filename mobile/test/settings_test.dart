@@ -236,6 +236,42 @@ void main() {
       return (g, session, saver);
     }
 
+    testWidgets('cambiar la contraseña: bien, mal y floja', (
+      WidgetTester tester,
+    ) async {
+      final (FakeGateway g, _, _) = await open(tester);
+      Future<void> change(String current, String next) async {
+        await tester.tap(find.text('Cambiar contraseña'));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Contraseña actual'),
+          current,
+        );
+        await tester.enterText(
+          find.widgetWithText(
+            TextField,
+            'Contraseña nueva (12 caracteres o más)',
+          ),
+          next,
+        );
+        await tester.tap(
+          find.widgetWithText(FilledButton, 'Cambiar contraseña'),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      await change('no es esta', 'otra contraseña larga');
+      expect(find.text('Esa contraseña no es correcta.'), findsOneWidget);
+      expect(g.accounts['ana@example.com'], 'una contraseña larga');
+
+      // El aviso anterior sigue en cola unos segundos.
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      await change('una contraseña larga', 'otra contraseña larga');
+      expect(find.textContaining('Contraseña cambiada'), findsOneWidget);
+      expect(g.accounts['ana@example.com'], 'otra contraseña larga');
+    });
+
     testWidgets('desde Inicio se abre Ajustes con tu perfil', (
       WidgetTester tester,
     ) async {

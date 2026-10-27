@@ -53,12 +53,13 @@ public class AuthService {
     private final RateLimiter rateLimiter;
     private final AuthProperties props;
     private final Clock clock;
+    private final GoogleIdTokenVerifier google;
     /** Huella falsa para que "el email no existe" tarde lo mismo que "contraseña mal". */
     private final String dummyHash;
 
     public AuthService(UserRepository users, PasswordEncoder passwords, AccessTokenIssuer accessTokens,
                        RefreshTokenService refreshTokens, RevocationStore revocations, RateLimiter rateLimiter,
-                       AuthProperties props, Clock clock) {
+                       AuthProperties props, Clock clock, GoogleIdTokenVerifier google) {
         this.users = users;
         this.passwords = passwords;
         this.accessTokens = accessTokens;
@@ -67,6 +68,7 @@ public class AuthService {
         this.rateLimiter = rateLimiter;
         this.props = props;
         this.clock = clock;
+        this.google = google;
         this.dummyHash = passwords.encode(UUID.randomUUID().toString());
     }
 
@@ -117,6 +119,61 @@ public class AuthService {
             users.updatePasswordHash(user.id(), passwords.encode(password));
         }
         return new TokenPair(accessTokens.issue(user.id(), user.roles()), refreshTokens.issueNewFamily(user.id()));
+    }
+
+    /**
+     * Entrar con Google. Si ya hay una cuenta con ese email se enlaza (Google
+     * ya comprobó que el email es de quien entra); si no, se crea una nueva.
+     * Su contraseña es una huella de un valor al azar que nadie conoce.
+     */
+    public TokenPair loginWithGoogle(String idToken, String clientIp) {
+        rateLimiter.acquire(BUCKET_LOGIN_IP, clientIp, props.rateLimits().loginPerIp());
+        GoogleIdTokenVerifier.GoogleIdentity who = google.verify(idToken);
+        String email = normalizeEmail(who.email());
+        String photo = who.pictureUrl() != null && who.pictureUrl().startsWith("https://") && who.pictureUrl().length() <= 500
+                ? who.pictureUrl() : null;
+        UserAccount user = users.findByGoogleSub(who.sub()).orElse(null);
+        if (user == null) {
+            user = users.findByEmail(email).orElse(null);
+            if (user != null) {
+                users.linkGoogle(user.id(), who.sub(), photo);
+            } else {
+                try {
+                    user = users.insertGoogle(UUID.randomUUID(), email, passwords.encode(UUID.randomUUID().toString()),
+                            who.sub(), photo, clock.instant());
+                    log.info("Usuario registrado con Google: {}", user.id());
+                } catch (DuplicateKeyException e) {
+                    throw new InvalidCredentialsException();
+                }
+            }
+        }
+        if (user.isDisabled()) {
+            throw new InvalidCredentialsException();
+        }
+        return new TokenPair(accessTokens.issue(user.id(), user.roles()), refreshTokens.issueNewFamily(user.id()));
+    }
+
+    /**
+     * Cambiar la contraseña: pide la actual (mismos frenos que borrar la
+     * cuenta), cierra las sesiones de los demás móviles y devuelve tokens
+     * nuevos para este.
+     */
+    public TokenPair changePassword(UUID userId, String current, String next, String clientIp) {
+        rateLimiter.acquire(BUCKET_LOGIN_IP, clientIp, props.rateLimits().loginPerIp());
+        UserAccount user = users.findById(userId).orElseThrow(InvalidCredentialsException::new);
+        rateLimiter.ensureNotBlocked(BUCKET_LOGIN_FAILURES, user.email(), props.rateLimits().loginFailuresPerAccount());
+        if (!passwords.matches(current, user.passwordHash())) {
+            rateLimiter.record(BUCKET_LOGIN_FAILURES, user.email(), props.rateLimits().loginFailuresPerAccount());
+            throw new InvalidCredentialsException();
+        }
+        PasswordPolicy.check(next, user.email());
+        users.updatePasswordHash(userId, passwords.encode(next));
+        refreshTokens.revokeAllForUser(userId);
+        // Un segundo antes: la lista negra compara por segundos y si no, también
+        // anularía el token nuevo que entregamos ahora mismo.
+        revocations.revokeAllIssuedBefore(userId, clock.instant().minusSeconds(1), props.jwt().accessTokenTtl());
+        log.warn("Contraseña cambiada por su dueño: {}", userId);
+        return new TokenPair(accessTokens.issue(userId, user.roles()), refreshTokens.issueNewFamily(userId));
     }
 
     /** Canjea un token de refresco por una pareja nueva (rotación). */

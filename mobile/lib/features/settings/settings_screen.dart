@@ -144,6 +144,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// Cambiar la contraseña: pide la actual y la nueva (diálogo propio).
+  Future<void> _changePassword() async {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final SessionController session = SessionScope.read(context);
+    final (String, String)? pair = await showDialog<(String, String)>(
+      context: context,
+      builder: (BuildContext context) => const _ChangePasswordDialog(),
+    );
+    if (pair == null || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      await session.changePassword(pair.$1, pair.$2);
+      if (mounted) _say(t.passwordChanged);
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      _say(switch (e.error) {
+        AuthError.invalidCredentials => t.deleteWrongPassword,
+        AuthError.invalidInput => t.passwordWeak,
+        AuthError.network => t.errorNetwork,
+        AuthError.rateLimited => t.errorUnavailable,
+        _ => t.errorUnavailable,
+      });
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _askDelete() async {
     final _DeleteChoice? choice = await showDialog<_DeleteChoice>(
       context: context,
@@ -368,6 +395,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: <Widget>[
                     if (signedIn) ...<Widget>[
                       ListTile(
+                        leading: const Icon(Icons.password_rounded),
+                        title: Text(t.passwordChangeTitle),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: _busy ? null : _changePassword,
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
                         leading: const Icon(Icons.download_rounded),
                         title: Text(t.downloadMyData),
                         onTap: _busy ? null : _download,
@@ -548,6 +582,68 @@ class _PasswordDialogState extends State<_PasswordDialog> {
           onPressed: () => Navigator.pop(context, _password.text),
           child: Text(t.deleteNow),
         ),
+      ],
+    );
+  }
+}
+
+/// Pide la contraseña actual y la nueva. Es StatefulWidget porque es dueño de
+/// los controladores de texto (se liberan al cerrarse).
+class _ChangePasswordDialog extends StatefulWidget {
+  const _ChangePasswordDialog();
+
+  @override
+  State<_ChangePasswordDialog> createState() => _ChangePasswordDialogState();
+}
+
+class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
+  final TextEditingController _current = TextEditingController();
+  final TextEditingController _next = TextEditingController();
+
+  @override
+  void dispose() {
+    _current.dispose();
+    _next.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_current.text.isEmpty || _next.text.length < 12) return;
+    Navigator.pop(context, (_current.text, _next.text));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final MaterialLocalizations m = MaterialLocalizations.of(context);
+    return AlertDialog(
+      title: Text(t.passwordChangeTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          TextField(
+            controller: _current,
+            obscureText: true,
+            autofocus: true,
+            autofillHints: const <String>[AutofillHints.password],
+            decoration: InputDecoration(labelText: t.passwordCurrent),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _next,
+            obscureText: true,
+            autofillHints: const <String>[AutofillHints.newPassword],
+            decoration: InputDecoration(labelText: t.passwordNew),
+            onSubmitted: (_) => _submit(),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(m.cancelButtonLabel),
+        ),
+        FilledButton(onPressed: _submit, child: Text(t.passwordChangeTitle)),
       ],
     );
   }

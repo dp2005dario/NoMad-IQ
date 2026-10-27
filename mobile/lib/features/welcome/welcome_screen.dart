@@ -6,7 +6,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../auth/auth_api.dart';
+import '../../auth/google_id_token.dart';
 import '../../auth/session.dart';
+import '../../core/config.dart';
 import '../../core/router.dart';
 import '../../core/services.dart';
 import '../../core/theme.dart';
@@ -25,14 +28,36 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   bool _started = false;
   bool _muted = false;
 
-  // El auth-gateway aún no sabe validar cuentas de Google (llega en otro PR):
-  // de momento se explica con un aviso breve en vez de un botón que no hace nada.
-  void _googleSoon(BuildContext context) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).googleSoon)),
-      );
+  bool _googleBusy = false;
+
+  void _say(String text) => ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(text)));
+
+  /// "Continuar con Google": Google da un id_token y el servidor lo comprueba.
+  Future<void> _google() async {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final GoogleIdTokenSource? source = ServicesScope.of(context).googleSignIn;
+    if (source == null) return _say(t.googleUnavailable);
+    final SessionController session = SessionScope.read(context);
+    setState(() => _googleBusy = true);
+    try {
+      final String? token = await source.idToken();
+      if (token == null) return; // cerró la ventana de Google
+      await session.signInWithGoogle(token);
+      // El router ve la sesión y lleva a Inicio.
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      _say(switch (e.error) {
+        AuthError.network => t.errorNetwork,
+        AuthError.unavailable => t.googleUnavailable, // 503: sin Google
+        _ => t.googleFailed,
+      });
+    } on Object {
+      if (mounted) _say(t.googleFailed);
+    } finally {
+      if (mounted) setState(() => _googleBusy = false);
+    }
   }
 
   @override
@@ -183,7 +208,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                             const SizedBox(height: 28),
                             // Botón de Google: blanco, con la G oficial multicolor.
                             FilledButton.icon(
-                              onPressed: () => _googleSoon(context),
+                              onPressed: _googleBusy ? null : _google,
                               style: FilledButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 foregroundColor: const Color(0xFF1F1F1F),
@@ -211,6 +236,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                   SessionScope.read(context).continueAsGuest(),
                               child: Text(t.continueAsGuest),
                             ),
+                            // Compilada sin NOMADIQ_API_URL: nada online irá.
+                            if (AppConfig.pointsToEmulator)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  t.serverUrlWarning,
+                                  textAlign: TextAlign.center,
+                                  style: text.bodySmall?.copyWith(
+                                    color: NomadColors.safety,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),
