@@ -8,7 +8,7 @@ import '../../core/theme.dart';
 import '../../widgets/user_avatar.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
-import '../coming_soon/coming_soon_screen.dart';
+import 'feature.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -257,7 +257,12 @@ class _AccountButton extends StatelessWidget {
     return IconButton(
       tooltip: t.accountMenu,
       onPressed: () => context.push(Routes.settings),
-      icon: UserAvatar(name: name, photoUrl: session.user?.photoUrl, size: 40),
+      icon: UserAvatar(
+        name: name,
+        photoUrl: session.user?.photoUrl,
+        size: 40,
+        isMe: true,
+      ),
     );
   }
 }

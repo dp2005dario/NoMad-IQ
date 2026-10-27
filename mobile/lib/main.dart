@@ -11,7 +11,9 @@ import 'auth/auth_api.dart';
 import 'auth/session.dart';
 import 'auth/token_store.dart';
 import 'core/api_client.dart';
+import 'auth/google_id_token.dart';
 import 'core/config.dart';
+import 'features/settings/profile_photo.dart';
 import 'core/services.dart';
 import 'features/vault/doc_source.dart';
 import 'features/vault/vault.dart';
@@ -87,6 +89,9 @@ Future<void> main() async {
         WebScene(html: html, onMessage: onMessage),
     newPlayer: JustAudioGuidePlayer.new,
     newWelcomeVideo: AssetWelcomeVideo.new,
+    googleSignIn: AppConfig.googleClientId.isEmpty
+        ? null
+        : PluginGoogleIdTokenSource(AppConfig.googleClientId),
     newCamera: DeviceCamera.new,
     newTravelCamera: DeviceTravelCamera.new,
     memoryFiles: AppMemoryFiles(),
@@ -144,6 +149,8 @@ Future<void> main() async {
     // por falta de red, aquí se reintenta). Casi siempre no hace nada.
     AppLifecycleListener(onResume: () => unawaited(registrar.sync()));
   }
+  // La foto de perfil elegida en este móvil (si hay).
+  unawaited(ProfilePhotoController.instance.load());
   runApp(
     EcliptaApp(
       settings: SettingsController(store),

@@ -205,6 +205,11 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.textContaining('600'), findsWidgets);
+    // Si no contestan en 30 días: enlace al organismo nacional (AESA).
+    await tester.tap(find.text('Ir a AESA (España)'));
+    await tester.pump();
+    expect(opened.single.host, 'www.seguridadaerea.gob.es');
+    opened.clear();
     await tester.tap(find.text('Preparar la reclamación'));
     await tester.pumpAndSettle();
     final Finder dialogFields = find.descendant(

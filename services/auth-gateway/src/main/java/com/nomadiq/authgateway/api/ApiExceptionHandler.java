@@ -58,6 +58,11 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
+    @ExceptionHandler(com.nomadiq.authgateway.auth.AuthExceptions.GoogleNotConfiguredException.class)
+    ProblemDetail googleOff() {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, "El acceso con Google no está activado en este servidor");
+    }
+
     @ExceptionHandler(UserNotFoundException.class)
     ProblemDetail userNotFound() {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Usuario no encontrado");

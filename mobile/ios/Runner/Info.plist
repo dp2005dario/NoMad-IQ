@@ -3,6 +3,10 @@
 <plist version="1.0">
 <dict>
 	<!-- Por qué pedimos la ubicación (lo enseña iOS en la pregunta del permiso). -->
+	<key>NSCameraUsageDescription</key>
+	<string>ECLIPTA uses the camera to recognise monuments and to take your profile photo.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ECLIPTA lets you pick a photo from your gallery for your profile or your vault.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>ECLIPTA uses your location while the map is open, or while you have travel mode on, to show where you are and tell you when you enter a zone with an audio guide.</string>
 	<key>UIBackgroundModes</key>

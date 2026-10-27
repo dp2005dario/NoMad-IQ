@@ -32,6 +32,17 @@ abstract final class AppConfig {
     return uri;
   }
 
+  /// true si la app apunta al servidor del EMULADOR (10.0.2.2): en un móvil
+  /// real eso significa que se compiló sin NOMADIQ_API_URL y nada online irá.
+  static bool get pointsToEmulator => Uri.parse(_apiUrl).host == '10.0.2.2';
+
+  /// "Client ID" web de Google para "Continuar con Google". No es un secreto.
+  /// Vacío = el botón avisa de que no está disponible. Se pasa al compilar:
+  ///   --dart-define=NOMADIQ_GOOGLE_CLIENT_ID=xxxx.apps.googleusercontent.com
+  static const String googleClientId = String.fromEnvironment(
+    'NOMADIQ_GOOGLE_CLIENT_ID',
+  );
+
   // Mapas: OpenFreeMap sirve gratis los mapas de OpenStreetMap, sin clave ni
   // registro y sin rastrear a nadie. Con millones de usuarios lo correcto es
   // montar nuestro propio servidor de teselas (es software libre) y cambiar

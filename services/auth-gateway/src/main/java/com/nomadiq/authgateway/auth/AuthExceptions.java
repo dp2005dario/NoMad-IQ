@@ -48,4 +48,11 @@ public final class AuthExceptions {
             super("usuario no encontrado");
         }
     }
+
+    /** El servidor no tiene GOOGLE_CLIENT_ID: no se puede validar a Google (503). */
+    public static class GoogleNotConfiguredException extends RuntimeException {
+        public GoogleNotConfiguredException() {
+            super("login con Google no configurado");
+        }
+    }
 }

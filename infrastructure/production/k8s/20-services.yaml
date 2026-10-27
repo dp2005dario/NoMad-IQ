@@ -231,6 +231,7 @@ spec:
             - {name: TLS_CLIENT_CA_FILE, value: "/certs/ca.crt"}
             - {name: JWT_ACTIVE_KEY_FILE, value: "/jwt/jwt-active.pem"}
             - {name: FORWARD_HEADERS_STRATEGY, value: "native"}
+            - {name: GOOGLE_CLIENT_ID, valueFrom: {configMapKeyRef: {name: nomadiq-config, key: GOOGLE_CLIENT_ID, optional: true}}}
             - {name: JAVA_TRUSTSTORE_PASSWORD, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: JAVA_TRUSTSTORE_PASSWORD}}}
             - {name: JAVA_TOOL_OPTIONS, value: "-XX:MaxRAMPercentage=70 -Djavax.net.ssl.trustStore=/certs/truststore.p12 -Djavax.net.ssl.trustStoreType=PKCS12 -Djavax.net.ssl.trustStorePassword=$(JAVA_TRUSTSTORE_PASSWORD)"}
             - {name: LOG_LEVEL, value: "info"}

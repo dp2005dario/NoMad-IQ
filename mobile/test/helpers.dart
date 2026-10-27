@@ -16,6 +16,7 @@ import 'package:eclipta/features/widgets/home_widgets.dart';
 import 'package:eclipta/features/visa/visa_data.dart';
 import 'package:eclipta/app.dart';
 import 'package:eclipta/auth/auth_api.dart';
+import 'package:eclipta/auth/google_id_token.dart';
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/auth/token_store.dart';
 import 'package:eclipta/core/api_client.dart';
@@ -57,6 +58,9 @@ class FakeGateway {
   /// Si se pone, TODAS las llamadas responden este código (simula averías).
   int? failWith;
 
+  /// true = el servidor no tiene GOOGLE_CLIENT_ID (503 en /v1/auth/google).
+  bool googleOff = false;
+
   /// Respuestas de los demás servicios (geo-engine, ai-orchestrator...), por
   /// ruta. Si una ruta no está aquí, 404.
   final Map<String, http.Response Function(http.Request)> services =
@@ -87,6 +91,22 @@ class FakeGateway {
         if (!liveRefresh.remove(body['refresh_token'])) {
           return http.Response('{}', 401);
         }
+        return _tokens();
+      case '/v1/auth/google':
+        // Como el servidor: sin Client ID responde 503; con uno, acepta el
+        // token "bueno" y rechaza cualquier otro.
+        if (googleOff) return http.Response('{}', 503);
+        if (body['id_token'] != 'token-bueno') return http.Response('{}', 401);
+        accounts['google@y.z'] = '-';
+        return _tokens();
+      case '/v1/auth/password':
+        final String? who = accounts.keys.isEmpty ? null : accounts.keys.first;
+        if (who == null || accounts[who] != body['current_password']) {
+          return http.Response('{}', 401);
+        }
+        final String next = body['new_password']! as String;
+        if (next.length < 12) return http.Response('{}', 400);
+        accounts[who] = next;
         return _tokens();
       case '/v1/auth/logout':
         liveRefresh.remove(body['refresh_token']);
@@ -173,6 +193,7 @@ AppServices fakeServices(
   FakeMap? map,
   List<FakePlayer>? players,
   WelcomeVideoFactory? welcomeVideo,
+  GoogleIdTokenSource? googleSignIn,
   NoticeCenter? notices,
   SettingsStore? prefs,
   OpenBooking? openBooking,
@@ -217,6 +238,7 @@ AppServices fakeServices(
       return p;
     },
     newWelcomeVideo: welcomeVideo ?? FakeWelcomeVideo.new,
+    googleSignIn: googleSignIn,
     tilesUrl: Uri.parse('https://tiles.test/planet'),
     glyphsUrl: 'https://tiles.test/fonts/{fontstack}/{range}.pbf',
     notices: notices ?? FakeNotices(),

@@ -92,6 +92,28 @@ class AuthApi {
     }),
   );
 
+  /// Entrar con Google: se manda el "id_token" que da el botón de Google y
+  /// el servidor lo comprueba con Google. 503 = el servidor no tiene Google
+  /// activado (unavailable).
+  Future<TokenPair> loginWithGoogle(String idToken) async => _tokens(
+    await _send('POST', '/v1/auth/google', <String, Object?>{
+      'id_token': idToken,
+    }),
+  );
+
+  /// Cambia la contraseña (pide la actual). El servidor cierra las demás
+  /// sesiones y devuelve pases nuevos para este móvil.
+  Future<TokenPair> changePassword(
+    String accessToken,
+    String current,
+    String next,
+  ) async => _tokens(
+    await _send('POST', '/v1/auth/password', <String, Object?>{
+      'current_password': current,
+      'new_password': next,
+    }, accessToken: accessToken),
+  );
+
   /// Cambia el pase largo por un par nuevo. Un 401 aquí significa que la
   /// sesión ya no vale (caducó, se cerró en otro sitio o se reutilizó).
   Future<TokenPair> refresh(String refreshToken) async {

@@ -104,6 +104,8 @@ SERVICES = [
             **SERVER_MTLS,
             "JWT_ACTIVE_KEY_FILE": "/jwt/jwt-active.pem",
             "FORWARD_HEADERS_STRATEGY": "native",
+            # Login con Google: opcional (si falta, el servidor responde 503 a ese botón).
+            "GOOGLE_CLIENT_ID": {"configMapKeyRef": {"name": "nomadiq-config", "key": "GOOGLE_CLIENT_ID", "optional": True}},
             "JAVA_TRUSTSTORE_PASSWORD": secret("JAVA_TRUSTSTORE_PASSWORD"),
             # Java comprueba a Redis con la CA interna (truststore.p12 lo crea
             # cert-manager). La memoria de Java, con techo.
@@ -209,8 +211,10 @@ def env_yaml(env: dict) -> list[str]:
     for k, v in {**env, **COMMON}.items():
         if isinstance(v, dict):
             (kind, ref), = v.items()
+            # "optional": si la clave no existe en el ConfigMap, el pod arranca igual.
+            opt = ", optional: true" if ref.get("optional") else ""
             lines.append(
-                f"            - {{name: {k}, valueFrom: {{{kind}: {{name: {ref['name']}, key: {ref['key']}}}}}}}"
+                f"            - {{name: {k}, valueFrom: {{{kind}: {{name: {ref['name']}, key: {ref['key']}{opt}}}}}}}"
             )
         else:
             lines.append(f'            - {{name: {k}, value: "{v}"}}')

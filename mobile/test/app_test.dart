@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/core/router.dart';
+import 'package:eclipta/auth/google_id_token.dart';
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/settings.dart';
 
@@ -12,6 +13,7 @@ Future<SettingsController> pumpWelcome(WidgetTester tester, {String? locale}) =>
     pumpApp(tester, locale: locale, session: newSession());
 
 void main() {
+  googleTests();
   testWidgets('la bienvenida sigue el idioma del móvil', (
     WidgetTester tester,
   ) async {
@@ -160,5 +162,93 @@ void main() {
     expect(settings.locale, const Locale('pt', 'BR'));
     await settings.setLocale(null);
     expect(store.readLocale(), isNull);
+  });
+}
+
+class _FakeGoogle implements GoogleIdTokenSource {
+  _FakeGoogle(this.token);
+  final String? token;
+
+  @override
+  Future<String?> idToken() async => token;
+}
+
+void googleTests() {
+  group('Continuar con Google', () {
+    testWidgets('con token bueno entra y va a Inicio', (
+      WidgetTester tester,
+    ) async {
+      final FakeGateway g = FakeGateway();
+      final SessionController s = newSession(g);
+      await pumpApp(
+        tester,
+        locale: 'es',
+        session: s,
+        services: fakeServices(
+          s,
+          gateway: g,
+          googleSignIn: _FakeGoogle('token-bueno'),
+        ),
+      );
+      await tester.tap(find.text('Continuar con Google'));
+      await tester.pumpAndSettle();
+      expect(s.status, SessionStatus.signedIn);
+      expect(g.calls, contains('POST /v1/auth/google'));
+    });
+
+    testWidgets('sin Client ID en la app: avisa y no llama al servidor', (
+      WidgetTester tester,
+    ) async {
+      final FakeGateway g = FakeGateway();
+      final SessionController s = newSession(g);
+      await pumpApp(
+        tester,
+        locale: 'es',
+        session: s,
+        services: fakeServices(s, gateway: g),
+      );
+      await tester.tap(find.text('Continuar con Google'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('no está disponible'), findsOneWidget);
+      expect(g.calls, isNot(contains('POST /v1/auth/google')));
+    });
+
+    testWidgets('servidor sin Google (503): avisa', (
+      WidgetTester tester,
+    ) async {
+      final FakeGateway g = FakeGateway()..googleOff = true;
+      final SessionController s = newSession(g);
+      await pumpApp(
+        tester,
+        locale: 'es',
+        session: s,
+        services: fakeServices(
+          s,
+          gateway: g,
+          googleSignIn: _FakeGoogle('token-bueno'),
+        ),
+      );
+      await tester.tap(find.text('Continuar con Google'));
+      await tester.pumpAndSettle();
+      expect(s.status, SessionStatus.signedOut);
+      expect(find.textContaining('no está disponible'), findsOneWidget);
+    });
+
+    testWidgets('si cierras la ventana de Google no pasa nada', (
+      WidgetTester tester,
+    ) async {
+      final FakeGateway g = FakeGateway();
+      final SessionController s = newSession(g);
+      await pumpApp(
+        tester,
+        locale: 'es',
+        session: s,
+        services: fakeServices(s, gateway: g, googleSignIn: _FakeGoogle(null)),
+      );
+      await tester.tap(find.text('Continuar con Google'));
+      await tester.pumpAndSettle();
+      expect(s.status, SessionStatus.signedOut);
+      expect(g.calls, isNot(contains('POST /v1/auth/google')));
+    });
   });
 }

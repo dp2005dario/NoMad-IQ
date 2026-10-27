@@ -18,6 +18,9 @@ import '../../widgets/user_avatar.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../home/home_screen.dart' show displayName;
 import 'account_data.dart';
+import 'profile_photo.dart';
+
+import 'package:image_picker/image_picker.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key, this.saver = const DeviceDataSaver()});
@@ -63,6 +66,106 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (saved && mounted) _say(t.downloadDone);
     } on Object {
       if (mounted) _say(t.exportFailed);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Hoja inferior para cambiar la foto de perfil (solo en este móvil).
+  Future<void> _changePhoto() async {
+    final ProfilePhotoController photo = ProfilePhotoController.instance;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext sheet) {
+        final AppLocalizations t = AppLocalizations.of(sheet);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                ListTile(
+                  leading: const Icon(Icons.photo_camera_rounded),
+                  title: Text(t.profilePhotoTake),
+                  onTap: () {
+                    Navigator.pop(sheet);
+                    unawaited(photo.pick(ImageSource.camera));
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library_rounded),
+                  title: Text(t.profilePhotoGallery),
+                  onTap: () {
+                    Navigator.pop(sheet);
+                    unawaited(photo.pick(ImageSource.gallery));
+                  },
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: Text(t.profilePhotoAvatars),
+                ),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: <Widget>[
+                    for (int i = 0; i < presetAvatars.length; i++)
+                      InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: () {
+                          Navigator.pop(sheet);
+                          unawaited(photo.choosePreset(i));
+                        },
+                        child: CircleAvatar(
+                          radius: 26,
+                          backgroundColor: presetAvatars[i].color,
+                          child: Icon(
+                            presetAvatars[i].icon,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                ListTile(
+                  leading: const Icon(Icons.hide_image_rounded),
+                  title: Text(t.profilePhotoRemove),
+                  onTap: () {
+                    Navigator.pop(sheet);
+                    unawaited(photo.remove());
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Cambiar la contraseña: pide la actual y la nueva (diálogo propio).
+  Future<void> _changePassword() async {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final SessionController session = SessionScope.read(context);
+    final (String, String)? pair = await showDialog<(String, String)>(
+      context: context,
+      builder: (BuildContext context) => const _ChangePasswordDialog(),
+    );
+    if (pair == null || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      await session.changePassword(pair.$1, pair.$2);
+      if (mounted) _say(t.passwordChanged);
+    } on AuthException catch (e) {
+      if (!mounted) return;
+      _say(switch (e.error) {
+        AuthError.invalidCredentials => t.deleteWrongPassword,
+        AuthError.invalidInput => t.passwordWeak,
+        AuthError.network => t.errorNetwork,
+        AuthError.rateLimited => t.errorUnavailable,
+        _ => t.errorUnavailable,
+      });
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -151,10 +254,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     children: <Widget>[
-                      UserAvatar(
-                        name: name,
-                        photoUrl: user?.photoUrl,
-                        size: 60,
+                      // Tocar la foto: hacer foto, galería, avatar o quitar.
+                      Semantics(
+                        button: true,
+                        label: t.profilePhotoChange,
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: _changePhoto,
+                          child: UserAvatar(
+                            name: name,
+                            photoUrl: user?.photoUrl,
+                            size: 60,
+                            isMe: true,
+                          ),
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -281,6 +394,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   children: <Widget>[
                     if (signedIn) ...<Widget>[
+                      ListTile(
+                        leading: const Icon(Icons.password_rounded),
+                        title: Text(t.passwordChangeTitle),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: _busy ? null : _changePassword,
+                      ),
+                      const Divider(height: 1),
                       ListTile(
                         leading: const Icon(Icons.download_rounded),
                         title: Text(t.downloadMyData),
@@ -462,6 +582,68 @@ class _PasswordDialogState extends State<_PasswordDialog> {
           onPressed: () => Navigator.pop(context, _password.text),
           child: Text(t.deleteNow),
         ),
+      ],
+    );
+  }
+}
+
+/// Pide la contraseña actual y la nueva. Es StatefulWidget porque es dueño de
+/// los controladores de texto (se liberan al cerrarse).
+class _ChangePasswordDialog extends StatefulWidget {
+  const _ChangePasswordDialog();
+
+  @override
+  State<_ChangePasswordDialog> createState() => _ChangePasswordDialogState();
+}
+
+class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
+  final TextEditingController _current = TextEditingController();
+  final TextEditingController _next = TextEditingController();
+
+  @override
+  void dispose() {
+    _current.dispose();
+    _next.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_current.text.isEmpty || _next.text.length < 12) return;
+    Navigator.pop(context, (_current.text, _next.text));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final MaterialLocalizations m = MaterialLocalizations.of(context);
+    return AlertDialog(
+      title: Text(t.passwordChangeTitle),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          TextField(
+            controller: _current,
+            obscureText: true,
+            autofocus: true,
+            autofillHints: const <String>[AutofillHints.password],
+            decoration: InputDecoration(labelText: t.passwordCurrent),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _next,
+            obscureText: true,
+            autofillHints: const <String>[AutofillHints.newPassword],
+            decoration: InputDecoration(labelText: t.passwordNew),
+            onSubmitted: (_) => _submit(),
+          ),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(m.cancelButtonLabel),
+        ),
+        FilledButton(onPressed: _submit, child: Text(t.passwordChangeTitle)),
       ],
     );
   }

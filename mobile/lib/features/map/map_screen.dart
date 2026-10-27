@@ -16,13 +16,14 @@ import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
-import '../coming_soon/coming_soon_screen.dart';
+import '../home/feature.dart';
 import 'geo.dart';
 import 'location.dart';
 import 'location_tracker.dart';
 import 'map_model.dart';
 import 'map_style.dart';
 import 'map_surface.dart';
+import 'weather_overlay.dart';
 import 'street_sheet.dart';
 
 class MapScreen extends StatefulWidget {
@@ -40,6 +41,9 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
+  /// Clima de adorno del mapa (solo visual).
+  MapWeather _weather = MapWeather.sun;
+
   late AppServices _services;
   MapModel? _model;
   SessionStatus? _modelFor;
@@ -296,6 +300,8 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           ),
+          // El clima de adorno (Sol/Nubes/Lluvia) va encima del mapa.
+          Positioned.fill(child: WeatherOverlay(weather: _weather)),
           SafeArea(
             child: Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 0),
@@ -324,6 +330,8 @@ class _MapScreenState extends State<MapScreen> {
                       tilted: _tilted,
                       onLook: (MapLook l) => setState(() => _chosenLook = l),
                       onTilt: _toggleTilt,
+                      weather: _weather,
+                      onWeather: (MapWeather w) => setState(() => _weather = w),
                     ),
                     const SizedBox(height: 10),
                     if (entered != null)
@@ -511,12 +519,16 @@ class _ViewControls extends StatelessWidget {
     required this.tilted,
     required this.onLook,
     required this.onTilt,
+    required this.weather,
+    required this.onWeather,
   });
 
   final MapLook look;
   final bool tilted;
   final ValueChanged<MapLook> onLook;
   final VoidCallback onTilt;
+  final MapWeather weather;
+  final ValueChanged<MapWeather> onWeather;
 
   @override
   Widget build(BuildContext context) {
@@ -550,6 +562,37 @@ class _ViewControls extends StatelessWidget {
             ],
             selected: <MapLook>{look},
             onSelectionChanged: (Set<MapLook> s) => onLook(s.first),
+          ),
+        ),
+        Semantics(
+          label: t.mapWeatherTitle,
+          child: SegmentedButton<MapWeather>(
+            showSelectedIcon: false,
+            style: SegmentedButton.styleFrom(
+              backgroundColor: NomadColors.surface.withValues(alpha: 0.94),
+              selectedBackgroundColor: NomadColors.mint,
+              selectedForegroundColor: NomadColors.background,
+              visualDensity: VisualDensity.compact,
+            ),
+            segments: <ButtonSegment<MapWeather>>[
+              ButtonSegment<MapWeather>(
+                value: MapWeather.sun,
+                icon: const Icon(Icons.wb_sunny_rounded),
+                tooltip: t.mapWeatherSun,
+              ),
+              ButtonSegment<MapWeather>(
+                value: MapWeather.clouds,
+                icon: const Icon(Icons.cloud_rounded),
+                tooltip: t.mapWeatherClouds,
+              ),
+              ButtonSegment<MapWeather>(
+                value: MapWeather.rain,
+                icon: const Icon(Icons.water_drop_rounded),
+                tooltip: t.mapWeatherRain,
+              ),
+            ],
+            selected: <MapWeather>{weather},
+            onSelectionChanged: (Set<MapWeather> s) => onWeather(s.first),
           ),
         ),
         Tooltip(
@@ -861,7 +904,7 @@ class _MapShortcuts extends StatelessWidget {
                     Feature.radar => Routes.radar(),
                     Feature.queues => Routes.queues(),
                     Feature.assistant => Routes.assistant,
-                    _ => Routes.soon(f),
+                    _ => Routes.home,
                   }),
                 ),
               ),

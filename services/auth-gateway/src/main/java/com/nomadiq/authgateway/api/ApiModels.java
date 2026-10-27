@@ -68,6 +68,30 @@ public final class ApiModels {
         }
     }
 
+    /** Cambiar la contraseña: se pide la actual (un móvil prestado no basta). */
+    public record ChangePasswordRequest(
+            @JsonProperty("current_password") @NotNull(message = "es obligatoria")
+            @Size(min = 1, max = 128, message = "máximo 128 caracteres") String currentPassword,
+            @JsonProperty("new_password") @NotNull(message = "es obligatoria")
+            @Size(min = 12, max = 128, message = "debe tener entre 12 y 128 caracteres") String newPassword) {
+
+        @Override
+        public String toString() {
+            return "ChangePasswordRequest[***]";
+        }
+    }
+
+    /** Entrar con Google: el "id_token" que da el botón de Google en el móvil. */
+    public record GoogleLoginRequest(
+            @JsonProperty("id_token") @NotBlank(message = "es obligatorio")
+            @Size(max = 4096, message = "demasiado largo") String idToken) {
+
+        @Override
+        public String toString() {
+            return "GoogleLoginRequest[***]";
+        }
+    }
+
     /** Logout: el token de refresco es opcional (si no se envía, solo se anula el de acceso). */
     public record LogoutRequest(@JsonProperty("refresh_token") @Size(max = 128, message = "demasiado largo") String refreshToken) {
 
@@ -90,6 +114,7 @@ public final class ApiModels {
     }
 
     /** Datos públicos de un usuario (sin la huella de la contraseña). */
-    public record UserResponse(UUID id, String email, List<String> roles, @JsonProperty("created_at") Instant createdAt) {
+    public record UserResponse(UUID id, String email, List<String> roles, @JsonProperty("created_at") Instant createdAt,
+                               @JsonProperty("photo_url") String photoUrl) {
     }
 }

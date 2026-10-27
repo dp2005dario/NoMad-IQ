@@ -8,6 +8,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 
+import '../auth/google_id_token.dart';
 import '../features/audioguide/audioguide_api.dart';
 import '../features/audioguide/guide_player.dart';
 import '../features/camera/camera_device.dart';
@@ -73,6 +74,7 @@ class AppServices {
     required this.mapSurface,
     required this.newPlayer,
     this.newWelcomeVideo,
+    this.googleSignIn,
     required this.tilesUrl,
     required this.glyphsUrl,
     this.notices = const SilentNotices(),
@@ -256,6 +258,10 @@ class AppServices {
   /// El vídeo de fondo de la Bienvenida. Si es null (o falla), se ve un fondo
   /// oscuro estático.
   final WelcomeVideoFactory? newWelcomeVideo;
+
+  /// "Continuar con Google". null = esta compilación no lleva Client ID de
+  /// Google (el botón avisa de que no está disponible).
+  final GoogleIdTokenSource? googleSignIn;
 
   /// Los perfiles de familia (cifrados en el Keystore del móvil).
   final FamilyStore family;

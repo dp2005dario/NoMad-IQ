@@ -81,6 +81,7 @@ dependencies:
   speech_to_text: ^7.5.0
   # El vídeo de fondo de la Bienvenida (en bucle, con música suave).
   video_player: ^2.14.1
+  google_sign_in: ^7.2.0
 
 dev_dependencies:
   flutter_test:

@@ -61,7 +61,9 @@ async def test_minimums_percentiles_and_erasure(pool: asyncpg.Pool[asyncpg.Recor
 async def test_daily_limit(pool: asyncpg.Pool[asyncpg.Record]) -> None:
     store = PostgresRadar(pool)
     user = str(uuid.uuid4())
-    cities = [city() for _ in range(MAX_POSTS_PER_DAY)]
+    # Ciudades TODAS distintas a propósito: con city() al azar, dos podían salir
+    # iguales (el upsert las contaría como una sola) y el test fallaba a veces.
+    cities = [f"{chr(65 + i // 26)}{chr(65 + i % 26)}Z" for i in range(MAX_POSTS_PER_DAY)]
     for c in cities:
         await store.add_price(c, user, "water", "EUR", Decimal("1.5"))
     with pytest.raises(RadarLimitError):
