@@ -1912,5 +1912,11 @@
   "mapWeatherSun": "Zon",
   "mapWeatherClouds": "Wolken",
   "mapWeatherRain": "Regen",
-  "nearbyNoSignal": "Ik heb nog geen GPS-positie. Ga binnen bij een raam staan of naar buiten en probeer het opnieuw."
+  "nearbyNoSignal": "Ik heb nog geen GPS-positie. Ga binnen bij een raam staan of naar buiten en probeer het opnieuw.",
+  "cameraTakePhoto": "Foto maken",
+  "cameraIdentifyMode": "Monument herkennen",
+  "cameraIdentifyOn": "Herkenmodus aan. Richt op een monument.",
+  "cameraNormalHint": "Tik op de groene knop voor een foto",
+  "cameraSaveMemory": "Opslaan in Herinneringen",
+  "cameraMemorySaved": "Opgeslagen in Herinneringen"
 }

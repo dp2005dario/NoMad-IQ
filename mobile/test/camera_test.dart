@@ -1,6 +1,8 @@
-// Tests del modo cámara: apuntar, "Reconocer", ver la ficha, escucharla,
-// guardar el sello, elegir otro lugar y los avisos (sin cuenta, sin cámara,
-// sin usos hoy). Cámara, brújula, GPS y servidor son falsos.
+// Tests de la cámara: al abrirla es normal (no busca nada), el botón verde
+// hace la foto y deja guardarla o compartirla, y el botón de identificar
+// monumento muestra la ficha, la escucha, el sello, elegir otro lugar y los
+// avisos (sin cuenta, sin cámara, sin usos hoy, servidor sin IA).
+// Cámara, brújula, GPS y servidor son falsos.
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -150,8 +152,7 @@ Future<void> pumpCamera(
   );
 }
 
-/// La pantalla tiene animaciones sin fin (el escáner): no se puede esperar a
-/// que "se calme", así que se avanza un rato fijo.
+/// Se avanza un rato fijo (más sencillo que esperar a que todo se calme).
 Future<void> settle(WidgetTester tester) async {
   for (int i = 0; i < 10; i++) {
     await tester.pump(const Duration(milliseconds: 100));
@@ -187,7 +188,50 @@ void main() {
     });
   });
 
-  testWidgets('apuntar, reconocer, escuchar y guardar el sello', (
+  testWidgets('al abrir es una cámara normal: no envía nada al servidor', (
+    WidgetTester tester,
+  ) async {
+    final LandmarkBackend b = LandmarkBackend();
+    final FakeCamera cam = FakeCamera();
+    await pumpCamera(tester, b: b, camera: () => cam);
+    await settle(tester);
+    expect(
+      find.text('Toca el botón verde para hacer una foto'),
+      findsOneWidget,
+    );
+    expect(find.text('Buscando…'), findsNothing);
+    expect(cam.photos, 0);
+    expect(b.sent, isEmpty);
+  });
+
+  testWidgets('el botón verde hace la foto y se guarda en Recuerdos', (
+    WidgetTester tester,
+  ) async {
+    final LandmarkBackend b = LandmarkBackend();
+    final FakeCamera cam = FakeCamera();
+    await pumpCamera(tester, b: b, camera: () => cam);
+    await settle(tester);
+
+    await tester.tap(find.bySemanticsLabel('Hacer foto'));
+    await settle(tester);
+    expect(cam.photos, 1);
+    expect(b.sent, isEmpty); // hacer una foto no identifica nada
+    expect(find.text('Guardar en Recuerdos'), findsOneWidget);
+    expect(find.text('Compartir'), findsOneWidget);
+
+    await tester.tap(find.text('Guardar en Recuerdos'));
+    await settle(tester);
+    expect(find.text('Guardado en Recuerdos'), findsWidgets);
+
+    await tester.tap(find.text('Repetir'));
+    await settle(tester);
+    expect(
+      find.text('Toca el botón verde para hacer una foto'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('apuntar, identificar, escuchar y guardar el sello', (
     WidgetTester tester,
   ) async {
     final LandmarkBackend b = LandmarkBackend();
@@ -202,9 +246,9 @@ void main() {
       prefs: prefs,
     );
     await settle(tester);
-    expect(find.text('Apunta a un monumento y toca el botón'), findsOneWidget);
+    expect(b.sent, isEmpty);
 
-    await tester.tap(find.bySemanticsLabel('Reconocer'));
+    await tester.tap(find.byTooltip('Identificar monumento'));
     await settle(tester);
 
     expect(cam.photos, 1);
@@ -239,9 +283,19 @@ void main() {
     expect(find.text('1967'), findsOneWidget);
     expect(find.text('¿ES ESTE?'), findsOneWidget);
 
+    // "Escanear otra vez" vuelve a identificar.
     await tester.tap(find.byTooltip('Escanear otra vez'));
     await settle(tester);
-    expect(find.text('Apunta a un monumento y toca el botón'), findsOneWidget);
+    expect(b.sent, hasLength(2));
+
+    // Apagar el modo identificar deja la cámara normal otra vez.
+    await tester.tap(find.byTooltip('Identificar monumento'));
+    await settle(tester);
+    expect(find.text('RECONOCIDO'), findsNothing);
+    expect(
+      find.text('Toca el botón verde para hacer una foto'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('nada famoso cerca', (WidgetTester tester) async {
@@ -253,7 +307,7 @@ void main() {
       };
     await pumpCamera(tester, b: b, camera: FakeCamera.new);
     await settle(tester);
-    await tester.tap(find.bySemanticsLabel('Reconocer'));
+    await tester.tap(find.byTooltip('Identificar monumento'));
     await settle(tester);
     expect(find.textContaining('No reconozco ningún lugar'), findsOneWidget);
   });
@@ -264,12 +318,23 @@ void main() {
     final LandmarkBackend b = LandmarkBackend()..failWith = 429;
     await pumpCamera(tester, b: b, camera: FakeCamera.new);
     await settle(tester);
-    await tester.tap(find.bySemanticsLabel('Reconocer'));
+    await tester.tap(find.byTooltip('Identificar monumento'));
     await settle(tester);
     expect(find.textContaining('escaneos gratis de hoy'), findsOneWidget);
-    await tester.tap(find.bySemanticsLabel('Reconocer'));
+    await tester.tap(find.byTooltip('Escanear otra vez'));
     await settle(tester);
     expect(b.sent, hasLength(1));
+  });
+
+  testWidgets('servidor sin IA (404): mensaje de "no activado"', (
+    WidgetTester tester,
+  ) async {
+    final LandmarkBackend b = LandmarkBackend()..failWith = 404;
+    await pumpCamera(tester, b: b, camera: FakeCamera.new);
+    await settle(tester);
+    await tester.tap(find.byTooltip('Identificar monumento'));
+    await settle(tester);
+    expect(find.textContaining('aún no está activada'), findsOneWidget);
   });
 
   testWidgets('sin permiso de cámara', (WidgetTester tester) async {

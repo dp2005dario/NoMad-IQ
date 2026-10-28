@@ -1912,5 +1912,11 @@
   "mapWeatherSun": "धूप",
   "mapWeatherClouds": "बादल",
   "mapWeatherRain": "बारिश",
-  "nearbyNoSignal": "अभी आपकी जीपीएस लोकेशन नहीं मिल रही। घर के अंदर हों तो खिड़की के पास या बाहर जाकर फिर कोशिश करें।"
+  "nearbyNoSignal": "अभी आपकी जीपीएस लोकेशन नहीं मिल रही। घर के अंदर हों तो खिड़की के पास या बाहर जाकर फिर कोशिश करें।",
+  "cameraTakePhoto": "फ़ोटो लें",
+  "cameraIdentifyMode": "स्मारक पहचानें",
+  "cameraIdentifyOn": "पहचान मोड चालू है। कैमरा किसी स्मारक की ओर करें।",
+  "cameraNormalHint": "फ़ोटो लेने के लिए हरा बटन दबाएँ",
+  "cameraSaveMemory": "यादों में सहेजें",
+  "cameraMemorySaved": "यादों में सहेजा गया"
 }

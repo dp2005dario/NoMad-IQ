@@ -1912,5 +1912,11 @@
   "mapWeatherSun": "맑음",
   "mapWeatherClouds": "구름",
   "mapWeatherRain": "비",
-  "nearbyNoSignal": "아직 GPS 위치를 잡지 못했어요. 실내라면 창가나 야외로 이동한 뒤 다시 시도하세요."
+  "nearbyNoSignal": "아직 GPS 위치를 잡지 못했어요. 실내라면 창가나 야외로 이동한 뒤 다시 시도하세요.",
+  "cameraTakePhoto": "사진 찍기",
+  "cameraIdentifyMode": "명소 인식",
+  "cameraIdentifyOn": "인식 모드가 켜졌습니다. 명소를 비추세요.",
+  "cameraNormalHint": "초록 버튼을 눌러 사진을 찍으세요",
+  "cameraSaveMemory": "추억에 저장",
+  "cameraMemorySaved": "추억에 저장됨"
 }

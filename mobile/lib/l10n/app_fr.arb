@@ -1912,5 +1912,11 @@
   "mapWeatherSun": "Soleil",
   "mapWeatherClouds": "Nuages",
   "mapWeatherRain": "Pluie",
-  "nearbyNoSignal": "Je n'ai pas encore de position GPS. En intérieur, approchez-vous d'une fenêtre ou sortez, puis réessayez."
+  "nearbyNoSignal": "Je n'ai pas encore de position GPS. En intérieur, approchez-vous d'une fenêtre ou sortez, puis réessayez.",
+  "cameraTakePhoto": "Prendre une photo",
+  "cameraIdentifyMode": "Identifier un monument",
+  "cameraIdentifyOn": "Mode identification activé. Visez un monument.",
+  "cameraNormalHint": "Appuyez sur le bouton vert pour prendre une photo",
+  "cameraSaveMemory": "Enregistrer dans Souvenirs",
+  "cameraMemorySaved": "Enregistré dans Souvenirs"
 }

@@ -1912,5 +1912,11 @@
   "mapWeatherSun": "晴れ",
   "mapWeatherClouds": "くもり",
   "mapWeatherRain": "雨",
-  "nearbyNoSignal": "まだGPSの位置を取得できません。屋内の場合は窓の近くか屋外に移動して、もう一度お試しください。"
+  "nearbyNoSignal": "まだGPSの位置を取得できません。屋内の場合は窓の近くか屋外に移動して、もう一度お試しください。",
+  "cameraTakePhoto": "写真を撮る",
+  "cameraIdentifyMode": "名所を識別",
+  "cameraIdentifyOn": "識別モードがオンです。名所にカメラを向けてください。",
+  "cameraNormalHint": "緑のボタンをタップして写真を撮る",
+  "cameraSaveMemory": "思い出に保存",
+  "cameraMemorySaved": "思い出に保存しました"
 }

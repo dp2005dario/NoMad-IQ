@@ -1912,5 +1912,11 @@
   "mapWeatherSun": "آفتاب",
   "mapWeatherClouds": "ابر",
   "mapWeatherRain": "باران",
-  "nearbyNoSignal": "هنوز موقعیت GPS شما را پیدا نکرده‌ام. اگر داخل ساختمان هستید، کنار پنجره یا بیرون بروید و دوباره تلاش کنید."
+  "nearbyNoSignal": "هنوز موقعیت GPS شما را پیدا نکرده‌ام. اگر داخل ساختمان هستید، کنار پنجره یا بیرون بروید و دوباره تلاش کنید.",
+  "cameraTakePhoto": "گرفتن عکس",
+  "cameraIdentifyMode": "شناسایی بنا",
+  "cameraIdentifyOn": "حالت شناسایی روشن است. دوربین را به سمت یک بنا بگیرید.",
+  "cameraNormalHint": "برای گرفتن عکس دکمه سبز را بزنید",
+  "cameraSaveMemory": "ذخیره در خاطرات",
+  "cameraMemorySaved": "در خاطرات ذخیره شد"
 }

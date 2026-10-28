@@ -1912,5 +1912,11 @@
   "mapWeatherSun": "Nắng",
   "mapWeatherClouds": "Mây",
   "mapWeatherRain": "Mưa",
-  "nearbyNoSignal": "Tôi chưa lấy được vị trí GPS của bạn. Nếu đang ở trong nhà, hãy lại gần cửa sổ hoặc ra ngoài rồi thử lại."
+  "nearbyNoSignal": "Tôi chưa lấy được vị trí GPS của bạn. Nếu đang ở trong nhà, hãy lại gần cửa sổ hoặc ra ngoài rồi thử lại.",
+  "cameraTakePhoto": "Chụp ảnh",
+  "cameraIdentifyMode": "Nhận diện công trình",
+  "cameraIdentifyOn": "Đã bật chế độ nhận diện. Hãy hướng máy vào một công trình.",
+  "cameraNormalHint": "Chạm nút xanh để chụp ảnh",
+  "cameraSaveMemory": "Lưu vào Kỷ niệm",
+  "cameraMemorySaved": "Đã lưu vào Kỷ niệm"
 }
