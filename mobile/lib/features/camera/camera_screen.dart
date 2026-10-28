@@ -24,11 +24,12 @@ import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../map/geo.dart';
 import '../map/location.dart';
+import '../memories/memories.dart';
 import 'camera_device.dart';
 import 'landmarks_api.dart';
 import 'stamps.dart';
 
-enum _Phase { starting, noAccess, noCamera, aiming, working, result }
+enum _Phase { starting, noAccess, noCamera, aiming, photo, working, result }
 
 enum _Problem { outOfScans, busy, network, noLocation, off }
 
@@ -54,6 +55,10 @@ class _CameraScreenState extends State<CameraScreen>
   Recognition? _result;
   Landmark? _shown;
   bool _speaking = false;
+  // Modo identificar apagado = cámara normal; la foto hecha y su Recuerdo.
+  bool _identify = false;
+  Uint8List? _photo;
+  Memory? _saved;
 
   // La cámara solo está encendida mientras ves esta pestaña y la app está
   // delante. Las pestañas siguen "vivas" al cambiar (para no perder lo que
@@ -449,18 +454,23 @@ class _CameraScreenState extends State<CameraScreen>
                         selected: _identify,
                         onTap: working ? null : _toggleIdentify,
                       ),
-                      const Spacer(),
-                      if (_identify)
-                        _StatusPill(
-                          text: switch (_phase) {
-                            _Phase.result when shown != null =>
-                              recognized ? t.cameraRecognized : t.cameraMaybe,
-                            _Phase.result => t.cameraNoneShort,
-                            _Phase.working => t.cameraSearching,
-                            _ => t.cameraIdentifyOn,
-                          },
+                      Expanded(
+                        child: Center(
+                          child: _identify
+                              ? _StatusPill(
+                                  text: switch (_phase) {
+                                    _Phase.result when shown != null =>
+                                      recognized
+                                          ? t.cameraRecognized
+                                          : t.cameraMaybe,
+                                    _Phase.result => t.cameraNoneShort,
+                                    _Phase.working => t.cameraSearching,
+                                    _ => t.cameraIdentifyOn,
+                                  },
+                                )
+                              : const SizedBox.shrink(),
                         ),
-                      const Spacer(),
+                      ),
                       if (_identify)
                         _RoundButton(
                           icon: Icons.refresh_rounded,
@@ -611,9 +621,13 @@ class _StatusPill extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            text,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+            ),
           ),
         ],
       ),
@@ -827,9 +841,8 @@ class _PhotoReview extends StatelessWidget {
               Text(
                 t.memInstagramNote,
                 textAlign: TextAlign.center,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: Colors.white54),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: Colors.white54),
               ),
             ],
           ),
