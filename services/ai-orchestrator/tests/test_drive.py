@@ -13,7 +13,7 @@ from conftest import InMemoryStore
 from ai_orchestrator.api import create_api
 from ai_orchestrator.drive.domain import DriveArea, cell_of
 from ai_orchestrator.drive.overpass import DriveOverpass, build_query, parse_spot
-from ai_orchestrator.drive.service import DriveService
+from ai_orchestrator.drive.service import DriveService, DriveUnavailableError
 from ai_orchestrator.places.wikimedia import RateLimiter
 
 
@@ -55,8 +55,12 @@ class MemoryCache:
     def __init__(self) -> None:
         self.items: dict[str, DriveArea] = {}
         self.ttls: list[int] = []
+        self.expired = False  # True = lo guardado ya no es "fresco"
 
     async def get(self, lat: float, lon: float) -> DriveArea | None:
+        return None if self.expired else await self.get_stale(lat, lon)
+
+    async def get_stale(self, lat: float, lon: float) -> DriveArea | None:
         return self.items.get(f"{lat:.2f}:{lon:.2f}")
 
     async def put(self, area: DriveArea, *, ttl_seconds: int) -> None:
@@ -64,10 +68,10 @@ class MemoryCache:
         self.ttls.append(ttl_seconds)
 
 
-def service(fake: FakeOverpass) -> DriveService:
+def service(fake: FakeOverpass, cache: MemoryCache | None = None) -> DriveService:
     http = httpx.AsyncClient(transport=httpx.MockTransport(fake.handler))
     source = DriveOverpass(http, limiter=RateLimiter(1000, 1000), url="https://overpass.test/api")
-    return DriveService(source=source, cache=MemoryCache())
+    return DriveService(source=source, cache=cache or MemoryCache())
 
 
 def test_cells_are_five_km() -> None:
@@ -130,3 +134,21 @@ async def test_api_says_busy_when_overpass_fails(status: int) -> None:
         resp = await client.get("/v1/drive", params={"lat": 40.4, "lon": -3.7})
     assert resp.status_code == 503
     assert resp.headers["Retry-After"] == "60"
+
+
+async def test_serves_stale_copy_when_overpass_fails() -> None:
+    fake = FakeOverpass()
+    cache = MemoryCache()
+    svc = service(fake, cache)
+    first = await svc.around(41.0, 14.0)
+    cache.expired = True  # pasó el tiempo: ya no es fresco
+    fake.status = 502  # y Overpass se cae
+    again = await svc.around(41.0, 14.0)
+    assert again == first
+
+
+async def test_fails_without_stale_copy() -> None:
+    fake = FakeOverpass()
+    fake.status = 502
+    with pytest.raises(DriveUnavailableError):
+        await service(fake).around(41.0, 14.0)

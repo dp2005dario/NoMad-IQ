@@ -190,6 +190,12 @@ class Settings(BaseSettings):
     atms_enabled: bool = True
     # El buscador Overpass. Se puede cambiar por otro espejo o uno propio.
     overpass_url: str = "https://overpass-api.de/api/interpreter"
+    # Espejos de respaldo, separados por comas: se prueban en orden si el
+    # principal falla (502, timeout...). Por defecto, el espejo de private.coffee,
+    # listado en la wiki de OpenStreetMap (vacío = sin respaldo).
+    overpass_fallback_urls: str = "https://overpass.private.coffee/api/interpreter"
+    # Cuánto se conserva una casilla DESPUÉS de caducar, solo para servirla si Overpass falla.
+    overpass_stale_seconds: int = Field(default=30 * 24 * 3600, ge=0, le=180 * 24 * 3600)
     # Su norma de uso justo: muy pocas peticiones por segundo (por copia).
     overpass_rate_per_second: float = Field(default=1.0, gt=0, le=10)
     overpass_burst: int = Field(default=3, ge=1, le=20)
@@ -374,6 +380,11 @@ class Settings(BaseSettings):
         if self.pgsslmode in SECURE_PG_SSLMODES and self.db_insecure_dev:
             problems.append("DB_INSECURE_DEV=true contradice PGSSLMODE=verify-full: quita una de las dos")
 
+        for server in self.overpass_servers:
+            if not server.startswith("https://"):
+                problems.append("OVERPASS_URL y OVERPASS_FALLBACK_URLS deben ser direcciones https://")
+                break
+
         problems += _check_url("OLLAMA_URL", self.ollama_url, insecure_ok=self.ollama_insecure_dev)
         if bool(self.ollama_tls_cert_file) != bool(self.ollama_tls_key_file):
             problems.append("OLLAMA_TLS_CERT_FILE y OLLAMA_TLS_KEY_FILE van juntas")
@@ -459,6 +470,12 @@ class Settings(BaseSettings):
             # Todos los problemas a la vez: arreglas el .env de una sola pasada.
             raise ValueError("configuración inválida:\n  - " + "\n  - ".join(problems))
         return self
+
+    @property
+    def overpass_servers(self) -> list[str]:
+        """El principal y sus respaldos, en orden y sin repetidos."""
+        extra = [u.strip() for u in self.overpass_fallback_urls.split(",") if u.strip()]
+        return list(dict.fromkeys([self.overpass_url, *extra]))
 
     @property
     def audioguide_lock_ttl_seconds(self) -> int:

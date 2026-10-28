@@ -50,8 +50,12 @@ class MemoryCache:
     def __init__(self) -> None:
         self.items: dict[str, AirportGuide] = {}
         self.ttls: list[int] = []
+        self.expired = False  # True = lo guardado ya no es "fresco"
 
     async def get(self, iata: str) -> AirportGuide | None:
+        return None if self.expired else await self.get_stale(iata)
+
+    async def get_stale(self, iata: str) -> AirportGuide | None:
         return self.items.get(iata)
 
     async def put(self, guide: AirportGuide, *, ttl_seconds: int) -> None:
@@ -159,3 +163,12 @@ async def test_api_says_busy_when_overpass_pushes_back(status: int) -> None:
         resp = await client.get("/v1/airports/MAD/spots")
     assert resp.status_code == 503
     assert resp.headers["Retry-After"] == "60"
+
+
+async def test_serves_stale_copy_when_overpass_fails() -> None:
+    fake = FakeOverpass()
+    svc, cache = service(fake)
+    first = await svc.guide("MAD")
+    cache.expired = True  # pasó el tiempo: ya no es fresca
+    fake.status = 502  # y Overpass se cae
+    assert await svc.guide("MAD") == first

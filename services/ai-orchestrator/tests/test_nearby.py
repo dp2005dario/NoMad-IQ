@@ -13,7 +13,7 @@ from conftest import InMemoryStore
 from ai_orchestrator.api import create_api
 from ai_orchestrator.nearby.domain import Nearby
 from ai_orchestrator.nearby.overpass import NearbyOverpass, build_query, parse_spot
-from ai_orchestrator.nearby.service import NearbyService
+from ai_orchestrator.nearby.service import NearbyService, NearbyUnavailableError
 from ai_orchestrator.places.wikimedia import RateLimiter
 
 
@@ -47,8 +47,12 @@ class MemoryCache:
     def __init__(self) -> None:
         self.items: dict[str, Nearby] = {}
         self.ttls: list[int] = []
+        self.expired = False  # True = lo guardado ya no es "fresco"
 
     async def get(self, lat: float, lon: float) -> Nearby | None:
+        return None if self.expired else await self.get_stale(lat, lon)
+
+    async def get_stale(self, lat: float, lon: float) -> Nearby | None:
         return self.items.get(f"{lat:.2f}:{lon:.2f}")
 
     async def put(self, nearby: Nearby, *, ttl_seconds: int) -> None:
@@ -151,3 +155,15 @@ async def test_api_says_busy_when_overpass_fails(status: int) -> None:
         resp = await client.get("/v1/nearby", params={"lat": 40.4, "lon": -3.7})
     assert resp.status_code == 503
     assert resp.headers["Retry-After"] == "60"
+
+
+async def test_serves_stale_copy_when_overpass_fails() -> None:
+    fake = FakeOverpass()
+    svc, cache = service(fake)
+    first = await svc.near(40.4168, -3.7038)
+    cache.expired = True  # pasó el tiempo: ya no es fresca
+    fake.status = 502  # y Overpass se cae
+    assert await svc.near(40.4168, -3.7038) == first
+    # Y si nunca se guardó esa casilla, sí hay error.
+    with pytest.raises(NearbyUnavailableError):
+        await svc.near(48.85, 2.35)
