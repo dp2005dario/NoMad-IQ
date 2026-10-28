@@ -146,8 +146,12 @@ void main() {
     );
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
+    // Mientras mantienes el botón se enciende la luz roja de alarma...
+    expect(find.byKey(const ValueKey<String>('sos-glow')), findsOneWidget);
     await press.up();
     await tester.pumpAndSettle();
+    // ...y al soltar se apaga del todo.
+    expect(find.byKey(const ValueKey<String>('sos-glow')), findsNothing);
     expect(find.text('Pide ayuda ya'), findsNothing);
 
     final TestGesture hold = await tester.startGesture(
@@ -164,5 +168,43 @@ void main() {
     expect(opened.first.toString(), 'tel:110');
     expect(opened.last.scheme, 'sms');
     expect(opened.last.queryParameters['body'], startsWith('¡Necesito ayuda!'));
+  });
+
+  testWidgets('la ficha médica se rellena con la rejilla de grupos', (
+    WidgetTester tester,
+  ) async {
+    final FakeGateway g = FakeGateway();
+    final session = await signedInSession(g);
+    final MemorySettingsStore prefs = MemorySettingsStore();
+    tester.view.physicalSize = const Size(1200, 4000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.home,
+      services: fakeServices(
+        session,
+        gateway: g,
+        location: FakeLocation(),
+        prefs: prefs,
+      ),
+    );
+    await tester.tap(find.text('SOS'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.textContaining('Añade tu grupo sanguíneo'));
+    await tester.pumpAndSettle();
+    // Un toque en el grupo (con el signo menos bonito) y a guardar.
+    await tester.tap(find.text('AB\u2212'));
+    await tester.enterText(find.byType(TextField).first, 'penicilina');
+    await tester.tap(find.text('Guardar'));
+    await tester.pumpAndSettle();
+
+    // Se guarda igual que siempre: con el "-" normal.
+    final MedicalCard saved = MedicalCard.load(prefs);
+    expect(saved.blood, 'AB-');
+    expect(saved.allergies, 'penicilina');
   });
 }
