@@ -9,9 +9,11 @@ import 'package:http/http.dart' as http;
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/flights/airport_search.dart';
 import 'package:eclipta/features/flights/fares_api.dart';
 import 'package:eclipta/features/flights/flight_format.dart';
 import 'package:eclipta/features/flights/price_chart.dart';
+import 'package:eclipta/features/route/world_data.dart';
 
 import 'helpers.dart';
 
@@ -409,7 +411,7 @@ void main() {
     await tester.enterText(find.byType(TextField), 'B1');
     await tester.tap(find.text('Guardar'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('código de 3 letras'), findsOneWidget);
+    expect(find.textContaining('Usa el código de 3 letras'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'bcn');
     await tester.tap(find.text('Guardar'));
@@ -417,6 +419,40 @@ void main() {
     expect(b.origins.last, 'BCN');
     expect(prefs.flightOrigin, 'BCN');
     expect(find.text('Desde BCN'), findsOneWidget);
+  });
+
+  testWidgets('cambiar de aeropuerto escribiendo la ciudad', (
+    WidgetTester tester,
+  ) async {
+    final MemorySettingsStore prefs = MemorySettingsStore('es');
+    final FaresBackend b = await pumpFlights(tester, prefs: prefs);
+    await tester.tap(find.text('Desde MAD'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'aeropuerto de Lisboa');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lisboa (LIS)'));
+    await tester.pumpAndSettle();
+    expect(b.origins.last, 'LIS');
+    expect(prefs.flightOrigin, 'LIS');
+    expect(find.text('Desde LIS'), findsOneWidget);
+  });
+
+  test('buscar aeropuertos por código, ciudad o nombre', () {
+    final Airports all = Airports.parse(
+      'AGP|36.675|-4.499|Málaga|Spain|Europe/Madrid\n'
+      'MAD|40.472|-3.563|Madrid|Spain|Europe/Madrid\n'
+      'MLA|35.857|14.477|Valletta|Malta|Europe/Malta',
+    );
+    List<String> codes(String q) => <String>[
+      for (final Airport a in searchAirports(all.all, q)) a.iata,
+    ];
+    expect(codes('mad'), <String>['MAD']);
+    expect(codes('Malaga'), <String>['AGP']);
+    expect(codes('aeropuerto de Málaga'), <String>['AGP']);
+    expect(codes('airport madrid'), <String>['MAD']);
+    expect(codes('spain'), <String>['MAD', 'AGP']);
+    expect(codes('m'), isEmpty);
+    expect(codes('zzzz'), isEmpty);
   });
 
   testWidgets('detalle: gráfica, mínimo y dejar de vigilar', (
