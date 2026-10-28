@@ -411,7 +411,7 @@ void main() {
     await tester.enterText(find.byType(TextField), 'B1');
     await tester.tap(find.text('Guardar'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('código de 3 letras'), findsOneWidget);
+    expect(find.textContaining('Usa el código de 3 letras'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'bcn');
     await tester.tap(find.text('Guardar'));
