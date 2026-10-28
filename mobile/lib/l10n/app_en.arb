@@ -3337,6 +3337,22 @@
   "@sosMedicalPrivacy": {
     "description": "Privacy note."
   },
+  "sosBloodPick": "Tap yours",
+  "@sosBloodPick": {
+    "description": "Hint under the blood type title."
+  },
+  "sosAllergiesHint": "E.g. penicillin, peanuts",
+  "@sosAllergiesHint": {
+    "description": "Placeholder example."
+  },
+  "sosMedicationHint": "E.g. insulin, ibuprofen",
+  "@sosMedicationHint": {
+    "description": "Placeholder example."
+  },
+  "sosConditionsHint": "E.g. asthma, diabetes",
+  "@sosConditionsHint": {
+    "description": "Placeholder example."
+  },
   "sosEmbassies": "Embassies and consulates nearby",
   "@sosEmbassies": {
     "description": "Button."

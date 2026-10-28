@@ -8,6 +8,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/services.dart';
 import '../../core/settings.dart';
@@ -32,14 +33,20 @@ class SosScreen extends StatefulWidget {
   State<SosScreen> createState() => _SosScreenState();
 }
 
-class _SosScreenState extends State<SosScreen>
-    with SingleTickerProviderStateMixin {
+class _SosScreenState extends State<SosScreen> with TickerProviderStateMixin {
   late final AppServices _services = ServicesScope.of(context);
   late final SettingsStore _prefs = _services.prefs;
   late final AnimationController _hold = AnimationController(
     vsync: this,
     duration: sosHold,
   )..addStatusListener(_onHold);
+
+  /// El "latido" de la luz de alarma: va y viene sin parar, pero SOLO
+  /// mientras mantienes el botón (si no, la pantalla nunca se quedaría quieta).
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 800),
+  );
 
   PositionFix? _fix;
   Whereabouts _where = const Whereabouts();
@@ -57,6 +64,7 @@ class _SosScreenState extends State<SosScreen>
   @override
   void dispose() {
     _hold.dispose();
+    _pulse.dispose();
     super.dispose();
   }
 
@@ -83,7 +91,18 @@ class _SosScreenState extends State<SosScreen>
   }
 
   void _onHold(AnimationStatus status) {
+    if (status == AnimationStatus.forward) {
+      // Empieza a pulsar la luz roja (salvo que el usuario pida reducir
+      // animaciones: entonces el fondo solo se enciende, sin parpadear).
+      unawaited(HapticFeedback.selectionClick());
+      if (!MediaQuery.disableAnimationsOf(context)) {
+        _pulse.repeat(reverse: true);
+      }
+    } else {
+      _pulse.stop();
+    }
     if (status == AnimationStatus.completed) {
+      unawaited(HapticFeedback.heavyImpact());
       setState(() => _active = true);
       _hold.reset();
     }
@@ -139,8 +158,8 @@ class _SosScreenState extends State<SosScreen>
             t.sosAccuracy(_fix!.accuracyM.round()),
           ].join(' · ');
 
-    return Scaffold(
-      backgroundColor: _active ? const Color(0xFF2A0909) : null,
+    final Widget page = Scaffold(
+      backgroundColor: _active ? const Color(0xFF2A0909) : Colors.transparent,
       appBar: AppBar(
         title: Text(t.sosTitle),
         backgroundColor: _active ? const Color(0xFF2A0909) : null,
@@ -322,7 +341,53 @@ class _SosScreenState extends State<SosScreen>
         ],
       ),
     );
+    // La luz de alarma va por detrás del Scaffold (que es transparente) y no
+    // recibe toques.
+    return Stack(
+      children: <Widget>[
+        const Positioned.fill(child: ColoredBox(color: NomadColors.background)),
+        Positioned.fill(
+          child: IgnorePointer(
+            child: _AlarmGlow(hold: _hold, pulse: _pulse),
+          ),
+        ),
+        page,
+      ],
+    );
   }
+}
+
+/// Resplandor rojo de fondo, como la luz de una alarma de emergencia: crece
+/// mientras mantienes el botón y late suave (nada de destellos bruscos).
+class _AlarmGlow extends StatelessWidget {
+  const _AlarmGlow({required this.hold, required this.pulse});
+
+  final Animation<double> hold;
+  final Animation<double> pulse;
+
+  @override
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: Listenable.merge(<Listenable>[hold, pulse]),
+    builder: (BuildContext context, _) {
+      // Sin pulsar no se pinta nada.
+      if (hold.value == 0) return const SizedBox.shrink();
+      // De 0.55 a 1.0: el latido nunca apaga del todo la luz.
+      final double beat = 0.55 + 0.45 * Curves.easeInOut.transform(pulse.value);
+      final double alpha = (0.12 + 0.38 * hold.value) * beat;
+      return DecoratedBox(
+        key: const ValueKey<String>('sos-glow'),
+        decoration: BoxDecoration(
+          gradient: RadialGradient(
+            radius: 1.1,
+            colors: <Color>[
+              const Color(0xFFE53935).withValues(alpha: alpha),
+              const Color(0xFF2A0909).withValues(alpha: alpha * 0.6),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }
 
 /// El botón rojo grande: se va llenando mientras lo mantienes pulsado.
@@ -507,35 +572,82 @@ class _MedicalDialogState extends State<_MedicalDialog> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
+    final TextTheme text = Theme.of(context).textTheme;
     return AlertDialog(
       title: Text(t.sosMedicalEdit),
       content: SingleChildScrollView(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            DropdownButtonFormField<String?>(
-              initialValue: _blood,
-              isExpanded: true,
-              decoration: InputDecoration(labelText: t.sosBlood),
-              items: <DropdownMenuItem<String?>>[
-                DropdownMenuItem<String?>(child: Text(t.sosBloodUnknown)),
-                for (final String b in bloodTypes)
-                  DropdownMenuItem<String?>(value: b, child: Text(b)),
+            // Grupo sanguíneo: botones grandes en rejilla, un toque y listo.
+            Row(
+              children: <Widget>[
+                const Icon(Icons.bloodtype_rounded, color: NomadColors.safety),
+                const SizedBox(width: 8),
+                Text(t.sosBlood, style: text.titleSmall),
               ],
-              onChanged: (String? v) => setState(() => _blood = v),
             ),
-            for (final (TextEditingController c, String label)
-                in <(TextEditingController, String)>[
-                  (_allergies, t.sosAllergies),
-                  (_conditions, t.sosConditions),
-                  (_medication, t.sosMedication),
-                ])
-              TextField(
-                controller: c,
-                maxLength: 200,
-                decoration: InputDecoration(labelText: label),
-              ),
-            Text(t.sosMedicalPrivacy),
+            const SizedBox(height: 4),
+            Text(
+              t.sosBloodPick,
+              style: text.bodySmall?.copyWith(color: NomadColors.textMuted),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: <Widget>[
+                for (final String b in bloodTypes)
+                  _BloodChip(
+                    label: b.replaceAll('-', '\u2212'),
+                    selected: _blood == b,
+                    onTap: () => setState(() => _blood = b),
+                  ),
+                _BloodChip(
+                  label: t.sosBloodUnknown,
+                  selected: _blood == null,
+                  onTap: () => setState(() => _blood = null),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            _MedicalField(
+              icon: Icons.warning_amber_rounded,
+              label: t.sosAllergies,
+              hint: t.sosAllergiesHint,
+              controller: _allergies,
+            ),
+            _MedicalField(
+              icon: Icons.medication_rounded,
+              label: t.sosMedication,
+              hint: t.sosMedicationHint,
+              controller: _medication,
+            ),
+            _MedicalField(
+              icon: Icons.monitor_heart_rounded,
+              label: t.sosConditions,
+              hint: t.sosConditionsHint,
+              controller: _conditions,
+            ),
+            Row(
+              children: <Widget>[
+                const Icon(
+                  Icons.lock_outline_rounded,
+                  size: 16,
+                  color: NomadColors.textMuted,
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    t.sosMedicalPrivacy,
+                    style: text.bodySmall?.copyWith(
+                      color: NomadColors.textMuted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -560,4 +672,68 @@ class _MedicalDialogState extends State<_MedicalDialog> {
       ],
     );
   }
+}
+
+/// Un botón de la rejilla de grupos sanguíneos (menta si está elegido).
+class _BloodChip extends StatelessWidget {
+  const _BloodChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => ChoiceChip(
+    label: Text(label),
+    selected: selected,
+    showCheckmark: false,
+    selectedColor: NomadColors.mint,
+    labelStyle: TextStyle(
+      fontWeight: FontWeight.w800,
+      color: selected ? NomadColors.background : null,
+    ),
+    // Un poco más alto: cómodo de pulsar con el dedo.
+    visualDensity: const VisualDensity(vertical: 1),
+    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+    onSelected: (_) => onTap(),
+  );
+}
+
+/// Un campo de la ficha: icono, nombre y un ejemplo para saber qué escribir.
+class _MedicalField extends StatelessWidget {
+  const _MedicalField({
+    required this.icon,
+    required this.label,
+    required this.hint,
+    required this.controller,
+  });
+
+  final IconData icon;
+  final String label;
+  final String hint;
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 14),
+    child: TextField(
+      controller: controller,
+      maxLength: 200,
+      minLines: 1,
+      maxLines: 3,
+      textCapitalization: TextCapitalization.sentences,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon),
+        labelText: label,
+        hintText: hint,
+        counterText: '',
+        filled: true,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+    ),
+  );
 }
