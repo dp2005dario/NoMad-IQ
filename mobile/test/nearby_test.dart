@@ -198,8 +198,7 @@ void main() {
   testWidgets('sin permiso sigue pidiendo activar la ubicación', (
     WidgetTester tester,
   ) async {
-    final FakeLocation gps = FakeLocation()
-      ..access = LocationAccess.serviceOff;
+    final FakeLocation gps = FakeLocation()..access = LocationAccess.serviceOff;
     await openNearby(tester, gps);
     expect(find.textContaining('Necesito tu ubicación'), findsOneWidget);
     expect(gps.currents, 0);
