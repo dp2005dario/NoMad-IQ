@@ -121,6 +121,8 @@ con TLS 1.3**, así que solo el proxy puede enviarlas. Errores en RFC 9457
 | `AUDIO_GC_KEEP` / `AUDIO_GC_GRACE_DAYS` | `2` / `30` | Grabaciones recientes que nunca se borran (N y N-1) y días de cuarentena de una sustituida |
 | `AUDIO_GC_ORPHAN_HOURS` | `24` | Edad mínima de un archivo sin manifiesto (grabación cortada) para borrarlo |
 | `AUDIOGUIDE_MAX_WORDS` / `AUDIOGUIDE_MAX_OUTPUT_TOKENS` | `260` / `900` | ≈ menos de dos minutos de audio |
+| `OVERPASS_URL` / `OVERPASS_FALLBACK_URLS` | `https://overpass-api.de/api/interpreter` / `https://overpass.private.coffee/api/interpreter` | Servidor Overpass principal y espejos de respaldo (separados por comas, solo `https://`; vacío = sin respaldo). Se prueban en orden si hay 429/5xx o timeout |
+| `OVERPASS_STALE_SECONDS` | `2592000` | Cuánto se guarda una casilla (cerca de ti, coche, aeropuerto) tras caducar, para servirla si Overpass falla |
 | `LOG_LEVEL` | `info` | Logs JSON |
 
 ## Desarrollo

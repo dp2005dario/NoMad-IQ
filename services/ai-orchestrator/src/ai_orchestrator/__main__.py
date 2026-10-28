@@ -346,7 +346,7 @@ def _atms(settings: Settings, redis: Redis, overpass: tuple[httpx.AsyncClient, R
     """Cajeros: Overpass (OpenStreetMap) con límite de ritmo + caché en Redis."""
     http, limiter = overpass
     return AtmService(
-        overpass=OverpassClient(http, url=settings.overpass_url, limiter=limiter),
+        overpass=OverpassClient(http, url=settings.overpass_servers, limiter=limiter),
         cache=RedisAtmCache(redis),
         settings=AtmSettings(ttl_seconds=settings.atm_ttl_seconds),
     )
@@ -358,8 +358,8 @@ def _nearby(
     """Cerca de ti: agua, baños, wifi, enchufes y sitios que ver (una semana de caché)."""
     http, limiter = overpass
     return NearbyService(
-        source=NearbyOverpass(http, url=settings.overpass_url, limiter=limiter),
-        cache=RedisNearbyCache(redis),
+        source=NearbyOverpass(http, url=settings.overpass_servers, limiter=limiter),
+        cache=RedisNearbyCache(redis, stale_seconds=settings.overpass_stale_seconds),
         settings=NearbySettings(ttl_seconds=settings.nearby_ttl_seconds),
     )
 
@@ -368,8 +368,8 @@ def _drive(settings: Settings, redis: Redis, overpass: tuple[httpx.AsyncClient, 
     """Modo coche: gasolineras, aparcamientos, cargadores y zonas ZTL/ZBE (una semana de caché)."""
     http, limiter = overpass
     return DriveService(
-        source=DriveOverpass(http, url=settings.overpass_url, limiter=limiter),
-        cache=RedisDriveCache(redis),
+        source=DriveOverpass(http, url=settings.overpass_servers, limiter=limiter),
+        cache=RedisDriveCache(redis, stale_seconds=settings.overpass_stale_seconds),
         settings=DriveSettings(ttl_seconds=settings.drive_ttl_seconds),
     )
 
@@ -378,7 +378,7 @@ def _stays(settings: Settings, redis: Redis, overpass: tuple[httpx.AsyncClient, 
     """Dormir barato: estaciones con alojamientos alrededor (un mes de caché)."""
     http, limiter = overpass
     return StayService(
-        source=StayOverpass(http, url=settings.overpass_url, limiter=limiter),
+        source=StayOverpass(http, url=settings.overpass_servers, limiter=limiter),
         cache=RedisStayCache(redis),
         settings=StaySettings(ttl_seconds=settings.stays_ttl_seconds),
     )
@@ -390,8 +390,8 @@ def _airport_guide(
     """Guía del aeropuerto: el mismo Overpass que los cajeros y un mes de caché por aeropuerto."""
     http, limiter = overpass
     return AirportGuideService(
-        source=AirportOverpass(http, url=settings.overpass_url, limiter=limiter),
-        cache=RedisGuideCache(redis),
+        source=AirportOverpass(http, url=settings.overpass_servers, limiter=limiter),
+        cache=RedisGuideCache(redis, stale_seconds=settings.overpass_stale_seconds),
         airports=Airports.bundled(),
         settings=GuideSettings(ttl_seconds=settings.airport_guide_ttl_seconds),
     )

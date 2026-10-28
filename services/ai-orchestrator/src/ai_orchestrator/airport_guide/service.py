@@ -16,12 +16,12 @@ from typing import Protocol
 
 from pydantic import ValidationError
 from redis.asyncio import Redis
-from redis.exceptions import RedisError
 
 from ai_orchestrator.airport_guide.domain import AirportGuide, AirportSpot
 from ai_orchestrator.atms.overpass import OverpassBusyError, OverpassError
 from ai_orchestrator.audioguides.cache import CacheError, SingleFlight
 from ai_orchestrator.places.airports import Airports
+from ai_orchestrator.stale_cache import DEFAULT_STALE_SECONDS, read, write
 
 log = logging.getLogger(__name__)
 
@@ -34,20 +34,24 @@ class SpotSource(Protocol):
 
 
 class GuideCache(Protocol):
-    async def get(self, iata: str) -> AirportGuide | None: ...
+    async def get(self, iata: str) -> AirportGuide | None:
+        """Solo si es fresca."""
+        ...
+
+    async def get_stale(self, iata: str) -> AirportGuide | None:
+        """Aunque esté pasada de fecha (para cuando Overpass falla)."""
+        ...
 
     async def put(self, guide: AirportGuide, *, ttl_seconds: int) -> None: ...
 
 
 class RedisGuideCache:
-    def __init__(self, redis: Redis) -> None:
+    def __init__(self, redis: Redis, *, stale_seconds: int = DEFAULT_STALE_SECONDS) -> None:
         self._redis = redis
+        self._stale = stale_seconds
 
-    async def get(self, iata: str) -> AirportGuide | None:
-        try:
-            raw = await self._redis.get(f"{KEY_PREFIX}:{iata}")
-        except (RedisError, OSError) as exc:
-            raise CacheError(f"leer aeropuerto de Redis: {exc}") from exc
+    async def _read(self, iata: str, *, fresh_only: bool) -> AirportGuide | None:
+        raw = await read(self._redis, f"{KEY_PREFIX}:{iata}", fresh_only=fresh_only, what="aeropuerto")
         if raw is None:
             return None
         try:
@@ -55,11 +59,21 @@ class RedisGuideCache:
         except ValidationError:
             return None
 
+    async def get(self, iata: str) -> AirportGuide | None:
+        return await self._read(iata, fresh_only=True)
+
+    async def get_stale(self, iata: str) -> AirportGuide | None:
+        return await self._read(iata, fresh_only=False)
+
     async def put(self, guide: AirportGuide, *, ttl_seconds: int) -> None:
-        try:
-            await self._redis.set(f"{KEY_PREFIX}:{guide.iata}", guide.model_dump_json(), ex=ttl_seconds)
-        except (RedisError, OSError) as exc:
-            raise CacheError(f"guardar aeropuerto en Redis: {exc}") from exc
+        await write(
+            self._redis,
+            f"{KEY_PREFIX}:{guide.iata}",
+            guide.model_dump_json(),
+            ttl_seconds=ttl_seconds,
+            stale_seconds=self._stale,
+            what="aeropuerto",
+        )
 
 
 class UnknownAirportError(Exception):
@@ -106,11 +120,27 @@ class AirportGuideService:
         try:
             result, _ = await self._flight.do(code, lambda: self._build(code, airport.lat, airport.lon))
         except OverpassBusyError as exc:
+            stale = await self._stale(code)
+            if stale is not None:
+                return stale
             raise GuideBusyError(str(exc)) from exc
         except OverpassError as exc:
             log.warning("Overpass no disponible", extra={"error": str(exc)})
+            stale = await self._stale(code)
+            if stale is not None:
+                return stale
             raise GuideUnavailableError(str(exc)) from exc
         return result
+
+    async def _stale(self, iata: str) -> AirportGuide | None:
+        """La copia vieja del aeropuerto, si existe: mejor algo antiguo que un error."""
+        try:
+            stale = await self._cache.get_stale(iata)
+        except CacheError:
+            return None  # si Redis también falla, se da el error original
+        if stale is not None:
+            log.info("sirviendo la guía del aeropuerto de la caché obsoleta")
+        return stale
 
     async def _build(self, iata: str, lat: float, lon: float) -> AirportGuide:
         spots = await self._source.spots(iata)

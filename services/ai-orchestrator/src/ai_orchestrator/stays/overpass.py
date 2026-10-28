@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any
 
 import httpx
 
-from ai_orchestrator.atms.overpass import USER_AGENT, OverpassBusyError, OverpassError
+from ai_orchestrator.atms.overpass import OverpassBusyError, OverpassError, as_urls, post_query
 from ai_orchestrator.places.wikimedia import RateLimiter
 from ai_orchestrator.stays.domain import MAX_KM, STATION_RADIUS_M, WALK_KM, Lodging, Station
 
@@ -93,25 +94,17 @@ class StayOverpass:
         http: httpx.AsyncClient,
         *,
         limiter: RateLimiter,
-        url: str,
+        url: str | Sequence[str],
         max_wait_seconds: float = 2.0,
     ) -> None:
         self._http = http
         self._limiter = limiter
-        self._url = url
+        self._urls = as_urls(url)
         self._max_wait = max_wait_seconds
 
     async def around(self, lat: float, lon: float) -> tuple[list[Station], list[Lodging]]:
         await self._limiter.acquire(self._max_wait)
-        try:
-            resp = await self._http.post(
-                self._url,
-                data={"data": build_query(lat, lon)},
-                headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
-            )
-        except httpx.HTTPError as exc:
-            # Solo el tipo de error: el mensaje podría llevar la zona.
-            raise OverpassError(f"{type(exc).__name__} al llamar a Overpass") from exc
+        resp = await post_query(self._http, self._urls, build_query(lat, lon))
         if resp.status_code in (429, 503, 504):
             raise OverpassBusyError(f"Overpass respondió {resp.status_code}")
         if resp.status_code != 200:

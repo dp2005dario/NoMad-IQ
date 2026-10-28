@@ -52,6 +52,31 @@ GET /v1/nearby?lat=40.42&lon=-3.70
 - Los "sitios que ver" son solo los que tienen ficha en Wikidata (los
   conocidos), para que el paseo no te lleve a una estatua cualquiera.
 
+## Si Overpass falla (espejos y copia vieja)
+
+Los datos vienen de Overpass, un servicio gratis de OpenStreetMap que a veces
+se satura ("502", "ReadTimeout"). Para que la app no se quede sin respuesta:
+
+1. **Espejos.** Si el servidor principal falla, se prueba el siguiente de la
+   lista, en orden. Los que fallan rápido se repiten una vez tras una pausa
+   corta; los que tardan (timeout) no, para no hacer esperar a la persona.
+   Se configuran con dos variables (todas las direcciones deben ser `https://`):
+   `OVERPASS_URL` (el principal, por defecto `overpass-api.de`) y
+   `OVERPASS_FALLBACK_URLS` (respaldos separados por comas, por defecto
+   `overpass.private.coffee`; vacío = sin respaldo). Ambos están en la lista
+   de servidores públicos de la wiki de OpenStreetMap. Antes de añadir otro
+   espejo, comprueba en esa wiki que existe y que acepta tu volumen de uso.
+2. **Copia vieja.** Cada casilla se guarda una semana como "fresca"
+   (`NEARBY_TTL_SECONDS`) y además se conserva `OVERPASS_STALE_SECONDS`
+   más (30 días por defecto). Si la casilla ha caducado y Overpass falla en
+   todos los espejos, se enseña la copia vieja en vez de dar error. Solo si
+   nunca se guardó esa casilla, la app recibe el 503 de siempre.
+
+Lo mismo vale para el modo coche (`guia-coche.md`) y la guía del aeropuerto
+(`guia-aeropuerto.md`); cajeros y "dormir barato" usan los espejos pero no la
+copia vieja. El código está en `atms/overpass.py` (`post_query`) y
+`stale_cache.py`.
+
 ## Dónde está el código
 
 | Archivo | Qué hace |

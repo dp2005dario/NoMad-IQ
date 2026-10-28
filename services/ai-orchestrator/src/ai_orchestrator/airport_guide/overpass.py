@@ -10,6 +10,7 @@ en la MISMA pregunta (una sola llamada a Overpass por aeropuerto).
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Any
 
 import httpx
@@ -21,7 +22,7 @@ from ai_orchestrator.airport_guide.domain import (
     AirportSpot,
     SpotKind,
 )
-from ai_orchestrator.atms.overpass import USER_AGENT, OverpassBusyError, OverpassError
+from ai_orchestrator.atms.overpass import OverpassBusyError, OverpassError, as_urls, post_query
 from ai_orchestrator.places.airports import IATA_PATTERN
 from ai_orchestrator.places.wikimedia import RateLimiter
 
@@ -139,24 +140,17 @@ class AirportOverpass:
         http: httpx.AsyncClient,
         *,
         limiter: RateLimiter,
-        url: str,
+        url: str | Sequence[str],
         max_wait_seconds: float = 2.0,
     ) -> None:
         self._http = http
         self._limiter = limiter
-        self._url = url
+        self._urls = as_urls(url)
         self._max_wait = max_wait_seconds
 
     async def spots(self, iata: str) -> list[AirportSpot]:
         await self._limiter.acquire(self._max_wait)
-        try:
-            resp = await self._http.post(
-                self._url,
-                data={"data": build_query(iata)},
-                headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
-            )
-        except httpx.HTTPError as exc:
-            raise OverpassError(f"{type(exc).__name__} al llamar a Overpass") from exc
+        resp = await post_query(self._http, self._urls, build_query(iata))
         if resp.status_code in (429, 503, 504):
             raise OverpassBusyError(f"Overpass respondió {resp.status_code}")
         if resp.status_code != 200:

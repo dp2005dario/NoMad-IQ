@@ -12,11 +12,11 @@ from typing import Protocol
 
 from pydantic import ValidationError
 from redis.asyncio import Redis
-from redis.exceptions import RedisError
 
 from ai_orchestrator.atms.overpass import OverpassBusyError, OverpassError
 from ai_orchestrator.audioguides.cache import CacheError, SingleFlight
 from ai_orchestrator.drive.domain import CELL_DEGREES, DriveArea, DriveSpot, cell_of
+from ai_orchestrator.stale_cache import DEFAULT_STALE_SECONDS, read, write
 
 log = logging.getLogger(__name__)
 
@@ -28,24 +28,28 @@ class DriveSource(Protocol):
 
 
 class DriveCache(Protocol):
-    async def get(self, lat: float, lon: float) -> DriveArea | None: ...
+    async def get(self, lat: float, lon: float) -> DriveArea | None:
+        """Solo si es fresco."""
+        ...
+
+    async def get_stale(self, lat: float, lon: float) -> DriveArea | None:
+        """Aunque esté pasado de fecha (para cuando Overpass falla)."""
+        ...
 
     async def put(self, area: DriveArea, *, ttl_seconds: int) -> None: ...
 
 
 class RedisDriveCache:
-    def __init__(self, redis: Redis) -> None:
+    def __init__(self, redis: Redis, *, stale_seconds: int = DEFAULT_STALE_SECONDS) -> None:
         self._redis = redis
+        self._stale = stale_seconds
 
     @staticmethod
     def _key(lat: float, lon: float) -> str:
         return f"{KEY_PREFIX}:{lat:.2f}:{lon:.2f}"
 
-    async def get(self, lat: float, lon: float) -> DriveArea | None:
-        try:
-            raw = await self._redis.get(self._key(lat, lon))
-        except (RedisError, OSError) as exc:
-            raise CacheError(f"leer el modo coche de Redis: {exc}") from exc
+    async def _read(self, lat: float, lon: float, *, fresh_only: bool) -> DriveArea | None:
+        raw = await read(self._redis, self._key(lat, lon), fresh_only=fresh_only, what="el modo coche")
         if raw is None:
             return None
         try:
@@ -53,11 +57,21 @@ class RedisDriveCache:
         except ValidationError:
             return None
 
+    async def get(self, lat: float, lon: float) -> DriveArea | None:
+        return await self._read(lat, lon, fresh_only=True)
+
+    async def get_stale(self, lat: float, lon: float) -> DriveArea | None:
+        return await self._read(lat, lon, fresh_only=False)
+
     async def put(self, area: DriveArea, *, ttl_seconds: int) -> None:
-        try:
-            await self._redis.set(self._key(area.lat, area.lon), area.model_dump_json(), ex=ttl_seconds)
-        except (RedisError, OSError) as exc:
-            raise CacheError(f"guardar el modo coche en Redis: {exc}") from exc
+        await write(
+            self._redis,
+            self._key(area.lat, area.lon),
+            area.model_dump_json(),
+            ttl_seconds=ttl_seconds,
+            stale_seconds=self._stale,
+            what="el modo coche",
+        )
 
 
 class DriveBusyError(Exception):
@@ -92,12 +106,28 @@ class DriveService:
         try:
             result, _ = await self._flight.do(f"{c_lat:.2f}:{c_lon:.2f}", lambda: self._build(c_lat, c_lon))
         except OverpassBusyError as exc:
+            stale = await self._stale(c_lat, c_lon)
+            if stale is not None:
+                return stale
             raise DriveBusyError(str(exc)) from exc
         except OverpassError as exc:
             # Sin coordenadas en el registro: dirían dónde está alguien.
             log.warning("Overpass no disponible", extra={"error": str(exc)})
+            stale = await self._stale(c_lat, c_lon)
+            if stale is not None:
+                return stale
             raise DriveUnavailableError(str(exc)) from exc
         return result
+
+    async def _stale(self, lat: float, lon: float) -> DriveArea | None:
+        """La copia vieja de la casilla, si existe: mejor algo antiguo que un error."""
+        try:
+            stale = await self._cache.get_stale(lat, lon)
+        except CacheError:
+            return None  # si Redis también falla, se da el error original
+        if stale is not None:
+            log.info("sirviendo el modo coche de la caché obsoleta")
+        return stale
 
     async def _build(self, lat: float, lon: float) -> DriveArea:
         half = CELL_DEGREES * (self._settings.ring + 0.5)

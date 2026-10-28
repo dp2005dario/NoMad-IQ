@@ -7,7 +7,9 @@ se pregunta una vez al día como mucho (ver service.py).
 
 from __future__ import annotations
 
+import asyncio
 import re
+from collections.abc import Sequence
 from typing import Any
 
 import httpx
@@ -23,12 +25,80 @@ MAX_RESULTS = 80
 _CURRENCY = re.compile(r"^currency:([A-Z]{3})$")
 
 
+# Respuestas "pasajeras": el servidor está saturado o caído un rato. Con estas
+# probamos el siguiente espejo; con otras (400, 403...) el fallo es nuestro y
+# otro servidor diría lo mismo.
+RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
+# Pausa corta antes de repetir un servidor que falló rápido.
+RETRY_PAUSE_SECONDS = 0.5
+
+
 class OverpassBusyError(Exception):
     """Hemos llegado a nuestro límite o Overpass pide que esperemos."""
 
 
 class OverpassError(Exception):
     """Overpass no responde o responde algo raro."""
+
+
+def as_urls(url: str | Sequence[str]) -> tuple[str, ...]:
+    """Acepta una dirección o una lista de espejos (en orden de preferencia)."""
+    return (url,) if isinstance(url, str) else tuple(url)
+
+
+async def post_query(
+    http: httpx.AsyncClient,
+    urls: Sequence[str],
+    query: str,
+    *,
+    retry_pause: float = RETRY_PAUSE_SECONDS,
+) -> httpx.Response:
+    """Manda la consulta a los servidores Overpass, en orden, hasta que uno responda.
+
+    Funciona en dos pasadas:
+
+    1. Se prueba cada servidor una vez. Si uno falla de forma pasajera (error
+       de red, 429, 5xx) se pasa al siguiente.
+    2. Los que fallaron *rápido* se repiten una vez tras una pausa corta. Los
+       que se agotaron por tiempo (timeout) NO se repiten: ya habrían gastado
+       otros 25 s y la app está esperando.
+
+    Si todos fallan devuelve la última respuesta HTTP (para que quien llama
+    decida si era "ocupado" o "error"), o lanza ``OverpassError`` si lo
+    último fue un fallo de red.
+    """
+    pending = list(urls)
+    last_resp: httpx.Response | None = None
+    last_error: str | None = None
+    for round_number in range(2):
+        retry: list[str] = []
+        for url in pending:
+            try:
+                resp = await http.post(
+                    url,
+                    data={"data": query},
+                    headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
+                )
+            except httpx.TimeoutException as exc:
+                # Solo el tipo de error: el mensaje podría llevar la zona.
+                last_resp, last_error = None, f"{type(exc).__name__} al llamar a Overpass"
+                continue  # lento: no se repite
+            except httpx.HTTPError as exc:
+                last_resp, last_error = None, f"{type(exc).__name__} al llamar a Overpass"
+                retry.append(url)
+                continue
+            if resp.status_code not in RETRYABLE_STATUS:
+                return resp  # éxito (o un error nuestro que no se arregla cambiando de servidor)
+            last_resp, last_error = resp, None
+            retry.append(url)
+        if round_number == 0 and retry:
+            await asyncio.sleep(retry_pause)
+        pending = retry
+        if not pending:
+            break
+    if last_resp is not None:
+        return last_resp
+    raise OverpassError(last_error or "ningún servidor Overpass configurado")
 
 
 def build_query(south: float, west: float, north: float, east: float) -> str:
@@ -103,27 +173,18 @@ class OverpassClient:
         http: httpx.AsyncClient,
         *,
         limiter: RateLimiter,
-        url: str = DEFAULT_URL,
+        url: str | Sequence[str] = DEFAULT_URL,
         max_wait_seconds: float = 2.0,
     ) -> None:
         self._http = http
         self._limiter = limiter
-        self._url = url
+        self._urls = as_urls(url)
         self._max_wait = max_wait_seconds
 
     async def atms_in(self, south: float, west: float, north: float, east: float) -> list[Atm]:
         """Los cajeros dentro de un rectángulo de unos pocos kilómetros."""
         await self._limiter.acquire(self._max_wait)
-        try:
-            resp = await self._http.post(
-                self._url,
-                data={"data": build_query(south, west, north, east)},
-                headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
-            )
-        except httpx.HTTPError as exc:
-            # Solo el tipo de error: el mensaje podría llevar la consulta
-            # (y la consulta lleva la zona).
-            raise OverpassError(f"{type(exc).__name__} al llamar a Overpass") from exc
+        resp = await post_query(self._http, self._urls, build_query(south, west, north, east))
         if resp.status_code in (429, 503, 504):
             raise OverpassBusyError(f"Overpass respondió {resp.status_code}")
         if resp.status_code != 200:
