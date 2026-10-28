@@ -811,10 +811,7 @@ class _Number extends StatelessWidget {
     decoration: InputDecoration(
       labelText: label,
       border: const OutlineInputBorder(),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 14,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     ),
     onChanged: (String v) {
       final double? x = double.tryParse(v.replaceAll(',', '.'));
