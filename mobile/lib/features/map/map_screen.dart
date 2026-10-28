@@ -85,7 +85,7 @@ class _MapScreenState extends State<MapScreen> {
     if (_model == null || status != _modelFor) _rebuildModel(status);
     // Al volver a la pestaña (las pestañas ocultas tienen los "tickers"
     // apagados) repasamos lo que se vio mientras estaba oculta.
-    final bool visible = TickerMode.of(context);
+    final bool visible = TickerMode.valuesOf(context).enabled;
     if (visible && !_wasVisible) {
       _sentZones = -1;
       _sentMe = null;
