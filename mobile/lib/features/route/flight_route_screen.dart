@@ -20,6 +20,7 @@ import '../flights/booking.dart';
 import '../flights/flight_format.dart';
 import 'city_sheet.dart';
 import 'flight3d.dart';
+import 'flight_hud.dart';
 import 'geo.dart';
 import 'places_api.dart';
 import 'route_painter.dart';
@@ -436,22 +437,14 @@ class _FlightRouteScreenState extends State<FlightRouteScreen>
         final Duration total = estimatedFlightTime(_km);
         return _Panel(
           children: <Widget>[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: done,
-                minHeight: 10,
-                color: NomadColors.flights,
-                backgroundColor: NomadColors.outline,
-              ),
+            FlightHud(
+              fromCode: origin.iata,
+              toCode: dest.iata,
+              progress: done,
+              traveled: t.routeTraveled(km.format((_km * done).round())),
+              remaining: t.routeRemaining(_durationText(t, total * (1 - done))),
             ),
-            const SizedBox(height: 8),
-            Text(
-              '${t.routeTraveled(km.format((_km * done).round()))} · '
-              '${t.routeRemaining(_durationText(t, total * (1 - done)))}',
-              style: _muted,
-            ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             OutlinedButton.icon(
               onPressed: _land,
               icon: const Icon(Icons.flight_land_rounded),
