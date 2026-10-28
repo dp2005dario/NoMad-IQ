@@ -17,3 +17,18 @@ table { width: 100%; border-collapse: collapse; font-size: .95rem; }
 th, td { text-align: left; vertical-align: top; padding: 8px; border-bottom: 1px solid var(--borde); }
 .tabla { overflow-x: auto; }
 .caja { border: 1px solid var(--borde); border-radius: 12px; padding: 12px 16px; margin: 16px 0; }
+
+/* ---- Portada (index.html / en.html) ---- */
+.hero { text-align: center; padding: 40px 0 8px; }
+.hero img.logo { width: 112px; height: auto; border-radius: 24px; }
+.hero h1 { font-size: 2.4rem; letter-spacing: .12em; margin: 16px 0 4px; }
+.hero p.lema { font-size: 1.15rem; color: var(--suave); margin: 0 auto; max-width: 34rem; }
+.aviso { border: 1px solid var(--borde); border-left: 4px solid var(--acento); border-radius: 8px; padding: 10px 14px; margin: 24px 0; }
+.rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; padding: 0; list-style: none; }
+.rejilla li { border: 1px solid var(--borde); border-radius: 12px; padding: 12px 14px; }
+.rejilla strong { display: block; margin-bottom: 4px; }
+.fotos { display: flex; gap: 12px; overflow-x: auto; padding: 4px 0 12px; scroll-snap-type: x mandatory; }
+.fotos figure { margin: 0; flex: 0 0 auto; width: 210px; scroll-snap-align: start; }
+.fotos img { width: 100%; height: auto; border-radius: 16px; border: 1px solid var(--borde); display: block; }
+.fotos figcaption, .pie { font-size: .85rem; color: var(--suave); }
+.pie { margin-top: 40px; border-top: 1px solid var(--borde); padding-top: 16px; }
