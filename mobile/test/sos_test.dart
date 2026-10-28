@@ -206,5 +206,7 @@ void main() {
     final MedicalCard saved = MedicalCard.load(prefs);
     expect(saved.blood, 'AB-');
     expect(saved.allergies, 'penicilina');
+    // Sin GPS, la búsqueda de ubicación caduca sola: se deja correr el reloj.
+    await tester.pump(const Duration(seconds: 16));
   });
 }

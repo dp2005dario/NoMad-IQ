@@ -347,7 +347,9 @@ class _SosScreenState extends State<SosScreen> with TickerProviderStateMixin {
       children: <Widget>[
         const Positioned.fill(child: ColoredBox(color: NomadColors.background)),
         Positioned.fill(
-          child: IgnorePointer(child: _AlarmGlow(hold: _hold, pulse: _pulse)),
+          child: IgnorePointer(
+            child: _AlarmGlow(hold: _hold, pulse: _pulse),
+          ),
         ),
         page,
       ],
