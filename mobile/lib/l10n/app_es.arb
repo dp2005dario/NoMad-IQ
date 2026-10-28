@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "Clima",
   "mapWeatherSun": "Sol",
   "mapWeatherClouds": "Nubes",
-  "mapWeatherRain": "Lluvia"
+  "mapWeatherRain": "Lluvia",
+  "nearbyNoSignal": "Todavía no consigo tu posición GPS. Si estás en interior, acércate a una ventana o sal a la calle y vuelve a intentarlo."
 }

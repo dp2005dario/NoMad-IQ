@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "สภาพอากาศ",
   "mapWeatherSun": "แดด",
   "mapWeatherClouds": "เมฆ",
-  "mapWeatherRain": "ฝน"
+  "mapWeatherRain": "ฝน",
+  "nearbyNoSignal": "ยังหาตำแหน่ง GPS ของคุณไม่ได้ ถ้าอยู่ในอาคาร ให้เข้าใกล้หน้าต่างหรือออกไปข้างนอก แล้วลองอีกครั้ง"
 }

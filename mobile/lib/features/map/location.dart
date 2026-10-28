@@ -27,6 +27,12 @@ abstract interface class LocationSource {
   /// sigue usando tu ubicación.
   Stream<PositionFix> watch({TrackingNotice? background});
 
+  /// Una posición ya, sin quedarse escuchando. Primero mira la última que
+  /// el móvil recuerda (rápido y funciona en interior) y, si no hay,
+  /// pregunta al GPS con paciencia. Devuelve null si no hay señal todavía.
+  /// Puede lanzar una excepción: quien la llame debe capturarla.
+  Future<PositionFix?> current();
+
   /// Abre los Ajustes del móvil (para quien eligió "no volver a preguntar").
   Future<void> openSettings();
 }
@@ -75,6 +81,31 @@ class DeviceLocationSource implements LocationSource {
           recordedAt: p.timestamp,
         ),
       );
+
+  @override
+  Future<PositionFix?> current() async {
+    Position? p;
+    // La última posición conocida no existe en todas las plataformas (p. ej.
+    // la web): si falla, seguimos con la petición normal.
+    try {
+      p = await Geolocator.getLastKnownPosition();
+    } on Object {
+      p = null;
+    }
+    // Sin posición guardada: se pide una nueva con precisión media (la
+    // "alta" en interior casi nunca llega) y hasta 30 s de espera.
+    p ??= await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.medium,
+        timeLimit: Duration(seconds: 30),
+      ),
+    );
+    return PositionFix(
+      point: GeoPoint(p.latitude, p.longitude),
+      accuracyM: p.accuracy,
+      recordedAt: p.timestamp,
+    );
+  }
 
   // Solo avisa cuando te has movido 20 m: andando, una posición cada 15 s
   // más o menos. Más a menudo gastaría batería sin aportar nada.

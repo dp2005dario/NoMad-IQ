@@ -8951,5 +8951,9 @@
   "mapWeatherTitle": "Weather",
   "mapWeatherSun": "Sun",
   "mapWeatherClouds": "Clouds",
-  "mapWeatherRain": "Rain"
+  "mapWeatherRain": "Rain",
+  "nearbyNoSignal": "I can't get a GPS fix yet. If you're indoors, move near a window or outside and try again.",
+  "@nearbyNoSignal": {
+    "description": "Nearby: permission and GPS are fine but no position fix arrived yet."
+  }
 }

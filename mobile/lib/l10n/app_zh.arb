@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "天气",
   "mapWeatherSun": "晴",
   "mapWeatherClouds": "多云",
-  "mapWeatherRain": "雨"
+  "mapWeatherRain": "雨",
+  "nearbyNoSignal": "暂时还无法获取 GPS 位置。如果在室内，请靠近窗边或到室外，然后重试。"
 }

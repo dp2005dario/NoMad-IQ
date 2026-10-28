@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "আবহাওয়া",
   "mapWeatherSun": "রোদ",
   "mapWeatherClouds": "মেঘ",
-  "mapWeatherRain": "বৃষ্টি"
+  "mapWeatherRain": "বৃষ্টি",
+  "nearbyNoSignal": "এখনো আপনার জিপিএস অবস্থান পাচ্ছি না। ঘরের ভেতরে থাকলে জানালার কাছে বা বাইরে গিয়ে আবার চেষ্টা করুন।"
 }

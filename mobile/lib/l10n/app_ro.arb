@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "Vreme",
   "mapWeatherSun": "Soare",
   "mapWeatherClouds": "Nori",
-  "mapWeatherRain": "Ploaie"
+  "mapWeatherRain": "Ploaie",
+  "nearbyNoSignal": "Încă nu primesc poziția GPS. Dacă ești în interior, apropie-te de o fereastră sau ieși afară și încearcă din nou."
 }

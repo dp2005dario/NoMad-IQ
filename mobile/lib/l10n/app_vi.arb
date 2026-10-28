@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "Thời tiết",
   "mapWeatherSun": "Nắng",
   "mapWeatherClouds": "Mây",
-  "mapWeatherRain": "Mưa"
+  "mapWeatherRain": "Mưa",
+  "nearbyNoSignal": "Tôi chưa lấy được vị trí GPS của bạn. Nếu đang ở trong nhà, hãy lại gần cửa sổ hoặc ra ngoài rồi thử lại."
 }

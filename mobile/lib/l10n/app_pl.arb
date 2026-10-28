@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "Pogoda",
   "mapWeatherSun": "Słońce",
   "mapWeatherClouds": "Chmury",
-  "mapWeatherRain": "Deszcz"
+  "mapWeatherRain": "Deszcz",
+  "nearbyNoSignal": "Nie mam jeszcze pozycji GPS. W budynku podejdź do okna lub wyjdź na zewnątrz i spróbuj ponownie."
 }

@@ -18,15 +18,13 @@ class SolLocation extends FakeLocation {
     access = LocationAccess.granted;
   }
 
+  // Cerca de ti pide una posición con current(), no con watch().
   @override
-  Stream<PositionFix> watch({TrackingNotice? background}) =>
-      Stream<PositionFix>.value(
-        PositionFix(
-          point: sol,
-          accuracyM: 10,
-          recordedAt: DateTime.utc(2026, 10, 25),
-        ),
-      );
+  Future<PositionFix?> current() async => PositionFix(
+    point: sol,
+    accuracyM: 10,
+    recordedAt: DateTime.utc(2026, 10, 25),
+  );
 }
 
 NearbySpot sight(String id, double lat, double lon, String name) => NearbySpot(
@@ -153,5 +151,57 @@ void main() {
     expect(find.text('SALIDA Y LLEGADA'), findsNWidgets(2));
     await tester.tap(find.text('Abrir el paseo en el mapa'));
     expect(opened.last.queryParameters['waypoints'], '40.41550,-3.70740');
+  });
+
+  // Abre "Cerca de ti" con el GPS dado y espera a que termine de buscar.
+  Future<void> openNearby(WidgetTester tester, FakeLocation gps) async {
+    final session = newSession()..continueAsGuest();
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.nearby,
+      services: fakeServices(session, gateway: FakeGateway(), location: gps),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('con permiso pero sin señal avisa de que reintente', (
+    WidgetTester tester,
+  ) async {
+    final FakeLocation gps = FakeLocation()
+      ..access = LocationAccess.granted
+      ..currentFix = null;
+    await openNearby(tester, gps);
+    expect(
+      find.textContaining('Todavía no consigo tu posición'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Necesito tu ubicación'), findsNothing);
+    expect(find.text('Reintentar'), findsOneWidget);
+  });
+
+  testWidgets('un error del GPS no rompe la pantalla', (
+    WidgetTester tester,
+  ) async {
+    final FakeLocation gps = FakeLocation()
+      ..access = LocationAccess.granted
+      ..currentError = Exception('fallo del GPS');
+    await openNearby(tester, gps);
+    expect(
+      find.textContaining('Todavía no consigo tu posición'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('sin permiso sigue pidiendo activar la ubicación', (
+    WidgetTester tester,
+  ) async {
+    final FakeLocation gps = FakeLocation()
+      ..access = LocationAccess.serviceOff;
+    await openNearby(tester, gps);
+    expect(find.textContaining('Necesito tu ubicación'), findsOneWidget);
+    expect(gps.currents, 0);
   });
 }

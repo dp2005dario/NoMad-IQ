@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "Cuaca",
   "mapWeatherSun": "Cerah",
   "mapWeatherClouds": "Berawan",
-  "mapWeatherRain": "Hujan"
+  "mapWeatherRain": "Hujan",
+  "nearbyNoSignal": "Saya belum dapat lokasi GPS anda. Jika di dalam bangunan, dekati tingkap atau keluar dan cuba lagi."
 }

@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "موسم",
   "mapWeatherSun": "دھوپ",
   "mapWeatherClouds": "بادل",
-  "mapWeatherRain": "بارش"
+  "mapWeatherRain": "بارش",
+  "nearbyNoSignal": "ابھی آپ کی جی پی ایس لوکیشن نہیں مل رہی۔ اگر آپ اندر ہیں تو کھڑکی کے پاس یا باہر جا کر دوبارہ کوشش کریں۔"
 }

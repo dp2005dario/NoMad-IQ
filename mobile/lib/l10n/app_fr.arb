@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "Météo",
   "mapWeatherSun": "Soleil",
   "mapWeatherClouds": "Nuages",
-  "mapWeatherRain": "Pluie"
+  "mapWeatherRain": "Pluie",
+  "nearbyNoSignal": "Je n'ai pas encore de position GPS. En intérieur, approchez-vous d'une fenêtre ou sortez, puis réessayez."
 }

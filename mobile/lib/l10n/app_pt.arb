@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "Clima",
   "mapWeatherSun": "Sol",
   "mapWeatherClouds": "Nuvens",
-  "mapWeatherRain": "Chuva"
+  "mapWeatherRain": "Chuva",
+  "nearbyNoSignal": "Ainda não consigo a sua posição GPS. Se estiver em espaço fechado, aproxime-se de uma janela ou saia e tente de novo."
 }
