@@ -1,0 +1,34 @@
+# Override para usar FCM REAL (Google) en el notifier, sin tocar el modo de
+# desarrollo. Uso (desde infrastructure/):
+#   docker compose -f docker-compose.yml -f docker-compose.fcm.yml --profile apps up -d
+# Guía: docs/guia-fcm-real.md
+#
+# - La clave JSON de la cuenta de servicio vive FUERA del repo y se monta de
+#   solo lectura (FCM_CREDENTIALS_HOST_PATH, obligatoria).
+# - Se quita FCM_INSECURE_DEV (el notifier prohíbe mezclarlo con credenciales)
+#   y la dependencia de fcm-fake, que pasa a un perfil que nadie activa.
+# - Requiere Docker Compose >= 2.24 (etiqueta !override).
+services:
+  notifier:
+    environment:
+      FCM_PROJECT_ID: ${FCM_PROJECT_ID:?Define FCM_PROJECT_ID en .env (id del proyecto de Firebase)}
+      FCM_ENDPOINT: ${FCM_ENDPOINT:-https://fcm.googleapis.com}
+      FCM_CREDENTIALS_FILE: /run/secrets/fcm-service-account.json
+      FCM_INSECURE_DEV: "false"
+    volumes:
+      - type: bind
+        source: ${FCM_CREDENTIALS_HOST_PATH:?Define FCM_CREDENTIALS_HOST_PATH en .env (ruta del JSON, fuera del repo)}
+        target: /run/secrets/fcm-service-account.json
+        read_only: true
+    # Sin fcm-fake: solo lo que el notifier necesita de verdad.
+    depends_on: !override
+      kafka-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # El FCM falso no arranca con este override (perfil que nadie activa).
+  fcm-fake:
+    profiles: !override ["fcm-fake-dev"]

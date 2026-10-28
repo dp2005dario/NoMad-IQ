@@ -435,3 +435,13 @@ FodyWeavers.xsd
 
 # Java / Maven: carpeta de compilación del auth-gateway (se regenera con ./mvnw)
 target/
+
+# Credenciales: NUNCA se suben (claves de cuentas de servicio de Google/Firebase)
+*service-account*.json
+*serviceAccount*.json
+*-firebase-adminsdk-*.json
+firebase-adminsdk*.json
+google-services.json.bak
+fcm-credentials*.json
+credentials/
+secrets/

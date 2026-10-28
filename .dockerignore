@@ -1,0 +1,14 @@
+# Que ninguna credencial entre jamás en el contexto de construcción de Docker
+.git
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*service-account*.json
+*serviceAccount*.json
+*-firebase-adminsdk-*.json
+firebase-adminsdk*.json
+fcm-credentials*.json
+credentials/
+secrets/
