@@ -88,6 +88,34 @@ Future<void> settleMap(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('cambiar de pestaña y volver al mapa no lo reinicia', (
+    WidgetTester tester,
+  ) async {
+    final FakeGateway g = backend();
+    final SessionController s = await signedInSession(g);
+    final FakeMap map = FakeMap();
+    await pumpApp(
+      tester,
+      locale: 'es',
+      initialLocation: Routes.map,
+      session: s,
+      services: fakeServices(s, gateway: g, map: map),
+    );
+    await settleMap(tester);
+    final int before = map.calls.where((String c) => c == 'zones').length;
+
+    await tester.tap(find.byIcon(Icons.home_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.map_rounded));
+    await settleMap(tester);
+
+    // El mismo mapa sigue ahí (una sola vez) y solo se repasó el dibujo.
+    expect(find.byKey(const Key('fake-map')), findsOneWidget);
+    final int after = map.calls.where((String c) => c == 'zones').length;
+    expect(after - before, lessThanOrEqualTo(1));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('zonas en el mapa, tocar una y escuchar su audioguía', (
     WidgetTester tester,
   ) async {
