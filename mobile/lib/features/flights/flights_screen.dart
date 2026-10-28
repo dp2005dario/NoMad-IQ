@@ -15,6 +15,8 @@ import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../home/feature.dart';
+import '../route/world_data.dart';
+import 'airport_search.dart';
 import 'fares_api.dart';
 import 'flight_format.dart';
 import 'watch_sheet.dart';
@@ -525,7 +527,8 @@ class _PlanShortcuts extends StatelessWidget {
   }
 }
 
-/// La hoja para elegir aeropuerto de salida (código IATA de 3 letras).
+/// La hoja para elegir aeropuerto: se escribe el código, la ciudad o el
+/// nombre ("MAD", "Málaga") y salen los que encajan.
 Future<String?> showOriginSheet(
   BuildContext context, {
   required String current,
@@ -549,21 +552,44 @@ class _OriginSheet extends StatefulWidget {
 }
 
 class _OriginSheetState extends State<_OriginSheet> {
-  late final TextEditingController _code = TextEditingController(
+  late final AppServices _services = ServicesScope.of(context);
+  late final TextEditingController _query = TextEditingController(
     text: widget.current,
   );
+  // Null hasta que se cargue la lista que lleva la app dentro.
+  Airports? _airports;
   bool _invalid = false;
 
   static final RegExp _iata = RegExp(r'^[A-Z]{3}$');
 
   @override
+  void initState() {
+    super.initState();
+    // El ServicesScope no se puede leer dentro de initState: se espera al
+    // primer fotograma.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => unawaited(_loadAirports()),
+    );
+  }
+
+  Future<void> _loadAirports() async {
+    try {
+      final Airports a = await _services.loadAirports();
+      if (mounted) setState(() => _airports = a);
+    } on Object {
+      // Sin lista, se puede seguir escribiendo el código de 3 letras.
+    }
+  }
+
+  @override
   void dispose() {
-    _code.dispose();
+    _query.dispose();
     super.dispose();
   }
 
+  /// Guardar lo escrito: sirve si son 3 letras (un código); si no, se avisa.
   void _save() {
-    final String code = _code.text.trim().toUpperCase();
+    final String code = _query.text.trim().toUpperCase();
     if (!_iata.hasMatch(code)) {
       setState(() => _invalid = true);
       return;
@@ -574,7 +600,13 @@ class _OriginSheetState extends State<_OriginSheet> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
+    final List<Airport> found = searchAirports(
+      _airports?.all ?? const <Airport>[],
+      _query.text,
+    );
+    final bool searched = normalizeSearch(_query.text).length >= 2;
     return Padding(
+      // Sube con el teclado para que no tape el campo ni los resultados.
       padding: EdgeInsets.fromLTRB(
         20,
         0,
@@ -591,15 +623,41 @@ class _OriginSheetState extends State<_OriginSheet> {
           ),
           const SizedBox(height: 16),
           TextField(
-            controller: _code,
+            controller: _query,
             autofocus: true,
-            maxLength: 3,
-            textCapitalization: TextCapitalization.characters,
+            textInputAction: TextInputAction.search,
             decoration: InputDecoration(
               labelText: t.flightsOriginHint,
+              prefixIcon: const Icon(Icons.search_rounded),
               errorText: _invalid ? t.flightsOriginInvalid : null,
             ),
-            onSubmitted: (_) => _save(),
+            onChanged: (_) => setState(() => _invalid = false),
+            // Intro: el primer resultado, o lo escrito si son 3 letras.
+            onSubmitted: (_) => found.isEmpty
+                ? _save()
+                : Navigator.pop(context, found.first.iata),
+          ),
+          const SizedBox(height: 8),
+          if (searched && found.isEmpty && _airports != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(t.flightsOriginNone),
+            ),
+          // Los resultados caben en pantalla y se pueden desplazar.
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children: <Widget>[
+                for (final Airport a in found)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.local_airport_rounded),
+                    title: Text('${a.city} (${a.iata})'),
+                    subtitle: Text(a.country),
+                    onTap: () => Navigator.pop(context, a.iata),
+                  ),
+              ],
+            ),
           ),
           const SizedBox(height: 8),
           FilledButton(onPressed: _save, child: Text(t.flightsOriginSave)),

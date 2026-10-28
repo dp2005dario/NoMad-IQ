@@ -232,7 +232,10 @@ class _TransportScreenState extends State<TransportScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(t.transportTitle)),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
+        // Al arrastrar la lista se esconde el teclado, y el hueco de abajo
+        // deja subir los campos de la calculadora por encima de él.
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 120),
         children: <Widget>[
           Text(
             city == null
@@ -485,11 +488,14 @@ class _TransportScreenState extends State<TransportScreen> {
         onMinus: _rides > 1 ? () => setState(() => _rides--) : null,
         onPlus: _rides < 12 ? () => setState(() => _rides++) : null,
       ),
+      const SizedBox(height: 8),
       _Number(
         label: t.transportSingleField,
         decimal: true,
         onChanged: (double? v) => setState(() => _single = v),
       ),
+      // Separación entre campos: antes salían pegados.
+      const SizedBox(height: 16),
       Row(
         children: <Widget>[
           Expanded(
@@ -513,7 +519,7 @@ class _TransportScreenState extends State<TransportScreen> {
           ),
         ],
       ),
-      const SizedBox(height: 8),
+      const SizedBox(height: 16),
       _Flyra(
         text: math == null
             ? t.transportCalcHint
@@ -800,7 +806,16 @@ class _Number extends StatelessWidget {
         RegExp(decimal ? r'[0-9.,]' : r'[0-9]'),
       ),
     ],
-    decoration: InputDecoration(labelText: label),
+    // Margen extra al enfocar: el campo sube y no lo tapa el teclado.
+    scrollPadding: const EdgeInsets.fromLTRB(20, 20, 20, 160),
+    decoration: InputDecoration(
+      labelText: label,
+      border: const OutlineInputBorder(),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 14,
+        vertical: 14,
+      ),
+    ),
     onChanged: (String v) {
       final double? x = double.tryParse(v.replaceAll(',', '.'));
       onChanged(x != null && x > 0 && x < 1e7 ? x : null);
