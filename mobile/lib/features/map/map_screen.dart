@@ -50,6 +50,8 @@ class _MapScreenState extends State<MapScreen> {
   MapSurfaceController? _map;
   Timer? _idleDebounce;
   Timer? _lookTimer;
+  // ¿Se está viendo la pestaña del mapa? (ver didChangeDependencies)
+  bool _wasVisible = true;
 
   MapLook _chosenLook = MapLook.auto;
   bool _tilted = true;
@@ -81,6 +83,16 @@ class _MapScreenState extends State<MapScreen> {
     // posiciones (que son solo para cuentas).
     final SessionStatus status = SessionScope.of(context).status;
     if (_model == null || status != _modelFor) _rebuildModel(status);
+    // Al volver a la pestaña (las pestañas ocultas tienen los "tickers"
+    // apagados) repasamos lo que se vio mientras estaba oculta.
+    final bool visible = TickerMode.of(context);
+    if (visible && !_wasVisible) {
+      _sentZones = -1;
+      _sentMe = null;
+      _syncMap();
+      _scheduleIdle();
+    }
+    _wasVisible = visible;
   }
 
   void _rebuildModel(SessionStatus status) {
@@ -163,6 +175,8 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _focus(GeoPoint target, double? zoom) {
+    // Con la pestaña oculta no movemos la cámara: saltaría al volver.
+    if (!_wasVisible) return;
     unawaited(_map?.flyTo(target, zoom: zoom));
   }
 

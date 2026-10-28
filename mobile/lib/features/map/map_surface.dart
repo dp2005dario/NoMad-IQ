@@ -78,6 +78,12 @@ class _MapLibreSurfaceState extends State<MapLibreSurface> {
   // a texto en cada redibujado sería trabajo tirado.
   Map<String, Object?>? _styleFor;
   String _styleJson = '';
+  // Dónde estaba la cámara la última vez que se quedó quieta. Si Android
+  // destruye y recrea el mapa al volver a la pestaña, empezamos desde aquí
+  // y no desde el centro inicial (que parecería que "se reinicia").
+  CameraPosition? _lastCamera;
+  // Cuenta cada carga de estilo: si llegan dos seguidas, solo vale la última.
+  int _loads = 0;
 
   String get _style {
     if (!identical(_styleFor, widget.spec.style)) {
@@ -88,18 +94,35 @@ class _MapLibreSurfaceState extends State<MapLibreSurface> {
   }
 
   @override
+  void dispose() {
+    // Invalida cualquier carga a medias y suelta el controlador viejo.
+    _loads++;
+    _controller = null;
+    super.dispose();
+  }
+
+  CameraPosition _firstCamera(MapSurfaceSpec spec) => CameraPosition(
+    target: LatLng(spec.initialCenter.lat, spec.initialCenter.lon),
+    zoom: spec.initialZoom,
+  );
+
+  void _rememberCamera() {
+    final CameraPosition? now = _controller?.cameraPosition;
+    if (now != null) _lastCamera = now;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final MapSurfaceSpec spec = widget.spec;
+    final CameraPosition start = _lastCamera ?? _firstCamera(spec);
     return MapLibreMap(
       styleString: _style,
-      initialCameraPosition: CameraPosition(
-        target: LatLng(spec.initialCenter.lat, spec.initialCenter.lon),
-        zoom: spec.initialZoom,
-      ),
+      initialCameraPosition: start,
       onMapCreated: (MapLibreMapController c) => _controller = c,
       onStyleLoadedCallback: () async {
         final MapLibreMapController? c = _controller;
         if (c == null) return;
+        final int load = ++_loads;
         // Primero las texturas (adoquín, fachadas): el estilo las nombra
         // pero las pinta la app. Si algo falla, el mapa sigue sin ellas.
         try {
@@ -112,9 +135,15 @@ class _MapLibreSurfaceState extends State<MapLibreSurface> {
         } on Exception {
           // Sin texturas: calles y edificios se ven igual, solo más lisos.
         }
-        if (mounted) spec.onReady(_MapLibreController(c));
+        // Si llegó otra carga mientras tanto (o se cerró el mapa), sobra.
+        if (mounted && load == _loads && identical(c, _controller)) {
+          spec.onReady(_MapLibreController(c));
+        }
       },
-      onCameraIdle: spec.onIdle,
+      onCameraIdle: () {
+        _rememberCamera();
+        spec.onIdle();
+      },
       onMapClick: (_, LatLng at) =>
           spec.onTap(GeoPoint(at.latitude, at.longitude)),
       // La brújula aparece al girar el mapa; al tocarla vuelve al norte.
