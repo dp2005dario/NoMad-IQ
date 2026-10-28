@@ -442,9 +442,7 @@ class _FlightRouteScreenState extends State<FlightRouteScreen>
               toCode: dest.iata,
               progress: done,
               traveled: t.routeTraveled(km.format((_km * done).round())),
-              remaining: t.routeRemaining(
-                _durationText(t, total * (1 - done)),
-              ),
+              remaining: t.routeRemaining(_durationText(t, total * (1 - done))),
             ),
             const SizedBox(height: 10),
             OutlinedButton.icon(
