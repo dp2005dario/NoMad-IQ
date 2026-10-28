@@ -1912,5 +1912,11 @@
   "mapWeatherSun": "Cerah",
   "mapWeatherClouds": "Berawan",
   "mapWeatherRain": "Hujan",
-  "nearbyNoSignal": "Saya belum dapat lokasi GPS anda. Jika di dalam bangunan, dekati tingkap atau keluar dan cuba lagi."
+  "nearbyNoSignal": "Saya belum dapat lokasi GPS anda. Jika di dalam bangunan, dekati tingkap atau keluar dan cuba lagi.",
+  "cameraTakePhoto": "Ambil gambar",
+  "cameraIdentifyMode": "Kenali monumen",
+  "cameraIdentifyOn": "Mod kenal pasti aktif. Halakan ke sebuah monumen.",
+  "cameraNormalHint": "Ketik butang hijau untuk mengambil gambar",
+  "cameraSaveMemory": "Simpan ke Kenangan",
+  "cameraMemorySaved": "Disimpan dalam Kenangan"
 }

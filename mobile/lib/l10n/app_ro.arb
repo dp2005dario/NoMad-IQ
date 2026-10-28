@@ -1912,5 +1912,11 @@
   "mapWeatherSun": "Soare",
   "mapWeatherClouds": "Nori",
   "mapWeatherRain": "Ploaie",
-  "nearbyNoSignal": "Încă nu primesc poziția GPS. Dacă ești în interior, apropie-te de o fereastră sau ieși afară și încearcă din nou."
+  "nearbyNoSignal": "Încă nu primesc poziția GPS. Dacă ești în interior, apropie-te de o fereastră sau ieși afară și încearcă din nou.",
+  "cameraTakePhoto": "Fă o poză",
+  "cameraIdentifyMode": "Identifică monumentul",
+  "cameraIdentifyOn": "Modul de identificare e activ. Îndreaptă camera spre un monument.",
+  "cameraNormalHint": "Atinge butonul verde pentru a face o poză",
+  "cameraSaveMemory": "Salvează în Amintiri",
+  "cameraMemorySaved": "Salvat în Amintiri"
 }

@@ -1912,5 +1912,11 @@
   "mapWeatherSun": "แดด",
   "mapWeatherClouds": "เมฆ",
   "mapWeatherRain": "ฝน",
-  "nearbyNoSignal": "ยังหาตำแหน่ง GPS ของคุณไม่ได้ ถ้าอยู่ในอาคาร ให้เข้าใกล้หน้าต่างหรือออกไปข้างนอก แล้วลองอีกครั้ง"
+  "nearbyNoSignal": "ยังหาตำแหน่ง GPS ของคุณไม่ได้ ถ้าอยู่ในอาคาร ให้เข้าใกล้หน้าต่างหรือออกไปข้างนอก แล้วลองอีกครั้ง",
+  "cameraTakePhoto": "ถ่ายภาพ",
+  "cameraIdentifyMode": "ระบุสถานที่สำคัญ",
+  "cameraIdentifyOn": "เปิดโหมดระบุแล้ว หันกล้องไปที่สถานที่สำคัญ",
+  "cameraNormalHint": "แตะปุ่มสีเขียวเพื่อถ่ายภาพ",
+  "cameraSaveMemory": "บันทึกลงความทรงจำ",
+  "cameraMemorySaved": "บันทึกลงความทรงจำแล้ว"
 }

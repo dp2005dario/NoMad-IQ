@@ -24,11 +24,12 @@ import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../map/geo.dart';
 import '../map/location.dart';
+import '../memories/memories.dart';
 import 'camera_device.dart';
 import 'landmarks_api.dart';
 import 'stamps.dart';
 
-enum _Phase { starting, noAccess, noCamera, aiming, working, result }
+enum _Phase { starting, noAccess, noCamera, aiming, photo, working, result }
 
 enum _Problem { outOfScans, busy, network, noLocation, off }
 
@@ -54,6 +55,10 @@ class _CameraScreenState extends State<CameraScreen>
   Recognition? _result;
   Landmark? _shown;
   bool _speaking = false;
+  // Modo identificar apagado = cámara normal; la foto hecha y su Recuerdo.
+  bool _identify = false;
+  Uint8List? _photo;
+  Memory? _saved;
 
   // La cámara solo está encendida mientras ves esta pestaña y la app está
   // delante. Las pestañas siguen "vivas" al cambiar (para no perder lo que
@@ -249,15 +254,95 @@ class _CameraScreenState extends State<CameraScreen>
     }
   }
 
-  Future<void> _again() async {
-    await _services.speaker.stop();
+  /// Activa o apaga el modo identificar. Al activarlo se mira UNA vez qué
+  /// monumento hay delante; al apagarlo la cámara vuelve a ser normal.
+  Future<void> _toggleIdentify() async {
+    if (_identify) {
+      await _services.speaker.stop();
+      if (!mounted) return;
+      setState(() {
+        _identify = false;
+        _phase = _Phase.aiming;
+        _result = null;
+        _shown = null;
+        _speaking = false;
+        _problem = null;
+      });
+      return;
+    }
+    setState(() => _identify = true);
+    await _recognize();
+  }
+
+  /// Hace la foto (sin buscar nada) y enseña las opciones.
+  Future<void> _shoot() async {
+    final CameraDevice? camera = _camera;
+    if (camera == null || _phase != _Phase.aiming) return;
+    try {
+      final Uint8List bytes = await camera.takePhoto();
+      if (!mounted) return;
+      setState(() {
+        _photo = bytes;
+        _saved = null;
+        _phase = _Phase.photo;
+      });
+    } on Object {
+      _toast(AppLocalizations.of(context).memFailed);
+    }
+  }
+
+  void _toast(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  /// Guarda la foto en Recuerdos (una sola vez). true = ya está guardada.
+  Future<bool> _saveMemory() async {
+    if (_saved != null) return true;
+    final Uint8List? bytes = _photo;
+    if (bytes == null) return false;
+    final AppLocalizations t = AppLocalizations.of(context);
+    if (_services.memories.full) {
+      _toast(t.memFull);
+      return false;
+    }
+    try {
+      final DateTime now = DateTime.now();
+      final String name = 'm_${now.microsecondsSinceEpoch}.jpg';
+      await _services.memoryFiles.write(name, bytes);
+      final Memory m = Memory(file: name, kind: MemoryKind.photo, at: now);
+      await _services.memories.add(m);
+      if (!mounted) return true;
+      setState(() => _saved = m);
+      _toast(t.cameraMemorySaved);
+      return true;
+    } on Object {
+      _toast(t.memFailed);
+      return false;
+    }
+  }
+
+  /// Compartir abre el menú del móvil (Instagram, WhatsApp...). Hace falta un
+  /// archivo, así que la foto también queda en Recuerdos.
+  Future<void> _sharePhoto() async {
+    if (!await _saveMemory()) return;
+    final Memory? m = _saved;
+    if (m == null) return;
+    await _services.share(<String>[await _services.memoryFiles.pathOf(m.file)]);
+  }
+
+  /// Vuelve a la cámara (la foto ya guardada se queda en Recuerdos).
+  void _backToCamera() {
     setState(() {
+      _photo = null;
+      _saved = null;
       _phase = _Phase.aiming;
-      _result = null;
-      _shown = null;
-      _speaking = false;
-      _problem = null;
     });
+    // Si la pestaña apagó la cámara mientras mirabas la foto, se enciende.
+    if (_camera == null && _running) {
+      setState(() => _phase = _Phase.starting);
+      unawaited(_start());
+    }
   }
 
   Future<void> _listen(Landmark l) async {
@@ -327,16 +412,25 @@ class _CameraScreenState extends State<CameraScreen>
           icon: Icons.no_photography_rounded,
           text: t.cameraNoCamera,
         );
+      case _Phase.photo:
+        return _PhotoReview(
+          photo: _photo!,
+          saved: _saved != null,
+          onSave: () => unawaited(_saveMemory()),
+          onShare: () => unawaited(_sharePhoto()),
+          onRetake: _backToCamera,
+        );
       case _Phase.aiming:
       case _Phase.working:
       case _Phase.result:
         break;
     }
     final Recognition? result = _phase == _Phase.result ? _result : null;
-    final Landmark? shown = _shown;
+    final Landmark? shown = _phase == _Phase.result ? _shown : null;
     final bool recognized =
         result?.status == RecognitionStatus.recognized &&
         shown?.qid == result?.landmark?.qid;
+    final bool working = _phase == _Phase.working;
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -346,33 +440,50 @@ class _CameraScreenState extends State<CameraScreen>
           SafeArea(
             child: Stack(
               children: <Widget>[
-                // Arriba: el estado y "escanear otra vez".
+                // Arriba: el botón de identificar y, solo con ese modo
+                // activo, una etiqueta discreta y "escanear otra vez".
                 PositionedDirectional(
                   start: 16,
                   end: 16,
                   top: 12,
                   child: Row(
                     children: <Widget>[
-                      const Spacer(),
-                      _StatusPill(
-                        text: switch (_phase) {
-                          _Phase.result when shown != null =>
-                            recognized ? t.cameraRecognized : t.cameraMaybe,
-                          _Phase.result => t.cameraNoneShort,
-                          _ => t.cameraSearching,
-                        },
-                      ),
-                      const Spacer(),
                       _RoundButton(
-                        icon: Icons.refresh_rounded,
-                        tooltip: t.cameraRescan,
-                        onTap: _phase == _Phase.result ? _again : null,
+                        icon: Icons.center_focus_strong_rounded,
+                        tooltip: t.cameraIdentifyMode,
+                        selected: _identify,
+                        onTap: working ? null : _toggleIdentify,
                       ),
+                      Expanded(
+                        child: Center(
+                          child: _identify
+                              ? _StatusPill(
+                                  text: switch (_phase) {
+                                    _Phase.result when shown != null =>
+                                      recognized
+                                          ? t.cameraRecognized
+                                          : t.cameraMaybe,
+                                    _Phase.result => t.cameraNoneShort,
+                                    _Phase.working => t.cameraSearching,
+                                    _ => t.cameraIdentifyOn,
+                                  },
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ),
+                      if (_identify)
+                        _RoundButton(
+                          icon: Icons.refresh_rounded,
+                          tooltip: t.cameraRescan,
+                          onTap: working || _problem == _Problem.outOfScans
+                              ? null
+                              : _recognize,
+                        )
+                      else
+                        const SizedBox(width: 44),
                     ],
                   ),
                 ),
-                if (result == null)
-                  _Scanner(animation: _scan, busy: _phase == _Phase.working),
                 if (shown != null)
                   PositionedDirectional(
                     start: 50,
@@ -391,8 +502,10 @@ class _CameraScreenState extends State<CameraScreen>
                   bottom: 16,
                   child: result == null
                       ? _AimBar(
+                          // Sin problema y sin modo identificar: una pista
+                          // sencilla de cómo hacer la foto.
                           hint: _problem == null
-                              ? t.cameraHint
+                              ? (_identify ? t.cameraHint : t.cameraNormalHint)
                               : switch (_problem!) {
                                   _Problem.outOfScans => t.cameraOutOfScans,
                                   _Problem.busy => t.cameraBusy,
@@ -400,11 +513,9 @@ class _CameraScreenState extends State<CameraScreen>
                                   _Problem.noLocation => t.cameraNoLocation,
                                   _Problem.off => t.errorFeatureOff,
                                 },
-                          shootLabel: t.cameraShoot,
-                          working: _phase == _Phase.working,
-                          onShoot: _problem == _Problem.outOfScans
-                              ? null
-                              : _recognize,
+                          shootLabel: t.cameraTakePhoto,
+                          working: working,
+                          onShoot: _shoot,
                         )
                       : _ResultCard(
                           landmark: shown,
@@ -510,9 +621,13 @@ class _StatusPill extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            text,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+            ),
           ),
         ],
       ),
@@ -525,97 +640,30 @@ class _RoundButton extends StatelessWidget {
     required this.icon,
     required this.tooltip,
     required this.onTap,
+    this.selected = false,
   });
 
   final IconData icon;
   final String tooltip;
   final VoidCallback? onTap;
 
+  /// Activado (el modo identificar): fondo verde.
+  final bool selected;
+
   @override
   Widget build(BuildContext context) => IconButton(
     tooltip: tooltip,
     onPressed: onTap,
     style: IconButton.styleFrom(
-      backgroundColor: _glass,
-      disabledBackgroundColor: _glass,
+      backgroundColor: selected ? NomadColors.mint : _glass,
+      disabledBackgroundColor: selected ? NomadColors.mint : _glass,
       fixedSize: const Size(44, 44),
     ),
-    icon: Icon(icon, color: NomadColors.text),
-  );
-}
-
-/// El marco de esquinas que "respira" y la línea verde que lo recorre.
-class _Scanner extends StatelessWidget {
-  const _Scanner({required this.animation, required this.busy});
-
-  final Animation<double> animation;
-  final bool busy;
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: AnimatedBuilder(
-      animation: animation,
-      builder: (BuildContext context, Widget? child) => Transform.scale(
-        scale: 1 + 0.04 * animation.value,
-        child: SizedBox(
-          width: 250,
-          height: 320,
-          child: CustomPaint(
-            painter: _FramePainter(
-              line: animation.value,
-              color: busy ? NomadColors.flights : NomadColors.mint,
-            ),
-          ),
-        ),
-      ),
+    icon: Icon(
+      icon,
+      color: selected ? NomadColors.background : NomadColors.text,
     ),
   );
-}
-
-class _FramePainter extends CustomPainter {
-  _FramePainter({required this.line, required this.color});
-
-  final double line;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint corner = Paint()
-      ..color = NomadColors.text
-      ..strokeWidth = 4
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    const double l = 40;
-    final double w = size.width;
-    final double h = size.height;
-    for (final List<Offset> c in <List<Offset>>[
-      <Offset>[const Offset(0, l), Offset.zero, const Offset(l, 0)],
-      <Offset>[Offset(w - l, 0), Offset(w, 0), Offset(w, l)],
-      <Offset>[Offset(0, h - l), Offset(0, h), Offset(l, h)],
-      <Offset>[Offset(w - l, h), Offset(w, h), Offset(w, h - l)],
-    ]) {
-      canvas.drawPath(
-        Path()
-          ..moveTo(c[0].dx, c[0].dy)
-          ..lineTo(c[1].dx, c[1].dy)
-          ..lineTo(c[2].dx, c[2].dy),
-        corner,
-      );
-    }
-    final double y = 10 + (h - 20) * line;
-    canvas.drawLine(
-      Offset(6, y),
-      Offset(w - 6, y),
-      Paint()
-        ..color = color
-        ..strokeWidth = 3
-        ..maskFilter = const MaskFilter.blur(BlurStyle.solid, 6),
-    );
-  }
-
-  @override
-  bool shouldRepaint(_FramePainter old) =>
-      old.line != line || old.color != color;
 }
 
 class _Badge extends StatelessWidget {
@@ -656,7 +704,7 @@ class _Badge extends StatelessWidget {
   );
 }
 
-/// Abajo, mientras apuntas: la pista y el botón grande de "Reconocer".
+/// Abajo, mientras apuntas: la pista y el botón verde grande de hacer foto.
 class _AimBar extends StatelessWidget {
   const _AimBar({
     required this.hint,
@@ -668,7 +716,7 @@ class _AimBar extends StatelessWidget {
   final String hint;
   final String shootLabel;
   final bool working;
-  final VoidCallback? onShoot;
+  final VoidCallback onShoot;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -709,9 +757,7 @@ class _AimBar extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: onShoot == null
-                      ? NomadColors.textMuted
-                      : NomadColors.mint,
+                  color: working ? NomadColors.textMuted : NomadColors.mint,
                 ),
                 child: working
                     ? const Padding(
@@ -722,7 +768,7 @@ class _AimBar extends StatelessWidget {
                         ),
                       )
                     : const Icon(
-                        Icons.center_focus_strong_rounded,
+                        Icons.photo_camera_rounded,
                         color: NomadColors.background,
                         size: 30,
                       ),
@@ -735,6 +781,75 @@ class _AimBar extends StatelessWidget {
       const SizedBox(height: 70),
     ],
   );
+}
+
+/// La foto recién hecha: guardarla en Recuerdos, compartirla o repetir.
+class _PhotoReview extends StatelessWidget {
+  const _PhotoReview({
+    required this.photo,
+    required this.saved,
+    required this.onSave,
+    required this.onShare,
+    required this.onRetake,
+  });
+
+  final Uint8List photo;
+  final bool saved;
+  final VoidCallback onSave;
+  final VoidCallback onShare;
+  final VoidCallback onRetake;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 86),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Image.memory(
+                    photo,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) =>
+                        const ColoredBox(color: NomadColors.surface),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: saved ? null : onSave,
+                icon: Icon(
+                  saved ? Icons.check_rounded : Icons.bookmark_add_rounded,
+                ),
+                label: Text(saved ? t.cameraMemorySaved : t.cameraSaveMemory),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: onShare,
+                icon: const Icon(Icons.ios_share_rounded),
+                label: Text(t.memShare),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(onPressed: onRetake, child: Text(t.memRetake)),
+              const SizedBox(height: 8),
+              Text(
+                t.memInstagramNote,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: Colors.white54),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// La ficha de abajo: nombre, datos, historia y los botones.

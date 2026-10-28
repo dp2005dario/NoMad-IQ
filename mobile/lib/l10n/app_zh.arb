@@ -1912,5 +1912,11 @@
   "mapWeatherSun": "晴",
   "mapWeatherClouds": "多云",
   "mapWeatherRain": "雨",
-  "nearbyNoSignal": "暂时还无法获取 GPS 位置。如果在室内，请靠近窗边或到室外，然后重试。"
+  "nearbyNoSignal": "暂时还无法获取 GPS 位置。如果在室内，请靠近窗边或到室外，然后重试。",
+  "cameraTakePhoto": "拍照",
+  "cameraIdentifyMode": "识别地标",
+  "cameraIdentifyOn": "识别模式已开启。请对准一处地标。",
+  "cameraNormalHint": "点按绿色按钮拍照",
+  "cameraSaveMemory": "保存到回忆",
+  "cameraMemorySaved": "已保存到回忆"
 }

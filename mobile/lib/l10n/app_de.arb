@@ -1912,5 +1912,11 @@
   "mapWeatherSun": "Sonne",
   "mapWeatherClouds": "Wolken",
   "mapWeatherRain": "Regen",
-  "nearbyNoSignal": "Ich habe noch keinen GPS-Standort. Gehen Sie in Innenräumen ans Fenster oder nach draußen und versuchen Sie es erneut."
+  "nearbyNoSignal": "Ich habe noch keinen GPS-Standort. Gehen Sie in Innenräumen ans Fenster oder nach draußen und versuchen Sie es erneut.",
+  "cameraTakePhoto": "Foto aufnehmen",
+  "cameraIdentifyMode": "Sehenswürdigkeit erkennen",
+  "cameraIdentifyOn": "Erkennungsmodus an. Richte die Kamera auf ein Bauwerk.",
+  "cameraNormalHint": "Tippe auf den grünen Knopf für ein Foto",
+  "cameraSaveMemory": "In Erinnerungen speichern",
+  "cameraMemorySaved": "In Erinnerungen gespeichert"
 }

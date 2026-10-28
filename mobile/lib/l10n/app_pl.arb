@@ -1912,5 +1912,11 @@
   "mapWeatherSun": "Słońce",
   "mapWeatherClouds": "Chmury",
   "mapWeatherRain": "Deszcz",
-  "nearbyNoSignal": "Nie mam jeszcze pozycji GPS. W budynku podejdź do okna lub wyjdź na zewnątrz i spróbuj ponownie."
+  "nearbyNoSignal": "Nie mam jeszcze pozycji GPS. W budynku podejdź do okna lub wyjdź na zewnątrz i spróbuj ponownie.",
+  "cameraTakePhoto": "Zrób zdjęcie",
+  "cameraIdentifyMode": "Rozpoznaj zabytek",
+  "cameraIdentifyOn": "Tryb rozpoznawania włączony. Skieruj aparat na zabytek.",
+  "cameraNormalHint": "Dotknij zielonego przycisku, by zrobić zdjęcie",
+  "cameraSaveMemory": "Zapisz we Wspomnieniach",
+  "cameraMemorySaved": "Zapisano we Wspomnieniach"
 }

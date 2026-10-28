@@ -1912,5 +1912,11 @@
   "mapWeatherSun": "دھوپ",
   "mapWeatherClouds": "بادل",
   "mapWeatherRain": "بارش",
-  "nearbyNoSignal": "ابھی آپ کی جی پی ایس لوکیشن نہیں مل رہی۔ اگر آپ اندر ہیں تو کھڑکی کے پاس یا باہر جا کر دوبارہ کوشش کریں۔"
+  "nearbyNoSignal": "ابھی آپ کی جی پی ایس لوکیشن نہیں مل رہی۔ اگر آپ اندر ہیں تو کھڑکی کے پاس یا باہر جا کر دوبارہ کوشش کریں۔",
+  "cameraTakePhoto": "تصویر لیں",
+  "cameraIdentifyMode": "یادگار کی شناخت",
+  "cameraIdentifyOn": "شناخت کا موڈ فعال ہے۔ کیمرہ کسی یادگار کی طرف کریں۔",
+  "cameraNormalHint": "تصویر لینے کے لیے سبز بٹن دبائیں",
+  "cameraSaveMemory": "یادوں میں محفوظ کریں",
+  "cameraMemorySaved": "یادوں میں محفوظ ہو گیا"
 }

@@ -1912,5 +1912,11 @@
   "mapWeatherSun": "Araw",
   "mapWeatherClouds": "Ulap",
   "mapWeatherRain": "Ulan",
-  "nearbyNoSignal": "Wala pa akong makuhang GPS location mo. Kung nasa loob ka, lumapit sa bintana o lumabas at subukan ulit."
+  "nearbyNoSignal": "Wala pa akong makuhang GPS location mo. Kung nasa loob ka, lumapit sa bintana o lumabas at subukan ulit.",
+  "cameraTakePhoto": "Kumuha ng litrato",
+  "cameraIdentifyMode": "Kilalanin ang monumento",
+  "cameraIdentifyOn": "Naka-on ang pagkilala. Ituon sa isang monumento.",
+  "cameraNormalHint": "I-tap ang berdeng button para kumuha ng litrato",
+  "cameraSaveMemory": "I-save sa Mga Alaala",
+  "cameraMemorySaved": "Na-save sa Mga Alaala"
 }

@@ -1912,5 +1912,11 @@
   "mapWeatherSun": "Güneş",
   "mapWeatherClouds": "Bulut",
   "mapWeatherRain": "Yağmur",
-  "nearbyNoSignal": "Henüz GPS konumunu alamadım. İçerideysen pencereye yaklaş veya dışarı çık ve tekrar dene."
+  "nearbyNoSignal": "Henüz GPS konumunu alamadım. İçerideysen pencereye yaklaş veya dışarı çık ve tekrar dene.",
+  "cameraTakePhoto": "Fotoğraf çek",
+  "cameraIdentifyMode": "Anıtı tanı",
+  "cameraIdentifyOn": "Tanıma modu açık. Kamerayı bir anıta doğrultun.",
+  "cameraNormalHint": "Fotoğraf çekmek için yeşil düğmeye dokunun",
+  "cameraSaveMemory": "Anılara kaydet",
+  "cameraMemorySaved": "Anılara kaydedildi"
 }

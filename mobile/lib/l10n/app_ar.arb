@@ -1912,5 +1912,11 @@
   "mapWeatherSun": "شمس",
   "mapWeatherClouds": "غيوم",
   "mapWeatherRain": "مطر",
-  "nearbyNoSignal": "لا أستطيع تحديد موقعك بعد. إذا كنت في الداخل، اقترب من نافذة أو اخرج وأعد المحاولة."
+  "nearbyNoSignal": "لا أستطيع تحديد موقعك بعد. إذا كنت في الداخل، اقترب من نافذة أو اخرج وأعد المحاولة.",
+  "cameraTakePhoto": "التقاط صورة",
+  "cameraIdentifyMode": "التعرف على المعلم",
+  "cameraIdentifyOn": "وضع التعرف مفعّل. وجّه الكاميرا نحو معلم.",
+  "cameraNormalHint": "اضغط الزر الأخضر لالتقاط صورة",
+  "cameraSaveMemory": "حفظ في الذكريات",
+  "cameraMemorySaved": "تم الحفظ في الذكريات"
 }

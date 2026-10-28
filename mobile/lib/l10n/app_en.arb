@@ -8955,5 +8955,11 @@
   "nearbyNoSignal": "I can't get a GPS fix yet. If you're indoors, move near a window or outside and try again.",
   "@nearbyNoSignal": {
     "description": "Nearby: permission and GPS are fine but no position fix arrived yet."
-  }
+  },
+  "cameraTakePhoto": "Take photo",
+  "cameraIdentifyMode": "Identify landmark",
+  "cameraIdentifyOn": "Identify mode on. Point at a landmark.",
+  "cameraNormalHint": "Tap the green button to take a photo",
+  "cameraSaveMemory": "Save to Memories",
+  "cameraMemorySaved": "Saved to Memories"
 }
