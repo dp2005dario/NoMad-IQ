@@ -331,6 +331,21 @@ class FakeLocation implements LocationSource {
     return fixes.stream;
   }
 
+  /// Lo que devolverá current(); null = "sin señal todavía".
+  PositionFix? currentFix;
+
+  /// Si no es null, current() lanza este error (GPS que falla).
+  Object? currentError;
+  int currents = 0;
+
+  @override
+  Future<PositionFix?> current() async {
+    currents++;
+    final Object? e = currentError;
+    if (e != null) throw e;
+    return currentFix;
+  }
+
   @override
   Future<void> openSettings() async {}
 }

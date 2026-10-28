@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "Panahon",
   "mapWeatherSun": "Araw",
   "mapWeatherClouds": "Ulap",
-  "mapWeatherRain": "Ulan"
+  "mapWeatherRain": "Ulan",
+  "nearbyNoSignal": "Wala pa akong makuhang GPS location mo. Kung nasa loob ka, lumapit sa bintana o lumabas at subukan ulit."
 }

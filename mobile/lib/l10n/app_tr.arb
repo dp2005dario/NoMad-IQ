@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "Hava",
   "mapWeatherSun": "Güneş",
   "mapWeatherClouds": "Bulut",
-  "mapWeatherRain": "Yağmur"
+  "mapWeatherRain": "Yağmur",
+  "nearbyNoSignal": "Henüz GPS konumunu alamadım. İçerideysen pencereye yaklaş veya dışarı çık ve tekrar dene."
 }

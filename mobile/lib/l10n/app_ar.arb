@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "الطقس",
   "mapWeatherSun": "شمس",
   "mapWeatherClouds": "غيوم",
-  "mapWeatherRain": "مطر"
+  "mapWeatherRain": "مطر",
+  "nearbyNoSignal": "لا أستطيع تحديد موقعك بعد. إذا كنت في الداخل، اقترب من نافذة أو اخرج وأعد المحاولة."
 }

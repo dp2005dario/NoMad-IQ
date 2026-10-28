@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "मौसम",
   "mapWeatherSun": "धूप",
   "mapWeatherClouds": "बादल",
-  "mapWeatherRain": "बारिश"
+  "mapWeatherRain": "बारिश",
+  "nearbyNoSignal": "अभी आपकी जीपीएस लोकेशन नहीं मिल रही। घर के अंदर हों तो खिड़की के पास या बाहर जाकर फिर कोशिश करें।"
 }

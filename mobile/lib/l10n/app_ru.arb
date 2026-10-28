@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "Погода",
   "mapWeatherSun": "Солнце",
   "mapWeatherClouds": "Облака",
-  "mapWeatherRain": "Дождь"
+  "mapWeatherRain": "Дождь",
+  "nearbyNoSignal": "Пока не удаётся определить GPS-позицию. Если вы в помещении, подойдите к окну или выйдите на улицу и повторите попытку."
 }

@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "هوا",
   "mapWeatherSun": "آفتاب",
   "mapWeatherClouds": "ابر",
-  "mapWeatherRain": "باران"
+  "mapWeatherRain": "باران",
+  "nearbyNoSignal": "هنوز موقعیت GPS شما را پیدا نکرده‌ام. اگر داخل ساختمان هستید، کنار پنجره یا بیرون بروید و دوباره تلاش کنید."
 }

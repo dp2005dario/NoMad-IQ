@@ -49,19 +49,23 @@ class _NearbyScreenState extends State<NearbyScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_search()));
   }
 
+  /// Por qué no hay posición: sin permiso / GPS apagado, o aún sin señal.
+  bool _noSignal = false;
+
   Future<GeoPoint?> _position() async {
     final LocationSource gps = _services.location;
-    LocationAccess access = await gps.check();
-    if (access == LocationAccess.denied) access = await gps.request();
-    if (access != LocationAccess.granted) return null;
+    _noSignal = false;
     try {
-      final PositionFix fix = await gps.watch().first.timeout(
-        const Duration(seconds: 15),
-      );
-      return fix.point;
-    } on TimeoutException {
-      return null;
-    } on StateError {
+      LocationAccess access = await gps.check();
+      if (access == LocationAccess.denied) access = await gps.request();
+      if (access != LocationAccess.granted) return null;
+      final PositionFix? fix = await gps.current();
+      if (fix == null) _noSignal = true;
+      return fix?.point;
+    } on Object {
+      // Tiempo agotado, GPS que falla a mitad, etc.: cualquier error de
+      // geolocator se trata como "todavía sin señal" y se puede reintentar.
+      _noSignal = true;
       return null;
     }
   }
@@ -134,7 +138,7 @@ class _NearbyScreenState extends State<NearbyScreen> {
               children: <Widget>[
                 Text(
                   _noLocation
-                      ? t.cameraNoLocation
+                      ? (_noSignal ? t.nearbyNoSignal : t.cameraNoLocation)
                       : _error == ApiError.network
                       ? t.errorNetwork
                       : t.errorUnavailable,

@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "Weer",
   "mapWeatherSun": "Zon",
   "mapWeatherClouds": "Wolken",
-  "mapWeatherRain": "Regen"
+  "mapWeatherRain": "Regen",
+  "nearbyNoSignal": "Ik heb nog geen GPS-positie. Ga binnen bij een raam staan of naar buiten en probeer het opnieuw."
 }

@@ -1911,5 +1911,6 @@
   "mapWeatherTitle": "날씨",
   "mapWeatherSun": "맑음",
   "mapWeatherClouds": "구름",
-  "mapWeatherRain": "비"
+  "mapWeatherRain": "비",
+  "nearbyNoSignal": "아직 GPS 위치를 잡지 못했어요. 실내라면 창가나 야외로 이동한 뒤 다시 시도하세요."
 }
