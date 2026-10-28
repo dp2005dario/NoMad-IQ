@@ -104,6 +104,9 @@ class WorldShapes {
 class WorldData {
   WorldData._(this.shapes, this.airports);
 
+  /// Para los tests: un mundo pequeño hecho a mano, sin leer archivos.
+  WorldData.test(this.shapes, this.airports);
+
   final WorldShapes shapes;
   final Airports airports;
 

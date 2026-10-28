@@ -15,8 +15,10 @@ import '../../core/router.dart';
 import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../route/world_data.dart';
 import 'fares_api.dart';
 import 'flight_format.dart';
+import 'search_globe.dart';
 import 'watch_sheet.dart';
 
 class FlightSearchScreen extends StatefulWidget {
@@ -26,6 +28,7 @@ class FlightSearchScreen extends StatefulWidget {
     this.destination,
     this.departure,
     this.returnDate,
+    this.loadWorld,
   });
 
   /// Con lo que empieza el formulario (p. ej. el aeropuerto de salida
@@ -34,6 +37,9 @@ class FlightSearchScreen extends StatefulWidget {
   final String? destination;
   final DateTime? departure;
   final DateTime? returnDate;
+
+  /// De dónde sale el mapa del globo (en los tests se puede dar ya listo).
+  final Future<WorldData> Function()? loadWorld;
 
   /// Máximo de viajeros (como en las aerolíneas; el servidor también lo exige).
   static const int maxAdults = 9;
@@ -63,6 +69,36 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
   String? _formError;
 
   static final RegExp _iata = RegExp(r'^[A-Z]{3}$');
+
+  // El mapa para el globo. Si no carga, simplemente no se enseña el globo.
+  WorldData? _world;
+
+  @override
+  void initState() {
+    super.initState();
+    _from.addListener(_refreshGlobe);
+    _to.addListener(_refreshGlobe);
+    unawaited(_loadGlobe());
+  }
+
+  Future<void> _loadGlobe() async {
+    try {
+      final WorldData w = await (widget.loadWorld ?? WorldData.load)();
+      if (mounted) setState(() => _world = w);
+    } catch (_) {
+      // Sin mapa no hay globo, pero el buscador sigue funcionando.
+    }
+  }
+
+  /// Al escribir un código se redibuja el globo para que gire hasta él.
+  void _refreshGlobe() {
+    if (mounted && _world != null) setState(() {});
+  }
+
+  Airport? _airportOf(TextEditingController c) {
+    final String code = c.text.trim().toUpperCase();
+    return _iata.hasMatch(code) ? _world?.airports[code] : null;
+  }
 
   @override
   void dispose() {
@@ -186,6 +222,20 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
         children: <Widget>[
+          if (_world case final WorldData world)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 170),
+                  child: SearchGlobe(
+                    world: world,
+                    from: _airportOf(_from),
+                    to: _airportOf(_to),
+                  ),
+                ),
+              ),
+            ),
           SegmentedButton<bool>(
             segments: <ButtonSegment<bool>>[
               ButtonSegment<bool>(value: true, label: Text(t.searchRoundTrip)),
