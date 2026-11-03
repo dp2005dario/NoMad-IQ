@@ -4172,6 +4172,224 @@
   "@beforePackInsuranceWhy": {
     "description": "Why insurance."
   },
+  "beforeFactsEyebrow": "{country} in 30 seconds",
+  "@beforeFactsEyebrow": {
+    "description": "Before trip: eyebrow '{country} in 30 seconds'",
+    "placeholders": {
+      "country": {
+        "type": "String"
+      }
+    }
+  },
+  "beforeFactsTitle": "What you need to know",
+  "@beforeFactsTitle": {
+    "description": "Before trip: facts title"
+  },
+  "beforeFactsHint": "The key things about {country} · tap a card",
+  "@beforeFactsHint": {
+    "description": "Before trip: facts hint",
+    "placeholders": {
+      "country": {
+        "type": "String"
+      }
+    }
+  },
+  "beforeSource": "SOURCE · {source}",
+  "@beforeSource": {
+    "description": "Before trip: source line",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "beforeFactPlug": "Plug",
+  "@beforeFactPlug": {
+    "description": "Fact card: plug"
+  },
+  "beforeFactCurrency": "Currency",
+  "@beforeFactCurrency": {
+    "description": "Fact card: currency"
+  },
+  "beforeFactEmergency": "Emergencies",
+  "@beforeFactEmergency": {
+    "description": "Fact card: emergency numbers"
+  },
+  "beforeFactDrive": "They drive on",
+  "@beforeFactDrive": {
+    "description": "Fact card: driving side"
+  },
+  "beforeFactLanguage": "Language",
+  "@beforeFactLanguage": {
+    "description": "Fact card: language"
+  },
+  "beforeFactTime": "Time",
+  "@beforeFactTime": {
+    "description": "Fact card: time difference"
+  },
+  "beforeDriveLeft": "The left",
+  "@beforeDriveLeft": {
+    "description": "Driving side: left"
+  },
+  "beforeDriveRight": "The right",
+  "@beforeDriveRight": {
+    "description": "Driving side: right"
+  },
+  "beforeDriveLeftMore": "When crossing the street, look right first. If you’ll drive, check whether you need an international permit.",
+  "@beforeDriveLeftMore": {
+    "description": "Driving left: detail"
+  },
+  "beforeDriveRightMore": "When crossing the street, look left first. If you’ll drive, check whether you need an international permit.",
+  "@beforeDriveRightMore": {
+    "description": "Driving right: detail"
+  },
+  "beforeCurrencyMore": "See it converted instantly in Currency.",
+  "@beforeCurrencyMore": {
+    "description": "Currency fact: detail"
+  },
+  "beforeEmergencyLine": "{who}: {number}",
+  "@beforeEmergencyLine": {
+    "description": "Emergency fact: one line, e.g. 'Policía: 110'",
+    "placeholders": {
+      "who": {
+        "type": "String"
+      },
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "beforeEmergencyMore": "In the app, SOS calls with one tap.",
+  "@beforeEmergencyMore": {
+    "description": "Emergency fact: detail"
+  },
+  "beforeLanguageMore": "The app’s interpreter translates face to face, also offline if you download the language.",
+  "@beforeLanguageMore": {
+    "description": "Language fact: detail"
+  },
+  "beforeTimeSame": "Same time",
+  "@beforeTimeSame": {
+    "description": "Time fact: same time"
+  },
+  "beforeTimeMore": "Compared with your phone’s time now. In 6 months: {later} (because of clock changes).",
+  "@beforeTimeMore": {
+    "description": "Time fact: detail ({later} like '+7 h' or 'Misma hora')",
+    "placeholders": {
+      "later": {
+        "type": "String"
+      }
+    }
+  },
+  "beforeTipsTitle": "Flyra’s tips for {country}",
+  "@beforeTipsTitle": {
+    "description": "Before trip: Flyra tips title",
+    "placeholders": {
+      "country": {
+        "type": "String"
+      }
+    }
+  },
+  "beforeTipsSub": "Each tip says where it comes from",
+  "@beforeTipsSub": {
+    "description": "Before trip: tips subtitle"
+  },
+  "beforeTipNext": "Another tip →",
+  "@beforeTipNext": {
+    "description": "Before trip: next tip button"
+  },
+  "beforeTipVisa": "With your {passport} passport: {rule}.",
+  "@beforeTipVisa": {
+    "description": "Tip: visa for your passport",
+    "placeholders": {
+      "passport": {
+        "type": "String"
+      },
+      "rule": {
+        "type": "String"
+      }
+    }
+  },
+  "beforeTipVisaPick": "Need a visa for {country}? Pick your passport in Visa and it tells you.",
+  "@beforeTipVisaPick": {
+    "description": "Tip: choose passport in Visa screen",
+    "placeholders": {
+      "country": {
+        "type": "String"
+      }
+    }
+  },
+  "beforeTipFx": "Check the rate to {currency} in Currency: it works offline with the last saved rate.",
+  "@beforeTipFx": {
+    "description": "Tip: currency",
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "beforeTipOffline": "Download {city} in Offline: map, audio guides and alerts without using data.",
+  "@beforeTipOffline": {
+    "description": "Tip: download city offline",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "beforeTipInsuranceOk": "Your insurance is in the Vault: if you get sick, it’s at hand and Flyra translates with the doctor.",
+  "@beforeTipInsuranceOk": {
+    "description": "Tip: insurance in vault"
+  },
+  "beforeTipInsuranceNo": "We don’t see travel insurance in your Vault: save it there to keep it at hand.",
+  "@beforeTipInsuranceNo": {
+    "description": "Tip: no insurance found"
+  },
+  "beforeTipPassport": "Many countries require 6 more months on your passport: check yours in the Vault.",
+  "@beforeTipPassport": {
+    "description": "Tip: passport margin"
+  },
+  "beforeSourceYours": "Your app data",
+  "@beforeSourceYours": {
+    "description": "Source: your own app data"
+  },
+  "beforeEsimTodo": "I’ve sorted it",
+  "@beforeEsimTodo": {
+    "description": "Mobile data card: mark done"
+  },
+  "beforeDone": "✓ Done",
+  "@beforeDone": {
+    "description": "Card: done"
+  },
+  "beforeInsuranceTitle": "Medical insurance",
+  "@beforeInsuranceTitle": {
+    "description": "Card: medical insurance"
+  },
+  "beforeInsuranceOk": "✓ Active · saved in your Vault",
+  "@beforeInsuranceOk": {
+    "description": "Insurance card: active"
+  },
+  "beforeInsuranceAdd": "Add insurance",
+  "@beforeInsuranceAdd": {
+    "description": "Insurance card: add"
+  },
+  "beforeReelsTitle": "Reels of {country}",
+  "@beforeReelsTitle": {
+    "description": "Reels title",
+    "placeholders": {
+      "country": {
+        "type": "String"
+      }
+    }
+  },
+  "beforeReelsSub": "Open them in the official app: we search {country} for you.",
+  "@beforeReelsSub": {
+    "description": "Reels subtitle: opens search in official app",
+    "placeholders": {
+      "country": {
+        "type": "String"
+      }
+    }
+  },
   "offlineTitle": "Offline",
   "@offlineTitle": {
     "description": "Title of the offline cities screen."
@@ -4740,6 +4958,111 @@
   "easyPickDay": "Choose day and time",
   "@easyPickDay": {
     "description": "Button: choose day and time."
+  },
+  "easyToday": "TODAY",
+  "@easyToday": {
+    "description": "Easy mode: flight is today"
+  },
+  "easyTomorrow": "TOMORROW",
+  "@easyTomorrow": {
+    "description": "Easy mode: flight is tomorrow"
+  },
+  "easyLeaveLower": "· leave home at {time}",
+  "@easyLeaveLower": {
+    "description": "Easy mode: after the gate, when to leave home",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "easySeeFamily": "See the family",
+  "@easySeeFamily": {
+    "description": "Easy mode: tile to call family"
+  },
+  "easyAskFlyraTalk": "Just talk, no typing needed",
+  "@easyAskFlyraTalk": {
+    "description": "Easy mode: Ask Flyra by voice subtitle"
+  },
+  "easyYourHotel": "Your hotel",
+  "@easyYourHotel": {
+    "description": "Easy mode: hotel sheet title"
+  },
+  "easyWalk": "🚶 Walk there · I’ll guide you",
+  "@easyWalk": {
+    "description": "Easy mode: walk to the hotel with directions"
+  },
+  "easyShowTaxi": "🚕 Show the taxi driver",
+  "@easyShowTaxi": {
+    "description": "Easy mode: show the hotel address to a taxi driver"
+  },
+  "easyTaxiTitle": "PLEASE TAKE ME TO:",
+  "@easyTaxiTitle": {
+    "description": "Easy mode: big taxi card heading"
+  },
+  "easyTaxiPhrase": "Please take me to this hotel. Thank you.",
+  "@easyTaxiPhrase": {
+    "description": "Easy mode: phrase for the taxi driver, shown in the destination language"
+  },
+  "easyBack": "Back",
+  "@easyBack": {
+    "description": "Easy mode: close the taxi card"
+  },
+  "easyHelpWheelchair": "Wheelchair",
+  "@easyHelpWheelchair": {
+    "description": "Easy mode: airport help option"
+  },
+  "easyHelpWalk": "Someone to walk with me",
+  "@easyHelpWalk": {
+    "description": "Easy mode: airport help option"
+  },
+  "easyHelpBag": "Only help with my bag",
+  "@easyHelpBag": {
+    "description": "Easy mode: airport help option"
+  },
+  "easyHelpAsk": "Ask for it now",
+  "@easyHelpAsk": {
+    "description": "Easy mode: confirm airport help"
+  },
+  "easyHelpDone": "Done: {what}. Flyra has prepared it with your flight. You still need to send it to your airline.",
+  "@easyHelpDone": {
+    "description": "Easy mode: airport help prepared; {what} is the chosen option in lowercase",
+    "placeholders": {
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "easyHelpSend": "✉️ Send it to my airline",
+  "@easyHelpSend": {
+    "description": "Easy mode: share the prepared request with the airline"
+  },
+  "easyHelpMessage": "Hello. For my flight {route} on {date} I need assistance at the airport: {what}. Thank you.",
+  "@easyHelpMessage": {
+    "description": "Easy mode: prepared message for the airline",
+    "placeholders": {
+      "route": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      },
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "easyHelpChange": "Change what I need",
+  "@easyHelpChange": {
+    "description": "Easy mode: change the airport help option"
+  },
+  "easyHelpAsked": "✓ Help requested",
+  "@easyHelpAsked": {
+    "description": "Easy mode: airport help tile once asked"
+  },
+  "easyCallHint": "Tap a person to call them. The green button opens WhatsApp for a video call.",
+  "@easyCallHint": {
+    "description": "Easy mode: call sheet hint"
   },
   "copyTitle": "Copy this trip",
   "@copyTitle": {

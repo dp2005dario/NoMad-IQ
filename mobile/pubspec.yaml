@@ -104,6 +104,8 @@ flutter:
     - assets/geo/countries.txt
     - assets/geo/country_names.txt
     - assets/geo/visas.txt
+    - assets/geo/country_facts.txt
+    - assets/geo/fact_names.txt
     # El Vuelo 3D: una página con three.js ya empaquetado (ver tool/flight3d/).
     - assets/flight3d/vuelo.html
     # La Bienvenida: vídeo de fondo (720x1280, ~1 MB), logo y la G de Google.

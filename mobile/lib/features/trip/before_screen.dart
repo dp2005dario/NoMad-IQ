@@ -1,31 +1,53 @@
-// Antes de salir (maqueta "Antes"): una sola pantalla con todo lo que hay
-// que tener resuelto antes de un viaje.
+// Antes de salir (maqueta "Antes", pantalla 22): una sola pantalla con todo
+// lo que hay que tener resuelto antes de un viaje, en el mismo orden que la
+// maqueta:
+//   1. Cabecera: el círculo de "% listo" y "País · Ciudad · sales en N días".
+//   2. "<PAÍS> EN 30 SEGUNDOS": tarjetas que se dan la vuelta al tocarlas
+//      (enchufe, moneda, emergencias, por dónde se conduce, idioma y hora).
+//      Detrás de cada una pone de dónde sale el dato ("FUENTE · ...").
+//   3. "Consejos de Flyra": uno cada vez, con puntos y "Otro consejo →".
+//   4. "Para la maleta": la lista con casillas.
+//   5. Dos tarjetas: datos móviles y seguro médico.
+//   6. "Reels de <país>": botones que abren TikTok, Instagram y YouTube ya
+//      buscando el país (no enseñamos vídeos inventados).
 //
-// Qué lleva, y de dónde sale cada cosa:
-//   - Datos móviles allí: tabla fija de países con "roaming como en casa".
+// De dónde sale cada cosa (todo real, nada inventado):
+//   - Enchufes: tabla de la IEC (plugs.dart).
+//   - Moneda, idioma y lado de conducir: REST Countries + CLDR, dentro de la
+//     app (country_facts.dart).
+//   - Emergencias: la tabla del SOS (sos/emergency_data.dart).
+//   - Hora: la base de husos horarios de IANA (paquete timezone).
+//   - Visado: la tabla de Passport Index (visa/visa_data.dart).
 //   - Papeles: la Bóveda de este móvil (pasaporte y seguro).
-//   - Huella del vuelo: se calcula aquí con la distancia y factores públicos.
 //   - Para la maleta: el enchufe del país y el clima medio del mes (NASA).
+// Si de un país falta un dato, su tarjeta no sale: mejor nada que inventar.
 // Lo que marcas se guarda SOLO en el móvil.
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:timezone/data/latest_10y.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
 
 import '../../core/api_client.dart';
+import '../../core/router.dart';
 import '../../core/services.dart';
+import '../../core/settings.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../flights/climate_api.dart';
-import 'trip_check.dart';
+import '../money/money_screen.dart' show MoneyTab;
 import '../route/flight3d.dart' show CountryCodes;
-import '../route/geo.dart';
 import '../route/world_data.dart';
+import '../sos/emergency_data.dart';
+import '../visa/visa_data.dart';
 import 'before_trip.dart';
-import 'co2.dart';
-import 'plug_painter.dart';
+import 'country_facts.dart';
 import 'plugs.dart';
+import 'trip_check.dart';
 
 class BeforeTripScreen extends StatefulWidget {
   const BeforeTripScreen({super.key});
@@ -50,6 +72,13 @@ class _BeforeTripScreenState extends State<BeforeTripScreen> {
   // Qué viaje se revisó ya. Así, si escribes las letras del aeropuerto una a
   // una, la Bóveda solo pide la huella UNA vez por viaje (y no en cada letra).
   String? _checkedFor;
+
+  // Los datos fijos de los países (nombres, monedas, idiomas, visados). Se
+  // cargan SOLO cuando ya sabemos a dónde vas: así no se leen si no hacen
+  // falta.
+  CountryFacts? _facts;
+  CountryNames? _names;
+  VisaTable? _visas;
 
   @override
   void initState() {
@@ -79,6 +108,29 @@ class _BeforeTripScreenState extends State<BeforeTripScreen> {
     } on Object {
       // Sin los datos del mundo no se puede calcular nada: la pantalla lo
       // dice en los campos ("no conocemos ese aeropuerto").
+    }
+  }
+
+  /// Lee las tablas de países la primera vez que hacen falta. Si una falla,
+  /// sus tarjetas simplemente no salen.
+  Future<void> _loadFacts() async {
+    try {
+      final CountryFacts facts = await CountryFacts.load();
+      if (mounted) setState(() => _facts = facts);
+    } on Object {
+      // Sin la tabla, no salen las tarjetas de moneda, idioma ni conducir.
+    }
+    try {
+      final CountryNames names = await CountryNames.load();
+      if (mounted) setState(() => _names = names);
+    } on Object {
+      // Sin nombres se enseña el código del país (ES, JP...).
+    }
+    try {
+      final VisaTable visas = await VisaTable.load();
+      if (mounted) setState(() => _visas = visas);
+    } on Object {
+      // Sin la tabla, el consejo del visado manda a la pantalla de Visado.
     }
   }
 
@@ -136,6 +188,7 @@ class _BeforeTripScreenState extends State<BeforeTripScreen> {
     if (trip == _checkedFor) return;
     _checkedFor = trip;
     setState(() => _working = true);
+    if (_facts == null) unawaited(_loadFacts());
     // Los papeles: la Bóveda se abre con tu huella y solo se miran fechas.
     if (!_services.vault.isOpen) {
       await _services.vault.open(t.vaultUnlockReason);
@@ -178,20 +231,33 @@ class _BeforeTripScreenState extends State<BeforeTripScreen> {
     noInsurance: _checks != null && _checks!.insurance != CheckState.ok,
   );
 
-  Future<void> _toggle(PackItem item) async {
-    final bool ready = !_done.contains(item.id);
-    await _packing.setDone(item.id, ready: ready);
+  Future<void> _toggle(String id) async {
+    final bool ready = !_done.contains(id);
+    await _packing.setDone(id, ready: ready);
     if (mounted) setState(() => _done = _packing.done());
   }
+
+  /// El nombre del país en tu idioma ("Japón"), o su código si no se sabe.
+  String _countryName(String code, String lang) =>
+      _names?.name(code, lang) ?? code;
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
     final TextTheme text = Theme.of(context).textTheme;
+    final String lang = Localizations.localeOf(context).languageCode;
     final Airport? to = _destination;
     final DateTime? day = _day;
     final bool ready = to != null && day != null;
     final List<PackItem> items = _items;
+    final String? country = _thereCountry;
+    final String countryName = country == null
+        ? ''
+        : _countryName(country, lang);
+    final RoamingStatus roaming = roamingFor(
+      homeCountry: _homeCountry,
+      destination: country,
+    );
     return Scaffold(
       appBar: AppBar(title: Text(t.beforeTitle)),
       body: ListView(
@@ -203,7 +269,13 @@ class _BeforeTripScreenState extends State<BeforeTripScreen> {
               style: text.bodyMedium?.copyWith(color: NomadColors.textMuted),
             )
           else
-            _Header(city: to.city, day: day, ready: readiness(items, _done)),
+            _Header(
+              place: countryName.isEmpty
+                  ? to.city
+                  : '$countryName · ${to.city}',
+              day: day,
+              ready: readiness(items, _done),
+            ),
           const SizedBox(height: 16),
           Row(
             children: <Widget>[
@@ -241,111 +313,669 @@ class _BeforeTripScreenState extends State<BeforeTripScreen> {
               padding: EdgeInsets.symmetric(vertical: 24),
               child: Center(child: CircularProgressIndicator()),
             ),
-          if (ready && !_working) ...<Widget>[
+          if (ready && !_working && country != null) ...<Widget>[
             const SizedBox(height: 24),
-            _Section(t.beforeDataTitle),
-            Text(switch (roamingFor(
-              homeCountry: _homeCountry,
-              destination: _thereCountry,
-            )) {
-              RoamingStatus.free => t.beforeRoamingFree,
-              RoamingStatus.abroad => t.beforeRoamingAbroad,
-              RoamingStatus.unknown => t.beforeFillTrip,
-            }),
+            // 2. El país en 30 segundos.
+            Text(
+              t.beforeFactsEyebrow(countryName).toUpperCase(),
+              style: text.labelMedium?.copyWith(
+                color: NomadColors.mint,
+                letterSpacing: 1.2,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            Text(t.beforeFactsTitle, style: text.titleLarge),
+            Text(
+              t.beforeFactsHint(countryName),
+              style: text.bodySmall?.copyWith(color: NomadColors.textMuted),
+            ),
+            const SizedBox(height: 10),
+            _FactGrid(facts: _factsFor(t, lang, country, to)),
             const SizedBox(height: 24),
-            _Section(t.beforePlugsTitle),
-            _Plugs(home: powerOf(_homeCountry), there: powerOf(_thereCountry)),
+            // 3. Los consejos de Flyra.
+            _Tips(
+              title: t.beforeTipsTitle(countryName),
+              tips: _tipsFor(t, lang, country, countryName, to),
+            ),
             const SizedBox(height: 24),
-            _Section(t.beforeCo2Title),
-            _Carbon(from: _origin, to: to),
-            const SizedBox(height: 24),
+            // 4. La maleta.
             _Section(t.beforePackTitle),
             for (final PackItem item in items)
               _PackTile(
                 item: item,
                 done: _done.contains(item.id),
-                onTap: () => unawaited(_toggle(item)),
+                onTap: () => unawaited(_toggle(item.id)),
               ),
+            const SizedBox(height: 16),
+            // 5. Datos móviles y seguro médico.
+            _InfoCard(
+              icon: Icons.signal_cellular_alt_rounded,
+              color: NomadColors.flights,
+              title: t.beforeDataTitle,
+              body: switch (roaming) {
+                RoamingStatus.free => t.beforeRoamingFree,
+                RoamingStatus.abroad => t.beforeRoamingAbroad,
+                RoamingStatus.unknown => t.beforeFillTrip,
+              },
+              action: roaming == RoamingStatus.abroad
+                  ? _done.contains('esim')
+                        ? _CardAction.done(t.beforeDone)
+                        : _CardAction(
+                            t.beforeEsimTodo,
+                            () => unawaited(_toggle('esim')),
+                          )
+                  : null,
+            ),
+            const SizedBox(height: 12),
+            _InfoCard(
+              icon: Icons.health_and_safety_rounded,
+              color: NomadColors.safety,
+              title: t.beforeInsuranceTitle,
+              body: _checks?.insurance == CheckState.ok
+                  ? t.beforeInsuranceOk
+                  : t.beforePackInsuranceWhy,
+              action: _checks?.insurance == CheckState.ok
+                  ? null
+                  : _CardAction(
+                      t.beforeInsuranceAdd,
+                      () => unawaited(context.push(Routes.vault)),
+                    ),
+            ),
+            const SizedBox(height: 24),
+            // 6. Reels del país, en su app oficial.
+            _Reels(country: countryName),
           ],
+        ],
+      ),
+    );
+  }
+
+  /// Las tarjetas de "(país) en 30 segundos". Solo las que tienen dato.
+  List<_Fact> _factsFor(
+    AppLocalizations t,
+    String lang,
+    String country,
+    Airport to,
+  ) {
+    final List<_Fact> out = <_Fact>[];
+    // Enchufe y voltaje.
+    final Power? there = powerOf(country);
+    final Power? home = powerOf(_homeCountry);
+    if (there != null) {
+      final List<String> types = there.plugs.split('/');
+      final bool adapter = home == null || there.needsAdapterFrom(home);
+      final bool transformer = home != null && there.needsTransformerFrom(home);
+      out.add(
+        _Fact(
+          icon: Icons.power_rounded,
+          title: t.beforeFactPlug,
+          value: '${t.beforePlugType(types.join('/'))} · ${there.volts} V',
+          more: <String>[
+            adapter ? t.beforePlugsNeed(types.join(', ')) : t.beforePlugsNoNeed,
+            if (transformer) t.beforePlugsTransformer,
+          ].join('\n'),
+          source: iecSource,
+        ),
+      );
+    }
+    final CountryFact? fact = _facts?[country];
+    // Moneda.
+    if (fact != null && fact.currencies.isNotEmpty) {
+      final CountryFacts facts = _facts!;
+      final String code = fact.currencies.first;
+      out.add(
+        _Fact(
+          icon: Icons.payments_rounded,
+          title: t.beforeFactCurrency,
+          value:
+              '${facts.symbol(code)} · ${_capital(facts.currencyName(code, lang))}',
+          more: t.beforeCurrencyMore,
+          source: cldrSource,
+        ),
+      );
+    }
+    // Emergencias (si el país no está, el 112, como hace el SOS).
+    final EmergencyNumbers n = numbersFor(country);
+    out.add(
+      _Fact(
+        icon: Icons.emergency_rounded,
+        title: t.beforeFactEmergency,
+        value: n.general,
+        more: <String>[
+          if (n.police != null) t.beforeEmergencyLine(t.sosPolice, n.police!),
+          if (n.ambulance != null)
+            t.beforeEmergencyLine(t.sosAmbulance, n.ambulance!),
+          if (n.fire != null) t.beforeEmergencyLine(t.sosFire, n.fire!),
+          t.beforeEmergencyMore,
+        ].join('\n'),
+        source: emergencyWikiSource,
+      ),
+    );
+    // Por dónde se conduce.
+    final bool? left = fact?.drivesLeft;
+    if (left != null) {
+      out.add(
+        _Fact(
+          icon: Icons.directions_car_rounded,
+          title: t.beforeFactDrive,
+          value: left ? t.beforeDriveLeft : t.beforeDriveRight,
+          more: left ? t.beforeDriveLeftMore : t.beforeDriveRightMore,
+          source: restCountriesSource,
+        ),
+      );
+    }
+    // Idioma.
+    if (fact != null && fact.languages.isNotEmpty) {
+      out.add(
+        _Fact(
+          icon: Icons.translate_rounded,
+          title: t.beforeFactLanguage,
+          value: fact.languages
+              .take(3)
+              .map((String l) => _capital(_facts!.languageName(l, lang)))
+              .join(', '),
+          more: t.beforeLanguageMore,
+          source: cldrSource,
+        ),
+      );
+    }
+    // Hora: la diferencia con tu móvil ahora y dentro de 6 meses.
+    final (String now, String later)? hours = _hoursAt(t, to.timeZone);
+    if (hours != null) {
+      out.add(
+        _Fact(
+          icon: Icons.schedule_rounded,
+          title: t.beforeFactTime,
+          value: hours.$1,
+          more: t.beforeTimeMore(hours.$2),
+          source: ianaSource,
+        ),
+      );
+    }
+    return out;
+  }
+
+  static bool _tzReady = false;
+
+  /// La diferencia de hora con el destino, ahora y dentro de 6 meses (por
+  /// el horario de verano puede cambiar). null si la zona no se conoce.
+  (String, String)? _hoursAt(AppLocalizations t, String zone) {
+    if (zone.isEmpty) return null;
+    if (!_tzReady) {
+      tzdata.initializeTimeZones();
+      _tzReady = true;
+    }
+    try {
+      final tz.Location place = tz.getLocation(zone);
+      final DateTime now = DateTime.now();
+      final DateTime later = now.add(const Duration(days: 182));
+      String diff(DateTime when) =>
+          hoursDiff(
+            tz.TZDateTime.from(when, place).timeZoneOffset,
+            when.timeZoneOffset,
+          ) ??
+          t.beforeTimeSame;
+      return (diff(now), diff(later));
+    } on tz.LocationNotFoundException {
+      return null;
+    }
+  }
+
+  /// Los consejos de Flyra, cada uno con su fuente y a dónde lleva.
+  List<_Tip> _tipsFor(
+    AppLocalizations t,
+    String lang,
+    String country,
+    String countryName,
+    Airport to,
+  ) {
+    final List<_Tip> tips = <_Tip>[];
+    // Visado con TU pasaporte (el que guardaste en Visado).
+    final String? passport = _services.prefs.readData(LocalData.visaPassport);
+    final VisaTable? visas = _visas;
+    if (passport != null && passport.isNotEmpty && visas != null) {
+      final EntryRequirement need = visas.lookup(passport, country);
+      if (need.rule != EntryRule.unknown) {
+        tips.add(
+          _Tip(
+            t.beforeTipVisa(_countryName(passport, lang), switch (need.rule) {
+              EntryRule.free => t.visaFree,
+              EntryRule.onArrival => t.visaOnArrival,
+              EntryRule.eta => t.visaEta,
+              EntryRule.eVisa => t.visaEVisa,
+              EntryRule.embassy => t.visaEmbassy,
+              EntryRule.refused => t.visaRefused,
+              EntryRule.unknown => t.visaUnknown,
+            }),
+            passportIndexSource,
+            Routes.visa(to: country),
+          ),
+        );
+      }
+    }
+    if (tips.isEmpty) {
+      tips.add(
+        _Tip(
+          t.beforeTipVisaPick(countryName),
+          passportIndexSource,
+          Routes.visa(to: country),
+        ),
+      );
+    }
+    // El cambio de moneda.
+    final CountryFact? fact = _facts?[country];
+    if (fact != null && fact.currencies.isNotEmpty) {
+      tips.add(
+        _Tip(
+          t.beforeTipFx(_facts!.currencyName(fact.currencies.first, lang)),
+          ecbSource,
+          Routes.money(tab: MoneyTab.fx),
+        ),
+      );
+    }
+    // La ciudad sin conexión.
+    tips.add(
+      _Tip(t.beforeTipOffline(to.city), t.beforeSourceYours, Routes.offline),
+    );
+    // El seguro y el pasaporte, según tu Bóveda.
+    final TripChecks? checks = _checks;
+    if (checks != null) {
+      tips.add(
+        _Tip(
+          checks.insurance == CheckState.ok
+              ? t.beforeTipInsuranceOk
+              : t.beforeTipInsuranceNo,
+          t.beforeSourceYours,
+          Routes.vault,
+        ),
+      );
+    }
+    tips.add(_Tip(t.beforeTipPassport, t.beforeSourceYours, Routes.vault));
+    return tips;
+  }
+}
+
+/// "yen japonés" → "Yen japonés" (solo cambia la primera letra).
+String _capital(String s) =>
+    s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+
+/// Una tarjeta de "(país) en 30 segundos".
+class _Fact {
+  const _Fact({
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.more,
+    required this.source,
+  });
+
+  final IconData icon;
+  final String title;
+  final String value;
+  final String more;
+  final String source;
+}
+
+/// Las tarjetas en dos columnas.
+class _FactGrid extends StatelessWidget {
+  const _FactGrid({required this.facts});
+
+  final List<_Fact> facts;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: <Widget>[
+      for (int i = 0; i < facts.length; i += 2)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          // IntrinsicHeight: las dos tarjetas de la fila miden lo mismo.
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Expanded(child: _FlipCard(fact: facts[i])),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: i + 1 < facts.length
+                      ? _FlipCard(fact: facts[i + 1])
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          ),
+        ),
+    ],
+  );
+}
+
+/// Una tarjeta que se da la vuelta al tocarla: delante el dato, detrás la
+/// explicación y la fuente.
+class _FlipCard extends StatefulWidget {
+  const _FlipCard({required this.fact});
+
+  final _Fact fact;
+
+  @override
+  State<_FlipCard> createState() => _FlipCardState();
+}
+
+class _FlipCardState extends State<_FlipCard> {
+  bool _back = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme text = Theme.of(context).textTheme;
+    final _Fact f = widget.fact;
+    final Widget front = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Icon(f.icon, color: NomadColors.mint, size: 22),
+        const SizedBox(height: 6),
+        Text(
+          f.title,
+          style: text.bodySmall?.copyWith(color: NomadColors.textMuted),
+        ),
+        Text(
+          f.value,
+          style: text.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+        ),
+      ],
+    );
+    final Widget back = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(f.more, style: text.bodySmall),
+        const SizedBox(height: 6),
+        Text(
+          AppLocalizations.of(context).beforeSource(f.source),
+          style: text.labelSmall?.copyWith(
+            color: NomadColors.mint,
+            letterSpacing: 0.6,
+          ),
+        ),
+      ],
+    );
+    return Semantics(
+      button: true,
+      child: GestureDetector(
+        onTap: () => setState(() => _back = !_back),
+        // Gira 180° en el eje vertical. A mitad de giro se cambia la cara.
+        child: TweenAnimationBuilder<double>(
+          tween: Tween<double>(end: _back ? math.pi : 0),
+          duration: const Duration(milliseconds: 450),
+          curve: Curves.easeInOut,
+          builder: (BuildContext context, double angle, Widget? _) {
+            final bool showBack = angle > math.pi / 2;
+            return Transform(
+              alignment: Alignment.center,
+              transform: Matrix4.identity()
+                ..setEntry(3, 2, 0.0015)
+                ..rotateY(angle),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: showBack
+                      ? NomadColors.surfaceHigh
+                      : NomadColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: NomadColors.outline),
+                ),
+                // Las dos caras están siempre (una invisible): así la
+                // tarjeta mide lo que la más alta y no salta al girar.
+                child: Stack(
+                  children: <Widget>[
+                    Opacity(opacity: showBack ? 0 : 1, child: front),
+                    Opacity(
+                      opacity: showBack ? 1 : 0,
+                      // La cara de atrás se da la vuelta para leerse bien.
+                      child: Transform(
+                        alignment: Alignment.center,
+                        transform: Matrix4.identity()..rotateY(math.pi),
+                        child: back,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// Un consejo de Flyra: el texto, de dónde sale y a qué pantalla lleva.
+class _Tip {
+  const _Tip(this.text, this.source, this.route);
+
+  final String text;
+  final String source;
+  final String route;
+}
+
+/// Los consejos, de uno en uno, con puntos y "Otro consejo →".
+class _Tips extends StatefulWidget {
+  const _Tips({required this.title, required this.tips});
+
+  final String title;
+  final List<_Tip> tips;
+
+  @override
+  State<_Tips> createState() => _TipsState();
+}
+
+class _TipsState extends State<_Tips> {
+  int _i = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final TextTheme text = Theme.of(context).textTheme;
+    final List<_Tip> tips = widget.tips;
+    if (tips.isEmpty) return const SizedBox.shrink();
+    final _Tip tip = tips[_i % tips.length];
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: NomadColors.group.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: NomadColors.group.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(widget.title, style: text.titleMedium),
+          Text(
+            t.beforeTipsSub,
+            style: text.bodySmall?.copyWith(color: NomadColors.textMuted),
+          ),
+          const SizedBox(height: 10),
+          InkWell(
+            onTap: () => unawaited(context.push(tip.route)),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: Column(
+                key: ValueKey<int>(_i),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(tip.text, style: text.bodyMedium),
+                  const SizedBox(height: 4),
+                  Text(
+                    t.beforeSource(tip.source),
+                    style: text.labelSmall?.copyWith(color: NomadColors.group),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: <Widget>[
+              for (int d = 0; d < tips.length; d++)
+                Container(
+                  width: d == _i % tips.length ? 16 : 6,
+                  height: 6,
+                  margin: const EdgeInsetsDirectional.only(end: 4),
+                  decoration: BoxDecoration(
+                    color: d == _i % tips.length
+                        ? NomadColors.group
+                        : NomadColors.outline,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              const Spacer(),
+              TextButton(
+                style: TextButton.styleFrom(minimumSize: const Size(0, 36)),
+                onPressed: () => setState(() => _i++),
+                child: Text(t.beforeTipNext),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 }
 
-/// Enchufes: el dibujo de los de allí y qué tienes que comprar.
-class _Plugs extends StatelessWidget {
-  const _Plugs({required this.home, required this.there});
+/// El botón de una tarjeta de abajo (o "✓ Listo" sin botón).
+class _CardAction {
+  const _CardAction(this.label, this.onTap);
+  const _CardAction.done(this.label) : onTap = null;
 
-  final Power? home;
-  final Power? there;
+  final String label;
+  final VoidCallback? onTap;
+}
+
+/// Las tarjetas de "Datos móviles" y "Seguro médico".
+class _InfoCard extends StatelessWidget {
+  const _InfoCard({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.body,
+    this.action,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String body;
+  final _CardAction? action;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme text = Theme.of(context).textTheme;
+    final _CardAction? action = this.action;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Icon(icon, color: color),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title.toUpperCase(),
+                    style: text.labelMedium?.copyWith(
+                      color: color,
+                      letterSpacing: 1.1,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(body),
+            if (action != null) ...<Widget>[
+              const SizedBox(height: 10),
+              if (action.onTap == null)
+                Text(
+                  action.label,
+                  style: const TextStyle(
+                    color: NomadColors.mint,
+                    fontWeight: FontWeight.w800,
+                  ),
+                )
+              else
+                FilledButton(
+                  style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
+                  onPressed: action.onTap,
+                  child: Text(action.label),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "Reels de (país)": abre la búsqueda del país en cada app oficial.
+class _Reels extends StatelessWidget {
+  const _Reels({required this.country});
+
+  final String country;
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
-    final Power? there = this.there;
-    final Power? home = this.home;
-    if (there == null) return Text(t.beforePlugsUnknown);
-    final List<String> types = there.plugs.split('/');
-    final bool adapter = home == null || there.needsAdapterFrom(home);
-    final bool transformer = home != null && there.needsTransformerFrom(home);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final TextTheme text = Theme.of(context).textTheme;
+    final String q = Uri.encodeComponent(country);
+    // Instagram busca por etiqueta: sin espacios ("Corea del Sur" →
+    // "CoreadelSur").
+    final String tag = Uri.encodeComponent(country.replaceAll(' ', ''));
+    final List<(String, Color, Uri)> apps = <(String, Color, Uri)>[
+      (
+        'TikTok',
+        NomadColors.text,
+        Uri.parse('https://www.tiktok.com/search?q=$q'),
+      ),
+      (
+        'Instagram',
+        const Color(0xFFE1306C),
+        Uri.parse('https://www.instagram.com/explore/tags/$tag/'),
+      ),
+      (
+        'YouTube',
+        const Color(0xFFFF4E45),
+        Uri.parse('https://www.youtube.com/results?search_query=$q'),
+      ),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(t.beforeReelsTitle(country), style: text.titleLarge),
+        Text(
+          t.beforeReelsSub(country),
+          style: text.bodySmall?.copyWith(color: NomadColors.textMuted),
+        ),
+        const SizedBox(height: 10),
+        Row(
           children: <Widget>[
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              children: <Widget>[
-                for (final String type in types)
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      PlugIcon(type),
-                      const SizedBox(height: 4),
-                      Text(
-                        t.beforePlugType(type),
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                    ],
+            for (final (String name, Color color, Uri url) in apps) ...<Widget>[
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                    foregroundColor: color,
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
                   ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              adapter
-                  ? t.beforePlugsNeed(types.join(', '))
-                  : t.beforePlugsNoNeed,
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: adapter ? NomadColors.money : NomadColors.mint,
+                  icon: const Icon(Icons.play_circle_rounded, size: 18),
+                  label: Text(name, overflow: TextOverflow.ellipsis),
+                  onPressed: () =>
+                      unawaited(ServicesScope.of(context).openLink(url)),
+                ),
               ),
-            ),
-            Text(t.beforePlugsVolts(there.volts)),
-            if (transformer) ...<Widget>[
-              const SizedBox(height: 4),
-              Text(t.beforePlugsTransformer),
+              if (name != apps.last.$1) const SizedBox(width: 8),
             ],
-            if (adapter) ...<Widget>[
-              const SizedBox(height: 4),
-              Text(
-                t.beforePlugsTip,
-                style: const TextStyle(color: NomadColors.textMuted),
-              ),
-            ],
-            // De dónde salen los enchufes, para poder comprobarlos.
-            TextButton.icon(
-              icon: const Icon(Icons.verified_outlined, size: 18),
-              label: Text(t.dataSourceCheck),
-              onPressed: () => unawaited(
-                ServicesScope.of(context).openBooking(Uri.parse(powerSource)),
-              ),
-            ),
           ],
         ),
-      ),
+      ],
     );
   }
 }
@@ -394,9 +1024,10 @@ class _Iata extends StatelessWidget {
 
 /// La cabecera: a dónde vas, cuándo y cuánto llevas listo.
 class _Header extends StatelessWidget {
-  const _Header({required this.city, required this.day, required this.ready});
+  const _Header({required this.place, required this.day, required this.ready});
 
-  final String city;
+  /// "Japón · Tokyo".
+  final String place;
   final DateTime day;
   final double ready;
 
@@ -417,10 +1048,17 @@ class _Header extends StatelessWidget {
           child: Stack(
             alignment: Alignment.center,
             children: <Widget>[
-              CircularProgressIndicator(
-                value: ready,
-                strokeWidth: 6,
-                backgroundColor: NomadColors.surfaceHigh,
+              // El anillo se llena con animación, como en la maqueta.
+              TweenAnimationBuilder<double>(
+                tween: Tween<double>(end: ready),
+                duration: const Duration(milliseconds: 800),
+                curve: Curves.easeOutCubic,
+                builder: (BuildContext context, double v, Widget? _) =>
+                    CircularProgressIndicator(
+                      value: v,
+                      strokeWidth: 6,
+                      backgroundColor: NomadColors.surfaceHigh,
+                    ),
               ),
               Text('${(ready * 100).round()}%'),
             ],
@@ -432,7 +1070,7 @@ class _Header extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Text(
-                t.beforeSubtitle(city, days),
+                t.beforeSubtitle(place, days),
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               Text(
@@ -441,77 +1079,6 @@ class _Header extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Las barras del CO₂: tu vuelo, con escala y un coche en un año.
-class _Carbon extends StatelessWidget {
-  const _Carbon({required this.from, required this.to});
-
-  final Airport? from;
-  final Airport to;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final TextTheme text = Theme.of(context).textTheme;
-    final Airport? origin = from;
-    if (origin == null) {
-      return Text(
-        t.beforeFillTrip,
-        style: const TextStyle(color: NomadColors.textMuted),
-      );
-    }
-    final LatLon a = origin.position;
-    final LatLon b = to.position;
-    final double direct = flightKgCo2(a, b);
-    final double stop = flightKgCo2(a, b, stops: 1);
-    final double most = <double>[
-      direct,
-      stop,
-      carYearKgCo2,
-    ].reduce((double x, double y) => x > y ? x : y);
-    final NumberFormat kg = NumberFormat.decimalPattern(
-      Localizations.localeOf(context).toLanguageTag(),
-    );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        for (final (String label, double value, bool mine)
-            in <(String, double, bool)>[
-              (t.beforeCo2Direct, direct, true),
-              (t.beforeCo2Stop, stop, false),
-              (t.beforeCo2Car, carYearKgCo2, false),
-            ]) ...<Widget>[
-          Text(
-            '$label · ${kg.format(value.round())} kg CO₂',
-            style: TextStyle(
-              color: mine ? NomadColors.mint : NomadColors.textMuted,
-            ),
-          ),
-          const SizedBox(height: 4),
-          // La barra más larga ocupa todo el ancho: se comparan de un vistazo.
-          FractionallySizedBox(
-            alignment: AlignmentDirectional.centerStart,
-            widthFactor: most == 0 ? 0 : (value / most).clamp(0.02, 1),
-            child: Container(
-              height: 10,
-              decoration: BoxDecoration(
-                color: mine ? NomadColors.mint : NomadColors.outline,
-                borderRadius: BorderRadius.circular(5),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
-        Text(t.beforeCo2Trees(treesForAYear(direct)), style: text.bodyMedium),
-        const SizedBox(height: 4),
-        Text(
-          t.beforeCo2Estimate,
-          style: text.bodySmall?.copyWith(color: NomadColors.textMuted),
         ),
       ],
     );

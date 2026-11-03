@@ -190,7 +190,7 @@ void main() {
       expires: DateTime(2027, 1, 1),
     );
     vault.close();
-    tester.view.physicalSize = const Size(1200, 5000);
+    tester.view.physicalSize = const Size(1200, 12000);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     await pumpApp(
@@ -225,17 +225,28 @@ void main() {
     // Fuera de la UE: avisa de la eSIM, y pide adaptador para Japón.
     expect(find.textContaining('eSIM'), findsWidgets);
     expect(find.textContaining('Adaptador de enchufe'), findsOneWidget);
-    // La sección de enchufes: el dibujo de los de Japón y qué comprar.
-    expect(find.text('Tipo A'), findsOneWidget);
-    expect(find.text('Tipo B'), findsOneWidget);
+    // "Japón en 30 segundos": las tarjetas con datos reales del país.
+    expect(find.text('JAPÓN EN 30 SEGUNDOS'), findsOneWidget);
+    expect(find.text('Tipo A/B · 100 V'), findsOneWidget);
+    // Detrás de la tarjeta (se da la vuelta al tocarla): qué comprar.
     expect(
-      find.text('Compra un adaptador para enchufes tipo A, B'),
+      find.textContaining('Compra un adaptador para enchufes tipo A, B'),
       findsOneWidget,
     );
+    expect(find.text('La izquierda'), findsOneWidget);
+    expect(find.text('¥ · Yen japonés'), findsOneWidget);
+    expect(find.text('Japonés'), findsOneWidget);
     expect(find.text('Seguro de viaje'), findsOneWidget);
-    // La huella: el vuelo, la escala y el coche, con el aviso de estimación.
-    expect(find.textContaining('kg CO₂'), findsNWidgets(3));
-    expect(find.textContaining('Estimación aproximada'), findsOneWidget);
+    // Ya no está la huella de CO₂ (la maqueta no la lleva).
+    expect(find.textContaining('kg CO₂'), findsNothing);
+    // Los consejos de Flyra pasan con "Otro consejo →".
+    expect(find.textContaining('Elige tu pasaporte en Visado'), findsOneWidget);
+    await tester.tap(find.text('Otro consejo →'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Elige tu pasaporte en Visado'), findsNothing);
+    // Reels: botones a las apps oficiales.
+    expect(find.text('Reels de Japón'), findsOneWidget);
+    expect(find.text('TikTok'), findsOneWidget);
 
     // Al marcar algo, sube el porcentaje de arriba.
     expect(find.text('0%'), findsOneWidget);

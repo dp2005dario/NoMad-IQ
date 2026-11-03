@@ -31,3 +31,12 @@ para la pantalla Visado. Sale de [passport-index-data](https://github.com/imorte
 `country_names.txt`: el nombre de cada país en los idiomas de la app y su
 código de tres letras (el del pasaporte). Lo genera
 `tool/flight3d/build_country_names.mjs` con i18n-iso-countries (MIT).
+
+`country_facts.txt` y `fact_names.txt`: para las tarjetas de "Antes de salir".
+Por país, el lado por el que se conduce, sus monedas y sus idiomas oficiales
+(de [REST Countries](https://gitlab.com/restcountries/restcountries), licencia
+MPL-2.0), y el nombre de cada idioma y moneda en los 25 idiomas de la app (de
+[CLDR](https://github.com/unicode-org/cldr-json), licencia Unicode v3; los
+códigos de idioma pasan de 3 a 2 letras con
+[datasets/language-codes](https://github.com/datasets/language-codes), ODC PDDL).
+Se regeneran con `tool/build_country_facts.py` (instrucciones dentro).
