@@ -20,6 +20,8 @@ _QID = re.compile(r"^Q[1-9][0-9]{0,11}$")
 # Un teléfono: solo dígitos, espacios, +, -, paréntesis y puntos.
 _PHONE = re.compile(r"^\+?[0-9 ()./-]{6,24}$")
 _RESERVATION = ("yes", "required", "recommended")
+# Tipos de alojamiento que buscamos para "Viajo con mi perro".
+_STAYS = ("hotel", "apartment", "guest_house", "hostel", "motel")
 
 
 def build_query(south: float, west: float, north: float, east: float) -> str:
@@ -39,6 +41,11 @@ def build_query(south: float, west: float, north: float, east: float) -> str:
         f'["website"]({box});'
         f'nwr["amenity"="restaurant"]["reservation"~"^(yes|required|recommended)$"]["name"]'
         f'["phone"]({box});'
+        # Para tu perro: veterinarios, parques para perros y alojamientos
+        # que en OpenStreetMap ponen "dog=yes" (admiten perros).
+        f'nwr["amenity"="veterinary"]({box});'
+        f'nwr["leisure"="dog_park"]({box});'
+        f'nwr["tourism"~"^(hotel|apartment|guest_house|hostel|motel)$"]["dog"~"^(yes|leashed)$"]["name"]({box});'
         f");out center {MAX_RESULTS};"
     )
 
@@ -80,6 +87,13 @@ def _kind(tags: dict[str, Any]) -> SpotKind | None:
         return "toilets"
     if amenity == "device_charging_station":
         return "charging"
+    if amenity == "veterinary":
+        return "vet"
+    if tags.get("leisure") == "dog_park":
+        return "dog_park"
+    # Va antes que "sight": un hotel con perro no es un sitio que ver.
+    if tags.get("tourism") in _STAYS and tags.get("dog") in ("yes", "leashed"):
+        return "pet_stay"
     if tags.get("internet_access") == "wlan" and tags.get("internet_access:fee") == "no":
         return "wifi"
     if tags.get("tourism") or tags.get("historic"):
@@ -114,6 +128,20 @@ def parse_spot(row: Any) -> NearbySpot | None:
     name = _text(tags, "name")
     if kind == "sight" and (name is None or not isinstance(qid, str) or not _QID.match(qid)):
         return None  # un "sitio que ver" sin nombre ni Wikidata no sirve
+    if kind == "pet_stay" and name is None:
+        return None  # un hotel sin nombre no se puede buscar ni reservar
+    if kind in ("vet", "pet_stay"):
+        # Veterinarios y hoteles: su web y teléfono, para llamar o reservar.
+        return NearbySpot(
+            id=f"{kind_raw[0]}{oid}",
+            kind=kind,
+            lat=float(lat),
+            lon=float(lon),
+            name=name,
+            opening_hours=_text(tags, "opening_hours"),
+            website=_https(tags),
+            phone=_phone(tags),
+        )
     if kind == "table":
         website, phone = _https(tags), _phone(tags)
         if name is None or (website is None and phone is None):

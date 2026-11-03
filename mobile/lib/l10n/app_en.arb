@@ -4151,21 +4151,13 @@
   "@offlineOpen": {
     "description": "Button: open the offline cities screen."
   },
-  "twTitle": "Travelling with…",
+  "twTitle": "Travelling with my dog",
   "@twTitle": {
-    "description": "Title: travelling with a pet or pregnant."
+    "description": "Title: travelling with my dog."
   },
-  "twSubtitle": "The rules for flying with your pet or while pregnant",
+  "twSubtitle": "The rules for flying with your dog, and what it has nearby",
   "@twSubtitle": {
     "description": "Subtitle of the travelling-with screen."
-  },
-  "twTabPet": "My pet",
-  "@twTabPet": {
-    "description": "Tab: my pet."
-  },
-  "twTabPregnant": "Pregnant",
-  "@twTabPregnant": {
-    "description": "Tab: pregnant."
   },
   "twPetWeight": "Your pet's weight (kg)",
   "@twPetWeight": {
@@ -4246,80 +4238,50 @@
   "@twPetDisclaimer": {
     "description": "Disclaimer for pet rules."
   },
-  "twWeeksQuestion": "How many weeks pregnant will you be on the return flight?",
-  "@twWeeksQuestion": {
-    "description": "Question: weeks pregnant on the return flight."
+  "twDogName": "Your dog's name",
+  "@twDogName": {
+    "description": "Field: the dog's name (saved only on the phone)."
   },
-  "twWeeks": "{weeks} weeks",
-  "@twWeeks": {
-    "description": "N weeks (pregnancy).",
+  "twDogDefault": "your dog",
+  "@twDogDefault": {
+    "description": "What the dog is called if no name was written."
+  },
+  "twDogPhoto": "Change photo",
+  "@twDogPhoto": {
+    "description": "Button: pick a photo of the dog."
+  },
+  "twNearTitle": "For {name}, near you",
+  "@twNearTitle": {
+    "description": "Section title: vets, parks and hotels near you for the dog.",
     "placeholders": {
-      "weeks": {
-        "type": "int"
+      "name": {
+        "type": "String"
       }
     }
   },
-  "twTwins": "Twin pregnancy",
-  "@twTwins": {
-    "description": "Switch: twin pregnancy."
+  "twVets": "Vets",
+  "@twVets": {
+    "description": "Chip: veterinary clinics nearby."
   },
-  "twVerdictFly": "You can fly without papers",
-  "@twVerdictFly": {
-    "description": "Verdict: can fly without papers."
+  "twParks": "Dog parks",
+  "@twParks": {
+    "description": "Chip: dog parks nearby."
   },
-  "twVerdictFlyWhy": "Until week {weeks} they do not usually ask for anything. Bring your pregnancy record just in case.",
-  "@twVerdictFlyWhy": {
-    "description": "Explanation: no papers until week N.",
-    "placeholders": {
-      "weeks": {
-        "type": "int"
-      }
-    }
+  "twStays": "Dog-friendly hotels",
+  "@twStays": {
+    "description": "Chip: hotels that accept dogs (OSM dog=yes)."
   },
-  "twVerdictCert": "You need a medical certificate",
-  "@twVerdictCert": {
-    "description": "Verdict: needs a medical certificate."
+  "twNearNone": "None nearby on OpenStreetMap",
+  "@twNearNone": {
+    "description": "Nothing of that kind nearby in OpenStreetMap."
   },
-  "twVerdictCertWhy": "Between week {from} and week {to} they ask for a note from your doctor, from the last 7 days, saying you can fly.",
-  "@twVerdictCertWhy": {
-    "description": "Explanation for the certificate weeks.",
-    "placeholders": {
-      "from": {
-        "type": "int"
-      },
-      "to": {
-        "type": "int"
-      }
-    }
+  "twCall": "Call",
+  "@twCall": {
+    "description": "Button: phone the place."
   },
-  "twVerdictNo": "Better not to fly",
-  "@twVerdictNo": {
-    "description": "Verdict: better not to fly."
-  },
-  "twVerdictNoWhy": "From week {weeks} most airlines will not let you board. Look at the train or change the dates.",
-  "@twVerdictNoWhy": {
-    "description": "Explanation: from week N most airlines refuse.",
-    "placeholders": {
-      "weeks": {
-        "type": "int"
-      }
-    }
-  },
-  "twTipAisle": "Aisle seat so you can get up every hour",
-  "@twTipAisle": {
-    "description": "Tip: aisle seat."
-  },
-  "twTipInsurance": "Insurance that covers pregnancy and birth",
-  "@twTipInsurance": {
-    "description": "Tip: insurance covering pregnancy."
-  },
-  "twTipHospital": "Note down the maternity hospital nearest your hotel",
-  "@twTipHospital": {
-    "description": "Tip: note the nearest maternity hospital."
-  },
-  "twDisclaimer": "General rules of many airlines. Each one has its own, and the first thing is to ask your doctor.",
-  "@twDisclaimer": {
-    "description": "Disclaimer for pregnancy rules."
+  "twWeb": "Website",
+  "@twWeb": {
+    "description": "Button: open the place's website."
   },
   "helpTitle": "Help",
   "@helpTitle": {
