@@ -31,6 +31,10 @@ abstract interface class MapSurfaceController {
 
   /// El rectángulo que se ve ahora mismo.
   Future<GeoBox?> visibleBox();
+
+  /// Dibuja puntos sueltos con color (un FeatureCollection de GeoJSON con
+  /// las propiedades "color" y "selected").
+  Future<void> showPins(Map<String, Object?> features);
 }
 
 /// Todo lo que la superficie necesita para dibujarse.
@@ -147,6 +151,10 @@ class _MapLibreController implements MapSurfaceController {
   @override
   Future<void> showZones(Map<String, Object?> features) =>
       _c.setGeoJsonSource(MapIds.zonesSource, features);
+
+  @override
+  Future<void> showPins(Map<String, Object?> features) =>
+      _c.setGeoJsonSource(MapIds.pinsSource, features);
 
   @override
   Future<void> showMe(GeoPoint? me) => _c.setGeoJsonSource(

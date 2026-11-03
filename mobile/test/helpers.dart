@@ -390,6 +390,14 @@ class FakeMap implements MapSurfaceController {
   @override
   Future<void> showMe(GeoPoint? point) async => me = point;
 
+  Map<String, Object?>? pins;
+
+  @override
+  Future<void> showPins(Map<String, Object?> features) async {
+    pins = features;
+    calls.add('pins');
+  }
+
   @override
   Future<void> flyTo(GeoPoint target, {double? zoom}) async =>
       calls.add('flyTo ${target.lat},${target.lon}');

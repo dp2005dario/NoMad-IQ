@@ -22,6 +22,9 @@ abstract final class MapIds {
   static const String zonesLabel = 'nomad-zones-label';
   static const String meSource = 'nomad-me';
 
+  /// Puntos sueltos con color (los eventos y tu hotel en "Qué pasa").
+  static const String pinsSource = 'nomad-pins';
+
   /// Texturas e iconos pintados por la app (ver map_patterns.dart).
   static const String cobblePattern = 'nq-cobble';
   static const String treesPattern = 'nq-trees';
@@ -384,6 +387,10 @@ Map<String, Object?> buildMapStyle({
         'data': emptyFeatures,
       },
       MapIds.meSource: <String, Object?>{
+        'type': 'geojson',
+        'data': emptyFeatures,
+      },
+      MapIds.pinsSource: <String, Object?>{
         'type': 'geojson',
         'data': emptyFeatures,
       },
@@ -1332,6 +1339,23 @@ Map<String, Object?> buildMapStyle({
           'circle-radius': 7,
           'circle-stroke-color': '#ffffff',
           'circle-stroke-width': 2.5,
+        },
+      },
+      // Puntos con color (cada uno trae su "color"; el elegido, más grande).
+      <String, Object?>{
+        'id': 'nomad-pins',
+        'type': 'circle',
+        'source': MapIds.pinsSource,
+        'paint': <String, Object?>{
+          'circle-color': <Object?>['get', 'color'],
+          'circle-radius': <Object?>[
+            'case',
+            <Object?>['get', 'selected'],
+            13,
+            10,
+          ],
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 3,
         },
       },
     ],
