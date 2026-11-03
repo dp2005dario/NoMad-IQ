@@ -3,10 +3,13 @@
 //
 // En los tests NO se usa nada de esto (se enchufan versiones de mentira):
 // aquí vive justo lo que necesita el móvil real.
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:battery_plus/battery_plus.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:http/http.dart' as http;
 import 'package:maplibre_gl/maplibre_gl.dart' as ml;
 import 'package:path_provider/path_provider.dart';
 
@@ -25,8 +28,21 @@ class AppOfflineFiles implements OfflineFiles {
     final Directory root = await _root();
     final File file = File('${root.path}/$path');
     await file.parent.create(recursive: true);
-    await file.writeAsBytes(bytes, flush: true);
+    // Primero a un archivo ".part" y luego se le cambia el nombre: así, si la
+    // descarga se corta a medio escribir, no queda un audio roto que luego
+    // se daría por bueno al "Seguir".
+    final File part = File('${file.path}.part');
+    await part.writeAsBytes(bytes, flush: true);
+    await part.rename(file.path);
     return bytes.length;
+  }
+
+  @override
+  Future<int?> sizeOf(String path) async {
+    final File file = File('${(await _root()).path}/$path');
+    if (!await file.exists()) return null;
+    final int size = await file.length();
+    return size > 0 ? size : null;
   }
 
   @override
@@ -67,7 +83,7 @@ class MapLibreOfflineMaps implements OfflineMaps {
     await style.parent.create(recursive: true);
     await style.writeAsString(styleJson(), flush: true);
     int bytes = 0;
-    await ml.downloadOfflineRegion(
+    final ml.OfflineRegion fresh = await ml.downloadOfflineRegion(
       ml.OfflineRegionDefinition(
         bounds: ml.LatLngBounds(
           southwest: ml.LatLng(box.minLat, box.minLon),
@@ -85,6 +101,15 @@ class MapLibreOfflineMaps implements OfflineMaps {
         }
       },
     );
+    // Ya está el mapa nuevo: se borran los de antes de esta ciudad (de una
+    // descarga parada o de la versión anterior) para no ocupar el doble.
+    // MapLibre guarda cada tesela una sola vez aunque la usen dos zonas, así
+    // que borrar la vieja no quita lo que la nueva necesita.
+    for (final ml.OfflineRegion old in await ml.getListOfRegions()) {
+      if (old.id != fresh.id && old.metadata['iata'] == iata) {
+        await ml.deleteOfflineRegion(old.id);
+      }
+    }
     return bytes;
   }
 
@@ -112,5 +137,64 @@ class SystemNetProbe implements NetProbe {
     }
     if (result.contains(ConnectivityResult.mobile)) return NetKind.mobile;
     return NetKind.none;
+  }
+}
+
+/// La versión del mapa de OpenFreeMap: su ficha (TileJSON) apunta a las
+/// teselas de la última versión publicada, con la fecha en la dirección
+/// (".../planet/20261025_080012_pt/{z}/{x}/{y}.pbf"). Es un dato real y
+/// gratis; si el servidor de mapas es otro y no lo dice, devuelve null.
+class TileJsonMapVersion implements MapVersionProbe {
+  TileJsonMapVersion(this.tilesUrl, {http.Client? client})
+    : _client = client ?? http.Client();
+
+  final Uri tilesUrl;
+  final http.Client _client;
+
+  static final RegExp _stamp = RegExp(r'/(\d{8}_\d{6})(?:_[a-z]+)?/');
+
+  @override
+  Future<String?> latest() async {
+    try {
+      final http.Response r = await _client
+          .get(tilesUrl)
+          .timeout(const Duration(seconds: 8));
+      if (r.statusCode != 200 || r.body.length > 200000) return null;
+      return versionFromTileJson(r.body);
+    } on Object {
+      return null;
+    }
+  }
+
+  /// Saca la versión de la ficha del mapa (null si no la trae).
+  static String? versionFromTileJson(String body) {
+    try {
+      final Object? json = jsonDecode(body);
+      if (json is! Map<String, Object?>) return null;
+      final Object? tiles = json['tiles'];
+      if (tiles is! List<Object?> || tiles.isEmpty) return null;
+      final Object? first = tiles.first;
+      if (first is! String) return null;
+      return _stamp.firstMatch(first)?.group(1);
+    } on FormatException {
+      return null;
+    }
+  }
+}
+
+/// ¿Está cargando? Lo dice el sistema (battery_plus).
+class SystemPowerProbe implements PowerProbe {
+  const SystemPowerProbe();
+
+  @override
+  Future<bool> charging() async {
+    try {
+      final BatteryState s = await Battery().batteryState;
+      return s == BatteryState.charging ||
+          s == BatteryState.full ||
+          s == BatteryState.connectedNotCharging;
+    } on Object {
+      return false;
+    }
   }
 }

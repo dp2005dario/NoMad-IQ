@@ -4518,6 +4518,79 @@
   "@offlineTextOnly": {
     "description": "Offline card: guides saved as text only"
   },
+  "offlineEstimate": "About {size} (based on your other cities)",
+  "@offlineEstimate": {
+    "description": "Approximate size, computed from cities already downloaded",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineEstimateUnknown": "The size will be known after your first city.",
+  "@offlineEstimateUnknown": {
+    "description": "No size estimate yet: no city downloaded"
+  },
+  "offlinePaused": "{city} · stopped halfway",
+  "@offlinePaused": {
+    "description": "A download stopped halfway",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineResumeNote": "What's already downloaded won't be downloaded again.",
+  "@offlineResumeNote": {
+    "description": "What resume does"
+  },
+  "offlineResume": "Resume",
+  "@offlineResume": {
+    "description": "Button: resume download"
+  },
+  "offlineNewMap": "A newer map is out ({date}) · tap Update",
+  "@offlineNewMap": {
+    "description": "A newer map version exists (date of publication)",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineAutoTitle": "Update automatically",
+  "@offlineAutoTitle": {
+    "description": "Switch: update cities automatically"
+  },
+  "offlineAutoWhy": "On wifi and while charging, when a new map is out or after 30 days. It runs with the app open or when you come back to it.",
+  "@offlineAutoWhy": {
+    "description": "Explains when automatic update happens, honestly: only with the app open"
+  },
+  "offlineAutoBusy": "{city} is being updated. Wait until it finishes.",
+  "@offlineAutoBusy": {
+    "description": "Another city is being updated automatically",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineAutoDone": "{city} is up to date for offline use ✓",
+  "@offlineAutoDone": {
+    "description": "Mini Flyra note: a city was updated automatically",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineTry": "Try it: I lose internet",
+  "@offlineTry": {
+    "description": "Button: preview how it looks with no internet"
+  },
+  "offlineTryStop": "Back to online",
+  "@offlineTryStop": {
+    "description": "Button: stop the no-internet preview"
+  },
   "offlineUsed": "ECLIPTA is using {size}",
   "@offlineUsed": {
     "description": "Storage used by the app, with the size.",

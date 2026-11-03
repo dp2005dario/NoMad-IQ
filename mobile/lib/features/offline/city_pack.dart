@@ -141,7 +141,13 @@ class CityPack {
     this.mapFailed = false,
     this.area = OfflineArea.city,
     this.withAudio = true,
+    this.mapVersion,
   });
+
+  /// Qué versión del mapa se bajó (la fecha con la que OpenFreeMap publica
+  /// cada mapa nuevo, "20261025_080012"). Sirve para avisar de que hay uno
+  /// más nuevo. null = no se sabe (servidor de mapas sin versión).
+  final String? mapVersion;
 
   /// Cuánto de la ciudad se bajó.
   final OfflineArea area;
@@ -180,6 +186,7 @@ class CityPack {
     if (mapFailed) 'map_failed': true,
     'area': area.name,
     if (!withAudio) 'with_audio': false,
+    'map_version': ?mapVersion,
   };
 
   static CityPack? parse(Object? json) {
@@ -205,6 +212,95 @@ class CityPack {
       savedAt: at.toLocal(),
       mapFailed: json['map_failed'] == true,
       // Las ciudades bajadas antes de poder elegir eran "la ciudad".
+      area: OfflineArea.byName(json['area']) ?? OfflineArea.city,
+      withAudio: json['with_audio'] != false,
+      mapVersion: switch (json['map_version']) {
+        final String v when mapVersionPattern.hasMatch(v) => v,
+        _ => null,
+      },
+    );
+  }
+}
+
+/// Cómo es una versión de mapa: "20261025_080012" (año, mes, día, hora).
+final RegExp mapVersionPattern = RegExp(r'^\d{8}_\d{6}$');
+
+/// El día de una versión de mapa ("20261025_080012" → 25/10/2026).
+DateTime? mapVersionDay(String? version) {
+  if (version == null || !mapVersionPattern.hasMatch(version)) return null;
+  return DateTime.tryParse(version.substring(0, 8));
+}
+
+/// ¿Hay un mapa más nuevo que el que bajaste? Solo si se saben las dos
+/// versiones (si no, no se avisa: mejor callar que inventar).
+bool hasNewerMap(CityPack pack, String? latest) {
+  final String? mine = pack.mapVersion;
+  if (mine == null || latest == null || pack.mapFailed) return false;
+  return latest.compareTo(mine) > 0;
+}
+
+/// Lo que ocupará aproximadamente una ciudad, sacado de lo que ocuparon DE
+/// VERDAD las que ya bajaste en este móvil (no es un número inventado):
+///   - el mapa: los bytes por grado² de tus otras ciudades × el trozo nuevo;
+///   - las voces: lo que ocuparon de media las ciudades bajadas con voces.
+/// null = aún no has bajado ninguna, así que no hay con qué calcularlo.
+int? estimateBytes(
+  List<CityPack> done, {
+  required OfflineArea area,
+  required bool withAudio,
+}) {
+  double side(OfflineArea a) => 2 * a.halfDeg;
+  final List<double> perDeg = <double>[
+    for (final CityPack p in done)
+      if (!p.mapFailed && p.tileBytes > 0)
+        p.tileBytes / (side(p.area) * side(p.area)),
+  ];
+  if (perDeg.isEmpty) return null;
+  final double map =
+      perDeg.reduce((double a, double b) => a + b) /
+      perDeg.length *
+      side(area) *
+      side(area);
+  if (!withAudio) return map.round();
+  final List<int> voices = <int>[
+    for (final CityPack p in done)
+      if (p.withAudio && p.audioBytes > 0) p.audioBytes,
+  ];
+  // Sin ninguna ciudad con voces no se puede decir cuánto ocupan.
+  if (voices.isEmpty) return null;
+  return (map + voices.reduce((int a, int b) => a + b) / voices.length).round();
+}
+
+/// Una descarga que se paró a medias (la paraste tú o se fue la red): lo
+/// que ya se bajó se queda y "Seguir" continúa desde ahí.
+class PausedDownload {
+  const PausedDownload({
+    required this.iata,
+    required this.city,
+    required this.area,
+    required this.withAudio,
+  });
+
+  final String iata;
+  final String city;
+  final OfflineArea area;
+  final bool withAudio;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'iata': iata,
+    'city': city,
+    'area': area.name,
+    'with_audio': withAudio,
+  };
+
+  static PausedDownload? parse(Object? json) {
+    if (json is! Map<String, Object?>) return null;
+    final Object? iata = json['iata'];
+    final Object? city = json['city'];
+    if (iata is! String || iata.length != 3 || city is! String) return null;
+    return PausedDownload(
+      iata: iata.toUpperCase(),
+      city: city,
       area: OfflineArea.byName(json['area']) ?? OfflineArea.city,
       withAudio: json['with_audio'] != false,
     );
@@ -265,6 +361,41 @@ class OfflineLibrary {
         if (p.iata != code) p,
     ]);
   }
+
+  /// Las descargas paradas a medias (como mucho una por ciudad).
+  List<PausedDownload> paused() {
+    try {
+      final Object? list = jsonDecode(
+        _store.readData(LocalData.offlinePaused) ?? '[]',
+      );
+      if (list is! List<Object?>) return <PausedDownload>[];
+      return <PausedDownload>[
+        for (final Object? p in list) ?PausedDownload.parse(p),
+      ];
+    } on FormatException {
+      return <PausedDownload>[];
+    }
+  }
+
+  Future<void> pause(PausedDownload p) => _writePaused(<PausedDownload>[
+    p,
+    for (final PausedDownload o in paused())
+      if (o.iata != p.iata) o,
+  ]);
+
+  Future<void> unpause(String iata) => _writePaused(<PausedDownload>[
+    for (final PausedDownload o in paused())
+      if (o.iata != iata.toUpperCase()) o,
+  ]);
+
+  Future<void> _writePaused(List<PausedDownload> list) => _store.writeData(
+    LocalData.offlinePaused,
+    list.isEmpty
+        ? null
+        : jsonEncode(<Object?>[
+            for (final PausedDownload p in list.take(maxCities)) p.toJson(),
+          ]),
+  );
 
   Future<void> _write(List<CityPack> packs) => _store.writeData(
     LocalData.offlineCities,

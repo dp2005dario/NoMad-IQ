@@ -9,12 +9,15 @@ import 'package:http/http.dart' as http;
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/api_client.dart';
 import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/services.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/audioguide/audioguide_api.dart';
 import 'package:eclipta/features/map/geo.dart';
 import 'package:eclipta/features/map/geo_api.dart';
 import 'package:eclipta/features/offline/city_downloader.dart';
 import 'package:eclipta/features/offline/city_pack.dart';
+import 'package:eclipta/features/offline/offline_auto.dart';
+import 'package:eclipta/features/offline/offline_platform.dart';
 import 'package:eclipta/features/offline/saved_guides.dart';
 import 'package:eclipta/features/route/geo.dart' show LatLon;
 
@@ -45,6 +48,24 @@ class FakeMaps implements OfflineMaps {
 
   @override
   Future<void> delete(String iata) async => deleted.add(iata);
+}
+
+class FakeVersion implements MapVersionProbe {
+  FakeVersion(this.value);
+
+  String? value;
+
+  @override
+  Future<String?> latest() async => value;
+}
+
+class FakePower implements PowerProbe {
+  FakePower(this.on);
+
+  bool on;
+
+  @override
+  Future<bool> charging() async => on;
 }
 
 class FakeNet implements NetProbe {
@@ -107,6 +128,7 @@ CityDownloader downloaderFor(
   OfflineMaps? maps,
   NetProbe? net,
   OfflineFiles? files,
+  MapVersionProbe? version,
 }) {
   final ApiClient api = ApiClient(
     baseUrl: Uri.parse('http://gateway.test'),
@@ -121,6 +143,7 @@ CityDownloader downloaderFor(
     maps: maps ?? FakeMaps(),
     net: net ?? FakeNet(NetKind.wifi),
     cities: OfflineLibrary(store),
+    mapVersion: version ?? const NoMapVersion(),
   );
 }
 
@@ -532,6 +555,11 @@ void main() {
     expect(find.text('Centro · 2 km'), findsOneWidget);
     expect(maps.asked!.maxLat - maps.asked!.minLat, closeTo(0.04, 1e-9));
     // La leyenda de la barra de espacio: la ciudad y lo que ocupa.
+    await tester.scrollUntilVisible(
+      find.textContaining('Madrid 20'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.textContaining('Madrid 20'), findsOneWidget);
     expect(
       find.text('1 zona lista para usar sin internet', skipOffstage: false),
@@ -549,7 +577,7 @@ void main() {
     await tester.pumpAndSettle(const Duration(seconds: 5));
 
     // "Solo con wifi" se recuerda en el móvil.
-    await tester.tap(find.byType(Switch));
+    await tester.tap(find.byType(Switch).first);
     await tester.pumpAndSettle();
     expect(store.readData(LocalData.offlineWifiOnly), '0');
 
@@ -566,5 +594,277 @@ void main() {
     await tester.pumpAndSettle();
     expect(maps.deleted, <String>['MAD']);
     expect(find.textContaining('Todavía no has descargado'), findsOneWidget);
+  });
+
+  group('lo que faltaba de la maqueta', () {
+    test('el tamaño aproximado sale de lo que ocuparon tus ciudades', () {
+      expect(
+        estimateBytes(
+          const <CityPack>[],
+          area: OfflineArea.city,
+          withAudio: true,
+        ),
+        isNull,
+      );
+      // Una ciudad de 14 MB de mapa en "la ciudad" (0,14° de lado).
+      final CityPack mad = packOf('MAD', tiles: 14 * 1024 * 1024);
+      final int city = estimateBytes(
+        <CityPack>[mad],
+        area: OfflineArea.city,
+        withAudio: false,
+      )!;
+      expect(city, 14 * 1024 * 1024);
+      // El centro (0,04° de lado) ocupa (0,04/0,14)² de eso.
+      final int center = estimateBytes(
+        <CityPack>[mad],
+        area: OfflineArea.center,
+        withAudio: false,
+      )!;
+      expect(center / city, closeTo(0.04 * 0.04 / (0.14 * 0.14), 1e-3));
+      // Con voces: se suma lo que ocuparon las voces (2 kB de media).
+      expect(
+        estimateBytes(<CityPack>[mad], area: OfflineArea.city, withAudio: true),
+        city + 2048,
+      );
+    });
+
+    test('la versión del mapa sale de la ficha de OpenFreeMap', () {
+      expect(
+        TileJsonMapVersion.versionFromTileJson(
+          '{"tiles":["https://tiles.openfreemap.org/planet/'
+          '20261025_080012_pt/{z}/{x}/{y}.pbf"]}',
+        ),
+        '20261025_080012',
+      );
+      expect(
+        TileJsonMapVersion.versionFromTileJson(
+          '{"tiles":["https://otro.test/{z}/{x}/{y}.pbf"]}',
+        ),
+        isNull,
+      );
+      expect(TileJsonMapVersion.versionFromTileJson('roto'), isNull);
+      final CityPack old = CityPack.parse(<String, Object?>{
+        ...packOf('MAD').toJson(),
+        'map_version': '20261001_000000',
+      })!;
+      expect(old.mapVersion, '20261001_000000');
+      expect(hasNewerMap(old, '20261025_080012'), isTrue);
+      expect(hasNewerMap(old, '20261001_000000'), isFalse);
+      expect(hasNewerMap(old, null), isFalse);
+      expect(hasNewerMap(packOf('MAD'), '20261025_080012'), isFalse);
+      expect(mapVersionDay('20261025_080012'), DateTime(2026, 10, 25));
+    });
+
+    test('seguir una descarga parada no baja otra vez los audios', () async {
+      final FakeGateway g = FakeGateway();
+      serveCity(g);
+      int opus = 0;
+      for (final String key in g.services.keys.toList()) {
+        if (!key.endsWith('.opus')) continue;
+        final http.Response Function(http.Request) inner = g.services[key]!;
+        g.services[key] = (http.Request r) {
+          opus++;
+          return inner(r);
+        };
+      }
+      final SessionController session = await signedInSession(g);
+      final MemorySettingsStore store = MemorySettingsStore();
+      final MemoryOfflineFiles files = MemoryOfflineFiles();
+      int audioSteps = 0;
+      Future<CityPack> go({bool Function()? stopped}) =>
+          downloaderFor(g, session, store, files: files).run(
+            iata: 'mad',
+            city: 'Madrid',
+            center: const LatLon(40.42, -3.70),
+            language: 'es',
+            wifiOnly: true,
+            onProgress: (DownloadProgress p) {
+              if (p.step == DownloadStep.audio) audioSteps++;
+            },
+            stopped: stopped,
+          );
+      // Se para al empezar la tercera zona: ya hay 4 audios guardados.
+      await expectLater(
+        go(stopped: () => audioSteps >= 2),
+        throwsA(isA<DownloadException>()),
+      );
+      expect(files.written.length, 4);
+      expect(opus, 4);
+      // "Seguir": solo faltan los 2 de la última zona.
+      final CityPack pack = await go();
+      expect(opus, 6);
+      expect(pack.audioBytes, 6 * 1024);
+    });
+
+    test('la versión del mapa se guarda con la ciudad', () async {
+      final FakeGateway g = FakeGateway();
+      serveCity(g);
+      final SessionController session = await signedInSession(g);
+      final MemorySettingsStore store = MemorySettingsStore();
+      await downloaderFor(
+        g,
+        session,
+        store,
+        version: FakeVersion('20261025_080012'),
+      ).run(
+        iata: 'mad',
+        city: 'Madrid',
+        center: const LatLon(40.42, -3.70),
+        language: 'es',
+        wifiOnly: true,
+        onProgress: (_) {},
+      );
+      expect(OfflineLibrary(store).of('MAD')!.mapVersion, '20261025_080012');
+    });
+
+    test('las descargas paradas se recuerdan y se olvidan', () async {
+      final OfflineLibrary lib = OfflineLibrary(MemorySettingsStore());
+      await lib.pause(
+        const PausedDownload(
+          iata: 'mad',
+          city: 'Madrid',
+          area: OfflineArea.center,
+          withAudio: false,
+        ),
+      );
+      expect(lib.paused().single.iata, 'MAD');
+      expect(lib.paused().single.area, OfflineArea.center);
+      expect(lib.paused().single.withAudio, isFalse);
+      await lib.unpause('MAD');
+      expect(lib.paused(), isEmpty);
+    });
+
+    test('actualizar solas: solo con wifi, cargando y si hace falta', () async {
+      final FakeGateway g = FakeGateway();
+      serveCity(g);
+      final SessionController session = await signedInSession(g);
+      final MemorySettingsStore store = MemorySettingsStore();
+      final FakeVersion version = FakeVersion('20261025_080012');
+      final FakePower power = FakePower(false);
+      final FakeNet net = FakeNet(NetKind.wifi);
+      final AppServices s = fakeServices(
+        session,
+        gateway: g,
+        prefs: store,
+        offlineMaps: FakeMaps(),
+        net: net,
+        mapVersion: version,
+        power: power,
+      );
+      final DateTime now = DateTime(2026, 11, 3, 10);
+      // Madrid se bajó con el mapa del 1 de octubre.
+      await OfflineLibrary(store).save(
+        CityPack.parse(<String, Object?>{
+          ...packOf('MAD').toJson(),
+          'saved_at': now.subtract(const Duration(days: 2)).toIso8601String(),
+          'map_version': '20261001_000000',
+        })!,
+      );
+      final OfflineAutoUpdate auto = OfflineAutoUpdate(
+        s,
+        centerOf: (String iata) async => const LatLon(40.42, -3.70),
+      );
+      // Apagado: nada.
+      expect(await auto.run(language: 'es', now: now), isEmpty);
+      await auto.setEnabled(true);
+      // Sin cargar: nada (y se volverá a mirar).
+      expect(await auto.run(language: 'es', now: now), isEmpty);
+      power.on = true;
+      net.kind = NetKind.mobile;
+      expect(await auto.run(language: 'es', now: now), isEmpty);
+      net.kind = NetKind.wifi;
+      final List<CityPack> done = await auto.run(language: 'es', now: now);
+      expect(done.single.iata, 'MAD');
+      expect(OfflineLibrary(store).of('MAD')!.mapVersion, '20261025_080012');
+      // Ya miró hoy: hasta mañana no vuelve a mirar.
+      version.value = '20261102_000000';
+      expect(
+        await auto.run(language: 'es', now: now.add(const Duration(hours: 2))),
+        isEmpty,
+      );
+      expect(s.offlineBusy.value, isNull);
+    });
+  });
+
+  testWidgets('pantalla: mapa nuevo, descarga parada y "probar sin internet"', (
+    WidgetTester tester,
+  ) async {
+    final FakeGateway g = FakeGateway();
+    serveCity(g);
+    final SessionController session = await signedInSession(g);
+    final MemorySettingsStore store = MemorySettingsStore();
+    await OfflineLibrary(store).save(
+      CityPack.parse(<String, Object?>{
+        ...packOf('LIS').toJson(),
+        'city': 'Lisboa',
+        'map_version': '20261001_000000',
+      })!,
+    );
+    await OfflineLibrary(store).pause(
+      const PausedDownload(
+        iata: 'BCN',
+        city: 'Barcelona',
+        area: OfflineArea.city,
+        withAudio: true,
+      ),
+    );
+    tester.view.physicalSize = const Size(1200, 6000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.offline,
+      services: fakeServices(
+        session,
+        gateway: g,
+        prefs: store,
+        offlineMaps: FakeMaps(),
+        net: FakeNet(NetKind.wifi),
+        mapVersion: FakeVersion('20261025_080012'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    // El tamaño aproximado sale de Lisboa.
+    expect(find.textContaining('Ocupará unos'), findsOneWidget);
+    expect(find.text('Barcelona · parada a medias'), findsOneWidget);
+    expect(find.text('Seguir'), findsOneWidget);
+    expect(find.textContaining('Hay un mapa más nuevo'), findsOneWidget);
+    expect(find.text('Funciona sin internet ✓'), findsNothing);
+
+    // "Probar": así se ve sin internet.
+    await tester.scrollUntilVisible(
+      find.text('Probar: me quedo sin internet'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Probar: me quedo sin internet'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Funciona sin internet ✓', skipOffstage: false),
+      findsOneWidget,
+    );
+
+    // "Actualizar solas" se recuerda.
+    await tester.tap(find.text('Actualizar solas'));
+    await tester.pumpAndSettle();
+    expect(store.readData(LocalData.offlineAutoUpdate), '1');
+
+    // Borrar la parada: se olvida.
+    await tester.scrollUntilVisible(
+      find.text('Seguir'),
+      -300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(
+      find.descendant(
+        of: find.ancestor(of: find.text('Seguir'), matching: find.byType(Card)),
+        matching: find.text('Borrar'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(OfflineLibrary(store).paused(), isEmpty);
+    expect(find.text('Barcelona · parada a medias'), findsNothing);
   });
 }

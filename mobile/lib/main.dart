@@ -130,6 +130,9 @@ Future<void> main() async {
       ),
     ),
     net: const SystemNetProbe(),
+    // "Hay un mapa más nuevo": la fecha de la versión que publica OpenFreeMap.
+    mapVersion: TileJsonMapVersion(AppConfig.tilesUrl),
+    power: const SystemPowerProbe(),
     help: AppConfig.help,
     family: SecureFamilyStore(),
     // Las audioguías ya descargadas: si no hay red, se oyen estas.

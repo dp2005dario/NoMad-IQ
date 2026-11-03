@@ -15,11 +15,17 @@
 // cada ciudad en una barra de colores y, si te quedas sin internet, la
 // pantalla te dice qué sigue funcionando.
 //
-// Lo que la maqueta tiene y aquí NO: el tamaño aproximado ANTES de bajar
-// (no hay forma fiable de saberlo sin bajarlo), reanudar justo donde se paró
-// (al volver a empezar se baja de nuevo), "hay cambios en el mapa" (el
-// servidor no dice qué cambió) y la actualización automática en segundo
-// plano.
+// Y lo que faltaba de la maqueta:
+//   - tamaño aproximado ANTES de bajar, calculado con lo que ocuparon de
+//     verdad tus otras ciudades (sin ninguna, se dice que aún no se sabe);
+//   - "Seguir" una descarga parada: los audios ya guardados no se bajan otra
+//     vez (el mapa lo vuelve a pedir MapLibre, que reaprovecha lo que ya
+//     tiene; eso no se ha podido probar en un móvil);
+//   - "Hay un mapa más nuevo (fecha)": la versión que publica OpenFreeMap;
+//     cuánto ocupa el cambio NO se sabe, así que no se dice;
+//   - "Actualizar solas" con wifi y cargando (ver offline_auto.dart: con la
+//     app abierta, no con la app cerrada del todo);
+//   - "Probar: me quedo sin internet", que enseña cómo se ve sin red.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -34,6 +40,7 @@ import '../../widgets/flyra_avatar.dart';
 import '../route/world_data.dart';
 import 'city_downloader.dart';
 import 'city_pack.dart';
+import 'offline_auto.dart';
 
 class OfflineScreen extends StatefulWidget {
   const OfflineScreen({super.key});
@@ -75,10 +82,26 @@ class _OfflineScreenState extends State<OfflineScreen> {
   /// La última ciudad que terminó bien (para el "estallido").
   String? _justDone;
 
+  /// Las descargas paradas a medias (para "Seguir").
+  List<PausedDownload> _paused = <PausedDownload>[];
+
+  /// La versión del mapa publicada ahora (null = no se sabe).
+  String? _latestMap;
+
+  /// "Actualizar solas" activado.
+  late final OfflineAutoUpdate _auto = OfflineAutoUpdate(_services);
+  bool _autoOn = false;
+
+  /// "Probar: me quedo sin internet" (solo cambia lo que se ve aquí).
+  bool _pretend = false;
+
   @override
   void initState() {
     super.initState();
     _cities = _services.offlineCities.all();
+    _paused = _services.offlineCities.paused();
+    _autoOn = _auto.enabled;
+    unawaited(_loadMapVersion());
     _wifiOnly = _services.prefs.readData(LocalData.offlineWifiOnly) != '0';
     unawaited(_loadWorld());
     _net = _services.onlineChanges().listen((bool on) {
@@ -100,6 +123,34 @@ class _OfflineScreenState extends State<OfflineScreen> {
     } on Object {
       // Sin la lista de aeropuertos no se puede añadir una ciudad: el campo
       // lo dirá ("no conocemos ese aeropuerto").
+    }
+  }
+
+  Future<void> _loadMapVersion() async {
+    if (_cities.isEmpty) return;
+    String? v;
+    try {
+      v = await _services.mapVersion.latest();
+    } on Object {
+      v = null;
+    }
+    if (mounted && v != null) setState(() => _latestMap = v);
+  }
+
+  Future<void> _setAuto(bool on) async {
+    setState(() => _autoOn = on);
+    await _auto.setEnabled(on);
+  }
+
+  /// Borrar lo que se bajó de una descarga parada.
+  Future<void> _discard(PausedDownload p) async {
+    // Si la ciudad ya estaba descargada de antes, esa se queda.
+    if (_services.offlineCities.of(p.iata) == null) {
+      await _services.downloads.forget(p.iata);
+    }
+    await _services.offlineCities.unpause(p.iata);
+    if (mounted) {
+      setState(() => _paused = _services.offlineCities.paused());
     }
   }
 
@@ -144,6 +195,14 @@ class _OfflineScreenState extends State<OfflineScreen> {
     bool withAudio,
   ) async {
     if (_busy != null) return;
+    final AppLocalizations t = AppLocalizations.of(context);
+    // Se está poniendo al día otra ciudad sola ("Actualizar solas").
+    final String? other = _services.offlineBusy.value;
+    if (other != null) {
+      setState(() => _error = t.offlineAutoBusy(other));
+      return;
+    }
+    _services.offlineBusy.value = airport.iata;
     final String language = Localizations.localeOf(context).languageCode;
     final bool hadIt = _cities.any((CityPack c) => c.iata == airport.iata);
     bool ok = false;
@@ -155,7 +214,6 @@ class _OfflineScreenState extends State<OfflineScreen> {
       _stop = false;
       _justDone = null;
     });
-    final AppLocalizations t = AppLocalizations.of(context);
     try {
       await _services.downloads.run(
         iata: airport.iata,
@@ -171,9 +229,23 @@ class _OfflineScreenState extends State<OfflineScreen> {
         withAudio: withAudio,
       );
       ok = true;
+      await _services.offlineCities.unpause(airport.iata);
     } on DownloadException catch (e) {
-      // Parada a medias de una ciudad nueva: se borra lo que se bajó.
-      if (e.error == DownloadError.cancelled && !hadIt) {
+      // Parada a medias (tú, o se fue la red): lo bajado se queda y la
+      // ciudad sale con "Seguir", que no vuelve a bajar lo que ya está.
+      if (e.error == DownloadError.cancelled ||
+          e.error == DownloadError.offline ||
+          e.error == DownloadError.failed) {
+        await _services.offlineCities.pause(
+          PausedDownload(
+            iata: airport.iata,
+            city: airport.city,
+            area: area,
+            withAudio: withAudio,
+          ),
+        );
+      } else if (!hadIt) {
+        // No hay nada que bajar ahí (o falta el wifi): fuera los restos.
         await _services.downloads.forget(airport.iata);
       }
       if (mounted) {
@@ -191,11 +263,13 @@ class _OfflineScreenState extends State<OfflineScreen> {
     } on Object {
       if (mounted) setState(() => _error = t.offlineFailed);
     } finally {
+      _services.offlineBusy.value = null;
       if (mounted) {
         setState(() {
           _busy = null;
           _progress = null;
           _cities = _services.offlineCities.all();
+          _paused = _services.offlineCities.paused();
           if (ok) _justDone = airport.iata;
         });
         if (ok) unawaited(HapticFeedback.mediumImpact());
@@ -240,6 +314,12 @@ class _OfflineScreenState extends State<OfflineScreen> {
     final String typed = _code.text.trim();
     final Airport? picked = _airportOf(typed);
     final bool full = _cities.length >= OfflineLibrary.maxCities;
+    final bool offline = _online == false || _pretend;
+    final int? estimate = estimateBytes(
+      _cities,
+      area: _area,
+      withAudio: _audio,
+    );
     return Scaffold(
       appBar: AppBar(title: Text(t.offlineTitle)),
       body: ListView(
@@ -255,7 +335,7 @@ class _OfflineScreenState extends State<OfflineScreen> {
             style: text.bodyMedium?.copyWith(color: NomadColors.textMuted),
           ),
           // Sin internet ahora: qué sigue funcionando (de verdad, no de prueba).
-          if (_online == false) ...<Widget>[
+          if (offline) ...<Widget>[
             const SizedBox(height: 12),
             _NoNet(count: _cities.length),
           ],
@@ -328,6 +408,14 @@ class _OfflineScreenState extends State<OfflineScreen> {
             t.offlinePartsNote,
             style: text.bodySmall?.copyWith(color: NomadColors.textMuted),
           ),
+          const SizedBox(height: 6),
+          // Cuánto ocupará, sacado de lo que ocuparon tus otras ciudades.
+          Text(
+            estimate == null
+                ? t.offlineEstimateUnknown
+                : t.offlineEstimate(sizeLabel(estimate)),
+            style: text.bodySmall?.copyWith(color: NomadColors.textMuted),
+          ),
           const SizedBox(height: 12),
           FilledButton(
             onPressed: picked == null || full
@@ -371,12 +459,27 @@ class _OfflineScreenState extends State<OfflineScreen> {
               t.offlineNone,
               style: text.bodyMedium?.copyWith(color: NomadColors.textMuted),
             ),
+          for (final PausedDownload p in _paused)
+            if (p.iata != _busy &&
+                !_queue.any((_Job j) => j.airport.iata == p.iata))
+              _PausedCard(
+                paused: p,
+                busy: _busy != null,
+                onResume: () {
+                  final Airport? a = _airportOf(p.iata);
+                  if (a != null) _enqueue(a, p.area, p.withAudio);
+                },
+                onDiscard: () => unawaited(_discard(p)),
+              ),
           for (final CityPack pack in _cities)
             _CityCard(
               pack: pack,
               fresh: pack.iata == _justDone,
               busy: _busy != null,
-              offline: _online == false,
+              offline: offline,
+              newerMap: hasNewerMap(pack, _latestMap)
+                  ? mapVersionDay(_latestMap)
+                  : null,
               onUpdate: () {
                 final Airport? a = _airportOf(pack.iata);
                 if (a != null) _enqueue(a, pack.area, pack.withAudio);
@@ -391,6 +494,24 @@ class _OfflineScreenState extends State<OfflineScreen> {
             subtitle: Text(t.offlineWifiOnlyWhy),
             contentPadding: EdgeInsets.zero,
           ),
+          SwitchListTile(
+            value: _autoOn,
+            onChanged: (bool v) => unawaited(_setAuto(v)),
+            title: Text(t.offlineAutoTitle),
+            subtitle: Text(t.offlineAutoWhy),
+            contentPadding: EdgeInsets.zero,
+          ),
+          if (_cities.isNotEmpty)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: OutlinedButton.icon(
+                onPressed: () => setState(() => _pretend = !_pretend),
+                icon: Icon(
+                  _pretend ? Icons.wifi_rounded : Icons.airplanemode_active,
+                ),
+                label: Text(_pretend ? t.offlineTryStop : t.offlineTry),
+              ),
+            ),
           const SizedBox(height: 8),
           Text(
             t.offlineUsed(sizeLabel(_services.offlineCities.totalBytes)),
@@ -652,9 +773,14 @@ class _CityCard extends StatelessWidget {
     required this.onUpdate,
     required this.onDelete,
     this.offline = false,
+    this.newerMap,
   });
 
   final CityPack pack;
+
+  /// El día del mapa más nuevo que hay (null = el tuyo está al día o no se
+  /// sabe).
+  final DateTime? newerMap;
 
   /// Ahora no hay internet: se dice que esta ciudad sigue funcionando.
   final bool offline;
@@ -730,6 +856,14 @@ class _CityCard extends StatelessWidget {
                 t.offlineMapMissing,
                 style: const TextStyle(color: NomadColors.money),
               ),
+            if (newerMap != null)
+              Text(
+                t.offlineNewMap(DateFormat.yMMMd(tag).format(newerMap!)),
+                style: const TextStyle(
+                  color: NomadColors.money,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             if (pack.language != language)
               Text(
                 t.offlineOtherLanguage,
@@ -776,6 +910,73 @@ class _CityCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Una descarga parada a medias: "Seguir" continúa (lo ya bajado no se baja
+/// otra vez) y "Borrar" tira lo que se bajó.
+class _PausedCard extends StatelessWidget {
+  const _PausedCard({
+    required this.paused,
+    required this.busy,
+    required this.onResume,
+    required this.onDiscard,
+  });
+
+  final PausedDownload paused;
+  final bool busy;
+  final VoidCallback onResume;
+  final VoidCallback onDiscard;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 8, 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                const Icon(
+                  Icons.pause_circle_rounded,
+                  color: NomadColors.money,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    t.offlinePaused(paused.city),
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              t.offlineResumeNote,
+              style: const TextStyle(color: NomadColors.textMuted),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: <Widget>[
+                TextButton(
+                  onPressed: busy ? null : onResume,
+                  child: Text(t.offlineResume),
+                ),
+                TextButton(
+                  onPressed: busy ? null : onDiscard,
+                  child: Text(
+                    t.offlineDelete,
+                    style: const TextStyle(color: NomadColors.safety),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
