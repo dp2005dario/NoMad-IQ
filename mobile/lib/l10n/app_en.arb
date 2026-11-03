@@ -7720,6 +7720,165 @@
   "@eventsUnsave": {
     "description": "Unsave tooltip."
   },
+  "eventsHeroLabel": "{count, plural, =1{thing happening on your dates} other{things happening on your dates}}",
+  "@eventsHeroLabel": {
+    "description": "Events hero: label under the big number",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "eventsHeroSub": "Concerts, festivals, sport and theatre",
+  "@eventsHeroSub": {
+    "description": "Events hero subtitle"
+  },
+  "eventsDaysTitle": "YOUR DAYS · TAP ONE",
+  "@eventsDaysTitle": {
+    "description": "Events: day picker heading"
+  },
+  "eventsAllDays": "ALL",
+  "@eventsAllDays": {
+    "description": "Events: all days chip"
+  },
+  "eventsCatAll": "All",
+  "@eventsCatAll": {
+    "description": "Events category"
+  },
+  "eventsCatMusic": "Music",
+  "@eventsCatMusic": {
+    "description": "Events category"
+  },
+  "eventsCatParty": "Festivities",
+  "@eventsCatParty": {
+    "description": "Events category (holidays and festivals)"
+  },
+  "eventsCatSports": "Sport",
+  "@eventsCatSports": {
+    "description": "Events category"
+  },
+  "eventsCatArts": "Theatre",
+  "@eventsCatArts": {
+    "description": "Events category"
+  },
+  "eventsCatFamily": "Family",
+  "@eventsCatFamily": {
+    "description": "Events category"
+  },
+  "eventsStatusOnsale": "ON SALE",
+  "@eventsStatusOnsale": {
+    "description": "Event ticket status badge"
+  },
+  "eventsStatusOffsale": "NOT ON SALE NOW",
+  "@eventsStatusOffsale": {
+    "description": "Event ticket status badge"
+  },
+  "eventsStatusCancelled": "CANCELLED",
+  "@eventsStatusCancelled": {
+    "description": "Event ticket status badge"
+  },
+  "eventsStatusRescheduled": "NEW DATE",
+  "@eventsStatusRescheduled": {
+    "description": "Event ticket status badge"
+  },
+  "eventsStatusHoliday": "HOLIDAY",
+  "@eventsStatusHoliday": {
+    "description": "Event badge for official holidays"
+  },
+  "eventsPriceAt": "Price on Ticketmaster",
+  "@eventsPriceAt": {
+    "description": "Event: price only on the ticket site"
+  },
+  "eventsStartsIn": "Starts in {time}",
+  "@eventsStartsIn": {
+    "description": "Event countdown",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "eventsHappening": "Happening now",
+  "@eventsHappening": {
+    "description": "Event countdown when it has started"
+  },
+  "eventsToPlans": "+ Plans",
+  "@eventsToPlans": {
+    "description": "Event: send to the group plans"
+  },
+  "eventsInPlans": "✓ In plans",
+  "@eventsInPlans": {
+    "description": "Event: already sent to the group plans"
+  },
+  "eventsEmptyFilter": "Nothing of this kind that day. Try another day or “All”.",
+  "@eventsEmptyFilter": {
+    "description": "Events: nothing for this day and category"
+  },
+  "eventsMapTitle": "Where they happen",
+  "@eventsMapTitle": {
+    "description": "Events: map section title"
+  },
+  "eventsMapSub": "Tap a pin to see its event. Each one is in its real place, according to Ticketmaster.",
+  "@eventsMapSub": {
+    "description": "Events: map explanation"
+  },
+  "eventsMapFiltered": "Filtering by the map pin · tap again to clear",
+  "@eventsMapFiltered": {
+    "description": "Events hero subtitle when filtering by a map pin"
+  },
+  "eventsTipBusy": "On {day}, {a} and {b} fall on the same day: expect more people. Want to vote on it as a group?",
+  "@eventsTipBusy": {
+    "description": "Events: Flyra tip when two events fall on the same day",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "a": {
+        "type": "String"
+      },
+      "b": {
+        "type": "String"
+      }
+    }
+  },
+  "eventsVoteLink": "Vote on it in “Pick plans” and find your match",
+  "@eventsVoteLink": {
+    "description": "Events: link to group voting"
+  },
+  "eventsSavedToast": "Saved. Flyra will remind you the day before and 2 hours before.",
+  "@eventsSavedToast": {
+    "description": "Events: after saving with the heart"
+  },
+  "eventsSentToPlans": "Sent to “Pick plans”. If someone in the group picks it too: travel match!",
+  "@eventsSentToPlans": {
+    "description": "Events: after sending to the group plans"
+  },
+  "eventsNoGroup": "To vote on plans, first create or join a group trip.",
+  "@eventsNoGroup": {
+    "description": "Events: no group trip to send plans to"
+  },
+  "eventsPickGroup": "Which group trip?",
+  "@eventsPickGroup": {
+    "description": "Events: which group trip"
+  },
+  "eventsReminderEve": "Tomorrow: {name}",
+  "@eventsReminderEve": {
+    "description": "Events: reminder the day before",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "eventsReminderSoon": "In 2 hours: {name}",
+  "@eventsReminderSoon": {
+    "description": "Events: reminder 2 hours before",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "beforePlugsTitle": "Plugs",
   "@beforePlugsTitle": {
     "description": "Section plugs."
