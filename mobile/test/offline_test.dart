@@ -277,6 +277,36 @@ void main() {
       expect(OfflineLibrary(store).of('MAD')!.city, 'Madrid');
     });
 
+    test('"Parar descarga" corta a mitad y no guarda la ciudad', () async {
+      final FakeGateway g = FakeGateway();
+      serveCity(g);
+      final SessionController session = await signedInSession(g);
+      final MemorySettingsStore store = MemorySettingsStore();
+      bool stop = false;
+      await expectLater(
+        downloaderFor(g, session, store, maps: FakeMaps()).run(
+          iata: 'mad',
+          city: 'Madrid',
+          center: const LatLon(40.42, -3.70),
+          language: 'es',
+          wifiOnly: true,
+          // En cuanto empieza a bajar audio, la persona toca "Parar".
+          onProgress: (DownloadProgress p) {
+            if (p.step == DownloadStep.audio) stop = true;
+          },
+          stopped: () => stop,
+        ),
+        throwsA(
+          isA<DownloadException>().having(
+            (DownloadException e) => e.error,
+            'error',
+            DownloadError.cancelled,
+          ),
+        ),
+      );
+      expect(OfflineLibrary(store).of('MAD'), isNull);
+    });
+
     test('si el mapa falla, las audioguías se guardan igual', () async {
       final FakeGateway g = FakeGateway();
       serveCity(g);
@@ -464,7 +494,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(store.readData(LocalData.offlineWifiOnly), '0');
 
+    // Borrar pregunta antes: "Mantener" no borra nada.
     await tester.tap(find.text('Borrar'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('¿Borrar Madrid?'), findsOneWidget);
+    await tester.tap(find.text('Mantener'));
+    await tester.pumpAndSettle();
+    expect(maps.deleted, isEmpty);
+    await tester.tap(find.text('Borrar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Borrar').last);
     await tester.pumpAndSettle();
     expect(maps.deleted, <String>['MAD']);
     expect(find.textContaining('Todavía no has descargado'), findsOneWidget);

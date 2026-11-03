@@ -3953,6 +3953,36 @@
   "@offlineOpen": {
     "description": "Button: open the offline cities screen."
   },
+  "offlineDeleteAsk": "Delete {city}? You'll need to download it again to use it offline.",
+  "@offlineDeleteAsk": {
+    "description": "Confirm deleting a downloaded city.",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineCancel": "Stop download",
+  "@offlineCancel": {
+    "description": "Button: stop the current download."
+  },
+  "offlineCancelled": "Download stopped",
+  "@offlineCancelled": {
+    "description": "Message: the download was stopped."
+  },
+  "offlineQueued": "Next up: {cities}",
+  "@offlineQueued": {
+    "description": "Cities waiting in the download queue.",
+    "placeholders": {
+      "cities": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineKeep": "Keep",
+  "@offlineKeep": {
+    "description": "Button: keep the city (do not delete)."
+  },
   "twTitle": "Travelling with my dog",
   "@twTitle": {
     "description": "Title: travelling with my dog."

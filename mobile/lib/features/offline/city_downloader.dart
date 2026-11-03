@@ -51,6 +51,9 @@ enum DownloadError {
 
   /// El servidor falló o se cortó la descarga.
   failed,
+
+  /// La paraste tú ("Parar descarga").
+  cancelled,
 }
 
 class DownloadException implements Exception {
@@ -142,7 +145,15 @@ class CityDownloader {
     required String language,
     required bool wifiOnly,
     required void Function(DownloadProgress) onProgress,
+    bool Function()? stopped,
   }) async {
+    // Entre paso y paso se mira si has tocado "Parar descarga".
+    void check() {
+      if (stopped?.call() ?? false) {
+        throw const DownloadException(DownloadError.cancelled);
+      }
+    }
+
     final NetKind kind = await net.now();
     if (!mayDownload(wifiOnly: wifiOnly, net: kind)) {
       throw DownloadException(
@@ -175,6 +186,7 @@ class CityDownloader {
     // salta y se avisa al final con las que sí hay.
     final List<PackZone> saved = <PackZone>[];
     for (int i = 0; i < zones.length; i++) {
+      check();
       onProgress(
         DownloadProgress(DownloadStep.guides, done: i, total: zones.length),
       );
@@ -198,12 +210,14 @@ class CityDownloader {
     // 3. Los audios (.opus) en la carpeta de la ciudad.
     final List<PackZone> withAudio = <PackZone>[];
     for (int i = 0; i < saved.length; i++) {
+      check();
       onProgress(
         DownloadProgress(DownloadStep.audio, done: i, total: saved.length),
       );
       withAudio.add(await _withAudio(code, saved[i], language));
     }
 
+    check();
     // 4. El mapa. Si falla, la ciudad se guarda igual (con el aviso): las
     // audioguías ya descargadas siguen valiendo.
     onProgress(const DownloadProgress(DownloadStep.map, total: 1));
@@ -225,6 +239,7 @@ class CityDownloader {
       mapFailed = true;
     }
 
+    check();
     final CityPack pack = CityPack(
       iata: code,
       city: city,
