@@ -483,12 +483,14 @@ void main() {
       expect(find.text('Menos piezas'), findsOneWidget);
       expect(find.text('Equilibrado'), findsOneWidget);
       expect(find.text('Sueltos y propinas'), findsOneWidget);
-      expect(find.textContaining('5.000'), findsOneWidget);
+      // El billete de 5000 ¥ sale con su foto (el lector dice su valor).
+      expect(find.bySemanticsLabel(RegExp('5.000')), findsOneWidget);
+      expect(find.byType(Image), findsWidgets);
       // Los 161 ¥ que sobran salen como monedas dibujadas (el yen las
       // tiene en la lista), no como texto.
       expect(find.textContaining('en monedas'), findsNothing);
       expect(find.text('¥500'), findsNothing);
-      expect(find.textContaining('100'), findsWidgets);
+      expect(find.bySemanticsLabel(RegExp('100')), findsWidgets);
       // Se guardó una copia para usarla sin red.
       expect(prefs.data[LocalData.fxRates], contains('163.21'));
     });

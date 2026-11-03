@@ -167,6 +167,15 @@ const Map<String, BanknoteSet> banknotes = <String, BanknoteSet>{
     100,
     200,
   ], 'https://www.resbank.co.za/en/home/what-we-do/currency'),
+  // Billetes de la serie E2 en circulación.
+  'TRY': BanknoteSet(<int>[
+    5,
+    10,
+    20,
+    50,
+    100,
+    200,
+  ], 'https://www.tcmb.gov.tr/wps/wcm/connect/EN/TCMB+EN/Main+Menu/Banknotes/'),
   'BRL': BanknoteSet(<int>[
     2,
     5,
@@ -312,6 +321,32 @@ const Map<String, BanknoteSet> coins = <String, BanknoteSet>{
     500,
     1000,
   ], 'https://www.banxico.org.mx/banknotes-and-coins/'),
+  // 1, 5, 10 y 25 centavos (las de 50 centavos y 1 dólar casi no se ven).
+  'USD': BanknoteSet(<int>[
+    1,
+    5,
+    10,
+    25,
+  ], 'https://www.usmint.gov/learn/coin-and-medal-programs/circulating-coins'),
+  // 5, 10 y 25 centavos; 1 y 2 dólares (Canadá ya no usa el centavo).
+  'CAD': BanknoteSet(<int>[
+    5,
+    10,
+    25,
+    100,
+    200,
+  ], 'https://www.mint.ca/en/discover/canadian-circulation-coins'),
+  // 25 y 50 satang; 1, 2, 5 y 10 baht.
+  'THB': BanknoteSet(<int>[
+    25,
+    50,
+    100,
+    200,
+    500,
+    1000,
+  ], 'https://www.bot.or.th/en/our-roles/banknotes.html'),
+  // 5, 10, 25 y 50 kuruş y 1 lira.
+  'TRY': BanknoteSet(<int>[5, 10, 25, 50, 100], 'https://www.tcmb.gov.tr/'),
   // 1 y 5 jiao (10 y 50 fen) y 1 yuan.
   'CNY': BanknoteSet(<int>[10, 50, 100], 'https://www.pbc.gov.cn/en/'),
 };

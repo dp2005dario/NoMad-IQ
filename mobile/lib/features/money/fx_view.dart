@@ -8,8 +8,8 @@
 // Arriba, Flyra recuerda siempre que es SOLO INFORMATIVA (el banco o la casa
 // de cambio te darán otro cambio). Hay botones rápidos (10, 20, 50, 100,
 // 200) y, al caer la moneda, "Cómo llevarlo en efectivo": hasta tres formas
-// (Menos piezas, Equilibrado, Sueltos y propinas) con billetes y monedas
-// dibujados.
+// (Menos piezas, Equilibrado, Sueltos y propinas) con las FOTOS de los
+// billetes y monedas (si no hay foto de uno, se dibuja con su valor).
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -25,6 +25,7 @@ import '../../widgets/flyra_avatar.dart';
 import '../visa/visa_data.dart' show CountryNames;
 import 'banknotes.dart';
 import 'currency_info.dart';
+import 'currency_photos.dart';
 import 'fx_api.dart';
 import 'receipt_parser.dart';
 
@@ -642,6 +643,7 @@ class _Banknotes extends StatelessWidget {
                 children: <Widget>[
                   for (final NotePile p in mixes[i].piles)
                     _Note(
+                      photo: notePhoto(currency, p.value),
                       label: formatMoney(
                         p.value * unit,
                         currency,
@@ -663,6 +665,7 @@ class _Banknotes extends StatelessWidget {
                     children: <Widget>[
                       for (final NotePile p in c)
                         _Coin(
+                          photo: coinPhoto(currency, p.value),
                           label: formatMoney(
                             p.value,
                             currency,
@@ -702,70 +705,116 @@ class _Banknotes extends StatelessWidget {
 }
 
 class _Note extends StatelessWidget {
-  const _Note({required this.label, required this.count});
+  const _Note({required this.label, required this.count, this.photo});
 
   final String label;
   final int count;
 
+  /// La foto del billete (assets/divisas/...), o null para dibujarlo.
+  final String? photo;
+
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: <Widget>[
-      Container(
-        width: 86,
-        height: 44,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: NomadColors.money.withValues(alpha: 0.18),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: NomadColors.money, width: 1.5),
-        ),
-        child: Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
-        ),
+  Widget build(BuildContext context) {
+    final String? photo = this.photo;
+    final Widget drawn = Container(
+      width: 86,
+      height: 44,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: NomadColors.money.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: NomadColors.money, width: 1.5),
       ),
-      const SizedBox(width: 4),
-      Text('× $count', style: const TextStyle(fontWeight: FontWeight.w800)),
-    ],
-  );
+      child: Text(
+        label,
+        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+      ),
+    );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Semantics(
+          label: label,
+          image: photo != null,
+          child: photo == null
+              ? drawn
+              : ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: Image.asset(
+                    photo,
+                    width: 110,
+                    height: 56,
+                    fit: BoxFit.contain,
+                    excludeFromSemantics: true,
+                    // Si la foto no carga, el billete dibujado.
+                    errorBuilder: (BuildContext c, Object e, StackTrace? s) =>
+                        drawn,
+                  ),
+                ),
+        ),
+        const SizedBox(width: 4),
+        Text('× $count', style: const TextStyle(fontWeight: FontWeight.w800)),
+      ],
+    );
+  }
 }
 
-/// Una moneda dibujada: un círculo dorado con su valor, y cuántas.
+/// Una moneda: su foto (o un círculo dorado con su valor) y cuántas.
 class _Coin extends StatelessWidget {
-  const _Coin({required this.label, required this.count});
+  const _Coin({required this.label, required this.count, this.photo});
 
   final String label;
   final int count;
 
+  /// La foto de la moneda (assets/divisas/...), o null para dibujarla.
+  final String? photo;
+
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: <Widget>[
-      Container(
-        width: 44,
-        height: 44,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: const RadialGradient(
-            colors: <Color>[Color(0xFFF6DD8B), Color(0xFFC9A04A)],
-          ),
-          border: Border.all(color: const Color(0xFF8E6E2C), width: 1.5),
+  Widget build(BuildContext context) {
+    final String? photo = this.photo;
+    final Widget drawn = Container(
+      width: 44,
+      height: 44,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: const RadialGradient(
+          colors: <Color>[Color(0xFFF6DD8B), Color(0xFFC9A04A)],
         ),
-        child: FittedBox(
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF3B2A08),
-            ),
+        border: Border.all(color: const Color(0xFF8E6E2C), width: 1.5),
+      ),
+      child: FittedBox(
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF3B2A08),
           ),
         ),
       ),
-      const SizedBox(width: 4),
-      Text('× $count', style: const TextStyle(fontWeight: FontWeight.w800)),
-    ],
-  );
+    );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Semantics(
+          label: label,
+          image: photo != null,
+          child: photo == null
+              ? drawn
+              : Image.asset(
+                  photo,
+                  width: 44,
+                  height: 44,
+                  fit: BoxFit.contain,
+                  excludeFromSemantics: true,
+                  errorBuilder: (BuildContext c, Object e, StackTrace? s) =>
+                      drawn,
+                ),
+        ),
+        const SizedBox(width: 4),
+        Text('× $count', style: const TextStyle(fontWeight: FontWeight.w800)),
+      ],
+    );
+  }
 }

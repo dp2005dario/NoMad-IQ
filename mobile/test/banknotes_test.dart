@@ -1,5 +1,8 @@
 // Billetes: las formas de juntar una cantidad, y banderas de las monedas.
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:eclipta/features/money/currency_photos.dart';
 import 'package:eclipta/features/money/banknotes.dart';
 import 'package:eclipta/features/money/currency_info.dart';
 
@@ -52,5 +55,20 @@ void main() {
     ]);
     expect(coinPiles(100, 'XXX'), isEmpty);
     expect(coinPiles(0, 'EUR'), isEmpty);
+  });
+
+  test('cada foto de la lista existe en assets/divisas', () {
+    for (final MapEntry<String, Set<int>> e in notePhotos.entries) {
+      for (final int v in e.value) {
+        expect(File(notePhoto(e.key, v)!).existsSync(), isTrue, reason: '$v');
+      }
+    }
+    for (final MapEntry<String, Set<int>> e in coinPhotos.entries) {
+      for (final int v in e.value) {
+        expect(File(coinPhoto(e.key, v)!).existsSync(), isTrue, reason: '$v');
+      }
+    }
+    expect(notePhoto('EUR', 50), 'assets/divisas/eur/b-50.webp');
+    expect(coinPhoto('EUR', 3), isNull);
   });
 }
