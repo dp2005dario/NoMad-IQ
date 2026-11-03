@@ -1327,6 +1327,7 @@
   "airportRight": "Kumanan",
   "airportBack": "Umikot pabalik",
   "airportArrived": "Nandito ka na",
+  "airportVoice": "Boses ni Flyra",
   "airportDistance": "{min} min · {m} m",
   "airportLevel": "Palapag {level}",
   "airportBoarding": "Boarding {time}",

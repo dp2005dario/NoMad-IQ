@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/airport/airport_guide.dart';
+import 'package:eclipta/features/camera/speaker.dart';
 import 'package:eclipta/features/easy/easy_mode.dart';
 import 'package:eclipta/features/map/geo.dart';
 import 'package:eclipta/features/map/location.dart';
@@ -62,7 +63,42 @@ const Map<String, Object?> guideJson = <String, Object?>{
   ],
 };
 
+/// Apunta lo que Flyra "dice" en voz alta.
+class SaidSpeaker implements Speaker {
+  final List<String> said = <String>[];
+
+  @override
+  Future<void> speak(String text, String language) async => said.add(text);
+
+  @override
+  Future<void> stop() async {}
+}
+
 void main() {
+  test('Flyra no habla con cada temblor de la brújula', () {
+    final TurnAnnouncer a = TurnAnnouncer();
+    final DateTime t0 = DateTime.utc(2026, 11, 3, 10);
+    DateTime at(int ms) => t0.add(Duration(milliseconds: ms));
+    // La primera, enseguida.
+    expect(a.update(Cue.straight, at(0)), Cue.straight);
+    expect(a.update(Cue.straight, at(500)), isNull);
+    // Un temblor de medio segundo hacia la izquierda: nada.
+    expect(a.update(Cue.left, at(600)), isNull);
+    expect(a.update(Cue.straight, at(1100)), isNull);
+    // Izquierda de verdad (dura más de 1,2 s y ya pasaron 3 s).
+    expect(a.update(Cue.left, at(3000)), isNull);
+    expect(a.update(Cue.left, at(4300)), Cue.left);
+    expect(a.update(Cue.left, at(6000)), isNull);
+    // Llegar se dice aunque no hayan pasado 3 s desde el último aviso.
+    expect(a.update(Cue.arrived, at(6100)), isNull);
+    expect(a.update(Cue.arrived, at(7400)), Cue.arrived);
+    // Destino nuevo: vuelve a decirse al momento.
+    a.reset();
+    expect(a.update(Cue.right, at(7500)), Cue.right);
+    expect(cueFor(10, 90), Cue.arrived);
+    expect(cueFor(100, -90), Cue.left);
+  });
+
   test('rumbo, giro y minutos andando', () {
     const GeoPoint here = GeoPoint(40.49, -3.59);
     expect(bearingTo(here, const GeoPoint(40.50, -3.59)), closeTo(0, 0.5));
@@ -101,6 +137,7 @@ void main() {
       ),
     );
     final session = newSession()..continueAsGuest();
+    final SaidSpeaker voice = SaidSpeaker();
     tester.view.physicalSize = const Size(1200, 4000);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -114,19 +151,33 @@ void main() {
         gateway: g,
         prefs: store,
         location: BarajasLocation(),
+        speaker: voice,
       ),
     );
     await tester.pumpAndSettle();
 
     expect(find.text('MAD'), findsOneWidget);
-    expect(find.text('Sigue recto 111 m'), findsOneWidget);
+    // En la tarjeta y en el aviso de Flyra de abajo, que además lo dice.
+    expect(find.text('Sigue recto 111 m'), findsNWidgets(2));
+    expect(voice.said, contains('Sigue recto 111 m'));
     expect(find.text('Puerta K42'), findsOneWidget);
     expect(find.text('Planta 1'), findsOneWidget);
     expect(find.text('Te da tiempo'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(ChoiceChip, 'Baño'));
     await tester.pumpAndSettle();
-    expect(find.text('Gira a la derecha'), findsOneWidget);
+    expect(find.text('Gira a la derecha'), findsNWidgets(2));
+    expect(voice.said.last, 'Gira a la derecha');
+
+    // Con el altavoz apagado, Flyra se calla (el aviso sigue abajo).
+    await tester.tap(find.byTooltip('Voz de Flyra'));
+    await tester.pumpAndSettle();
+    final int before = voice.said.length;
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Puerta'));
+    await tester.pumpAndSettle();
+    expect(voice.said, hasLength(before));
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Baño'));
+    await tester.pumpAndSettle();
     expect(find.text('1 min · 59 m'), findsOneWidget);
   });
 

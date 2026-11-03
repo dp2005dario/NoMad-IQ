@@ -1327,6 +1327,7 @@
   "airportRight": "오른쪽으로 도세요",
   "airportBack": "뒤로 도세요",
   "airportArrived": "도착했어요",
+  "airportVoice": "Flyra 음성",
   "airportDistance": "{min}분 · {m}m",
   "airportLevel": "{level}층",
   "airportBoarding": "탑승 {time}",

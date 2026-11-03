@@ -1327,6 +1327,7 @@
   "airportRight": "دائیں مڑیں",
   "airportBack": "پیچھے مڑیں",
   "airportArrived": "آپ پہنچ گئے",
+  "airportVoice": "Flyra کی آواز",
   "airportDistance": "{min} منٹ · {m} میٹر",
   "airportLevel": "منزل {level}",
   "airportBoarding": "بورڈنگ {time}",

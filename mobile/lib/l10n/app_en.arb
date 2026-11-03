@@ -6166,6 +6166,10 @@
   "@airportArrived": {
     "description": "Instruction."
   },
+  "airportVoice": "Flyra's voice",
+  "@airportVoice": {
+    "description": "Button: turn Flyra's spoken turn-by-turn directions on or off."
+  },
   "airportDistance": "{min} min · {m} m",
   "@airportDistance": {
     "description": "Distance.",

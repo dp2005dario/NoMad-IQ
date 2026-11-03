@@ -1327,6 +1327,7 @@
   "airportRight": "به راست بپیچید",
   "airportBack": "برگردید",
   "airportArrived": "رسیدید",
+  "airportVoice": "صدای Flyra",
   "airportDistance": "{min} دقیقه · {m} متر",
   "airportLevel": "طبقهٔ {level}",
   "airportBoarding": "سوار شدن {time}",

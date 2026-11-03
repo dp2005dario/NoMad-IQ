@@ -1327,6 +1327,7 @@
   "airportRight": "Belok kanan",
   "airportBack": "Pusing balik",
   "airportArrived": "Anda sudah sampai",
+  "airportVoice": "Suara Flyra",
   "airportDistance": "{min} min · {m} m",
   "airportLevel": "Tingkat {level}",
   "airportBoarding": "Naik pesawat {time}",

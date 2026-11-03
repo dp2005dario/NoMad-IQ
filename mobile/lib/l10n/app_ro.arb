@@ -1327,6 +1327,7 @@
   "airportRight": "Virează la dreapta",
   "airportBack": "Întoarce-te",
   "airportArrived": "Ai ajuns",
+  "airportVoice": "Vocea lui Flyra",
   "airportDistance": "{min} min · {m} m",
   "airportLevel": "Etajul {level}",
   "airportBoarding": "Îmbarcare {time}",

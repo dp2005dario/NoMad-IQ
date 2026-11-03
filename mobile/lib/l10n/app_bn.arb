@@ -1327,6 +1327,7 @@
   "airportRight": "ডানে ঘুরুন",
   "airportBack": "ঘুরে দাঁড়ান",
   "airportArrived": "আপনি পৌঁছে গেছেন",
+  "airportVoice": "Flyra-র কণ্ঠ",
   "airportDistance": "{min} মিনিট · {m} মি",
   "airportLevel": "তলা {level}",
   "airportBoarding": "বোর্ডিং {time}",

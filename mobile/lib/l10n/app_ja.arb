@@ -1327,6 +1327,7 @@
   "airportRight": "右に曲がる",
   "airportBack": "後ろを向く",
   "airportArrived": "到着しました",
+  "airportVoice": "Flyraの声",
   "airportDistance": "{min} 分 · {m} m",
   "airportLevel": "{level} 階",
   "airportBoarding": "搭乗 {time}",

@@ -1327,6 +1327,7 @@
   "airportRight": "Ga rechtsaf",
   "airportBack": "Draai om",
   "airportArrived": "Je bent er",
+  "airportVoice": "Stem van Flyra",
   "airportDistance": "{min} min · {m} m",
   "airportLevel": "Verdieping {level}",
   "airportBoarding": "Boarding {time}",

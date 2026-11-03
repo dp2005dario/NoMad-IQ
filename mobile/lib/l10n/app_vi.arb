@@ -1327,6 +1327,7 @@
   "airportRight": "Rẽ phải",
   "airportBack": "Quay lại",
   "airportArrived": "Bạn đã đến",
+  "airportVoice": "Giọng của Flyra",
   "airportDistance": "{min} phút · {m} m",
   "airportLevel": "Tầng {level}",
   "airportBoarding": "Lên máy bay {time}",

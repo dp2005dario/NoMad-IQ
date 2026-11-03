@@ -1327,6 +1327,7 @@
   "airportRight": "Поверніть праворуч",
   "airportBack": "Розверніться",
   "airportArrived": "Ви на місці",
+  "airportVoice": "Голос Flyra",
   "airportDistance": "{min} хв · {m} м",
   "airportLevel": "Поверх {level}",
   "airportBoarding": "Посадка {time}",

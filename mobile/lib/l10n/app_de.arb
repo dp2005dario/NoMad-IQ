@@ -1327,6 +1327,7 @@
   "airportRight": "Biege rechts ab",
   "airportBack": "Dreh dich um",
   "airportArrived": "Du bist da",
+  "airportVoice": "Flyras Stimme",
   "airportDistance": "{min} Min. · {m} m",
   "airportLevel": "Ebene {level}",
   "airportBoarding": "Boarding {time}",

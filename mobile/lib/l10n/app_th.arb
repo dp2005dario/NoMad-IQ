@@ -1327,6 +1327,7 @@
   "airportRight": "เลี้ยวขวา",
   "airportBack": "กลับหลัง",
   "airportArrived": "ถึงแล้ว",
+  "airportVoice": "เสียงของ Flyra",
   "airportDistance": "{min} นาที · {m} ม.",
   "airportLevel": "ชั้น {level}",
   "airportBoarding": "ขึ้นเครื่อง {time}",

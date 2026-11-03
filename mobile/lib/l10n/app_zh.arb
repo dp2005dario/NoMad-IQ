@@ -1327,6 +1327,7 @@
   "airportRight": "向右转",
   "airportBack": "掉头",
   "airportArrived": "已到达",
+  "airportVoice": "Flyra 的声音",
   "airportDistance": "{min} 分钟 · {m} 米",
   "airportLevel": "{level} 层",
   "airportBoarding": "登机 {time}",

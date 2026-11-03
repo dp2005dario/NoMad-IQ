@@ -1327,6 +1327,7 @@
   "airportRight": "Skręć w prawo",
   "airportBack": "Zawróć",
   "airportArrived": "Jesteś na miejscu",
+  "airportVoice": "Głos Flyry",
   "airportDistance": "{min} min · {m} m",
   "airportLevel": "Piętro {level}",
   "airportBoarding": "Boarding {time}",

@@ -1327,6 +1327,7 @@
   "airportRight": "Gira a destra",
   "airportBack": "Girati",
   "airportArrived": "Sei arrivato",
+  "airportVoice": "Voce di Flyra",
   "airportDistance": "{min} min · {m} m",
   "airportLevel": "Piano {level}",
   "airportBoarding": "Imbarco {time}",

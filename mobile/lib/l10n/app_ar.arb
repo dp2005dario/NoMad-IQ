@@ -1327,6 +1327,7 @@
   "airportRight": "انعطف يمينًا",
   "airportBack": "استدر للخلف",
   "airportArrived": "لقد وصلت",
+  "airportVoice": "صوت Flyra",
   "airportDistance": "{min} د · {m} م",
   "airportLevel": "الطابق {level}",
   "airportBoarding": "الصعود {time}",

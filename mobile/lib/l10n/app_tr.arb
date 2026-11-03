@@ -1327,6 +1327,7 @@
   "airportRight": "Sağa dönün",
   "airportBack": "Geri dönün",
   "airportArrived": "Vardınız",
+  "airportVoice": "Flyra'nın sesi",
   "airportDistance": "{min} dk · {m} m",
   "airportLevel": "Kat {level}",
   "airportBoarding": "Biniş {time}",
