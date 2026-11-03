@@ -1375,6 +1375,7 @@
   "assistantDownloadFailed": "İndirilemedi. Wifi'ye bağlan ve tekrar dene.",
   "assistantNeedModels": "Önce dilleri indir (yukarıda).",
   "assistantDidntHear": "Seni duyamadım. Tekrar dene veya yaz.",
+  "assistantDetected": "Flyra {lang} dilini algıladı: bu dilden çeviriyorum.",
   "assistantType": "Yaz",
   "assistantTranslate": "Çevir",
   "assistantSpeak": "Konuş",

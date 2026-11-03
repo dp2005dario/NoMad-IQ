@@ -1375,6 +1375,7 @@
   "assistantDownloadFailed": "Не вдалося завантажити. Підключіться до wifi і спробуйте ще раз.",
   "assistantNeedModels": "Спершу завантажте мови (вище).",
   "assistantDidntHear": "Я вас не почула. Спробуйте ще раз або введіть текст.",
+  "assistantDetected": "Flyra визначила мову: {lang}. Перекладаю з неї.",
   "assistantType": "Ввести",
   "assistantTranslate": "Перекласти",
   "assistantSpeak": "Говорити",

@@ -1375,6 +1375,7 @@
   "assistantDownloadFailed": "تعذّر التنزيل. اتصل بشبكة واي فاي وحاول مجددًا.",
   "assistantNeedModels": "نزّل اللغات أولًا (في الأعلى).",
   "assistantDidntHear": "لم أسمعك. حاول مجددًا أو اكتبه.",
+  "assistantDetected": "اكتشفت Flyra اللغة {lang}: أترجم من هذه اللغة.",
   "assistantType": "اكتب",
   "assistantTranslate": "ترجم",
   "assistantSpeak": "تحدّث",

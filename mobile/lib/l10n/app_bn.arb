@@ -1375,6 +1375,7 @@
   "assistantDownloadFailed": "ডাউনলোড হয়নি। ওয়াই-ফাইতে যুক্ত হয়ে আবার চেষ্টা করুন।",
   "assistantNeedModels": "প্রথমে ভাষাগুলো ডাউনলোড করুন (উপরে)।",
   "assistantDidntHear": "আমি শুনতে পাইনি। আবার চেষ্টা করুন বা টাইপ করুন।",
+  "assistantDetected": "Flyra {lang} শনাক্ত করেছে: সেই ভাষা থেকে অনুবাদ করছি।",
   "assistantType": "টাইপ",
   "assistantTranslate": "অনুবাদ",
   "assistantSpeak": "বলুন",

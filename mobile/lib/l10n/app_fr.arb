@@ -1375,6 +1375,7 @@
   "assistantDownloadFailed": "Échec du téléchargement. Connectez-vous au wifi et réessayez.",
   "assistantNeedModels": "Téléchargez d'abord les langues (ci-dessus).",
   "assistantDidntHear": "Je ne vous ai pas entendu. Réessayez ou tapez-le.",
+  "assistantDetected": "Flyra a détecté {lang} : je traduis depuis cette langue.",
   "assistantType": "Écrire",
   "assistantTranslate": "Traduire",
   "assistantSpeak": "Parler",

@@ -1375,6 +1375,7 @@
   "assistantDownloadFailed": "Gagal mengunduh. Sambungkan ke wifi dan coba lagi.",
   "assistantNeedModels": "Unduh bahasanya dulu (di atas).",
   "assistantDidntHear": "Aku tidak mendengarmu. Coba lagi atau ketik.",
+  "assistantDetected": "Flyra mendeteksi {lang}: aku menerjemahkan dari bahasa itu.",
   "assistantType": "Ketik",
   "assistantTranslate": "Terjemahkan",
   "assistantSpeak": "Bicara",

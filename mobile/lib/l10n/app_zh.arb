@@ -1375,6 +1375,7 @@
   "assistantDownloadFailed": "下载失败。请连接 Wi-Fi 后重试。",
   "assistantNeedModels": "请先下载语言(上方)。",
   "assistantDidntHear": "没听清。请再试一次或直接输入。",
+  "assistantDetected": "Flyra 检测到{lang}：将从该语言翻译。",
   "assistantType": "输入",
   "assistantTranslate": "翻译",
   "assistantSpeak": "说话",

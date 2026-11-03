@@ -11,6 +11,7 @@
 // 0 € y privado: lo que dices nunca pasa por nuestros servidores.
 import 'dart:async';
 
+import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
@@ -105,6 +106,40 @@ class NoSpeechInput implements SpeechInput {
 
   @override
   Future<void> stop() async {}
+}
+
+/// Adivina el idioma de una frase escrita (o ya pasada a texto).
+abstract interface class LanguageGuesser {
+  /// El código ("it") si está bastante seguro y es uno de los del
+  /// intérprete; null si no lo sabe.
+  Future<String?> guess(String text);
+}
+
+/// Para los tests y los aparatos sin ML Kit: nunca adivina.
+class NoLanguageGuesser implements LanguageGuesser {
+  const NoLanguageGuesser();
+
+  @override
+  Future<String?> guess(String text) async => null;
+}
+
+/// ML Kit Language ID: funciona dentro del móvil, sin internet y gratis.
+/// Con frases muy cortas ("ok", "taxi") no se fía: devuelve null.
+class MlKitLanguageGuesser implements LanguageGuesser {
+  final LanguageIdentifier _id = LanguageIdentifier(confidenceThreshold: 0.6);
+
+  @override
+  Future<String?> guess(String text) async {
+    if (text.trim().length < 8) return null;
+    try {
+      final String code = await _id.identifyLanguage(text);
+      // "zh-Latn" → "zh"; "und" = no lo sabe.
+      final String base = code.split('-').first;
+      return interpreterLanguages.containsKey(base) ? base : null;
+    } on Object {
+      return null;
+    }
+  }
 }
 
 class TranslationUnavailable implements Exception {

@@ -1375,6 +1375,7 @@
   "assistantDownloadFailed": "دانلود نشد. به وای‌فای وصل شوید و دوباره امتحان کنید.",
   "assistantNeedModels": "اول زبان‌ها را دانلود کنید (بالا).",
   "assistantDidntHear": "صدایتان را نشنیدم. دوباره امتحان کنید یا تایپ کنید.",
+  "assistantDetected": "Flyra زبان {lang} را تشخیص داد: از همین زبان ترجمه می‌کنم.",
   "assistantType": "تایپ",
   "assistantTranslate": "ترجمه",
   "assistantSpeak": "صحبت کنید",

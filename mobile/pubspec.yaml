@@ -82,6 +82,9 @@ dependencies:
   # El vídeo de fondo de la Bienvenida (en bucle, con música suave).
   video_player: ^2.14.1
   google_sign_in: ^7.2.0
+  # Asistente: adivina en qué idioma está una frase (ML Kit, en el móvil y
+  # gratis), para cambiar solo el idioma de la otra persona.
+  google_mlkit_language_id: ^0.15.1
 
 dev_dependencies:
   flutter_test:

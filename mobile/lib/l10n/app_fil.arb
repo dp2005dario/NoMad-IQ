@@ -1375,6 +1375,7 @@
   "assistantDownloadFailed": "Hindi ma-download. Kumonekta sa wifi at subukang muli.",
   "assistantNeedModels": "I-download muna ang mga wika (sa itaas).",
   "assistantDidntHear": "Hindi kita narinig. Subukang muli o i-type ito.",
+  "assistantDetected": "Natukoy ni Flyra ang {lang}: isinasalin ko mula sa wikang iyon.",
   "assistantType": "I-type",
   "assistantTranslate": "Isalin",
   "assistantSpeak": "Magsalita",

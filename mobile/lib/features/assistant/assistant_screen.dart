@@ -131,8 +131,28 @@ class _AssistantScreenState extends State<AssistantScreen> {
     await _check();
   }
 
+  /// Lo que dijo o escribió la otra persona: si Flyra ve que está en otro
+  /// idioma (ni el tuyo ni el elegido), cambia solo el idioma de su lado y
+  /// lo avisa. Funciona con texto; la voz se escucha en el idioma elegido.
+  Future<void> _detect(String text) async {
+    final String? found = await _services.languageGuesser.guess(text);
+    if (!mounted || found == null || found == _theirs || found == _mine) {
+      return;
+    }
+    setState(() => (_theirs = found, _missing = null));
+    await _services.prefs.writeData(LocalData.interpreterLang, found);
+    if (!mounted) return;
+    _snack(
+      AppLocalizations.of(context)
+          .assistantDetected(interpreterLanguages[found] ?? found),
+    );
+    await _check();
+  }
+
   /// Traduce y lo añade a la conversación (y lo lee en alto).
   Future<void> _say(String text, {required bool mine}) async {
+    if (!mine) await _detect(text);
+    if (!mounted) return;
     final String from = mine ? _mine : _theirs;
     final String to = mine ? _theirs : _mine;
     setState(() => _busy = true);

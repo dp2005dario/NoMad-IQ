@@ -1375,6 +1375,7 @@
   "assistantDownloadFailed": "Nu s-a putut descărca. Conectează-te la wifi și încearcă din nou.",
   "assistantNeedModels": "Descarcă mai întâi limbile (mai sus).",
   "assistantDidntHear": "Nu te-am auzit. Încearcă din nou sau scrie.",
+  "assistantDetected": "Flyra a detectat {lang}: traduc din această limbă.",
   "assistantType": "Scrie",
   "assistantTranslate": "Tradu",
   "assistantSpeak": "Vorbește",

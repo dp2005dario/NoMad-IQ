@@ -1375,6 +1375,7 @@
   "assistantDownloadFailed": "ڈاؤن لوڈ نہیں ہو سکا۔ وائی فائی سے جڑیں اور دوبارہ کوشش کریں۔",
   "assistantNeedModels": "پہلے زبانیں ڈاؤن لوڈ کریں (اوپر)۔",
   "assistantDidntHear": "میں سن نہیں سکی۔ دوبارہ کوشش کریں یا ٹائپ کریں۔",
+  "assistantDetected": "Flyra نے {lang} پہچانی: اسی زبان سے ترجمہ کر رہی ہوں۔",
   "assistantType": "ٹائپ",
   "assistantTranslate": "ترجمہ",
   "assistantSpeak": "بولیں",

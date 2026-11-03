@@ -6399,6 +6399,15 @@
   "@assistantDidntHear": {
     "description": "Speech recognised nothing."
   },
+  "assistantDetected": "Flyra detected {lang}: translating from that language.",
+  "@assistantDetected": {
+    "description": "Flyra noticed the other person writes/speaks another language and switched to it. {lang} is the language name in that language.",
+    "placeholders": {
+      "lang": {
+        "type": "String"
+      }
+    }
+  },
   "assistantType": "Type",
   "@assistantType": {
     "description": "Type instead of speaking."

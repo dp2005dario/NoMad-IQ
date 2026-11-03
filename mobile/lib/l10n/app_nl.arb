@@ -1375,6 +1375,7 @@
   "assistantDownloadFailed": "Downloaden mislukt. Maak verbinding met wifi en probeer opnieuw.",
   "assistantNeedModels": "Download eerst de talen (hierboven).",
   "assistantDidntHear": "Ik hoorde je niet. Probeer opnieuw of typ het.",
+  "assistantDetected": "Flyra herkende {lang}: ik vertaal vanuit die taal.",
   "assistantType": "Typen",
   "assistantTranslate": "Vertalen",
   "assistantSpeak": "Spreken",

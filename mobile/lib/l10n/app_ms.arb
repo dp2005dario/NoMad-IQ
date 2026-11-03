@@ -1375,6 +1375,7 @@
   "assistantDownloadFailed": "Gagal memuat turun. Sambung ke wifi dan cuba lagi.",
   "assistantNeedModels": "Muat turun bahasa dahulu (di atas).",
   "assistantDidntHear": "Saya tidak dengar. Cuba lagi atau taip.",
+  "assistantDetected": "Flyra mengesan {lang}: saya menterjemah daripada bahasa itu.",
   "assistantType": "Taip",
   "assistantTranslate": "Terjemah",
   "assistantSpeak": "Cakap",
