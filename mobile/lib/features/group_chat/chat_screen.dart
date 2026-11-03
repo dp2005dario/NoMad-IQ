@@ -25,6 +25,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
 import '../../widgets/user_avatar.dart';
 import '../group/group_api.dart';
+import '../group/group_hub.dart' show tasteLabel, tastesInText;
 import 'chat_api.dart';
 
 class GroupChatScreen extends StatefulWidget {
@@ -187,6 +188,7 @@ class _GroupChatScreenState extends State<GroupChatScreen>
       if (preset == null) _text.clear();
       setState(() => _merge(posted.messages));
       _lastNews = DateTime.now();
+      unawaited(_noteTastes(text));
       switch (posted.flyra) {
         case FlyraTrouble.quota:
           _snack(t.chatFlyraQuota);
@@ -202,6 +204,34 @@ class _GroupChatScreenState extends State<GroupChatScreen>
       );
     } finally {
       if (mounted) setState(() => (_sending = false, _flyraTyping = false));
+    }
+  }
+
+  /// "Apuntado en tus gustos": si el mensaje nombra gustos (por palabras
+  /// clave, sin IA), se añaden a los tuyos de "Gustos de cada uno".
+  Future<void> _noteTastes(String text) async {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final List<String> said = tastesInText(t, text);
+    if (said.isEmpty) return;
+    try {
+      final GroupTrip trip = await _services.group.get(widget.tripId);
+      final List<String> mine = trip.me?.tastes ?? const <String>[];
+      final List<String> fresh = <String>[
+        for (final String id in said)
+          if (!mine.contains(id)) id,
+      ];
+      if (fresh.isEmpty) return;
+      await _services.group.setTastes(widget.tripId, <String>[
+        ...mine,
+        ...fresh,
+      ]);
+      if (mounted) {
+        _snack(
+          t.tastesNoted(fresh.map((String id) => tasteLabel(t, id)).join(', ')),
+        );
+      }
+    } on ApiException {
+      // Si no se puede apuntar, el mensaje ya se envió: no pasa nada.
     }
   }
 

@@ -423,6 +423,8 @@ void main() {
       ),
       findsOneWidget,
     );
+    // Lo que dijo cada agente va debajo de la parte nueva (gustos, dormir...).
+    await tester.scrollUntilVisible(find.text('Tu agente'), 400);
     expect(find.text('Tu agente'), findsOneWidget);
     expect(find.text('Agente de Noelia'), findsOneWidget);
     expect(find.text('Su favorita'), findsOneWidget);

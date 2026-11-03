@@ -42,6 +42,9 @@ const List<Color> _faces = <Color>[
   Color(0xFFE6D86B),
 ];
 
+/// El color de la carita del miembro n.º [index] (el mismo en toda la app).
+Color faceColor(int index) => _faces[index % _faces.length];
+
 /// El nombre que se enseña de un miembro: el suyo, "Tú" o su alias.
 String memberName(AppLocalizations t, TripMember m) =>
     m.me ? t.groupYou : (m.name ?? m.alias);

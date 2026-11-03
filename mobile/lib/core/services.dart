@@ -38,6 +38,7 @@ import '../features/stays/stays_api.dart';
 import '../features/help/help_contacts.dart';
 import '../features/map/geo_api.dart';
 import '../features/map/geocode_api.dart';
+import '../features/group/cravings_api.dart';
 import '../features/map/location.dart';
 import '../features/map/location_tracker.dart';
 import '../features/map/map_surface.dart';
@@ -310,6 +311,9 @@ class AppServices {
   /// Festivos y eventos de una ciudad en unas fechas (público).
   late final EventsApi events = EventsApi(api);
   late final GeocodeApi geocode = GeocodeApi(api);
+
+  /// «¿Qué os apetece?» de Grupo: sitios de OSM para un antojo (público).
+  late final CravingsApi cravings = CravingsApi(api);
 
   /// Radar local: lluvia, timos y precios de viajeros.
   late final RadarApi radar = RadarApi(api);

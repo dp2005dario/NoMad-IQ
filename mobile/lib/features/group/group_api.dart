@@ -112,7 +112,12 @@ class TripMember {
     required this.me,
     this.name,
     this.photoUrl,
+    this.tastes = const <String>[],
   });
+
+  /// "Gustos de cada uno": lo que marcó (tapas, museos...). Lo ve todo el
+  /// grupo (no son las preferencias secretas de su agente).
+  final List<String> tastes;
 
   /// Foto de perfil del miembro, si su perfil la trae.
   final String? photoUrl;
@@ -138,9 +143,32 @@ class TripMember {
       photoUrl: m['photo_url'] is String ? m['photo_url'] as String : null,
       submitted: submitted,
       me: me,
+      // Solo los gustos que la app conoce (ver tasteIds).
+      tastes: <String>[
+        if (m['tastes'] case final List<Object?> l)
+          for (final Object? v in l)
+            if (v is String && tasteIds.contains(v)) v,
+      ],
     );
   }
 }
+
+/// "Gustos de cada uno" (pantalla Grupo), como en el servidor
+/// (negotiation/domain.py, Taste). El orden es el de los chips.
+const List<String> tasteIds = <String>[
+  'tapas',
+  'music',
+  'beach',
+  'museums',
+  'views',
+  'fish',
+  'veggie',
+  'late',
+  'nightlife',
+  'nature',
+  'shopping',
+  'history',
+];
 
 /// Lo que cada uno cuenta a SU agente. Nadie más del grupo lo ve y el
 /// servidor lo borra al terminar la negociación.
@@ -420,6 +448,15 @@ class GroupApi {
         await _api.putJson(
           '$_base/${Uri.encodeComponent(id)}/preferences',
           prefs.toJson(),
+        ),
+      );
+
+  /// Tus gustos visibles para el grupo (sin IA; vale en cualquier momento).
+  Future<GroupTrip> setTastes(String id, List<String> tastes) async =>
+      GroupTrip.parse(
+        await _api.putJson(
+          '$_base/${Uri.encodeComponent(id)}/tastes',
+          <String, Object?>{'tastes': tastes},
         ),
       );
 
