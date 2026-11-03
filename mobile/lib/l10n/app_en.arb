@@ -4211,6 +4211,18 @@
   "@helpTitle": {
     "description": "Title of the help screen."
   },
+  "premiumTitle": "ECLIPTA Premium",
+  "@premiumTitle": {
+    "description": "Name of the future paid plan (brand name, not translated)."
+  },
+  "premiumSoon": "Coming soon",
+  "@premiumSoon": {
+    "description": "Tag: the paid plan is not available yet."
+  },
+  "premiumWhy": "We're working on it.",
+  "@premiumWhy": {
+    "description": "Short line under the Premium card: still being prepared (no price, no promises)."
+  },
   "helpSubtitle": "Flyra first; a person if you need one",
   "@helpSubtitle": {
     "description": "Help screen subtitle."
@@ -6521,6 +6533,15 @@
   "@assistantDidntHear": {
     "description": "Speech recognised nothing."
   },
+  "assistantDetected": "Flyra detected {lang}: translating from that language.",
+  "@assistantDetected": {
+    "description": "Flyra noticed the other person writes/speaks another language and switched to it. {lang} is the language name in that language.",
+    "placeholders": {
+      "lang": {
+        "type": "String"
+      }
+    }
+  },
   "assistantType": "Type",
   "@assistantType": {
     "description": "Type instead of speaking."
@@ -7377,14 +7398,6 @@
   "@fxEurozone": {
     "description": "Euro area name."
   },
-  "fxNotesTitle": "In banknotes",
-  "@fxNotesTitle": {
-    "description": "Banknotes card title."
-  },
-  "fxNotesOr": "or",
-  "@fxNotesOr": {
-    "description": "Alternative mix."
-  },
   "fxNotesCoins": "+ {amount} in coins",
   "@fxNotesCoins": {
     "description": "Coins remainder.",
@@ -7393,6 +7406,26 @@
         "type": "String"
       }
     }
+  },
+  "fxInfoOnly": "For information only: the real rate from your bank or exchange office will differ.",
+  "@fxInfoOnly": {
+    "description": "Fixed Flyra notice on the currency converter: the rate is informational only"
+  },
+  "fxMixFewest": "Fewest pieces",
+  "@fxMixFewest": {
+    "description": "Cash combination with the fewest notes and coins"
+  },
+  "fxMixBalanced": "Balanced",
+  "@fxMixBalanced": {
+    "description": "Cash combination without the biggest note"
+  },
+  "fxMixSmall": "Small change and tips",
+  "@fxMixSmall": {
+    "description": "Cash combination with small notes, handy for tips"
+  },
+  "fxCashTitle": "How to carry it in cash",
+  "@fxCashTitle": {
+    "description": "Title of the cash breakdown card (notes and coins)"
   },
   "fxNotesSource": "Banknotes according to the central bank",
   "@fxNotesSource": {

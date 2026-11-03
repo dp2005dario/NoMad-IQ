@@ -48,7 +48,48 @@ class FakeMic implements SpeechInput {
   Future<void> stop() async {}
 }
 
+/// Adivina "it" si la frase lleva "dov'è" (de mentira).
+class FakeGuesser implements LanguageGuesser {
+  @override
+  Future<String?> guess(String text) async =>
+      text.contains("dov'è") ? 'it' : null;
+}
+
 void main() {
+  testWidgets('si la otra persona habla otro idioma, Flyra lo cambia solo', (
+    WidgetTester tester,
+  ) async {
+    final FakeTranslator translator = FakeTranslator()
+      ..models.addAll(<String>{'ja', 'it'});
+    final FakeMic mic = FakeMic()..heard.add("Scusi, dov'è il museo?");
+    final MemorySettingsStore prefs = MemorySettingsStore();
+    await prefs.writeData(LocalData.interpreterLang, 'ja');
+    final session = newSession()..continueAsGuest();
+    tester.view.physicalSize = const Size(1200, 3000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.assistant,
+      services: fakeServices(
+        session,
+        prefs: prefs,
+        translator: translator,
+        speechInput: mic,
+        languageGuesser: FakeGuesser(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('日本語'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Flyra ha detectado Italiano'), findsOneWidget);
+    expect(prefs.readData(LocalData.interpreterLang), 'it');
+    expect(find.text('Español ⇄ Italiano'), findsOneWidget);
+    expect(find.text("[es] Scusi, dov'è il museo?"), findsOneWidget);
+  });
+
   testWidgets('descargar idiomas, hablar cada uno y cambiar el idioma', (
     WidgetTester tester,
   ) async {

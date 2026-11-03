@@ -82,6 +82,7 @@ class AppServices {
     this.speaker = const SilentSpeaker(),
     this.translator = const NoTranslator(),
     this.speechInput = const NoSpeechInput(),
+    this.languageGuesser = const NoLanguageGuesser(),
     this.receipts = const NoReceiptScanner(),
     this.docSource = const NoDocSource(),
     this.docReader = const NoDocTextReader(),
@@ -174,6 +175,9 @@ class AppServices {
   /// Asistente: traducir (ML Kit, en el móvil) y oír lo que dices.
   final PhraseTranslator translator;
   final SpeechInput speechInput;
+
+  /// Adivina el idioma de la otra persona (Asistente).
+  final LanguageGuesser languageGuesser;
 
   /// Viajes en grupo: invitar, preferencias y la negociación de los agentes.
   final GroupApi group;

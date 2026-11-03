@@ -82,6 +82,9 @@ dependencies:
   # El vídeo de fondo de la Bienvenida (en bucle, con música suave).
   video_player: ^2.14.1
   google_sign_in: ^7.2.0
+  # Asistente: adivina en qué idioma está una frase (ML Kit, en el móvil y
+  # gratis), para cambiar solo el idioma de la otra persona.
+  google_mlkit_language_id: ^0.15.1
 
 dev_dependencies:
   flutter_test:
@@ -108,6 +111,18 @@ flutter:
     - assets/brand/google_g.png
     # Inicio: fotos e iconos de los cuadrados del carrusel (de la maqueta).
     - assets/inicio/
+    # Divisas: fotos de billetes y monedas (licencia sin comprobar, ver LEEME).
+    - assets/divisas/aud/
+    - assets/divisas/cad/
+    - assets/divisas/chf/
+    - assets/divisas/cny/
+    - assets/divisas/eur/
+    - assets/divisas/gbp/
+    - assets/divisas/jpy/
+    - assets/divisas/mxn/
+    - assets/divisas/thb/
+    - assets/divisas/try/
+    - assets/divisas/usd/
   # Genera el código de traducciones a partir de lib/l10n/*.arb (ver l10n.yaml).
   generate: true
   # Las fuentes van DENTRO de la app (no se descargan de Internet al abrirla):
