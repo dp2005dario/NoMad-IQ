@@ -1973,5 +1973,14 @@
   "craveJoined": "{yes} de {total} se apuntan",
   "craveNone": "No hay sitios así a un paseo en OpenStreetMap.",
   "craveGolden": "Hora dorada hoy sobre las {time} (estimada por la posición del sol): buen momento para un mirador.",
-  "craveSource": "Sitios de OpenStreetMap. La app no muestra precios de sitios."
+  "craveSource": "Sitios de OpenStreetMap. La app no muestra precios de sitios.",
+  "hubTabTastes": "Gustos",
+  "hubTabZone": "Zona",
+  "hubTabSleep": "Dormir",
+  "hubTabEvents": "Eventos",
+  "hubReplay": "Repetir",
+  "hubExample": "EJEMPLO",
+  "hubChatSample": "esta noche me apetece algo de fado y cenar pescado",
+  "craveGo": "Ir",
+  "hubYouPin": "TÚ"
 }

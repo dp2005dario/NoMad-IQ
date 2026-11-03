@@ -1973,5 +1973,14 @@
   "craveJoined": "{yes} z {total} wchodzi",
   "craveNone": "W OpenStreetMap nie ma takich miejsc w zasięgu spaceru.",
   "craveGolden": "Złota godzina dziś około {time} (szacowana z pozycji słońca): dobry moment na punkt widokowy.",
-  "craveSource": "Miejsca z OpenStreetMap. Aplikacja nie pokazuje cen miejsc."
+  "craveSource": "Miejsca z OpenStreetMap. Aplikacja nie pokazuje cen miejsc.",
+  "hubTabTastes": "Gusty",
+  "hubTabZone": "Okolica",
+  "hubTabSleep": "Nocleg",
+  "hubTabEvents": "Wydarzenia",
+  "hubReplay": "Powtórz",
+  "hubExample": "PRZYKŁAD",
+  "hubChatSample": "dziś wieczorem mam ochotę na fado i rybę na kolację",
+  "craveGo": "Idź",
+  "hubYouPin": "TY"
 }

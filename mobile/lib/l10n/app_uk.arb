@@ -1973,5 +1973,14 @@
   "craveJoined": "{yes} з {total} хочуть",
   "craveNone": "В OpenStreetMap таких місць у пішій доступності немає.",
   "craveGolden": "Золота година сьогодні близько {time} (за положенням сонця, приблизно): добрий час для оглядового майданчика.",
-  "craveSource": "Місця з OpenStreetMap. Застосунок не показує ціни місць."
+  "craveSource": "Місця з OpenStreetMap. Застосунок не показує ціни місць.",
+  "hubTabTastes": "Смаки",
+  "hubTabZone": "Район",
+  "hubTabSleep": "Ночівля",
+  "hubTabEvents": "Події",
+  "hubReplay": "Повторити",
+  "hubExample": "ПРИКЛАД",
+  "hubChatSample": "сьогодні хочеться фаду і рибу на вечерю",
+  "craveGo": "Йти",
+  "hubYouPin": "ВИ"
 }

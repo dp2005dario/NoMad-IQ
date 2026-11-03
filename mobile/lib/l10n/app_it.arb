@@ -1973,5 +1973,14 @@
   "craveJoined": "{yes} su {total} ci stanno",
   "craveNone": "Nessun posto così a due passi su OpenStreetMap.",
   "craveGolden": "Ora d'oro oggi verso le {time} (stimata dalla posizione del sole): buon momento per un belvedere.",
-  "craveSource": "Posti da OpenStreetMap. L'app non mostra prezzi dei posti."
+  "craveSource": "Posti da OpenStreetMap. L'app non mostra prezzi dei posti.",
+  "hubTabTastes": "Gusti",
+  "hubTabZone": "Zona",
+  "hubTabSleep": "Dormire",
+  "hubTabEvents": "Eventi",
+  "hubReplay": "Rivedi",
+  "hubExample": "ESEMPIO",
+  "hubChatSample": "stasera ho voglia di fado e di cenare pesce",
+  "craveGo": "Vai",
+  "hubYouPin": "TU"
 }

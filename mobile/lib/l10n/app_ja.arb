@@ -1973,5 +1973,14 @@
   "craveJoined": "{total}人中{yes}人が行きたい",
   "craveNone": "OpenStreetMapでは歩ける範囲にありません。",
   "craveGolden": "今日のゴールデンアワーは{time}ごろ（太陽の位置から推定）：展望台に最適。",
-  "craveSource": "場所はOpenStreetMapから。アプリは場所の価格を表示しません。"
+  "craveSource": "場所はOpenStreetMapから。アプリは場所の価格を表示しません。",
+  "hubTabTastes": "好み",
+  "hubTabZone": "エリア",
+  "hubTabSleep": "宿泊",
+  "hubTabEvents": "イベント",
+  "hubReplay": "もう一度",
+  "hubExample": "例",
+  "hubChatSample": "今夜はファドを聴いて魚を食べたい",
+  "craveGo": "行く",
+  "hubYouPin": "あなた"
 }

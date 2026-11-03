@@ -1973,5 +1973,14 @@
   "craveJoined": "{total} میں سے {yes} کا دل ہے",
   "craveNone": "OpenStreetMap پر پیدل فاصلے میں ایسی جگہ نہیں۔",
   "craveGolden": "آج گولڈن آور تقریباً {time} (سورج کی پوزیشن سے اندازہ): ویو پوائنٹ کے لیے اچھا وقت۔",
-  "craveSource": "جگہیں OpenStreetMap سے۔ ایپ جگہوں کی قیمتیں نہیں دکھاتی۔"
+  "craveSource": "جگہیں OpenStreetMap سے۔ ایپ جگہوں کی قیمتیں نہیں دکھاتی۔",
+  "hubTabTastes": "پسند",
+  "hubTabZone": "علاقہ",
+  "hubTabSleep": "قیام",
+  "hubTabEvents": "تقریبات",
+  "hubReplay": "دوبارہ",
+  "hubExample": "مثال",
+  "hubChatSample": "آج رات فادو سننے اور مچھلی کھانے کا دل ہے",
+  "craveGo": "جائیں",
+  "hubYouPin": "آپ"
 }

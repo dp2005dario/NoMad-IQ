@@ -359,13 +359,21 @@ void main() {
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     final HubBackend b = HubBackend();
+    final List<Uri> opened = <Uri>[];
     final SessionController s = await signedInSession(b.g);
     await pumpApp(
       tester,
       locale: 'es',
       session: s,
       initialLocation: Routes.groupTrip(tripId),
-      services: fakeServices(s, gateway: b.g),
+      services: fakeServices(
+        s,
+        gateway: b.g,
+        openBooking: (Uri u) async {
+          opened.add(u);
+          return true;
+        },
+      ),
     );
 
     // Atajos y "Gustos de cada uno".
@@ -373,24 +381,42 @@ void main() {
     expect(find.text('El bote común'), findsOneWidget);
     expect(find.text('Gustos de cada uno'), findsOneWidget);
     expect(find.text(t.tastesHintMine), findsOneWidget);
-    await tester.tap(find.widgetWithText(FilterChip, 'Museos'));
+    // El ejemplo del chat: así se apuntan los gustos sin tocar nada.
+    expect(find.text(t.hubChatSample), findsOneWidget);
+    await tester.tap(find.text('Museos').first);
     await tester.pumpAndSettle();
     expect(b.sentTastes.single, <String>['tapas', 'late', 'museums']);
     // Los de Noelia se ven, pero no se tocan.
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Noelia'));
+    await tester.tap(
+      find
+          .descendant(
+            of: find.byType(AnimatedContainer),
+            matching: find.text('Noelia'),
+          )
+          .first,
+    );
     await tester.pumpAndSettle();
     expect(find.text('Esto lo marcó Noelia en su móvil.'), findsOneWidget);
-    expect(find.widgetWithText(FilterChip, 'Museos'), findsNothing);
+    await tester.tap(find.text('Museos').first);
+    await tester.pumpAndSettle();
+    expect(b.sentTastes, hasLength(1));
 
-    // Los 4 pasos con datos reales.
+    // Los 4 pasos, en pestañas, con datos reales.
     expect(
       find.text(
         'Lo que más se repite: Tapas (2) · Museos (1) · Con vistas (1)',
       ),
       findsOneWidget,
     );
+    await tester.tap(find.text('Zona'));
+    await tester.pumpAndSettle();
     expect(find.text('Primera opción: Junto a Lisboa'), findsOneWidget);
+    expect(find.text('Abrir Booking'), findsNothing);
+    await tester.tap(find.text('Dormir'));
+    await tester.pumpAndSettle();
     expect(find.text('Abrir Booking'), findsOneWidget);
+    await tester.tap(find.text('Zona'));
+    await tester.pumpAndSettle();
 
     // Votad dónde dormir: Noelia ya eligió Alfama; al elegirla yo, acuerdo.
     expect(find.text('Votos que faltan, contando el tuyo: 1.'), findsOneWidget);
@@ -399,7 +425,7 @@ void main() {
     expect(b.added, isEmpty); // las dos zonas ya estaban en el tablero
     expect(b.votes, <String>['p1=false', 'p2=true']);
     expect(find.text(t.sleepDeal), findsOneWidget);
-    expect(find.text('Abrir Booking'), findsNWidgets(2));
+    expect(find.text('Abrir Booking'), findsOneWidget); // el del acuerdo
 
     // "¿Qué os apetece?": empieza por tapas (el gusto más repetido).
     expect(b.cravings, <String>['tapas']);
@@ -417,9 +443,16 @@ void main() {
     });
     expect(b.votes.last, 'p3=true');
     expect(find.text('1 de 2 se apuntan'), findsOneWidget);
-    await tester.ensureVisible(find.widgetWithText(ChoiceChip, 'Café'));
+    // "Ir": Google Maps andando hasta el sitio.
+    await tester.ensureVisible(find.text('Ir').first);
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Café'));
+    await tester.tap(find.text('Ir').first);
+    await tester.pumpAndSettle();
+    expect(opened.last.host, 'www.google.com');
+    expect(opened.last.queryParameters['travelmode'], 'walking');
+    await tester.ensureVisible(find.text('Café').first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Café').first);
     await tester.pumpAndSettle();
     expect(b.cravings, <String>['tapas', 'cafe']);
     expect(find.textContaining('Hora dorada hoy sobre las'), findsOneWidget);

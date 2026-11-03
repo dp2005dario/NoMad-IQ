@@ -1973,5 +1973,14 @@
   "craveJoined": "{total} kişiden {yes} kişi var",
   "craveNone": "OpenStreetMap'te yürüme mesafesinde böyle bir yer yok.",
   "craveGolden": "Bugün altın saat {time} civarı (güneşin konumuna göre tahmini): seyir noktası için iyi zaman.",
-  "craveSource": "Yerler OpenStreetMap'ten. Uygulama yer fiyatı göstermez."
+  "craveSource": "Yerler OpenStreetMap'ten. Uygulama yer fiyatı göstermez.",
+  "hubTabTastes": "Zevkler",
+  "hubTabZone": "Bölge",
+  "hubTabSleep": "Konaklama",
+  "hubTabEvents": "Etkinlikler",
+  "hubReplay": "Tekrar",
+  "hubExample": "ÖRNEK",
+  "hubChatSample": "bu akşam canım fado ve balık yemeği istiyor",
+  "craveGo": "Git",
+  "hubYouPin": "SEN"
 }

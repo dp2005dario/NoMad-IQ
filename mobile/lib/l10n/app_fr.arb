@@ -1973,5 +1973,14 @@
   "craveJoined": "{yes} sur {total} partants",
   "craveNone": "Aucun lieu de ce genre à distance de marche sur OpenStreetMap.",
   "craveGolden": "Heure dorée aujourd'hui vers {time} (estimée d'après la position du soleil) : bon moment pour un belvédère.",
-  "craveSource": "Lieux d'OpenStreetMap. L'app n'affiche pas de prix de lieux."
+  "craveSource": "Lieux d'OpenStreetMap. L'app n'affiche pas de prix de lieux.",
+  "hubTabTastes": "Goûts",
+  "hubTabZone": "Quartier",
+  "hubTabSleep": "Dormir",
+  "hubTabEvents": "Événements",
+  "hubReplay": "Revoir",
+  "hubExample": "EXEMPLE",
+  "hubChatSample": "ce soir j'ai envie de fado et d'un dîner de poisson",
+  "craveGo": "Y aller",
+  "hubYouPin": "VOUS"
 }

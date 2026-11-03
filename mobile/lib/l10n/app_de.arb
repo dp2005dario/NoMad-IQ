@@ -1973,5 +1973,14 @@
   "craveJoined": "{yes} von {total} sind dabei",
   "craveNone": "Auf OpenStreetMap gibt es so etwas nicht in Gehweite.",
   "craveGolden": "Goldene Stunde heute gegen {time} (geschätzt nach dem Sonnenstand): gute Zeit für einen Aussichtspunkt.",
-  "craveSource": "Orte aus OpenStreetMap. Die App zeigt keine Preise von Orten."
+  "craveSource": "Orte aus OpenStreetMap. Die App zeigt keine Preise von Orten.",
+  "hubTabTastes": "Vorlieben",
+  "hubTabZone": "Gegend",
+  "hubTabSleep": "Schlafen",
+  "hubTabEvents": "Events",
+  "hubReplay": "Nochmal",
+  "hubExample": "BEISPIEL",
+  "hubChatSample": "heute Abend hätte ich Lust auf Fado und Fisch zum Essen",
+  "craveGo": "Hin",
+  "hubYouPin": "DU"
 }

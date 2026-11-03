@@ -1973,5 +1973,14 @@
   "craveJoined": "{yes} من {total} يرغبون",
   "craveNone": "لا توجد أماكن كهذه على مسافة مشي في OpenStreetMap.",
   "craveGolden": "الساعة الذهبية اليوم نحو {time} (تقدير حسب موقع الشمس): وقت جيد لنقطة مشاهدة.",
-  "craveSource": "الأماكن من OpenStreetMap. لا يعرض التطبيق أسعار الأماكن."
+  "craveSource": "الأماكن من OpenStreetMap. لا يعرض التطبيق أسعار الأماكن.",
+  "hubTabTastes": "الأذواق",
+  "hubTabZone": "المنطقة",
+  "hubTabSleep": "المبيت",
+  "hubTabEvents": "الفعاليات",
+  "hubReplay": "إعادة",
+  "hubExample": "مثال",
+  "hubChatSample": "الليلة أرغب في سماع الفادو وعشاء سمك",
+  "craveGo": "اذهب",
+  "hubYouPin": "أنت"
 }

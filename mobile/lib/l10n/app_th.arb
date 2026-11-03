@@ -1973,5 +1973,14 @@
   "craveJoined": "{yes} จาก {total} อยากไป",
   "craveNone": "ไม่มีที่แบบนี้ในระยะเดินบน OpenStreetMap",
   "craveGolden": "ชั่วโมงทองวันนี้ราว {time} (ประมาณจากตำแหน่งดวงอาทิตย์): เหมาะกับจุดชมวิว",
-  "craveSource": "สถานที่จาก OpenStreetMap แอปไม่แสดงราคาสถานที่"
+  "craveSource": "สถานที่จาก OpenStreetMap แอปไม่แสดงราคาสถานที่",
+  "hubTabTastes": "ความชอบ",
+  "hubTabZone": "ย่าน",
+  "hubTabSleep": "ที่พัก",
+  "hubTabEvents": "อีเวนต์",
+  "hubReplay": "ดูอีกครั้ง",
+  "hubExample": "ตัวอย่าง",
+  "hubChatSample": "คืนนี้อยากฟังฟาดูแล้วกินปลา",
+  "craveGo": "ไป",
+  "hubYouPin": "คุณ"
 }

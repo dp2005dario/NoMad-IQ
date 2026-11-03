@@ -1973,5 +1973,14 @@
   "craveJoined": "{yes}/{total} người thích",
   "craveNone": "Không có chỗ như vậy trong tầm đi bộ trên OpenStreetMap.",
   "craveGolden": "Giờ vàng hôm nay khoảng {time} (ước tính theo vị trí mặt trời): lúc đẹp để lên điểm ngắm cảnh.",
-  "craveSource": "Địa điểm từ OpenStreetMap. Ứng dụng không hiển thị giá."
+  "craveSource": "Địa điểm từ OpenStreetMap. Ứng dụng không hiển thị giá.",
+  "hubTabTastes": "Sở thích",
+  "hubTabZone": "Khu vực",
+  "hubTabSleep": "Ngủ",
+  "hubTabEvents": "Sự kiện",
+  "hubReplay": "Xem lại",
+  "hubExample": "VÍ DỤ",
+  "hubChatSample": "tối nay thèm nghe fado và ăn cá",
+  "craveGo": "Đi",
+  "hubYouPin": "BẠN"
 }

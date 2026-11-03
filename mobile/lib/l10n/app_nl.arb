@@ -1973,5 +1973,14 @@
   "craveJoined": "{yes} van {total} doen mee",
   "craveNone": "Geen zulke plekken op loopafstand in OpenStreetMap.",
   "craveGolden": "Gouden uur vandaag rond {time} (geschat op de stand van de zon): goed moment voor een uitkijkpunt.",
-  "craveSource": "Plekken uit OpenStreetMap. De app toont geen prijzen van plekken."
+  "craveSource": "Plekken uit OpenStreetMap. De app toont geen prijzen van plekken.",
+  "hubTabTastes": "Smaak",
+  "hubTabZone": "Buurt",
+  "hubTabSleep": "Slapen",
+  "hubTabEvents": "Evenementen",
+  "hubReplay": "Opnieuw",
+  "hubExample": "VOORBEELD",
+  "hubChatSample": "vanavond heb ik zin in fado en vis eten",
+  "craveGo": "Ga",
+  "hubYouPin": "JIJ"
 }

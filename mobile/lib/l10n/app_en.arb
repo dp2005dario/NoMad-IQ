@@ -9320,5 +9320,41 @@
   "craveSource": "Places from OpenStreetMap. The app shows no prices for places.",
   "@craveSource": {
     "description": "Attribution under the places"
+  },
+  "hubTabTastes": "Tastes",
+  "@hubTabTastes": {
+    "description": "Tab label: tastes"
+  },
+  "hubTabZone": "Area",
+  "@hubTabZone": {
+    "description": "Tab label: zone to stay"
+  },
+  "hubTabSleep": "Sleep",
+  "@hubTabSleep": {
+    "description": "Tab label: where to sleep"
+  },
+  "hubTabEvents": "Events",
+  "@hubTabEvents": {
+    "description": "Tab label: events"
+  },
+  "hubReplay": "Replay",
+  "@hubReplay": {
+    "description": "Button: replay the demo animation"
+  },
+  "hubExample": "EXAMPLE",
+  "@hubExample": {
+    "description": "Small badge marking a sample, uppercase"
+  },
+  "hubChatSample": "tonight I fancy some fado and a fish dinner",
+  "@hubChatSample": {
+    "description": "Sample chat message showing tastes"
+  },
+  "craveGo": "Go",
+  "@craveGo": {
+    "description": "Button: go there walking"
+  },
+  "hubYouPin": "YOU",
+  "@hubYouPin": {
+    "description": "Map marker for the user's position, very short, uppercase"
   }
 }

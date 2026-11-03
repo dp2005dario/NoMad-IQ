@@ -1973,5 +1973,14 @@
   "craveJoined": "{total}명 중 {yes}명 좋아",
   "craveNone": "OpenStreetMap에 걸어갈 거리에는 없어요.",
   "craveGolden": "오늘 골든아워는 {time}쯤 (태양 위치로 추정): 전망대 가기 좋은 때.",
-  "craveSource": "장소는 OpenStreetMap 기준. 앱은 장소 가격을 보여 주지 않아요."
+  "craveSource": "장소는 OpenStreetMap 기준. 앱은 장소 가격을 보여 주지 않아요.",
+  "hubTabTastes": "취향",
+  "hubTabZone": "지역",
+  "hubTabSleep": "숙소",
+  "hubTabEvents": "이벤트",
+  "hubReplay": "다시 보기",
+  "hubExample": "예시",
+  "hubChatSample": "오늘 밤엔 파두 듣고 생선 먹고 싶어",
+  "craveGo": "가기",
+  "hubYouPin": "나"
 }

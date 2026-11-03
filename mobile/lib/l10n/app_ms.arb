@@ -1973,5 +1973,14 @@
   "craveJoined": "{yes} daripada {total} nak",
   "craveNone": "Tiada tempat begitu dalam jarak berjalan di OpenStreetMap.",
   "craveGolden": "Waktu keemasan hari ini sekitar {time} (anggaran dari kedudukan matahari): masa sesuai ke tempat tinjauan.",
-  "craveSource": "Tempat dari OpenStreetMap. Apl tidak tunjuk harga tempat."
+  "craveSource": "Tempat dari OpenStreetMap. Apl tidak tunjuk harga tempat.",
+  "hubTabTastes": "Citarasa",
+  "hubTabZone": "Kawasan",
+  "hubTabSleep": "Tidur",
+  "hubTabEvents": "Acara",
+  "hubReplay": "Ulang",
+  "hubExample": "CONTOH",
+  "hubChatSample": "malam ni teringin fado dan makan ikan",
+  "craveGo": "Pergi",
+  "hubYouPin": "ANDA"
 }

@@ -1973,5 +1973,14 @@
   "craveJoined": "{yes} из {total} хотят",
   "craveNone": "В OpenStreetMap таких мест в пешей доступности нет.",
   "craveGolden": "Золотой час сегодня около {time} (по положению солнца, примерно): хорошее время для смотровой площадки.",
-  "craveSource": "Места из OpenStreetMap. Приложение не показывает цены мест."
+  "craveSource": "Места из OpenStreetMap. Приложение не показывает цены мест.",
+  "hubTabTastes": "Вкусы",
+  "hubTabZone": "Район",
+  "hubTabSleep": "Ночлег",
+  "hubTabEvents": "События",
+  "hubReplay": "Повторить",
+  "hubExample": "ПРИМЕР",
+  "hubChatSample": "сегодня хочется фаду и рыбу на ужин",
+  "craveGo": "Идти",
+  "hubYouPin": "ВЫ"
 }

@@ -1973,5 +1973,14 @@
   "craveJoined": "{yes} din {total} vor",
   "craveNone": "Nu există astfel de locuri la distanță de mers pe OpenStreetMap.",
   "craveGolden": "Ora de aur azi pe la {time} (estimată după poziția soarelui): moment bun pentru un punct de belvedere.",
-  "craveSource": "Locuri din OpenStreetMap. Aplicația nu arată prețuri."
+  "craveSource": "Locuri din OpenStreetMap. Aplicația nu arată prețuri.",
+  "hubTabTastes": "Gusturi",
+  "hubTabZone": "Zonă",
+  "hubTabSleep": "Cazare",
+  "hubTabEvents": "Evenimente",
+  "hubReplay": "Din nou",
+  "hubExample": "EXEMPLU",
+  "hubChatSample": "diseară aș vrea niște fado și pește la cină",
+  "craveGo": "Mergi",
+  "hubYouPin": "TU"
 }

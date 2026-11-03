@@ -1973,5 +1973,14 @@
   "craveJoined": "{yes} از {total} پایه‌اند",
   "craveNone": "در OpenStreetMap چنین جایی در فاصله پیاده نیست.",
   "craveGolden": "ساعت طلایی امروز حدود {time} (تخمینی از موقعیت خورشید): وقت خوبی برای دیدگاه.",
-  "craveSource": "جاها از OpenStreetMap. اپ قیمت جاها را نشان نمی‌دهد."
+  "craveSource": "جاها از OpenStreetMap. اپ قیمت جاها را نشان نمی‌دهد.",
+  "hubTabTastes": "سلیقه‌ها",
+  "hubTabZone": "منطقه",
+  "hubTabSleep": "خواب",
+  "hubTabEvents": "رویدادها",
+  "hubReplay": "تکرار",
+  "hubExample": "نمونه",
+  "hubChatSample": "امشب دلم فادو و شام ماهی می‌خواهد",
+  "craveGo": "برو",
+  "hubYouPin": "شما"
 }

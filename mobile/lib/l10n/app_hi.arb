@@ -1973,5 +1973,14 @@
   "craveJoined": "{total} में से {yes} का मन है",
   "craveNone": "OpenStreetMap पर पैदल दूरी में ऐसी जगह नहीं।",
   "craveGolden": "आज गोल्डन आवर लगभग {time} (सूरज की स्थिति से अनुमान): व्यूपॉइंट के लिए अच्छा समय।",
-  "craveSource": "जगहें OpenStreetMap से। ऐप जगहों के दाम नहीं दिखाता।"
+  "craveSource": "जगहें OpenStreetMap से। ऐप जगहों के दाम नहीं दिखाता।",
+  "hubTabTastes": "पसंद",
+  "hubTabZone": "इलाका",
+  "hubTabSleep": "ठहरना",
+  "hubTabEvents": "कार्यक्रम",
+  "hubReplay": "फिर से",
+  "hubExample": "उदाहरण",
+  "hubChatSample": "आज रात फ़ादो सुनने और मछली खाने का मन है",
+  "craveGo": "जाएँ",
+  "hubYouPin": "आप"
 }

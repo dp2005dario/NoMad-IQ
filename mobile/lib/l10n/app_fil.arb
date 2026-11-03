@@ -1973,5 +1973,14 @@
   "craveJoined": "{yes} sa {total} ang game",
   "craveNone": "Walang ganitong lugar na malalakad sa OpenStreetMap.",
   "craveGolden": "Golden hour ngayon mga {time} (tantiya batay sa araw): magandang oras para sa viewpoint.",
-  "craveSource": "Mga lugar mula sa OpenStreetMap. Walang presyo ng lugar sa app."
+  "craveSource": "Mga lugar mula sa OpenStreetMap. Walang presyo ng lugar sa app.",
+  "hubTabTastes": "Gusto",
+  "hubTabZone": "Lugar",
+  "hubTabSleep": "Tulugan",
+  "hubTabEvents": "Event",
+  "hubReplay": "Ulitin",
+  "hubExample": "HALIMBAWA",
+  "hubChatSample": "gusto ko ng fado ngayong gabi at isda sa hapunan",
+  "craveGo": "Puntahan",
+  "hubYouPin": "IKAW"
 }

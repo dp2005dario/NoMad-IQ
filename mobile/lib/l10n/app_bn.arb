@@ -1973,5 +1973,14 @@
   "craveJoined": "{total} জনের {yes} জন আগ্রহী",
   "craveNone": "OpenStreetMap-এ হাঁটা দূরত্বে এমন জায়গা নেই।",
   "craveGolden": "আজ গোল্ডেন আওয়ার প্রায় {time} (সূর্যের অবস্থান থেকে আনুমানিক): ভিউপয়েন্টে যাওয়ার ভালো সময়।",
-  "craveSource": "জায়গাগুলো OpenStreetMap-এর। অ্যাপ জায়গার দাম দেখায় না।"
+  "craveSource": "জায়গাগুলো OpenStreetMap-এর। অ্যাপ জায়গার দাম দেখায় না।",
+  "hubTabTastes": "পছন্দ",
+  "hubTabZone": "এলাকা",
+  "hubTabSleep": "থাকা",
+  "hubTabEvents": "ইভেন্ট",
+  "hubReplay": "আবার দেখুন",
+  "hubExample": "উদাহরণ",
+  "hubChatSample": "আজ রাতে একটু ফাদো শুনতে আর মাছ খেতে ইচ্ছে",
+  "craveGo": "যান",
+  "hubYouPin": "আপনি"
 }

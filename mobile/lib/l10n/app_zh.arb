@@ -1973,5 +1973,14 @@
   "craveJoined": "{total} 人中 {yes} 人想去",
   "craveNone": "OpenStreetMap 上步行范围内没有这样的地方。",
   "craveGolden": "今天的黄金时刻约在 {time}（按太阳位置估算）：适合去观景台。",
-  "craveSource": "地点来自 OpenStreetMap。应用不显示地点价格。"
+  "craveSource": "地点来自 OpenStreetMap。应用不显示地点价格。",
+  "hubTabTastes": "口味",
+  "hubTabZone": "区域",
+  "hubTabSleep": "住宿",
+  "hubTabEvents": "活动",
+  "hubReplay": "重播",
+  "hubExample": "示例",
+  "hubChatSample": "今晚想听法朵、吃鱼",
+  "craveGo": "去",
+  "hubYouPin": "你"
 }
