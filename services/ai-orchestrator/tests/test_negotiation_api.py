@@ -65,8 +65,8 @@ async def test_full_flow_and_privacy(store: InMemoryNegotiations) -> None:
         assert view["my_alias"] == "Viajero 1"
         assert view["deadline"].startswith((FIXED_NOW + timedelta(hours=72)).date().isoformat())
         assert view["members"] == [
-            {"alias": "Viajero 1", "name": None, "submitted": False, "me": True},
-            {"alias": "Viajero 2", "name": None, "submitted": False, "me": False},
+            {"alias": "Viajero 1", "name": None, "tastes": [], "submitted": False, "me": True},
+            {"alias": "Viajero 2", "name": None, "tastes": [], "submitted": False, "me": False},
         ]
 
         first = await c.put(
@@ -82,7 +82,13 @@ async def test_full_flow_and_privacy(store: InMemoryNegotiations) -> None:
         assert seen.status_code == 200
         assert seen.json()["my_preferences"] is None
         assert "secreto" not in seen.text and ORGANIZER not in seen.text
-        first_member = {"alias": "Viajero 1", "name": None, "submitted": True, "me": False}
+        first_member: dict[str, Any] = {
+            "alias": "Viajero 1",
+            "name": None,
+            "tastes": [],
+            "submitted": True,
+            "me": False,
+        }
         assert seen.json()["members"][0] == first_member
 
         last = await c.put(
@@ -177,7 +183,9 @@ async def test_invite_flow(store: InMemoryNegotiations) -> None:
         negotiation_id = view["negotiation_id"]
         code = view["invite_code"]
         assert len(code) == 8 and view["i_organize"] is True
-        assert view["members"] == [{"alias": "Viajero 1", "name": "Darío", "submitted": False, "me": True}]
+        assert view["members"] == [
+            {"alias": "Viajero 1", "name": "Darío", "tastes": [], "submitted": False, "me": True}
+        ]
 
         # El amigo lo escribe a su manera: minúsculas, guion y una "o" en vez de un cero.
         typed = (code[:4] + "-" + code[4:]).lower().replace("0", "o")
@@ -253,3 +261,21 @@ async def test_join_rejects_bad_codes_and_full_groups(store: InMemoryNegotiation
         other_code = {"code": other.json()["invite_code"]}
         late = await c.post("/v1/group-negotiations/join", json=other_code, headers=headers(STRANGER))
         assert late.status_code == 409
+
+
+async def test_tastes_are_shared_with_the_group(store: InMemoryNegotiations) -> None:
+    """ "Gustos de cada uno": los tuyos los ve todo el grupo (a diferencia de
+    las preferencias, que son secretas). Solo identificadores conocidos."""
+    async with client(store) as c:
+        created = await c.post("/v1/group-negotiations", json=body(), headers=headers(ORGANIZER))
+        trip = created.json()["negotiation_id"]
+        url = f"/v1/group-negotiations/{trip}/tastes"
+        mine = await c.put(url, json={"tastes": ["tapas", "late", "tapas"]}, headers=headers(ORGANIZER))
+        assert mine.status_code == 200
+        assert mine.json()["members"][0]["tastes"] == ["tapas", "late"]
+        seen = await c.get(f"/v1/group-negotiations/{trip}", headers=headers(FRIEND))
+        assert seen.json()["members"][0]["tastes"] == ["tapas", "late"]
+        assert seen.json()["members"][1]["tastes"] == []
+        bad = await c.put(url, json={"tastes": ["<script>"]}, headers=headers(FRIEND))
+        assert bad.status_code in (400, 422)
+        assert (await c.put(url, json={"tastes": []}, headers=headers(STRANGER))).status_code == 404

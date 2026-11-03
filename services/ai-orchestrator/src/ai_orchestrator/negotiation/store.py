@@ -114,6 +114,8 @@ class MemberRecord:
     preferences: MemberPreferences | None
     submitted_at: datetime | None
     display_name: str | None = None
+    # "Gustos de cada uno": los ve todo el grupo (ver 0018_group_tastes.sql).
+    tastes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -157,6 +159,10 @@ class NegotiationStore(Protocol):
     ) -> NegotiationRecord: ...
 
     async def join(self, code: str, user_id: str, display_name: str | None) -> NegotiationRecord: ...
+
+    async def set_tastes(
+        self, negotiation_id: str, user_id: str, tastes: tuple[str, ...]
+    ) -> NegotiationRecord: ...
 
     async def start(self, negotiation_id: str, user_id: str) -> NegotiationRecord: ...
 
@@ -334,6 +340,29 @@ class PostgresNegotiations:
                 return await self._load(conn, negotiation_id) if member else None
         except _DB_ERRORS as exc:
             raise StoreError(f"leer negociación: {exc}") from exc
+
+    async def set_tastes(
+        self, negotiation_id: str, user_id: str, tastes: tuple[str, ...]
+    ) -> NegotiationRecord:
+        """Cambia TUS gustos visibles. Vale en cualquier momento del viaje
+        (también cuando ya hay destino: es justo cuando más sirven)."""
+        try:
+            async with self._pool.acquire() as conn:
+                updated = await conn.fetchval(
+                    "UPDATE ai.group_negotiation_members SET tastes = $3::text[]"
+                    " WHERE negotiation_id = $1::uuid AND user_id = $2 RETURNING 1",
+                    negotiation_id,
+                    user_id,
+                    list(tastes),
+                )
+                if updated is None:
+                    raise NegotiationNotFoundError(negotiation_id)
+                record = await self._load(conn, negotiation_id)
+        except _DB_ERRORS as exc:
+            raise StoreError(f"guardar gustos: {exc}") from exc
+        if record is None:
+            raise NegotiationNotFoundError(negotiation_id)
+        return record
 
     async def list_for_member(self, user_id: str, *, limit: int) -> list[NegotiationRecord]:
         try:
@@ -570,7 +599,7 @@ class PostgresNegotiations:
         if not negotiation_ids:
             return {}
         rows = await conn.fetch(
-            "SELECT negotiation_id, user_id, seat, alias, preferences, submitted_at, display_name "
+            "SELECT negotiation_id, user_id, seat, alias, preferences, submitted_at, display_name, tastes "
             "FROM ai.group_negotiation_members WHERE negotiation_id = ANY($1::uuid[]) "
             "ORDER BY negotiation_id, seat",
             list(negotiation_ids),
@@ -587,6 +616,7 @@ class PostgresNegotiations:
                     ),
                     submitted_at=r["submitted_at"],
                     display_name=r["display_name"],
+                    tastes=tuple(r["tastes"] or ()),
                 )
             )
         return {k: tuple(v) for k, v in out.items()}

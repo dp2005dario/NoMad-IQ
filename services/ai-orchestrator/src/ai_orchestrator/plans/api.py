@@ -3,6 +3,10 @@
     GET    /v1/group-negotiations/{id}/plans                 los planes y cómo van
     POST   /v1/group-negotiations/{id}/plans                 añadir planes (1-10 de golpe)
     PUT    /v1/group-negotiations/{id}/plans/{plan}/vote     votar sí o no
+
+Además de los planes de siempre ("plan"), el mismo tablero guarda los
+sitios de "¿Qué os apetece?" ("crave": Me apetece = sí, Paso = no) y las
+zonas de "Votad dónde dormir" ("sleep"). Cada uno lleva su "kind".
     DELETE /v1/group-negotiations/{id}/plans/{plan}          quitar un plan (solo quien lo puso)
 
 Todas devuelven el tablero entero, ya con tu voto: la app no tiene que
@@ -15,7 +19,7 @@ nunca quién. A quien no es del viaje se le responde 404.
 from __future__ import annotations
 
 import uuid
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
@@ -68,6 +72,9 @@ class NewPlanBody(BaseModel):
     wikidata_id: str | None = Field(default=None, pattern=r"^Q[1-9][0-9]{0,11}$")
     photo_url: Annotated[str | None, Field(default=None, max_length=500), AfterValidator(_photo)] = None
     article_url: Annotated[str | None, Field(default=None, max_length=500), AfterValidator(_article)] = None
+    # "plan" de siempre; "crave" = sitio de "¿Qué os apetece?"; "sleep" =
+    # zona para dormir. Los dos últimos no se repiten (por nombre).
+    kind: Literal["plan", "crave", "sleep"] = "plan"
 
 
 class AddPlans(BaseModel):
@@ -99,6 +106,7 @@ class PlanView(BaseModel):
     match_with: list[str]
     # Ya está en el plan del grupo.
     planned: bool
+    kind: str = "plan"
 
 
 class PersonView(BaseModel):
@@ -145,6 +153,7 @@ class BoardView(BaseModel):
                     match=is_match(p, active),
                     match_with=match_with(p, board),
                     planned=p.planned,
+                    kind=p.kind,
                 )
                 for p in board.plans
             ],

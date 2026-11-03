@@ -15,6 +15,10 @@ const int maxPlanTitle = 80;
 const int maxPlanNote = 140;
 const int maxPlansPerAdd = 10;
 
+/// plan = "Elegid planes"; crave = "¿Qué os apetece?" (Me apetece / Paso);
+/// sleep = "Votad dónde dormir". Todos van en el mismo tablero del servidor.
+enum PlanKind { plan, crave, sleep }
+
 class GroupPlan {
   const GroupPlan({
     required this.id,
@@ -30,7 +34,12 @@ class GroupPlan {
     this.myVote,
     this.matchWith = const <String>[],
     this.planned = false,
+    this.kind = PlanKind.plan,
   });
+
+  /// De qué es: un plan de siempre, un sitio de "¿Qué os apetece?" o una
+  /// zona de "Votad dónde dormir" (pantalla Grupo).
+  final PlanKind kind;
 
   final String id;
   final String title;
@@ -102,6 +111,7 @@ class GroupPlan {
         _ => const <String>[],
       },
       planned: json['planned'] == true,
+      kind: PlanKind.values.asNameMap()[json['kind']] ?? PlanKind.plan,
     );
   }
 }
@@ -133,7 +143,11 @@ class PlanBoard {
     required this.members,
     required this.plans,
     this.people = const <PlanPerson>[],
+    this.extras = const <GroupPlan>[],
   });
+
+  /// Los sitios y zonas de la pantalla Grupo (no salen en "Elegid planes").
+  final List<GroupPlan> extras;
 
   /// Cuántas personas cuentan para el match.
   final int members;
@@ -154,9 +168,19 @@ class PlanBoard {
     if (members is! int || plans is! List<Object?>) {
       throw const ApiException(ApiError.unavailable);
     }
+    final List<GroupPlan> all = <GroupPlan>[
+      for (final Object? p in plans) ?GroupPlan.parse(p),
+    ];
     return PlanBoard(
       members: members,
-      plans: <GroupPlan>[for (final Object? p in plans) ?GroupPlan.parse(p)],
+      plans: <GroupPlan>[
+        for (final GroupPlan p in all)
+          if (p.kind == PlanKind.plan) p,
+      ],
+      extras: <GroupPlan>[
+        for (final GroupPlan p in all)
+          if (p.kind != PlanKind.plan) p,
+      ],
       people: switch (json['people']) {
         final List<Object?> l => <PlanPerson>[
           for (final Object? p in l) ?PlanPerson.parse(p),
@@ -175,6 +199,7 @@ class NewPlan {
     this.wikidataId,
     this.photoUrl,
     this.articleUrl,
+    this.kind = PlanKind.plan,
   });
 
   final String title;
@@ -182,8 +207,10 @@ class NewPlan {
   final String? wikidataId;
   final Uri? photoUrl;
   final Uri? articleUrl;
+  final PlanKind kind;
 
   Map<String, Object?> toJson() => <String, Object?>{
+    if (kind != PlanKind.plan) 'kind': kind.name,
     'title': title.length > maxPlanTitle
         ? title.substring(0, maxPlanTitle)
         : title,

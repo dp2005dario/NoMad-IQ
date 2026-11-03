@@ -9,6 +9,9 @@ from datetime import datetime
 # Topes: con esto un viaje nunca crece sin límite (y la base de datos tampoco).
 MAX_PLANS = 60
 MAX_PLANS_PER_MEMBER = 15
+# Sitios de "¿Qué os apetece?" y zonas para dormir (pantalla Grupo): van
+# aparte y no gastan el tope de planes de nadie.
+MAX_EXTRAS = 40
 
 # La foto y el artículo solo pueden ser de Wikimedia: así nadie mete en la
 # app de los demás un enlace a cualquier web.
@@ -30,6 +33,8 @@ class Plan:
     votes: dict[int, bool]
     # Ya está "en el plan del grupo" (alguien del match lo añadió).
     planned: bool = False
+    # "plan" (Elegid planes), "crave" (¿Qué os apetece?) o "sleep" (dónde dormir).
+    kind: str = "plan"
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,7 +71,7 @@ def match_with(plan: Plan, board: Board) -> list[str]:
 
 def has_voted(seat: int, board: Board) -> bool:
     """Si esa persona ya ha votado algún plan (para "ya votó" / "sin entrar")."""
-    return any(seat in p.votes for p in board.plans)
+    return any(seat in p.votes for p in board.plans if p.kind == "plan")
 
 
 class NotMatchError(Exception):

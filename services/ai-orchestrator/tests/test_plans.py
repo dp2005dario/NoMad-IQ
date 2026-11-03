@@ -78,8 +78,15 @@ class MemoryPlans:
     async def add(self, negotiation_id: str, user_id: str, plans: list[NewPlan]) -> Board:
         seat = self._seat(negotiation_id, user_id)
         known = {p.wikidata_id for p in self.plans if p.wikidata_id}
-        fresh = [p for p in plans if p.wikidata_id is None or p.wikidata_id not in known]
-        if sum(1 for p in self.plans if p.added_by_seat == seat) + len(fresh) > MAX_PLANS_PER_MEMBER:
+        named = {(p.kind, p.title.lower()) for p in self.plans if p.kind != "plan"}
+        fresh = [
+            p
+            for p in plans
+            if (p.wikidata_id is None or p.wikidata_id not in known)
+            and (p.kind == "plan" or (p.kind, p.title.lower()) not in named)
+        ]
+        mine = sum(1 for p in self.plans if p.added_by_seat == seat and p.kind == "plan")
+        if mine + sum(1 for p in fresh if p.kind == "plan") > MAX_PLANS_PER_MEMBER:
             raise PlanLimitError(negotiation_id)
         for p in fresh:
             self.plans.append(
@@ -93,6 +100,7 @@ class MemoryPlans:
                     p.article_url,
                     NOW,
                     {},
+                    kind=p.kind,
                 )
             )
         return self._board(seat)
@@ -208,3 +216,22 @@ async def test_strangers_and_bad_links_are_refused() -> None:
         assert (await c.post(URL, json=many, headers=h(DARIO))).status_code == 409
         missing = f"{URL}/{uuid.uuid4()}/vote"
         assert (await c.put(missing, json={"yes": True}, headers=h(DARIO))).status_code == 404
+
+
+async def test_cravings_and_sleep_votes_share_the_board() -> None:
+    """Grupo: "Me apetece/Paso" y "Votad dónde dormir" van al mismo tablero
+    con su "kind", sin repetirse por nombre y sin contar como "ya votó"."""
+    store = MemoryPlans()
+    async with client(store) as c:
+        crave = {"title": "Taberna do Largo", "note": "tapas", "kind": "crave"}
+        r = await c.post(URL, json={"plans": [crave]}, headers=h(DARIO))
+        assert r.status_code == 201
+        again = await c.post(URL, json={"plans": [{**crave, "title": "taberna do largo"}]}, headers=h(NOELIA))
+        assert [p["kind"] for p in again.json()["plans"]] == ["crave"]
+        spot = again.json()["plans"][0]["plan_id"]
+        view = (await c.put(f"{URL}/{spot}/vote", json={"yes": True}, headers=h(NOELIA))).json()
+        assert view["plans"][0]["yes"] == 1
+        # Votar un antojo no cuenta como "ya votó" en Elegid planes.
+        assert all(not p["voted"] for p in view["people"])
+        bad = await c.post(URL, json={"plans": [{"title": "X", "kind": "other"}]}, headers=h(DARIO))
+        assert bad.status_code in (400, 422)

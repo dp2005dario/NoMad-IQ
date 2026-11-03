@@ -355,6 +355,17 @@ class InMemoryNegotiations:
         record = self.records.get(negotiation_id)
         return record if record and any(m.user_id == user_id for m in record.members) else None
 
+    async def set_tastes(
+        self, negotiation_id: str, user_id: str, tastes: tuple[str, ...]
+    ) -> NegotiationRecord:
+        record = await self.get_for_member(negotiation_id, user_id)
+        if record is None:
+            raise NegotiationNotFoundError(negotiation_id)
+        members = tuple(replace(m, tastes=tastes) if m.user_id == user_id else m for m in record.members)
+        record = replace(record, members=members)
+        self.records[negotiation_id] = record
+        return record
+
     async def list_for_member(self, user_id: str, *, limit: int) -> list[NegotiationRecord]:
         mine = [r for r in self.records.values() if any(m.user_id == user_id for m in r.members)]
         return mine[:limit]
