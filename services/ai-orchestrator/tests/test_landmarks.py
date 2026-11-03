@@ -266,3 +266,27 @@ async def test_api() -> None:
         assert card.status_code == 200 and card.json()["name"] == OSO.name
         assert (await c.get("/v1/landmarks/Q404", headers=headers())).status_code == 404
         assert (await c.get("/v1/landmarks/nope", headers=headers())).status_code in (400, 404)
+
+
+async def test_near_for_audioguides_does_not_spend_camera_uses() -> None:
+    quota = MemoryQuota()
+    svc = service(quota=quota, limit=1)
+    card = await svc.near(SOL[0], SOL[1], "es")
+    assert card is not None and card.name == "Real Casa de Correos"
+    assert card.distance_m is not None
+    # Sin lugares cerca: no hay ficha.
+    assert await service([]).near(SOL[0], SOL[1], "es") is None
+    async with client(svc) as c:
+        assert (await c.get("/v1/landmarks/near", params={"lat": SOL[0], "lon": SOL[1]})).status_code == 401
+        ok = await c.get(
+            "/v1/landmarks/near", params={"lat": SOL[0], "lon": SOL[1], "lang": "es"}, headers=headers()
+        )
+        assert ok.status_code == 200 and ok.json()["name"] == "Real Casa de Correos"
+        bad = await c.get("/v1/landmarks/near", params={"lat": 99, "lon": 0}, headers=headers())
+        assert bad.status_code in (400, 422)
+        # La cámara sigue teniendo su uso del día.
+        body = {"lat": SOL[0], "lon": SOL[1], "language": "es"}
+        assert (await c.post("/v1/landmarks/recognize", json=body, headers=headers())).status_code == 200
+    async with client(service([])) as c:
+        none = await c.get("/v1/landmarks/near", params={"lat": SOL[0], "lon": SOL[1]}, headers=headers())
+        assert none.status_code == 404

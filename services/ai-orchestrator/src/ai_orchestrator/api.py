@@ -634,6 +634,26 @@ def create_api(
             # Depende de dónde estás: que ningún proxy lo guarde.
             return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": "no-store"})
 
+        # Va ANTES de /{qid}: si no, "near" se tomaría por un identificador.
+        @app.get("/v1/landmarks/near", response_model=Landmark)
+        async def landmark_near(
+            _: Annotated[Principal, Depends(current_principal)],
+            lat: Annotated[float, Query(ge=-85, le=85)],
+            lon: Annotated[float, Query(ge=-180, le=180)],
+            lang: Annotated[str, Query(pattern=r"^([A-Za-z]{2,3})?$")] = "",
+        ) -> JSONResponse:
+            try:
+                card = await landmarks.near(lat, lon, lang or "en")
+            except LandmarkBusyError:
+                resp = _problem(503, "Servicio no disponible temporalmente", "monumentos ocupados")
+                resp.headers["Retry-After"] = "30"
+                return resp
+            if card is None:
+                return _problem(404, "No encontrado", "no hay ningún lugar conocido aquí")
+            return JSONResponse(
+                card.model_dump(mode="json"), headers={"Cache-Control": "private, max-age=86400"}
+            )
+
         @app.get("/v1/landmarks/{qid}", response_model=Landmark)
         async def get_landmark(
             _: Annotated[Principal, Depends(current_principal)],

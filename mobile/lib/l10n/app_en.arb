@@ -3028,6 +3028,51 @@
       }
     }
   },
+  "mapWeatherSource": "Weather: MET Norway",
+  "@mapWeatherSource": {
+    "description": "Small credit on the map: where the live weather comes from"
+  },
+  "guideLiveSubtitles": "LIVE SUBTITLES",
+  "@guideLiveSubtitles": {
+    "description": "Label above the audio guide text that lights up as it plays"
+  },
+  "guideDidYouKnow": "DID YOU KNOW…?",
+  "@guideDidYouKnow": {
+    "description": "Card title with a real fact from Wikipedia"
+  },
+  "guideWikipediaSource": "Source: Wikipedia · read more",
+  "@guideWikipediaSource": {
+    "description": "Link: the text comes from Wikipedia, tap to read the article"
+  },
+  "guidePhotoCredit": "Photo of {name}: Wikimedia Commons · author and license",
+  "@guidePhotoCredit": {
+    "description": "Credit under a real photo; tap opens the author and license page",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "guideRoute": "Your tour",
+  "@guideRoute": {
+    "description": "Section title: the parts of the audio guide"
+  },
+  "guideRouteLeft": "{count} parts · {minutes} min left",
+  "@guideRouteLeft": {
+    "description": "Under the tour title: number of parts and minutes left",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "guideDownloaded": "Audio guide downloaded: the parts and text work offline.",
+  "@guideDownloaded": {
+    "description": "Note: this audio guide is saved on the phone and works offline"
+  },
   "abroadRadarLabel": "{count} ATMs within {range}",
   "@abroadRadarLabel": {
     "description": "Accessibility label of the ATM radar.",

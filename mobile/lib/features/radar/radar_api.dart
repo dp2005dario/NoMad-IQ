@@ -15,11 +15,14 @@ GeoPoint rainCellOf(GeoPoint p) => GeoPoint(
 );
 
 class RainHour {
-  const RainHour(this.time, this.rainMm, this.tempC);
+  const RainHour(this.time, this.rainMm, this.tempC, [this.symbol]);
 
   final DateTime time;
   final double rainMm;
   final double? tempC;
+
+  /// El icono de MET Norway: "rain", "cloudy", "fog", "clearsky_day"...
+  final String? symbol;
 }
 
 class RainForecast {
@@ -46,6 +49,7 @@ class RainForecast {
       final Object? time = h['time'];
       final Object? rain = h['rain_mm'];
       final Object? temp = h['temp_c'];
+      final Object? symbol = h['symbol'];
       final DateTime? when = time is String ? DateTime.tryParse(time) : null;
       if (when == null || rain is! num) continue;
       hours.add(
@@ -53,6 +57,7 @@ class RainForecast {
           when.toLocal(),
           rain.toDouble(),
           temp is num ? temp.toDouble() : null,
+          symbol is String && symbol.length < 40 ? symbol : null,
         ),
       );
     }
