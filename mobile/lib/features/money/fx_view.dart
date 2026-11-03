@@ -4,6 +4,12 @@
 //
 // Los tipos son los oficiales del Banco Central Europeo de ese día. Sin red
 // se usan los últimos guardados en el móvil (con aviso de la fecha).
+//
+// Arriba, Flyra recuerda siempre que es SOLO INFORMATIVA (el banco o la casa
+// de cambio te darán otro cambio). Hay botones rápidos (10, 20, 50, 100,
+// 200) y, al caer la moneda, "Cómo llevarlo en efectivo": hasta tres formas
+// (Menos piezas, Equilibrado, Sueltos y propinas) con billetes y monedas
+// dibujados.
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -15,6 +21,7 @@ import '../../core/money.dart';
 import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../widgets/flyra_avatar.dart';
 import '../visa/visa_data.dart' show CountryNames;
 import 'banknotes.dart';
 import 'currency_info.dart';
@@ -139,6 +146,8 @@ class _FxViewState extends State<FxView> with SingleTickerProviderStateMixin {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
       children: <Widget>[
+        _FlyraInfo(text: t.fxInfoOnly),
+        const SizedBox(height: 12),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(14),
@@ -156,6 +165,23 @@ class _FxViewState extends State<FxView> with SingleTickerProviderStateMixin {
                     labelText: t.fxAmount,
                     suffixText: _symbol(_from, locale),
                   ),
+                ),
+                const SizedBox(height: 8),
+                // Botones rápidos: tocar uno escribe esa cantidad.
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: <Widget>[
+                    for (final int q in _quick)
+                      ChoiceChip(
+                        label: Text('$q'),
+                        selected: amount == q * _unit(_from),
+                        onSelected: (_) => setState(() {
+                          _amount.text = '$q';
+                          _landed = false;
+                        }),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -290,6 +316,48 @@ extension on _FxViewState {
       country == null ? code : '$code · $country',
     ].join(' ');
   }
+}
+
+/// Las cantidades de los botones rápidos.
+const List<int> _quick = <int>[10, 20, 50, 100, 200];
+
+/// Cuántas unidades pequeñas tiene una entera (100 céntimos = 1 euro; el
+/// yen no tiene: 1).
+int _unit(String currency) {
+  int unit = 1;
+  for (int i = 0; i < currencyDigits(currency); i++) {
+    unit *= 10;
+  }
+  return unit;
+}
+
+/// El aviso fijo de Flyra (con su foto).
+class _FlyraInfo extends StatelessWidget {
+  const _FlyraInfo({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: const Color(0xFF1A1530),
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: const Color(0xFF3E3163)),
+    ),
+    child: Row(
+      children: <Widget>[
+        const FlyraAvatar(size: 32),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(color: Color(0xFFDCD3F7), height: 1.35),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 String _symbol(String code, String locale) =>
@@ -544,11 +612,7 @@ class _Banknotes extends StatelessWidget {
     final AppLocalizations t = AppLocalizations.of(context);
     final BanknoteSet? set = banknotes[currency];
     if (set == null) return const SizedBox.shrink();
-    final int digits = currencyDigits(currency);
-    int unit = 1;
-    for (int i = 0; i < digits; i++) {
-      unit *= 10;
-    }
+    final int unit = _unit(currency);
     final List<NoteMix> mixes = noteMixes(amountMinor ~/ unit, currency);
     if (mixes.isEmpty) return const SizedBox.shrink();
     // Lo que no llega a billete (incluidos los céntimos) va en monedas.
@@ -559,17 +623,19 @@ class _Banknotes extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(
-              t.fxNotesTitle,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+            Text(t.fxCashTitle, style: Theme.of(context).textTheme.titleMedium),
             for (int i = 0; i < mixes.length; i++) ...<Widget>[
-              const SizedBox(height: 8),
-              if (i > 0)
-                Text(
-                  t.fxNotesOr,
-                  style: const TextStyle(color: NomadColors.textMuted),
+              const SizedBox(height: 10),
+              // El nombre de cada forma: la 1ª tiene menos piezas; las
+              // siguientes, billetes cada vez más pequeños.
+              Text(
+                <String>[t.fxMixFewest, t.fxMixBalanced, t.fxMixSmall][i],
+                style: const TextStyle(
+                  color: NomadColors.money,
+                  fontWeight: FontWeight.w700,
                 ),
+              ),
+              const SizedBox(height: 6),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -586,7 +652,29 @@ class _Banknotes extends StatelessWidget {
                     ),
                 ],
               ),
-              if (mixes[i].rest * unit + coinsMinor > 0)
+              // Las monedas, dibujadas (si conocemos las de esa divisa).
+              if (coinPiles(mixes[i].rest * unit + coinsMinor, currency)
+                  case final List<NotePile> c when c.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: <Widget>[
+                      for (final NotePile p in c)
+                        _Coin(
+                          label: formatMoney(
+                            p.value,
+                            currency,
+                            locale,
+                            compact: true,
+                          ),
+                          count: p.count,
+                        ),
+                    ],
+                  ),
+                )
+              else if (mixes[i].rest * unit + coinsMinor > 0)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
@@ -635,6 +723,45 @@ class _Note extends StatelessWidget {
         child: Text(
           label,
           style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+        ),
+      ),
+      const SizedBox(width: 4),
+      Text('× $count', style: const TextStyle(fontWeight: FontWeight.w800)),
+    ],
+  );
+}
+
+/// Una moneda dibujada: un círculo dorado con su valor, y cuántas.
+class _Coin extends StatelessWidget {
+  const _Coin({required this.label, required this.count});
+
+  final String label;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: <Widget>[
+      Container(
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const RadialGradient(
+            colors: <Color>[Color(0xFFF6DD8B), Color(0xFFC9A04A)],
+          ),
+          border: Border.all(color: const Color(0xFF8E6E2C), width: 1.5),
+        ),
+        child: FittedBox(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF3B2A08),
+            ),
+          ),
         ),
       ),
       const SizedBox(width: 4),

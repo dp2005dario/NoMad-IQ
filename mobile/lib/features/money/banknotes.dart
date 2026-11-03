@@ -249,3 +249,78 @@ bool _same(NoteMix a, NoteMix b) =>
     a.piles.length == b.piles.length &&
     <int>[for (int i = 0; i < a.piles.length; i++) i]
         .every((int i) => a.piles[i] == b.piles[i]);
+
+/// Las monedas de cada divisa, en la unidad pequeña (céntimos, peniques...),
+/// de menor a mayor, con la web oficial que las publica. Solo las que hemos
+/// comprobado: si una divisa no está, se dice "+ X en monedas" sin dibujarlas.
+const Map<String, BanknoteSet> coins = <String, BanknoteSet>{
+  // 1, 2, 5, 10, 20 y 50 céntimos; 1 y 2 euros.
+  'EUR': BanknoteSet(<int>[
+    1,
+    2,
+    5,
+    10,
+    20,
+    50,
+    100,
+    200,
+  ], 'https://www.ecb.europa.eu/euro/coins/html/index.en.html'),
+  // 1p, 2p, 5p, 10p, 20p, 50p, £1 y £2.
+  'GBP': BanknoteSet(<int>[
+    1,
+    2,
+    5,
+    10,
+    20,
+    50,
+    100,
+    200,
+  ], 'https://www.royalmint.com/discover/uk-coins/'),
+  // El yen no tiene céntimos: 1, 5, 10, 50, 100 y 500 yenes.
+  'JPY': BanknoteSet(<int>[
+    1,
+    5,
+    10,
+    50,
+    100,
+    500,
+  ], 'https://www.mint.go.jp/eng/operations/coins'),
+  // 5, 10, 20 y 50 céntimos; 1, 2 y 5 francos.
+  'CHF': BanknoteSet(<int>[
+    5,
+    10,
+    20,
+    50,
+    100,
+    200,
+    500,
+  ], 'https://www.swissmint.ch/'),
+  // 5, 10, 20 y 50 céntimos; 1 y 2 dólares.
+  'AUD': BanknoteSet(<int>[
+    5,
+    10,
+    20,
+    50,
+    100,
+    200,
+  ], 'https://www.ramint.gov.au/'),
+  // 50 centavos; 1, 2, 5 y 10 pesos (el billete más pequeño es de 20).
+  'MXN': BanknoteSet(<int>[
+    50,
+    100,
+    200,
+    500,
+    1000,
+  ], 'https://www.banxico.org.mx/banknotes-and-coins/'),
+  // 1 y 5 jiao (10 y 50 fen) y 1 yuan.
+  'CNY': BanknoteSet(<int>[10, 50, 100], 'https://www.pbc.gov.cn/en/'),
+};
+
+/// Cómo pagar [minor] (en céntimos...) con monedas: las más grandes primero.
+/// Lo que no llega a la moneda más pequeña se pierde (p. ej. 3 céntimos de
+/// franco suizo, que no tiene moneda de 1 ni de 2: allí se redondea).
+List<NotePile> coinPiles(int minor, String currency) {
+  final BanknoteSet? set = coins[currency];
+  if (set == null || minor <= 0) return const <NotePile>[];
+  return greedyMix(minor, set.notes).piles;
+}

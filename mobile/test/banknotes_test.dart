@@ -32,4 +32,25 @@ void main() {
       expect(s.source, startsWith('https://'));
     }
   });
+
+  test('monedas: las más grandes primero, y nada si no las conocemos', () {
+    // 1,88 € = 1 € + 50 + 20 + 10 + 5 + 2 + 1 céntimos.
+    expect(coinPiles(188, 'EUR'), const <NotePile>[
+      NotePile(100, 1),
+      NotePile(50, 1),
+      NotePile(20, 1),
+      NotePile(10, 1),
+      NotePile(5, 1),
+      NotePile(2, 1),
+      NotePile(1, 1),
+    ]);
+    expect(coinPiles(161, 'JPY'), const <NotePile>[
+      NotePile(100, 1),
+      NotePile(50, 1),
+      NotePile(10, 1),
+      NotePile(1, 1),
+    ]);
+    expect(coinPiles(100, 'XXX'), isEmpty);
+    expect(coinPiles(0, 'EUR'), isEmpty);
+  });
 }

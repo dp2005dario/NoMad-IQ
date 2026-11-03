@@ -7255,14 +7255,6 @@
   "@fxEurozone": {
     "description": "Euro area name."
   },
-  "fxNotesTitle": "In banknotes",
-  "@fxNotesTitle": {
-    "description": "Banknotes card title."
-  },
-  "fxNotesOr": "or",
-  "@fxNotesOr": {
-    "description": "Alternative mix."
-  },
   "fxNotesCoins": "+ {amount} in coins",
   "@fxNotesCoins": {
     "description": "Coins remainder.",
@@ -7271,6 +7263,26 @@
         "type": "String"
       }
     }
+  },
+  "fxInfoOnly": "For information only: the real rate from your bank or exchange office will differ.",
+  "@fxInfoOnly": {
+    "description": "Fixed Flyra notice on the currency converter: the rate is informational only"
+  },
+  "fxMixFewest": "Fewest pieces",
+  "@fxMixFewest": {
+    "description": "Cash combination with the fewest notes and coins"
+  },
+  "fxMixBalanced": "Balanced",
+  "@fxMixBalanced": {
+    "description": "Cash combination without the biggest note"
+  },
+  "fxMixSmall": "Small change and tips",
+  "@fxMixSmall": {
+    "description": "Cash combination with small notes, handy for tips"
+  },
+  "fxCashTitle": "How to carry it in cash",
+  "@fxCashTitle": {
+    "description": "Title of the cash breakdown card (notes and coins)"
   },
   "fxNotesSource": "Banknotes according to the central bank",
   "@fxNotesSource": {
