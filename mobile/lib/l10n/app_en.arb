@@ -1726,6 +1726,27 @@
   "@cameraShoot": {
     "description": "Shutter button (screen readers)."
   },
+  "cameraAutoTitle": "Flyra spotted a monument",
+  "@cameraAutoTitle": {
+    "description": "Title of Flyra's pop-up when the camera detects a monument by itself."
+  },
+  "cameraAutoAsk": "I think you're looking at {name}. Shall I play its audio guide?",
+  "@cameraAutoAsk": {
+    "description": "Flyra asks whether to play the audio guide of the detected monument.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "cameraAutoYes": "Accept",
+  "@cameraAutoYes": {
+    "description": "Button: accept and play the audio guide."
+  },
+  "cameraAutoNo": "Cancel",
+  "@cameraAutoNo": {
+    "description": "Button: dismiss Flyra's suggestion."
+  },
   "cameraOutOfScans": "You've used today's free scans. Come back tomorrow.",
   "@cameraOutOfScans": {
     "description": "Daily scan quota used up."

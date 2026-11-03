@@ -244,6 +244,64 @@ void main() {
     expect(find.text('Apunta a un monumento y toca el botón'), findsOneWidget);
   });
 
+  testWidgets('la cámara ve sola el monumento y Flyra pregunta', (
+    WidgetTester tester,
+  ) async {
+    final LandmarkBackend b = LandmarkBackend();
+    final FakeCamera cam = FakeCamera();
+    final FakeSpeaker voice = FakeSpeaker();
+    await pumpCamera(tester, b: b, camera: () => cam, speaker: voice);
+    await settle(tester);
+    // Primera vuelta: apunta hacia dónde miras. Segunda (móvil quieto): mira.
+    await tester.pump(const Duration(seconds: 8));
+    await tester.pump(const Duration(seconds: 8));
+    await settle(tester);
+    expect(b.sent, hasLength(1));
+    expect(find.text('Flyra ha visto un monumento'), findsOneWidget);
+    expect(find.textContaining('Real Casa de Correos'), findsOneWidget);
+
+    // Cancelar: se va y no vuelve a preguntar por el mismo.
+    await tester.tap(find.text('Cancelar'));
+    await settle(tester);
+    expect(find.text('Flyra ha visto un monumento'), findsNothing);
+    await tester.pump(const Duration(seconds: 8));
+    await tester.pump(const Duration(seconds: 8));
+    await settle(tester);
+    expect(find.text('Flyra ha visto un monumento'), findsNothing);
+    expect(voice.said, isEmpty);
+  });
+
+  testWidgets('Aceptar abre la ficha y empieza la audioguía', (
+    WidgetTester tester,
+  ) async {
+    final LandmarkBackend b = LandmarkBackend();
+    final FakeSpeaker voice = FakeSpeaker();
+    await pumpCamera(tester, b: b, camera: FakeCamera.new, speaker: voice);
+    await settle(tester);
+    await tester.pump(const Duration(seconds: 8));
+    await tester.pump(const Duration(seconds: 8));
+    await settle(tester);
+    await tester.tap(find.text('Aceptar'));
+    await settle(tester);
+    expect(find.text('RECONOCIDO'), findsOneWidget);
+    expect(voice.said.single, contains('campanadas'));
+  });
+
+  testWidgets('si nadie contesta, el aviso se cierra solo', (
+    WidgetTester tester,
+  ) async {
+    final LandmarkBackend b = LandmarkBackend();
+    await pumpCamera(tester, b: b, camera: FakeCamera.new);
+    await settle(tester);
+    await tester.pump(const Duration(seconds: 8));
+    await tester.pump(const Duration(seconds: 8));
+    await settle(tester);
+    expect(find.text('Flyra ha visto un monumento'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 9));
+    await settle(tester);
+    expect(find.text('Flyra ha visto un monumento'), findsNothing);
+  });
+
   testWidgets('nada famoso cerca', (WidgetTester tester) async {
     final LandmarkBackend b = LandmarkBackend()
       ..response = <String, Object?>{
