@@ -7,6 +7,9 @@ import '../../core/api_client.dart';
 
 enum EventKind { holiday, music, sports, arts, family, other }
 
+/// Cómo están las entradas, según Ticketmaster.
+enum SaleStatus { onsale, offsale, cancelled, rescheduled }
+
 class CityEvent {
   const CityEvent({
     required this.id,
@@ -19,6 +22,9 @@ class CityEvent {
     this.priceMin,
     this.currency,
     this.regional = false,
+    this.status,
+    this.lat,
+    this.lon,
   });
 
   final String id;
@@ -35,6 +41,13 @@ class CityEvent {
 
   /// Festivo solo en una parte del país.
   final bool regional;
+
+  /// El estado de las entradas (solo si Ticketmaster lo publica).
+  final SaleStatus? status;
+
+  /// Dónde está el recinto (para el mapa "Dónde pasan").
+  final double? lat;
+  final double? lon;
 
   static CityEvent? parse(Object? json) {
     if (json is! Map<String, Object?>) return null;
@@ -68,6 +81,17 @@ class CityEvent {
       priceMin: price is num && currency != null ? price.toDouble() : null,
       currency: price is num ? currency : null,
       regional: json['regional'] == true,
+      status: SaleStatus.values
+          .where((SaleStatus s) => s.name == json['status'])
+          .firstOrNull,
+      lat: switch (json['lat']) {
+        final num v when v >= -90 && v <= 90 => v.toDouble(),
+        _ => null,
+      },
+      lon: switch (json['lon']) {
+        final num v when v >= -180 && v <= 180 => v.toDouble(),
+        _ => null,
+      },
     );
   }
 }

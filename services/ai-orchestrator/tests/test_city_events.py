@@ -127,6 +127,42 @@ def test_parsers_keep_only_real_fields() -> None:
     assert parse_ticketmaster({}) == []
 
 
+def test_ticketmaster_status_and_place() -> None:
+    ev = parse_ticketmaster(
+        {
+            "_embedded": {
+                "events": [
+                    tm_event(
+                        "s",
+                        "2026-06-12",
+                        dates={"start": {"localDate": "2026-06-12"}, "status": {"code": "onsale"}},
+                        _embedded={
+                            "venues": [
+                                {
+                                    "name": "Estádio",
+                                    "location": {"latitude": "38.7527", "longitude": "-9.1847"},
+                                }
+                            ]
+                        },
+                    ),
+                    tm_event(
+                        "x",
+                        "2026-06-13",
+                        dates={"start": {"localDate": "2026-06-13"}, "status": {"code": "canceled"}},
+                        _embedded={"venues": [{"name": "Sitio", "location": {"latitude": "rara"}}]},
+                    ),
+                ]
+            }
+        }
+    )
+    assert (ev[0].status, ev[0].lat, ev[0].lon) == ("onsale", 38.7527, -9.1847)
+    # "canceled" (así lo escribe Ticketmaster) queda como "cancelled"; sin
+    # coordenadas buenas, sin punto en el mapa.
+    assert (ev[1].status, ev[1].lat, ev[1].lon) == ("cancelled", None, None)
+    # Sin estado publicado: sin etiqueta.
+    assert parse_ticketmaster({"_embedded": {"events": [tm_event("n", "2026-06-12")]}})[0].status is None
+
+
 def test_bundled_countries_has_the_airport_names() -> None:
     codes = bundled_countries()
     assert codes["Portugal"] == "PT"

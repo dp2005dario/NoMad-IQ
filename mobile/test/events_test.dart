@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/easy/easy_mode.dart';
+import 'package:eclipta/features/events/event_reminders.dart';
 import 'package:eclipta/features/events/events_api.dart';
 
 import 'helpers.dart';
@@ -79,6 +80,7 @@ void main() {
       ),
     );
     final List<Uri> opened = <Uri>[];
+    final MemoryEventReminders reminders = MemoryEventReminders();
     final session = newSession()..continueAsGuest();
     tester.view.physicalSize = const Size(1200, 4000);
     tester.view.devicePixelRatio = 3;
@@ -92,6 +94,7 @@ void main() {
         session,
         gateway: g,
         prefs: store,
+        eventReminders: reminders,
         openBooking: (Uri u) async {
           opened.add(u);
           return true;
@@ -106,11 +109,11 @@ void main() {
       'from': day(start),
       'to': day(start.add(const Duration(days: 4))),
     });
-    expect(find.text('Lisbon · LIS'), findsOneWidget);
-    expect(
-      find.textContaining('En tus fechas: 1 festivo y 2 eventos'),
-      findsOneWidget,
-    );
+    expect(find.text('Lisbon'), findsOneWidget);
+    // 1 festivo + 2 eventos = 3 cosas en tus fechas.
+    expect(find.text('3'), findsOneWidget);
+    expect(find.text('cosas pasan en tus fechas'), findsOneWidget);
+    expect(find.text('TICKETMASTER'), findsOneWidget);
     expect(
       find.text('Festivo: algunas tiendas y museos pueden cerrar'),
       findsOneWidget,
@@ -122,7 +125,10 @@ void main() {
     expect(opened.single.host, 'www.ticketmaster.pt');
 
     // Solo el día del partido.
-    await tester.tap(find.text('${start.add(const Duration(days: 2)).day}'));
+    // El primero es el botón del día (arriba); el otro, la fecha de la tarjeta.
+    await tester.tap(
+      find.text('${start.add(const Duration(days: 2)).day}').first,
+    );
     await tester.pumpAndSettle();
     expect(find.text('Benfica - Porto'), findsOneWidget);
     expect(find.text('Dia de Portugal'), findsNothing);
@@ -130,6 +136,11 @@ void main() {
     await tester.tap(find.byTooltip('Guardar'));
     await tester.pumpAndSettle();
     expect(store.readData(LocalData.savedEvents), '["t-b"]');
-    expect(find.text('Guardados (1)'), findsOneWidget);
+    // El partido no tiene hora: solo el aviso de la víspera.
+    expect(reminders.scheduled['t-b'], hasLength(1));
+    expect(
+      find.text('Guardado. Flyra te avisa la víspera y 2 horas antes.'),
+      findsOneWidget,
+    );
   });
 }

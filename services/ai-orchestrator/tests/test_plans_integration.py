@@ -19,7 +19,7 @@ from ai_orchestrator.erasure import PostgresEraser
 from ai_orchestrator.negotiation.domain import GroupOption
 from ai_orchestrator.negotiation.store import NewNegotiation, PostgresNegotiations
 from ai_orchestrator.plans.api import NewPlanBody
-from ai_orchestrator.plans.domain import MAX_PLANS_PER_MEMBER, PlanLimitError, is_match
+from ai_orchestrator.plans.domain import MAX_PLANS_PER_MEMBER, NotMatchError, PlanLimitError, is_match
 from ai_orchestrator.plans.store import PlanNotFoundError, PostgresPlans, TripNotFoundError
 from ai_orchestrator.store import create_pool, migrate
 
@@ -77,9 +77,15 @@ async def test_plans_votes_and_erasure(pool: asyncpg.Pool[asyncpg.Record]) -> No
     await store.vote(trip_id, beto, first, yes=False)
     board = await store.vote(trip_id, beto, first, yes=True)  # cambia de opinión
     assert board.plans[0].votes == {1: True, 2: True}
-    assert not is_match(board.plans[0], board.active_seats)
+    # Dos de los tres dicen que sí: ya es match viajero.
+    assert is_match(board.plans[0], board.active_seats)
+    # Carla no dijo que sí: no puede meterlo en el plan; Ana sí.
+    with pytest.raises(NotMatchError):
+        await store.plan(trip_id, carla, first)
+    board = await store.plan(trip_id, ana, first)
+    assert board.plans[0].planned
 
-    # Carla borra su cuenta: su asiento deja de contar y ya hay match.
+    # Carla borra su cuenta: su asiento deja de contar.
     await PostgresEraser(pool).erase(carla)
     board = await store.board(trip_id, ana)
     assert board.active_seats == frozenset({1, 2})

@@ -16,7 +16,15 @@ from typing import Protocol
 import asyncpg
 
 from ai_orchestrator.erasure import ERASED_PREFIX
-from ai_orchestrator.plans.domain import MAX_PLANS, MAX_PLANS_PER_MEMBER, Board, Plan, PlanLimitError
+from ai_orchestrator.plans.domain import (
+    MAX_PLANS,
+    MAX_PLANS_PER_MEMBER,
+    Board,
+    NotMatchError,
+    Plan,
+    PlanLimitError,
+    is_match,
+)
 from ai_orchestrator.store import Conn, Pool, StoreError
 
 _DB_ERRORS = (asyncpg.PostgresError, OSError, TimeoutError)
@@ -56,6 +64,8 @@ class PlanStore(Protocol):
 
     async def vote(self, negotiation_id: str, user_id: str, plan_id: str, *, yes: bool) -> Board: ...
 
+    async def plan(self, negotiation_id: str, user_id: str, plan_id: str) -> Board: ...
+
     async def delete(self, negotiation_id: str, user_id: str, plan_id: str) -> Board: ...
 
 
@@ -81,13 +91,14 @@ class PostgresPlans:
 
     async def _board(self, conn: Conn, negotiation_id: str, seat: int) -> Board:
         seats = await conn.fetch(
-            "SELECT seat FROM ai.group_negotiation_members"
+            "SELECT seat, coalesce(display_name, alias) AS name FROM ai.group_negotiation_members"
             " WHERE negotiation_id = $1::uuid AND user_id NOT LIKE $2",
             negotiation_id,
             ERASED_PREFIX + "%",
         )
         rows = await conn.fetch(
-            "SELECT plan_id, added_by_seat, title, note, wikidata_id, photo_url, article_url, created_at"
+            "SELECT plan_id, added_by_seat, title, note, wikidata_id, photo_url, article_url, created_at,"
+            " planned_at IS NOT NULL AS planned"
             " FROM ai.group_plans WHERE negotiation_id = $1::uuid ORDER BY created_at, plan_id",
             negotiation_id,
         )
@@ -103,6 +114,7 @@ class PostgresPlans:
             negotiation_id=negotiation_id,
             my_seat=seat,
             active_seats=frozenset(int(s["seat"]) for s in seats),
+            names={int(s["seat"]): str(s["name"]) for s in seats},
             plans=tuple(
                 Plan(
                     plan_id=str(r["plan_id"]),
@@ -114,6 +126,7 @@ class PostgresPlans:
                     article_url=r["article_url"],
                     created_at=r["created_at"],
                     votes=by_plan.get(str(r["plan_id"]), {}),
+                    planned=bool(r["planned"]),
                 )
                 for r in rows
             ),
@@ -194,6 +207,27 @@ class PostgresPlans:
                 return await self._board(conn, negotiation_id, seat)
         except _DB_ERRORS as exc:
             raise StoreError(f"votar plan: {exc}") from exc
+
+    async def plan(self, negotiation_id: str, user_id: str, plan_id: str) -> Board:
+        """ "Añadir al plan": solo un match en el que tú dijiste que sí."""
+        try:
+            async with self._pool.acquire() as conn, conn.transaction():
+                seat = await self._seat(conn, negotiation_id, user_id)
+                board = await self._board(conn, negotiation_id, seat)
+                found = next((p for p in board.plans if p.plan_id == plan_id), None)
+                if found is None:
+                    raise PlanNotFoundError(plan_id)
+                if found.votes.get(seat) is not True or not is_match(found, board.active_seats):
+                    raise NotMatchError(plan_id)
+                await conn.execute(
+                    "UPDATE ai.group_plans SET planned_at = coalesce(planned_at, now())"
+                    " WHERE plan_id = $1::uuid AND negotiation_id = $2::uuid",
+                    plan_id,
+                    negotiation_id,
+                )
+                return await self._board(conn, negotiation_id, seat)
+        except _DB_ERRORS as exc:
+            raise StoreError(f"meter plan: {exc}") from exc
 
     async def delete(self, negotiation_id: str, user_id: str, plan_id: str) -> Board:
         try:

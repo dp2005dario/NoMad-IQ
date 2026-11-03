@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 # Topes: con esto un viaje nunca crece sin límite (y la base de datos tampoco).
@@ -28,6 +28,8 @@ class Plan:
     created_at: datetime
     # Los votos por asiento (True = sí).
     votes: dict[int, bool]
+    # Ya está "en el plan del grupo" (alguien del match lo añadió).
+    planned: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,13 +41,36 @@ class Board:
     # Los asientos que cuentan para el match (los de cuentas borradas, no).
     active_seats: frozenset[int]
     plans: tuple[Plan, ...]
+    # El nombre de cada asiento (el que puso al unirse, o "Viajero 2").
+    names: dict[int, str] = field(default_factory=dict)
 
 
 def is_match(plan: Plan, active_seats: frozenset[int]) -> bool:
-    """Match = todos los miembros activos (al menos dos) han dicho que sí."""
-    if len(active_seats) < 2:
-        return False
-    return all(plan.votes.get(seat) is True for seat in active_seats)
+    """Match viajero = dos o más miembros activos han dicho que sí (como en la
+    maqueta: "solo salen los sitios que habéis marcado dos o más")."""
+    return sum(1 for seat in active_seats if plan.votes.get(seat) is True) >= 2
+
+
+def match_with(plan: Plan, board: Board) -> list[str]:
+    """Con quién coincides en un plan: los nombres de los OTROS que dijeron
+    que sí. Solo se cuenta si tú también dijiste que sí y hay match: los votos
+    son secretos hasta que coincidís."""
+    if plan.votes.get(board.my_seat) is not True or not is_match(plan, board.active_seats):
+        return []
+    return [
+        board.names.get(seat, f"Viajero {seat}")
+        for seat in sorted(board.active_seats)
+        if seat != board.my_seat and plan.votes.get(seat) is True
+    ]
+
+
+def has_voted(seat: int, board: Board) -> bool:
+    """Si esa persona ya ha votado algún plan (para "ya votó" / "sin entrar")."""
+    return any(seat in p.votes for p in board.plans)
+
+
+class NotMatchError(Exception):
+    """Solo se mete en el plan del grupo un match en el que tú dijiste sí."""
 
 
 class PlanLimitError(Exception):
