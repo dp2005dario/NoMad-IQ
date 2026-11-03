@@ -13,6 +13,10 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 EventKind = Literal["holiday", "music", "sports", "arts", "family", "other"]
+# Cómo están las entradas, según Ticketmaster (dates.status.code):
+# "onsale" a la venta, "offsale" no se venden ahora, "cancelled" cancelado,
+# "rescheduled" cambiado de fecha (o aplazado).
+SaleStatus = Literal["onsale", "offsale", "cancelled", "rescheduled"]
 
 # Como mucho un mes por pregunta, y hasta un año vista (más allá casi no
 # hay eventos publicados y así la caché tiene un tamaño fijo).
@@ -38,6 +42,11 @@ class CityEvent(BaseModel):
     currency: str | None = None
     # Festivo solo en una región del país (no en todo).
     regional: bool = False
+    # Estado de las entradas (solo Ticketmaster lo publica).
+    status: SaleStatus | None = None
+    # Dónde está el sitio (el recinto de Ticketmaster), para el mapa.
+    lat: float | None = None
+    lon: float | None = None
 
 
 class CityEvents(BaseModel):

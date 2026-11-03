@@ -20,7 +20,7 @@ from typing import Any
 
 import httpx
 
-from ai_orchestrator.city_events.domain import CityEvent, EventKind
+from ai_orchestrator.city_events.domain import CityEvent, EventKind, SaleStatus
 from ai_orchestrator.places.wikimedia import RateLimiter
 
 NAGER_URL = "https://date.nager.at/api/v3/PublicHolidays"
@@ -124,7 +124,12 @@ def parse_ticketmaster(data: Any) -> list[CityEvent]:
         segment = _first(row.get("classifications")).get("segment")
         kind = _SEGMENTS.get(segment.get("name", "") if isinstance(segment, dict) else "", "other")
         venues = row.get("_embedded")
-        venue = _text(_first(venues.get("venues") if isinstance(venues, dict) else None).get("name"), 80)
+        place = _first(venues.get("venues") if isinstance(venues, dict) else None)
+        venue = _text(place.get("name"), 80)
+        lat, lon = _position(place.get("location"))
+        raw_status = dates.get("status") if isinstance(dates, dict) else None
+        code = raw_status.get("code") if isinstance(raw_status, dict) else None
+        status = _STATUS.get(code) if isinstance(code, str) else None
         url = row.get("url")
         price = _first(row.get("priceRanges"))
         lo, hi, cur = price.get("min"), price.get("max"), price.get("currency")
@@ -143,9 +148,36 @@ def parse_ticketmaster(data: Any) -> list[CityEvent]:
                 price_min=low if has_price else None,
                 price_max=high if has_price else None,
                 currency=cur if has_price else None,
+                status=status,
+                lat=lat,
+                lon=lon,
             )
         )
     return out
+
+
+# Los estados de Ticketmaster que enseñamos (los demás, sin etiqueta).
+_STATUS: dict[str, SaleStatus] = {
+    "onsale": "onsale",
+    "offsale": "offsale",
+    "cancelled": "cancelled",
+    "canceled": "cancelled",
+    "rescheduled": "rescheduled",
+    "postponed": "rescheduled",
+}
+
+
+def _position(location: Any) -> tuple[float | None, float | None]:
+    """Las coordenadas del recinto ("40.4", "-3.7" en texto) o nada."""
+    if not isinstance(location, dict):
+        return None, None
+    try:
+        lat, lon = float(location.get("latitude", "")), float(location.get("longitude", ""))
+    except (TypeError, ValueError):
+        return None, None
+    if not (-90 <= lat <= 90 and -180 <= lon <= 180) or (lat == 0 and lon == 0):
+        return None, None
+    return round(lat, 5), round(lon, 5)
 
 
 async def _get_json(http: httpx.AsyncClient, url: str, params: dict[str, str] | None, who: str) -> Any:

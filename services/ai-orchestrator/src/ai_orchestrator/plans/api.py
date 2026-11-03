@@ -22,7 +22,16 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from ai_orchestrator.identity import Principal, current_principal
 from ai_orchestrator.negotiation.domain import clean_text
-from ai_orchestrator.plans.domain import ARTICLE_RE, PHOTO_RE, Board, PlanLimitError, is_match
+from ai_orchestrator.plans.domain import (
+    ARTICLE_RE,
+    PHOTO_RE,
+    Board,
+    NotMatchError,
+    PlanLimitError,
+    has_voted,
+    is_match,
+    match_with,
+)
 from ai_orchestrator.plans.store import PlanNotFoundError, PlanStore, TripNotFoundError
 
 PREFIX = "/v1/group-negotiations/{negotiation_id}/plans"
@@ -86,11 +95,24 @@ class PlanView(BaseModel):
     yes: int
     voted: int
     match: bool
+    # Con quién coincides (solo si tú dijiste sí y hay match; si no, vacío).
+    match_with: list[str]
+    # Ya está en el plan del grupo.
+    planned: bool
+
+
+class PersonView(BaseModel):
+    """Una persona del viaje, para las caras de arriba ("ya votó")."""
+
+    name: str
+    me: bool
+    voted: bool
 
 
 class BoardView(BaseModel):
     negotiation_id: str
     members: int
+    people: list[PersonView]
     plans: list[PlanView]
 
     @classmethod
@@ -99,6 +121,14 @@ class BoardView(BaseModel):
         return cls(
             negotiation_id=board.negotiation_id,
             members=len(active),
+            people=[
+                PersonView(
+                    name=board.names.get(seat, f"Viajero {seat}"),
+                    me=seat == board.my_seat,
+                    voted=has_voted(seat, board),
+                )
+                for seat in sorted(active)
+            ],
             plans=[
                 PlanView(
                     plan_id=p.plan_id,
@@ -113,6 +143,8 @@ class BoardView(BaseModel):
                     yes=sum(1 for s, v in p.votes.items() if v and s in active),
                     voted=sum(1 for s in p.votes if s in active),
                     match=is_match(p, active),
+                    match_with=match_with(p, board),
+                    planned=p.planned,
                 )
                 for p in board.plans
             ],
@@ -153,6 +185,23 @@ def plan_router(store: PlanStore) -> APIRouter:
             board = await store.vote(str(negotiation_id), principal.user_id, str(plan_id), yes=body.yes)
         except (TripNotFoundError, PlanNotFoundError) as exc:
             raise HTTPException(status_code=404, detail="plan no encontrado") from exc
+        return BoardView.of(board)
+
+    @router.put("/{plan_id}/planned", response_model=BoardView)
+    async def planned(
+        principal: Annotated[Principal, Depends(current_principal)],
+        negotiation_id: TripId,
+        plan_id: PlanId,
+    ) -> BoardView:
+        """ "Añadir al plan": mete un match en el plan del grupo."""
+        try:
+            board = await store.plan(str(negotiation_id), principal.user_id, str(plan_id))
+        except (TripNotFoundError, PlanNotFoundError) as exc:
+            raise HTTPException(status_code=404, detail="plan no encontrado") from exc
+        except NotMatchError as exc:
+            raise HTTPException(
+                status_code=409, detail="solo se añade un match en el que dijiste sí"
+            ) from exc
         return BoardView.of(board)
 
     @router.delete("/{plan_id}", response_model=BoardView)

@@ -19,8 +19,15 @@ class FakePlans {
   Map<String, Object?> board() => <String, Object?>{
     'negotiation_id': trip,
     'members': 2,
+    'people': <Object?>[
+      <String, Object?>{'name': 'Dario', 'me': true, 'voted': true},
+      <String, Object?>{'name': 'Noelia', 'me': false, 'voted': true},
+    ],
     'plans': plans,
   };
+
+  /// Lo que se ha escrito en el chat del viaje.
+  final List<String> chat = <String>[];
 
   void add(Map<String, Object?> p, {bool mine = true}) {
     plans.add(<String, Object?>{
@@ -50,6 +57,10 @@ class FakePlans {
       }
       return FakeGateway.json(board());
     };
+    g.services['/v1/group-negotiations/$trip/chat'] = (http.Request r) {
+      chat.add((jsonDecode(r.body) as Map<String, Object?>)['text']! as String);
+      return FakeGateway.json(<String, Object?>{'messages': <Object?>[]});
+    };
     for (int i = 1; i <= 20; i++) {
       g.services['$base/p$i/vote'] = (http.Request r) {
         final bool yes =
@@ -59,6 +70,12 @@ class FakePlans {
         p['voted'] = 2;
         p['yes'] = yes ? 2 : 1;
         p['match'] = yes;
+        // Noelia ya había dicho que sí: con tu sí, coincidís.
+        p['match_with'] = yes ? <String>['Noelia'] : <String>[];
+        return FakeGateway.json(board());
+      };
+      g.services['$base/p$i/planned'] = (http.Request r) {
+        plans[i - 1]['planned'] = true;
         return FakeGateway.json(board());
       };
     }
@@ -92,6 +109,8 @@ void main() {
     expect(b.plans, hasLength(2));
     expect(b.pending.single.title, 'Surf');
     expect(b.matches.single.title, 'Fado');
+    // Sin "match_with" no es un match MÍO (no coincido con nadie aún).
+    expect(b.plans.first.myMatch, isFalse);
     expect(b.plans.first.photoUrl, isNull);
     expect(const NewPlan(title: 'x', note: 'y').toJson(), <String, Object?>{
       'title': 'x',
@@ -136,7 +155,9 @@ void main() {
       services: fakeServices(session, gateway: g),
     );
     await tester.pumpAndSettle();
-    expect(find.textContaining('Lisboa · desliza'), findsOneWidget);
+    expect(find.textContaining('Lisboa · derecha: me apetece'), findsOneWidget);
+    // Las caras del grupo: tú y Noelia, que ya votó.
+    expect(find.text('ya votó'), findsOneWidget);
     expect(find.text('Plan 1 de 1'), findsOneWidget);
     expect(find.text('Fado en Alfama'), findsWidgets);
 
@@ -150,19 +171,30 @@ void main() {
     expect(server.plans.last['wikidata_id'], 'Q193208');
     expect(find.text('Plan 1 de 2'), findsOneWidget);
 
-    // Deslizar a la derecha = sí.
+    // Deslizar a la derecha = me apetece. Noelia también: ¡match viajero!
     await tester.drag(find.text('Esta noche · 21:30'), const Offset(300, 0));
     await tester.pumpAndSettle();
     expect(server.plans.first['my_vote'], true);
+    expect(
+      find.text('Tú y Noelia queréis ir a Fado en Alfama'),
+      findsOneWidget,
+    );
+    // "Añadir al plan": se apunta y se avisa al grupo por el chat.
+    await tester.tap(find.widgetWithText(FilledButton, 'Añadir al plan'));
+    await tester.pumpAndSettle();
+    expect(server.plans.first['planned'], true);
+    expect(server.chat.single, contains('Fado en Alfama'));
+    expect(find.textContaining('Está en el plan del grupo'), findsOneWidget);
     expect(find.text('Plan 2 de 2'), findsOneWidget);
 
-    // El botón ✕ = no.
-    await tester.tap(find.byTooltip('NO'));
+    // El botón ✕ = paso.
+    await tester.tap(find.byTooltip('PASO'));
     await tester.pumpAndSettle();
     expect(server.plans.last['my_vote'], false);
 
-    expect(find.text('¡Match!'), findsOneWidget);
-    expect(find.text('Estos planes gustan a los 2.'), findsOneWidget);
-    expect(find.text('1 sí · han votado 2 de 2'), findsOneWidget);
+    // Vuestros match viajeros: con quién y que ya está en el plan.
+    expect(find.text('Vuestros match viajeros'), findsOneWidget);
+    expect(find.text('Tú y Noelia'), findsOneWidget);
+    expect(find.text('En el plan'), findsOneWidget);
   });
 }

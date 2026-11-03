@@ -78,6 +78,10 @@ enum LocalData {
   /// pasaporte y del DNI. De los números solo se guardan las 3 últimas
   /// cifras (el número entero nunca se guarda).
   myDocs,
+
+  /// Elegid planes: los match viajeros que ya te enseñamos en grande (para
+  /// no repetir la celebración cada vez que entras).
+  plansSeen,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real

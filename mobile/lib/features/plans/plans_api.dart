@@ -28,6 +28,8 @@ class GroupPlan {
     this.photoUrl,
     this.articleUrl,
     this.myVote,
+    this.matchWith = const <String>[],
+    this.planned = false,
   });
 
   final String id;
@@ -47,6 +49,16 @@ class GroupPlan {
   final int yes;
   final int voted;
   final bool match;
+
+  /// Con quién coincides ("Marta", "Álex"). Solo llega si tú dijiste que sí
+  /// y hay match: los votos son secretos hasta que coincidís.
+  final List<String> matchWith;
+
+  /// Ya está metido en el plan del grupo.
+  final bool planned;
+
+  /// Es un "match viajero" mío: coincido con alguien.
+  bool get myMatch => match && myVote == true && matchWith.isNotEmpty;
 
   static GroupPlan? parse(Object? json) {
     if (json is! Map<String, Object?>) return null;
@@ -83,16 +95,50 @@ class GroupPlan {
       yes: yes,
       voted: voted,
       match: json['match'] == true,
+      matchWith: switch (json['match_with']) {
+        final List<Object?> l => <String>[
+          for (final Object? n in l) ?(n is String && n.isNotEmpty ? n : null),
+        ],
+        _ => const <String>[],
+      },
+      planned: json['planned'] == true,
+    );
+  }
+}
+
+/// Una persona del viaje (las caras de arriba).
+class PlanPerson {
+  const PlanPerson({required this.name, required this.me, required this.voted});
+
+  final String name;
+  final bool me;
+
+  /// Ya ha votado algún plan ("ya votó"); si no, "sin entrar".
+  final bool voted;
+
+  static PlanPerson? parse(Object? json) {
+    if (json is! Map<String, Object?>) return null;
+    final Object? name = json['name'];
+    if (name is! String || name.isEmpty) return null;
+    return PlanPerson(
+      name: name,
+      me: json['me'] == true,
+      voted: json['voted'] == true,
     );
   }
 }
 
 class PlanBoard {
-  const PlanBoard({required this.members, required this.plans});
+  const PlanBoard({
+    required this.members,
+    required this.plans,
+    this.people = const <PlanPerson>[],
+  });
 
   /// Cuántas personas cuentan para el match.
   final int members;
   final List<GroupPlan> plans;
+  final List<PlanPerson> people;
 
   /// Los que me faltan por votar.
   List<GroupPlan> get pending =>
@@ -111,6 +157,12 @@ class PlanBoard {
     return PlanBoard(
       members: members,
       plans: <GroupPlan>[for (final Object? p in plans) ?GroupPlan.parse(p)],
+      people: switch (json['people']) {
+        final List<Object?> l => <PlanPerson>[
+          for (final Object? p in l) ?PlanPerson.parse(p),
+        ],
+        _ => const <PlanPerson>[],
+      },
     );
   }
 }
@@ -172,6 +224,14 @@ class PlansApi {
             <String, Object?>{'yes': yes},
           )
           .then(PlanBoard.parse);
+
+  /// "Añadir al plan": mete un match en el plan del grupo.
+  Future<PlanBoard> addToPlan(String tripId, String planId) => _api
+      .putJson(
+        '${_base(tripId)}/${Uri.encodeComponent(planId)}/planned',
+        const <String, Object?>{},
+      )
+      .then(PlanBoard.parse);
 
   Future<PlanBoard> remove(String tripId, String planId) => _api
       .delete('${_base(tripId)}/${Uri.encodeComponent(planId)}')
