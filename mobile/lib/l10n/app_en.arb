@@ -123,6 +123,34 @@
   "@homeSub18": {
     "description": "Home tile: Language"
   },
+  "homeSosHold": "Hold for 2 seconds to ask for help",
+  "@homeSosHold": {
+    "description": "Home SOS: hold hint"
+  },
+  "homeSosWarn": "Using SOS when it isn’t needed can have consequences",
+  "@homeSosWarn": {
+    "description": "Home SOS: misuse warning"
+  },
+  "homeSosCancelHint": "If it’s not a real emergency, cancel",
+  "@homeSosCancelHint": {
+    "description": "Home SOS countdown: hint"
+  },
+  "homeSosIn": "Alerting in",
+  "@homeSosIn": {
+    "description": "Home SOS countdown: 'Alerting in' (number below)"
+  },
+  "homeSosCancel": "CANCEL",
+  "@homeSosCancel": {
+    "description": "Home SOS countdown: cancel button"
+  },
+  "homeSosContacts": "Your 3 emergency contacts",
+  "@homeSosContacts": {
+    "description": "Home SOS: contacts title"
+  },
+  "homeSosMore": "More contacts",
+  "@homeSosMore": {
+    "description": "Home SOS: manage contacts"
+  },
   "homeTitleHotels": "Hotels",
   "@homeTitleHotels": {
     "description": "Home tile title: Hotels"

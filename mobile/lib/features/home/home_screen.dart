@@ -7,7 +7,8 @@
 //      y una caja para escribirle.
 //   3. "Todo en ECLIPTA": un carrusel infinito de cuadrados con foto que se
 //      inclinan en 3D al deslizar (el del centro, grande y nítido).
-//   4. Atajos que aún no están en el carrusel (SOS, cromos, sellos...).
+//   4. El SOS: un cuarto de acero que hay que mantener pulsado 2 s.
+//   5. Atajos que aún no están en el carrusel (cromos, sellos...).
 //
 // Animaciones: duran un rato y se paran (no gastan batería sin fin) y con
 // "reducir movimiento" del móvil no hay ninguna.
@@ -18,6 +19,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router.dart';
+import 'home_sos.dart';
 import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -87,6 +89,9 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const _Carousel(),
+            const SizedBox(height: 28),
+            // El SOS de la maqueta: un cuarto de acero; mantener 2 s.
+            const HomeSos(),
             const SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -105,13 +110,6 @@ class HomeScreen extends StatelessWidget {
                   final double width =
                       (box.maxWidth - gap * (columns - 1)) / columns;
                   final List<Widget> tiles = <Widget>[
-                    // SOS el primero: en un apuro no hay que buscarlo.
-                    _Shortcut(
-                      icon: Icons.sos_rounded,
-                      color: const Color(0xFFE53935),
-                      label: t.sosTitle,
-                      onTap: () => context.push(Routes.sos),
-                    ),
                     // Preguntarle a Flyra en voz alta (o escrito).
                     _Shortcut(
                       icon: Icons.mic_rounded,

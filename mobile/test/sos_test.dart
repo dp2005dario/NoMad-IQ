@@ -121,7 +121,16 @@ void main() {
         },
       ),
     );
-    await tester.tap(find.text('SOS'));
+    // En Inicio, bajo el cuarto de acero, salen tus contactos de verdad;
+    // "Más contactos" abre la pantalla SOS.
+    await tester.scrollUntilVisible(
+      find.text('Más contactos'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Ana'), findsOneWidget);
+    await tester.tap(find.text('Más contactos'));
     await tester.pumpAndSettle();
     expect(find.text('¿Necesitas ayuda?'), findsOneWidget);
     gps.fixes.add(

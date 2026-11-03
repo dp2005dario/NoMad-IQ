@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/features/assistant/interpreter.dart';
+import 'package:eclipta/features/sos/sos_screen.dart';
 
 import 'helpers.dart';
 
@@ -60,5 +61,57 @@ void main() {
     await tester.drag(find.byType(PageView), const Offset(300, 0));
     await tester.pumpAndSettle();
     expect(find.text('Cambia el idioma'), findsOneWidget);
+  });
+
+  testWidgets('SOS: mantener 2 s, cuenta atrás, CANCELAR y luego avisar', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 3000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await pumpApp(tester, locale: 'es', initialLocation: Routes.home);
+    await tester.pumpAndSettle();
+    final Finder room = find.byKey(const ValueKey<String>('homeSosHold'));
+    await tester.scrollUntilVisible(
+      room,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    // Soltar antes de 2 s no hace nada.
+    TestGesture finger = await tester.startGesture(tester.getCenter(room));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await finger.up();
+    await tester.pumpAndSettle();
+    expect(find.text('CANCELAR'), findsNothing);
+
+    // Mantener 2 s: cuenta atrás con CANCELAR.
+    finger = await tester.startGesture(tester.getCenter(room));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 2100));
+    await finger.up();
+    await tester.pump();
+    expect(find.text('CANCELAR'), findsOneWidget);
+    await tester.tap(find.text('CANCELAR'));
+    await tester.pumpAndSettle();
+    expect(find.text('CANCELAR'), findsNothing);
+
+    // Otra vez, y esta vez se deja llegar a 0: se abre el SOS activado.
+    finger = await tester.startGesture(tester.getCenter(room));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 2100));
+    await finger.up();
+    for (int i = 0; i < 6; i++) {
+      await tester.pump(const Duration(seconds: 1));
+    }
+    await tester.pumpAndSettle();
+    expect(
+      find.byWidgetPredicate((Widget w) => w is SosScreen && w.armed),
+      findsOneWidget,
+    );
+    // La pantalla SOS espera al GPS hasta 15 s: se deja terminar.
+    await tester.pump(const Duration(seconds: 16));
   });
 }

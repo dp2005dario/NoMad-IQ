@@ -85,6 +85,7 @@ dependencies:
   # Asistente: adivina en qué idioma está una frase (ML Kit, en el móvil y
   # gratis), para cambiar solo el idioma de la otra persona.
   google_mlkit_language_id: ^0.15.1
+  flutter_svg: ^2.3.2
 
 dev_dependencies:
   flutter_test:

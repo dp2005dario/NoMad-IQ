@@ -23,7 +23,11 @@ import 'where_am_i.dart';
 const Duration sosHold = Duration(seconds: 3);
 
 class SosScreen extends StatefulWidget {
-  const SosScreen({super.key, this.locate = whereabouts});
+  const SosScreen({super.key, this.locate = whereabouts, this.armed = false});
+
+  /// true si ya se pidió ayuda desde Inicio (mantener 2 s y cuenta atrás):
+  /// la pantalla abre directamente en modo "Pide ayuda ya".
+  final bool armed;
 
   /// País y ciudad de un punto (en los tests, uno fijo).
   final Future<Whereabouts> Function(GeoPoint) locate;
@@ -44,7 +48,7 @@ class _SosScreenState extends State<SosScreen>
   PositionFix? _fix;
   Whereabouts _where = const Whereabouts();
   bool _locating = true;
-  bool _active = false;
+  late bool _active = widget.armed;
   late List<SosContact> _contacts = loadContacts(_prefs);
   late MedicalCard _card = MedicalCard.load(_prefs);
 

@@ -71,6 +71,9 @@ abstract final class Routes {
   static const String vault = '/vault';
   static const String settings = '/settings';
   static const String sos = '/sos';
+
+  /// El SOS ya activado (desde el botón de Inicio).
+  static const String sosArmed = '/sos?armed=1';
   static const String passport = '/passport';
   static const String notices = '/notices';
   static const String menu = '/menu';
@@ -504,7 +507,9 @@ GoRouter buildRouter({
     ),
     GoRoute(
       path: Routes.sos,
-      builder: (BuildContext context, GoRouterState state) => const SosScreen(),
+      // ?armed=1: llega desde el SOS de Inicio, ya activado.
+      builder: (BuildContext context, GoRouterState state) =>
+          SosScreen(armed: state.uri.queryParameters['armed'] == '1'),
     ),
     GoRoute(
       path: Routes.vault,
