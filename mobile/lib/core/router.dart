@@ -130,9 +130,22 @@ abstract final class Routes {
 
   /// La audioguía de una zona. El nombre va en la dirección para poder
   /// enseñarlo en el título mientras se carga el resto.
-  static String audioguide(String zoneId, String zoneName) => Uri(
+  /// [lat]/[lon]: el centro de la zona, para buscar su foto real y su
+  /// "¿Sabías que…?" (desde un aviso no se sabe y no salen).
+  static String audioguide(
+    String zoneId,
+    String zoneName, {
+    double? lat,
+    double? lon,
+  }) => Uri(
     path: '/audioguide/${Uri.encodeComponent(zoneId)}',
-    queryParameters: <String, String>{'name': zoneName},
+    queryParameters: <String, String>{
+      'name': zoneName,
+      if (lat != null && lon != null) ...<String, String>{
+        'lat': lat.toStringAsFixed(5),
+        'lon': lon.toStringAsFixed(5),
+      },
+    },
   ).toString();
 
   /// Tus alertas de precio de vuelos (también al tocar la notificación).
@@ -280,6 +293,7 @@ GoRouter buildRouter({
       builder: (BuildContext context, GoRouterState state) => AudioguideScreen(
         zoneId: state.pathParameters['zoneId'] ?? '',
         zoneName: state.uri.queryParameters['name'] ?? '',
+        center: _point(state.uri.queryParameters),
       ),
     ),
     GoRoute(
@@ -544,4 +558,14 @@ String? sessionRedirect(SessionStatus status, String location) {
           ? Routes.home
           : null;
   }
+}
+
+/// Un punto que viene en la dirección (?lat=..&lon=..), si es válido.
+GeoPoint? _point(Map<String, String> q) {
+  final double? lat = double.tryParse(q['lat'] ?? '');
+  final double? lon = double.tryParse(q['lon'] ?? '');
+  if (lat == null || lon == null || lat.abs() > 85 || lon.abs() > 180) {
+    return null;
+  }
+  return GeoPoint(lat, lon);
 }

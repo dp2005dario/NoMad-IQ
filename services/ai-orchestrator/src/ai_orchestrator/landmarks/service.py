@@ -252,6 +252,21 @@ class LandmarkService:
             attribution=ATTRIBUTION,
         )
 
+    async def near(self, lat: float, lon: float, language: str) -> Landmark | None:
+        """El lugar más conocido junto a un punto (la foto y el "¿Sabías que…?"
+        de la audioguía de una zona). No gasta usos de la cámara: no hay foto
+        ni modelo de visión, solo Wikidata (guardado en caché por zonas)."""
+        lang = place_language(language.split("-")[0])
+        # Una zona de audioguía mide unos cientos de metros: se busca un poco
+        # más lejos que con el GPS (450 m).
+        request = RecognizeRequest(lat=lat, lon=lon, accuracy_m=100, language=lang)
+        ranked = rank(request, await self._nearby(request, lang))
+        if not ranked:
+            return None
+        chosen, dist = ranked[0]
+        card = await self._card(chosen, lang)
+        return card.model_copy(update={"distance_m": dist})
+
     async def landmark(self, qid: str, language: str) -> Landmark | None:
         """La ficha de un lugar concreto (al elegir otro en "¿Es este?")."""
         lang = place_language(language.split("-")[0])

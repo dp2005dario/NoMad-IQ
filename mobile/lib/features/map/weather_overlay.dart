@@ -8,6 +8,22 @@ import 'package:flutter/material.dart';
 
 enum MapWeather { sun, clouds, rain }
 
+/// El tiempo de verdad de ahora (MET Norway) → el adorno del mapa.
+/// Con lluvia, aguanieve, nieve, chubascos o tormenta: lluvia. Con nubes o
+/// niebla: nubes. Si no: sol.
+MapWeather mapWeatherFrom(double rainMm, String? symbol) {
+  final String s = symbol ?? '';
+  if (rainMm >= 0.2 ||
+      s.contains('rain') ||
+      s.contains('sleet') ||
+      s.contains('snow') ||
+      s.contains('thunder')) {
+    return MapWeather.rain;
+  }
+  if (s.contains('cloudy') || s.contains('fog')) return MapWeather.clouds;
+  return MapWeather.sun;
+}
+
 class WeatherOverlay extends StatefulWidget {
   const WeatherOverlay({super.key, required this.weather});
 

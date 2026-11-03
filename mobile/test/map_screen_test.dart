@@ -7,9 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
+import 'package:eclipta/features/audioguide/audioguide_screen.dart';
 import 'package:eclipta/features/map/geo.dart';
 import 'package:eclipta/features/map/location.dart';
 import 'package:eclipta/features/map/street_photos_api.dart';
+import 'package:eclipta/features/map/weather_overlay.dart';
 
 import 'helpers.dart';
 import 'zones_fixture.dart';
@@ -389,5 +391,95 @@ void main() {
     );
     final GeoPoint cell = streetCell(const GeoPoint(40.41694, -3.70361));
     expect((cell.lat, cell.lon), (40.417, -3.704));
+  });
+
+  testWidgets('audioguía: foto real, ¿Sabías que…?, subtítulos y recorrido', (
+    WidgetTester tester,
+  ) async {
+    final FakeGateway g = backend();
+    final List<Uri> asked = <Uri>[];
+    final List<Uri> opened = <Uri>[];
+    g.services['/v1/landmarks/near'] = (http.Request r) {
+      asked.add(r.url);
+      return FakeGateway.json(<String, Object?>{
+        'qid': 'Q1503138',
+        'name': 'Real Casa de Correos',
+        'lat': 40.4167,
+        'lon': -3.7035,
+        'distance_m': 40,
+        'photo': <String, Object?>{
+          'url': 'https://upload.wikimedia.org/x/800px-Correos.jpg',
+          'page_url': 'https://commons.wikimedia.org/wiki/File:Correos.jpg',
+        },
+        'summary': 'Su reloj da las campanadas de Nochevieja.',
+        'article_url': 'https://es.wikipedia.org/wiki/Real_Casa_de_Correos',
+      });
+    };
+    final SessionController s = await signedInSession(g);
+    final List<FakePlayer> players = <FakePlayer>[];
+    await pumpApp(
+      tester,
+      locale: 'es',
+      initialLocation: Routes.audioguide(
+        solId,
+        'Puerta del Sol',
+        lat: 40.4168,
+        lon: -3.7038,
+      ),
+      session: s,
+      services: fakeServices(
+        s,
+        gateway: g,
+        players: players,
+        openBooking: (Uri u) async {
+          opened.add(u);
+          return true;
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(asked.single.queryParameters, <String, String>{
+      'lat': '40.41680',
+      'lon': '-3.70380',
+      'lang': 'es',
+    });
+    expect(find.textContaining('Foto de Real Casa de Correos'), findsOneWidget);
+    await tester.tap(find.textContaining('Foto de Real Casa de Correos'));
+    await tester.pumpAndSettle();
+    expect(opened.single.host, 'commons.wikimedia.org');
+    final Finder subs = find.text('SUBTÍTULOS EN DIRECTO');
+    await tester.scrollUntilVisible(subs, 200);
+    expect(subs, findsOneWidget);
+
+    final Finder know = find.text('¿SABÍAS QUE…?');
+    await tester.scrollUntilVisible(know, 200);
+    expect(
+      find.text('Su reloj da las campanadas de Nochevieja.'),
+      findsOneWidget,
+    );
+    final Finder route = find.text('Tu recorrido');
+    await tester.scrollUntilVisible(route, 200);
+    expect(find.text('2 partes · quedan 1 min'), findsOneWidget);
+    await tester.tap(find.text('Parte 2'));
+    await tester.pumpAndSettle();
+    expect(players.single.state.value.part, 1);
+  });
+
+  test('los subtítulos se iluminan por palabras enteras', () {
+    const String text = 'Bienvenida a la plaza.';
+    expect(guideSpokenUpTo(text, 0), 0);
+    expect(guideSpokenUpTo(text, 1), text.length);
+    // A mitad, nunca corta una palabra.
+    final int cut = guideSpokenUpTo(text, 0.5);
+    expect(text.substring(0, cut), 'Bienvenida a');
+  });
+
+  test('el tiempo del mapa sale del de verdad (MET Norway)', () {
+    expect(mapWeatherFrom(0, 'clearsky_day'), MapWeather.sun);
+    expect(mapWeatherFrom(0, 'partlycloudy_night'), MapWeather.clouds);
+    expect(mapWeatherFrom(0, 'fog'), MapWeather.clouds);
+    expect(mapWeatherFrom(0, 'lightrainshowers_day'), MapWeather.rain);
+    expect(mapWeatherFrom(1.2, null), MapWeather.rain);
+    expect(mapWeatherFrom(0, null), MapWeather.sun);
   });
 }

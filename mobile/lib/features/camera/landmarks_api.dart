@@ -165,6 +165,21 @@ class LandmarksApi {
     }),
   );
 
+  /// El lugar más conocido junto a un punto (foto real y "¿Sabías que…?"
+  /// de la audioguía). No gasta usos de la cámara. ApiError.notFound = no
+  /// hay ningún lugar conocido ahí.
+  Future<Landmark> near(double lat, double lon, String language) async =>
+      Landmark.parse(
+        await _api.getJson(
+          '/v1/landmarks/near',
+          query: <String, String>{
+            'lat': lat.toStringAsFixed(5),
+            'lon': lon.toStringAsFixed(5),
+            'lang': language,
+          },
+        ),
+      );
+
   Future<Landmark> get(String qid, String language) async => Landmark.parse(
     await _api.getJson(
       '/v1/landmarks/${Uri.encodeComponent(qid)}',

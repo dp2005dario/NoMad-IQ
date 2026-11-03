@@ -1,6 +1,19 @@
 // La pantalla de la audioguía de una zona (maqueta 4): el guion por partes,
 // el reproductor con el círculo verde que se desliza para avanzar o
 // retroceder, y el texto de lo que suena (útil con ruido o sin cascos).
+//
+// Como en la maqueta, además:
+//   - FOTO REAL del lugar más conocido de la zona (Wikimedia Commons, con
+//     enlace a su autor y licencia). Si no hay foto, no se pone nada.
+//   - "¿SABÍAS QUE…?": el resumen de su artículo de Wikipedia (texto real,
+//     con la fuente). Si no hay artículo, no sale.
+//   - SUBTÍTULOS EN DIRECTO: las palabras se iluminan según avanza el audio.
+//     Ojo: el servidor no dice cuándo suena cada palabra, así que se reparte
+//     el tiempo de la parte entre sus letras (va bastante a la par, no exacto).
+//   - TU RECORRIDO: las partes de la guía, cuáles has oído y cuánto queda.
+//     Límite: las partes no traen un punto del mapa, así que no se dibuja
+//     el recorrido sobre el mapa como en la maqueta.
+//   - "Audioguía descargada" si la tienes guardada para usarla sin conexión.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -14,6 +27,9 @@ import '../../core/services.dart';
 import '../offline/saved_guides.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../camera/landmarks_api.dart';
+import '../map/geo.dart';
+import '../route/places_api.dart' show PlacePhoto;
 import '../../widgets/flyra_avatar.dart';
 import 'audioguide_api.dart';
 import 'guide_player.dart';
@@ -26,11 +42,15 @@ class AudioguideScreen extends StatefulWidget {
     super.key,
     required this.zoneId,
     required this.zoneName,
+    this.center,
     this.retryEvery = const Duration(seconds: 5),
   });
 
   final String zoneId;
   final String zoneName;
+
+  /// El centro de la zona (para la foto real y el "¿Sabías que…?").
+  final GeoPoint? center;
 
   /// Si el guion aún se está escribiendo, cada cuánto se vuelve a preguntar.
   final Duration retryEvery;
@@ -61,6 +81,12 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
   static const List<double> _speeds = <double>[1, 1.25, 1.5, 0.75];
   int _speed = 0;
 
+  /// El lugar más conocido de la zona (foto y resumen reales), si lo hay.
+  Landmark? _place;
+
+  /// true si la tienes descargada en el móvil (funciona sin conexión).
+  bool _saved = false;
+
   /// Mientras arrastras el círculo verde: cuántos segundos vas a saltar.
   double? _seekDelta;
 
@@ -76,6 +102,31 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
     _services = ServicesScope.of(context);
     _language = Localizations.localeOf(context).languageCode;
     unawaited(_load());
+    unawaited(_loadExtras());
+  }
+
+  /// La foto, el "¿Sabías que…?" y si está descargada. Si algo falla, esa
+  /// parte simplemente no sale: la audioguía funciona igual.
+  Future<void> _loadExtras() async {
+    final SavedGuide? saved = await _services.saved.of(
+      widget.zoneId,
+      _language,
+    );
+    if (mounted && saved != null) setState(() => _saved = true);
+    final GeoPoint? c = widget.center;
+    if (c == null) return;
+    try {
+      final Landmark place = await _services.landmarks.near(
+        c.lat,
+        c.lon,
+        _language,
+      );
+      // Solo si está de verdad en la zona (no uno famoso a 1 km).
+      if ((place.distanceM ?? 0) > 500) return;
+      if (mounted) setState(() => _place = place);
+    } on ApiException {
+      // Sin cuenta, sin internet o sin lugares conocidos: no sale.
+    }
   }
 
   @override
@@ -337,6 +388,10 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
           ),
         ),
         const SizedBox(height: 6),
+        if (_place?.photo case final PlacePhoto photo) ...<Widget>[
+          _Photo(photo: photo, name: _place!.name, open: _services.openBooking),
+          const SizedBox(height: 14),
+        ],
         Text(title, style: text.displaySmall),
         const SizedBox(height: 6),
         Text(
@@ -378,13 +433,8 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
         ],
         const SizedBox(height: 24),
         if (audio != null)
-          // Solo el texto de la parte que suena (como subtítulos).
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Text(partText, style: text.bodyLarge),
-            ),
-          )
+          // Solo el texto de la parte que suena, iluminándose al sonar.
+          _LiveSubtitles(text: partText, progress: _progress(p, part))
         else
           // Sin audio: el guion completo, para leerlo.
           for (final GuideSegment s in script.segments)
@@ -396,8 +446,37 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
           const SizedBox(height: 16),
           _PartChips(count: partCount, current: part, onPick: _goPart),
         ],
+        if (_place?.summary case final String summary) ...<Widget>[
+          const SizedBox(height: 20),
+          _DidYouKnow(
+            text: summary,
+            article: _place!.articleUrl,
+            open: _services.openBooking,
+          ),
+        ],
+        if (audio != null) ...<Widget>[
+          const SizedBox(height: 20),
+          _Route(
+            parts: audio.parts,
+            current: part,
+            position: p?.position ?? Duration.zero,
+            onPick: _goPart,
+          ),
+        ],
+        if (_saved) ...<Widget>[
+          const SizedBox(height: 20),
+          _Note(icon: Icons.download_done_rounded, text: t.guideDownloaded),
+        ],
       ],
     );
+  }
+
+  /// Por dónde va la parte que suena (0 a 1).
+  double _progress(Playback? p, int part) {
+    if (p == null) return 0;
+    final int total = _partLength(part).inMilliseconds;
+    if (total <= 0) return 0;
+    return (p.position.inMilliseconds / total).clamp(0.0, 1.0);
   }
 
   /// "1", "1,25", "1.5"... con la coma o el punto de cada idioma.
@@ -734,6 +813,258 @@ class _Message extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// La foto real del lugar, con su crédito (autor y licencia en Commons).
+class _Photo extends StatelessWidget {
+  const _Photo({required this.photo, required this.name, required this.open});
+
+  final PlacePhoto photo;
+  final String name;
+  final Future<bool> Function(Uri) open;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Image.network(
+              photo.url.toString(),
+              fit: BoxFit.cover,
+              semanticLabel: name,
+              // Si no carga (sin internet), un hueco tranquilo en su lugar.
+              errorBuilder: (_, _, _) => const ColoredBox(
+                color: NomadColors.surfaceHigh,
+                child: Center(
+                  child: Icon(
+                    Icons.photo_outlined,
+                    color: NomadColors.textMuted,
+                    size: 40,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton(
+            onPressed: () => unawaited(open(photo.pageUrl)),
+            child: Text(
+              t.guidePhotoCredit(name),
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Cuántas letras de [text] se han dicho ya cuando la parte va por
+/// [progress] (0 a 1), cortado al final de una palabra.
+int guideSpokenUpTo(String text, double progress) {
+  final int cut = (text.length * progress).round().clamp(0, text.length);
+  if (cut == 0 || cut == text.length) return cut;
+  final int space = text.indexOf(' ', cut);
+  return space < 0 ? text.length : space;
+}
+
+/// "SUBTÍTULOS EN DIRECTO": lo dicho, en blanco; lo que falta, en gris.
+class _LiveSubtitles extends StatelessWidget {
+  const _LiveSubtitles({required this.text, required this.progress});
+
+  final String text;
+
+  /// Por dónde va la parte (0 a 1).
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final TextStyle? base = Theme.of(context).textTheme.bodyLarge;
+    final int cut = guideSpokenUpTo(text, progress);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text(
+              t.guideLiveSubtitles,
+              style: const TextStyle(
+                color: NomadColors.mint,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
+                fontSize: 11,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text.rich(
+              TextSpan(
+                children: <TextSpan>[
+                  TextSpan(
+                    text: text.substring(0, cut),
+                    style: const TextStyle(
+                      color: NomadColors.text,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  TextSpan(
+                    text: text.substring(cut),
+                    style: const TextStyle(color: NomadColors.textMuted),
+                  ),
+                ],
+              ),
+              style: base,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "¿SABÍAS QUE…?" con el resumen de Wikipedia (y su enlace).
+class _DidYouKnow extends StatelessWidget {
+  const _DidYouKnow({
+    required this.text,
+    required this.article,
+    required this.open,
+  });
+
+  final String text;
+  final Uri? article;
+  final Future<bool> Function(Uri) open;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final Uri? link = article;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1B1A33),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: NomadColors.group.withValues(alpha: 0.6)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          const FlyraAvatar(size: 34),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  t.guideDidYouKnow,
+                  style: const TextStyle(
+                    color: NomadColors.group,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                    fontSize: 11,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(text, maxLines: 6, overflow: TextOverflow.ellipsis),
+                if (link != null)
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 36),
+                    ),
+                    onPressed: () => unawaited(open(link)),
+                    child: Text(t.guideWikipediaSource),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "TU RECORRIDO": las partes, las que ya has oído y cuánto queda.
+class _Route extends StatelessWidget {
+  const _Route({
+    required this.parts,
+    required this.current,
+    required this.position,
+    required this.onPick,
+  });
+
+  final List<AudioPart> parts;
+  final int current;
+  final Duration position;
+  final ValueChanged<int> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    Duration left = Duration.zero;
+    for (int i = current; i < parts.length; i++) {
+      left += parts[i].duration;
+    }
+    left -= position;
+    if (left < Duration.zero) left = Duration.zero;
+    final int minutes = (left.inSeconds / 60).ceil();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Text(t.guideRoute, style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          t.guideRouteLeft(parts.length, minutes),
+          style: const TextStyle(color: NomadColors.textMuted),
+        ),
+        const SizedBox(height: 8),
+        for (int i = 0; i < parts.length; i++)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            onTap: () => onPick(i),
+            leading: CircleAvatar(
+              radius: 15,
+              backgroundColor: i < current
+                  ? NomadColors.mint
+                  : i == current
+                  ? NomadColors.group
+                  : NomadColors.surfaceHigh,
+              child: i < current
+                  ? const Icon(
+                      Icons.check_rounded,
+                      size: 18,
+                      color: NomadColors.background,
+                    )
+                  : Text(
+                      '${i + 1}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: NomadColors.text,
+                      ),
+                    ),
+            ),
+            title: Text(
+              t.guidePart(i + 1),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontWeight: i == current ? FontWeight.w800 : FontWeight.w500,
+              ),
+            ),
+            trailing: Text(
+              t.guideSeekBy(parts[i].duration.inSeconds.toString()),
+              style: const TextStyle(color: NomadColors.textMuted),
+            ),
+          ),
+      ],
     );
   }
 }

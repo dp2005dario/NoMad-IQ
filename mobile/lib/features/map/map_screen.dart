@@ -17,6 +17,7 @@ import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
 import '../home/feature.dart';
+import '../radar/radar_api.dart';
 import 'geo.dart';
 import 'location.dart';
 import 'location_tracker.dart';
@@ -41,8 +42,14 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  /// Clima de adorno del mapa (solo visual).
+  /// El tiempo que hace de verdad donde miras (MET Norway). Se pone solo,
+  /// como en la maqueta: no hay botones de sol, nubes o lluvia.
   MapWeather _weather = MapWeather.sun;
+
+  /// La casilla de ~5 km del último tiempo pedido y cuándo se pidió (se
+  /// vuelve a pedir al cambiar de casilla o a los 15 minutos).
+  GeoPoint? _weatherCell;
+  DateTime? _weatherAt;
 
   late AppServices _services;
   MapModel? _model;
@@ -51,7 +58,8 @@ class _MapScreenState extends State<MapScreen> {
   Timer? _idleDebounce;
   Timer? _lookTimer;
 
-  MapLook _chosenLook = MapLook.auto;
+  /// La luz (día, tarde, noche) va sola por la hora, como en la maqueta.
+  static const MapLook _chosenLook = MapLook.auto;
   bool _tilted = true;
   final TextEditingController _search = TextEditingController();
 
@@ -69,7 +77,7 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
     // El modo "auto" cambia solo al atardecer y al anochecer.
     _lookTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-      if (_chosenLook == MapLook.auto && mounted) setState(() {});
+      if (mounted) setState(() {});
     });
   }
 
@@ -158,8 +166,45 @@ class _MapScreenState extends State<MapScreen> {
     _idleDebounce = Timer(const Duration(milliseconds: 350), () async {
       final MapSurfaceController? map = _map;
       if (map == null || !mounted) return;
-      await _m.onViewChanged(await map.visibleBox());
+      final GeoBox? box = await map.visibleBox();
+      await _m.onViewChanged(box);
+      if (box != null) {
+        unawaited(
+          _updateWeather(
+            GeoPoint(
+              (box.minLat + box.maxLat) / 2,
+              (box.minLon + box.maxLon) / 2,
+            ),
+          ),
+        );
+      }
     });
+  }
+
+  /// Pone el tiempo real de la zona que miras. Si falla (sin internet),
+  /// se queda el que había: es solo el adorno del mapa.
+  Future<void> _updateWeather(GeoPoint center) async {
+    final GeoPoint cell = rainCellOf(center);
+    final DateTime now = widget.clock();
+    final DateTime? at = _weatherAt;
+    final GeoPoint? last = _weatherCell;
+    if (last != null &&
+        last.lat == cell.lat &&
+        last.lon == cell.lon &&
+        at != null &&
+        now.difference(at) < const Duration(minutes: 15)) {
+      return;
+    }
+    _weatherCell = cell;
+    _weatherAt = now;
+    try {
+      final RainForecast f = await _services.radar.rain(center);
+      if (f.hours.isEmpty || !mounted) return;
+      final RainHour h = f.hours.first;
+      setState(() => _weather = mapWeatherFrom(h.rainMm, h.symbol));
+    } on Object {
+      _weatherAt = null; // se reintenta la próxima vez que se mueva
+    }
   }
 
   void _focus(GeoPoint target, double? zoom) {
@@ -269,7 +314,17 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _openGuide(Zone zone) {
-    unawaited(context.push(Routes.audioguide(zone.id, zone.name)));
+    final GeoBox b = zone.bounds;
+    unawaited(
+      context.push(
+        Routes.audioguide(
+          zone.id,
+          zone.name,
+          lat: (b.minLat + b.maxLat) / 2,
+          lon: (b.minLon + b.maxLon) / 2,
+        ),
+      ),
+    );
   }
 
   // --- Dibujo ----------------------------------------------------------------
@@ -325,14 +380,7 @@ class _MapScreenState extends State<MapScreen> {
                     )
                   else ...<Widget>[
                     const SizedBox(height: 10),
-                    _ViewControls(
-                      look: _chosenLook,
-                      tilted: _tilted,
-                      onLook: (MapLook l) => setState(() => _chosenLook = l),
-                      onTilt: _toggleTilt,
-                      weather: _weather,
-                      onWeather: (MapWeather w) => setState(() => _weather = w),
-                    ),
+                    _ViewControls(tilted: _tilted, onTilt: _toggleTilt),
                     const SizedBox(height: 10),
                     if (entered != null)
                       _EnteredBanner(
@@ -514,87 +562,18 @@ class _SearchResults extends StatelessWidget {
 }
 
 class _ViewControls extends StatelessWidget {
-  const _ViewControls({
-    required this.look,
-    required this.tilted,
-    required this.onLook,
-    required this.onTilt,
-    required this.weather,
-    required this.onWeather,
-  });
+  const _ViewControls({required this.tilted, required this.onTilt});
 
-  final MapLook look;
   final bool tilted;
-  final ValueChanged<MapLook> onLook;
   final VoidCallback onTilt;
-  final MapWeather weather;
-  final ValueChanged<MapWeather> onWeather;
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
-    String label(MapLook l) => switch (l) {
-      MapLook.auto => t.mapLookAuto,
-      MapLook.day => t.mapLookDay,
-      MapLook.dusk => t.mapLookDusk,
-      MapLook.night => t.mapLookNight,
-    };
-    // Wrap: si un idioma tiene palabras largas, los botones bajan de línea
-    // en vez de salirse de la pantalla.
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      crossAxisAlignment: WrapCrossAlignment.center,
+    // La luz y el tiempo van solos (hora del día y MET Norway): solo queda
+    // el botón de 2D/3D y, por la licencia, de dónde sale el tiempo.
+    return Row(
       children: <Widget>[
-        Semantics(
-          label: t.mapLookTitle,
-          child: SegmentedButton<MapLook>(
-            showSelectedIcon: false,
-            style: SegmentedButton.styleFrom(
-              backgroundColor: NomadColors.surface.withValues(alpha: 0.94),
-              selectedBackgroundColor: NomadColors.mint,
-              selectedForegroundColor: NomadColors.background,
-              visualDensity: VisualDensity.compact,
-            ),
-            segments: <ButtonSegment<MapLook>>[
-              for (final MapLook l in MapLook.values)
-                ButtonSegment<MapLook>(value: l, label: Text(label(l))),
-            ],
-            selected: <MapLook>{look},
-            onSelectionChanged: (Set<MapLook> s) => onLook(s.first),
-          ),
-        ),
-        Semantics(
-          label: t.mapWeatherTitle,
-          child: SegmentedButton<MapWeather>(
-            showSelectedIcon: false,
-            style: SegmentedButton.styleFrom(
-              backgroundColor: NomadColors.surface.withValues(alpha: 0.94),
-              selectedBackgroundColor: NomadColors.mint,
-              selectedForegroundColor: NomadColors.background,
-              visualDensity: VisualDensity.compact,
-            ),
-            segments: <ButtonSegment<MapWeather>>[
-              ButtonSegment<MapWeather>(
-                value: MapWeather.sun,
-                icon: const Icon(Icons.wb_sunny_rounded),
-                tooltip: t.mapWeatherSun,
-              ),
-              ButtonSegment<MapWeather>(
-                value: MapWeather.clouds,
-                icon: const Icon(Icons.cloud_rounded),
-                tooltip: t.mapWeatherClouds,
-              ),
-              ButtonSegment<MapWeather>(
-                value: MapWeather.rain,
-                icon: const Icon(Icons.water_drop_rounded),
-                tooltip: t.mapWeatherRain,
-              ),
-            ],
-            selected: <MapWeather>{weather},
-            onSelectionChanged: (Set<MapWeather> s) => onWeather(s.first),
-          ),
-        ),
         Tooltip(
           message: t.mapTiltTooltip,
           child: FilledButton.tonal(
@@ -606,6 +585,23 @@ class _ViewControls extends StatelessWidget {
             onPressed: onTilt,
             // "3D" y "2D" son iguales en todos los idiomas.
             child: Text(tilted ? '3D' : '2D'),
+          ),
+        ),
+        const Spacer(),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: NomadColors.surface.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(99),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: Text(
+              t.mapWeatherSource,
+              style: const TextStyle(
+                fontSize: 10.5,
+                color: NomadColors.textMuted,
+              ),
+            ),
           ),
         ),
       ],
