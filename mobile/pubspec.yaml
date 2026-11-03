@@ -85,6 +85,7 @@ dependencies:
   # Asistente: adivina en qué idioma está una frase (ML Kit, en el móvil y
   # gratis), para cambiar solo el idioma de la otra persona.
   google_mlkit_language_id: ^0.15.1
+  flutter_svg: ^2.3.2
 
 dev_dependencies:
   flutter_test:
@@ -109,6 +110,8 @@ flutter:
     - assets/video/bienvenida.mp4
     - assets/brand/eclipta_spark.png
     - assets/brand/google_g.png
+    # Inicio: fotos e iconos de los cuadrados del carrusel (de la maqueta).
+    - assets/inicio/
     # Divisas: fotos de billetes y monedas (licencia sin comprobar, ver LEEME).
     - assets/divisas/aud/
     - assets/divisas/cad/

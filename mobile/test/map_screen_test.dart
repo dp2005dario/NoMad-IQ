@@ -257,7 +257,8 @@ void main() {
     );
     await tester.tap(find.text('Activar ubicación'));
     await tester.pumpAndSettle();
-    expect(find.text('Ajustes'), findsOneWidget);
+    // El botón del mapa (la barra de abajo también tiene la pestaña Ajustes).
+    expect(find.widgetWithText(TextButton, 'Ajustes'), findsOneWidget);
   });
 
   testWidgets('el mapa en árabe (de derecha a izquierda) cabe en pantalla', (

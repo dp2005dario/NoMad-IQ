@@ -1,8 +1,12 @@
 // El "marco" que rodea las pestañas principales: la barra de abajo con
-// Inicio, Mapa, la CÁMARA en grande en el centro, Vuelos y Grupo (maquetas).
+// Inicio, Mapa, la CÁMARA en grande en el centro, Vuelos, Grupo y Ajustes.
+// (Ajustes no es una pestaña con su propia pila: abre la pantalla encima.
+// Lo eligió DARIO porque la maqueta de Inicio no tiene la cuenta ni la
+// campana; los Avisos están dentro de Ajustes.)
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/router.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 
@@ -43,24 +47,58 @@ class AppShell extends StatelessWidget {
         color: NomadColors.surface,
         shape: const CircularNotchedRectangle(), // el hueco para la cámara
         notchMargin: 8,
+        // Dos mitades iguales a cada lado de la cámara, para que el botón
+        // grande quede justo en el centro (2 pestañas a la izquierda y 3 a
+        // la derecha).
         child: Row(
           children: <Widget>[
-            _Tab(Icons.home_rounded, t.navHome, _home, shell.currentIndex, _go),
-            _Tab(Icons.map_rounded, t.navMap, _map, shell.currentIndex, _go),
-            const SizedBox(width: 88), // espacio bajo el botón de la cámara
-            _Tab(
-              Icons.flight_rounded,
-              t.navFlights,
-              _flights,
-              shell.currentIndex,
-              _go,
+            Expanded(
+              child: Row(
+                children: <Widget>[
+                  _Tab(
+                    Icons.home_rounded,
+                    t.navHome,
+                    _home,
+                    shell.currentIndex,
+                    _go,
+                  ),
+                  _Tab(
+                    Icons.map_rounded,
+                    t.navMap,
+                    _map,
+                    shell.currentIndex,
+                    _go,
+                  ),
+                ],
+              ),
             ),
-            _Tab(
-              Icons.groups_rounded,
-              t.navGroup,
-              _group,
-              shell.currentIndex,
-              _go,
+            const SizedBox(width: 88), // espacio bajo el botón de la cámara
+            Expanded(
+              child: Row(
+                children: <Widget>[
+                  _Tab(
+                    Icons.flight_rounded,
+                    t.navFlights,
+                    _flights,
+                    shell.currentIndex,
+                    _go,
+                  ),
+                  _Tab(
+                    Icons.groups_rounded,
+                    t.navGroup,
+                    _group,
+                    shell.currentIndex,
+                    _go,
+                  ),
+                  _Tab(
+                    Icons.settings_rounded,
+                    t.settingsTitle,
+                    -1,
+                    shell.currentIndex,
+                    (_) => context.push(Routes.settings),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
