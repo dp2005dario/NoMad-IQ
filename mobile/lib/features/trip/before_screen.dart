@@ -18,7 +18,7 @@ import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../flights/climate_api.dart';
-import '../papers/trip_check.dart';
+import 'trip_check.dart';
 import '../route/flight3d.dart' show CountryCodes;
 import '../route/geo.dart';
 import '../route/world_data.dart';

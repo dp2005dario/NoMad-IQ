@@ -77,7 +77,8 @@ class _HelpScreenState extends State<HelpScreen> {
         cta: t.helpAirlineCta,
         color: NomadColors.flights,
         icon: Icons.flight_rounded,
-        onTap: () => unawaited(context.push(Routes.papers)),
+        // Tus billetes y reservas (con el teléfono de la aerolínea).
+        onTap: () => unawaited(context.push(Routes.vault)),
       ),
       _Option(
         title: t.helpInsurance,

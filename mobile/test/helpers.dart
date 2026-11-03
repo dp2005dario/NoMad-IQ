@@ -11,7 +11,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:eclipta/features/route/world_data.dart';
-import 'package:eclipta/features/queues/reminders.dart';
 import 'package:eclipta/features/widgets/home_widgets.dart';
 import 'package:eclipta/features/visa/visa_data.dart';
 import 'package:eclipta/app.dart';
@@ -215,7 +214,6 @@ AppServices fakeServices(
   MemoryFiles? memoryFiles,
   HomeWidgets? homeWidgets,
   LiveFlight? liveFlight,
-  Reminders? reminders,
   Future<Airports> Function()? loadAirports,
   Future<VisaData> Function()? loadVisaData,
   Stream<double?> Function()? compass,
@@ -263,7 +261,6 @@ AppServices fakeServices(
     memoryFiles: memoryFiles,
     homeWidgets: homeWidgets,
     liveFlight: liveFlight,
-    reminders: reminders,
     loadAirports: loadAirports ?? () async => testAirports,
     // Los archivos de verdad, leídos de golpe (en los tests no hay assets
     // grandes: Flutter los leería en otro hilo que el test no espera).

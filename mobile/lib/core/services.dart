@@ -41,7 +41,6 @@ import '../features/map/map_surface.dart';
 import '../features/map/street_photos_api.dart';
 import '../features/money/atms_api.dart';
 import '../features/nearby/nearby_api.dart';
-import '../features/meetups/meetups_api.dart';
 import '../features/drive/drive_api.dart';
 import '../features/assistant/interpreter.dart';
 import '../features/money/expenses_api.dart';
@@ -56,8 +55,6 @@ import '../features/offline/saved_guides.dart';
 import '../features/push/notices.dart';
 import '../features/push/push_registrar.dart';
 import '../features/route/flight3d.dart';
-import '../features/queues/queues_api.dart';
-import '../features/queues/reminders.dart';
 import '../features/route/places_api.dart';
 import '../features/vault/doc_source.dart';
 import '../features/vault/vault.dart';
@@ -96,7 +93,6 @@ class AppServices {
     MemoryFiles? memoryFiles,
     HomeWidgets? homeWidgets,
     LiveFlight? liveFlight,
-    Reminders? reminders,
     this.loadAirports = worldAirports,
     this.loadVisaData = bundledVisaData,
     this.syncWidgetsOnStart = false,
@@ -118,7 +114,6 @@ class AppServices {
        expenses = ExpensesApi(api),
        atms = AtmsApi(api),
        nearby = NearbyApi(api),
-       meetups = MeetupsApi(api),
        drive = DriveApi(api),
        stays = StaysApi(api),
        places = PlacesApi(api),
@@ -131,7 +126,6 @@ class AppServices {
        memoryFiles = memoryFiles ?? MemoryMemoryFiles(),
        homeWidgets = homeWidgets ?? MemoryHomeWidgets(),
        liveFlight = liveFlight ?? MemoryLiveFlight(),
-       reminders = reminders ?? MemoryReminders(),
        vault =
            vault ??
            Vault(
@@ -201,7 +195,6 @@ class AppServices {
 
   /// Cerca de ti: agua, baños, wifi, enchufes y sitios que ver.
   final NearbyApi nearby;
-  final MeetupsApi meetups;
   final DriveApi drive;
 
   /// Tipos de cambio del BCE (con copia en el móvil para usarlos sin red).
@@ -263,7 +256,9 @@ class AppServices {
   /// Google (el botón avisa de que no está disponible).
   final GoogleIdTokenSource? googleSignIn;
 
-  /// Los perfiles de familia (cifrados en el Keystore del móvil).
+  /// Los perfiles de familia (cifrados en el Keystore del móvil). La
+  /// pantalla de Familia ya no existe: se guarda solo para BORRAR lo que
+  /// quedara de antes cuando eliminas tu cuenta.
   final FamilyStore family;
 
   /// La cámara de viaje (fotos con pegatina y vídeos); null = no hay.
@@ -284,9 +279,6 @@ class AppServices {
   /// El aviso "en directo" del día del vuelo (programado en el móvil).
   final LiveFlight liveFlight;
 
-  /// Avisos del propio móvil a una hora ("recuérdamelo" de Colas).
-  final Reminders reminders;
-
   /// La brújula (hacia dónde miras). En los tests, una de mentira.
   final Stream<double?> Function() compass;
 
@@ -298,9 +290,6 @@ class AppServices {
 
   /// Radar local: lluvia, timos y precios de viajeros.
   late final RadarApi radar = RadarApi(api);
-
-  /// Sin colas: esperas que avisan los viajeros (/v1/queues).
-  late final QueuesApi queues = QueuesApi(api);
 
   /// ¿Poner al día los widgets al abrir la app? (en los tests, no).
   final bool syncWidgetsOnStart;

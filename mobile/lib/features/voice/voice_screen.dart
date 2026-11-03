@@ -180,26 +180,12 @@ class _VoiceScreenState extends State<VoiceScreen> {
           icon: Icons.record_voice_over_rounded,
           onAction: () => go(Routes.assistant),
         );
-      case VoiceIntent.meetups:
-        return _Answer(
-          t.voiceMeetups,
-          action: t.voiceOpen,
-          icon: Icons.diversity_3_rounded,
-          onAction: () => go(Routes.meetups()),
-        );
       case VoiceIntent.drive:
         return _Answer(
           t.voiceDrive,
           action: t.voiceOpen,
           icon: Icons.directions_car_rounded,
           onAction: () => go(Routes.drive),
-        );
-      case VoiceIntent.trouble:
-        return _Answer(
-          t.voiceTrouble,
-          action: t.voiceOpen,
-          icon: Icons.report_problem_rounded,
-          onAction: () => go(Routes.trouble),
         );
       case null:
         return _Answer(

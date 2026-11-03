@@ -68,17 +68,8 @@ enum LocalData {
   /// el número y lo demás nunca se guardan.
   visaPassport,
 
-  /// "1" = en las quedadas, los demás no ven tu nombre (sale "Alguien").
-  meetupHidden,
-
-  /// "Si algo falla": tu reclamación de maleta (solo en el móvil).
-  bagClaim,
-
   /// Asistente: el idioma de la otra persona ("ja").
   interpreterLang,
-
-  /// Moverte: tus bonos y tarjetas de transporte (solo en el móvil).
-  transitTickets,
 
   /// Qué pasa en tus fechas: los eventos que guardaste (con la estrella).
   savedEvents,

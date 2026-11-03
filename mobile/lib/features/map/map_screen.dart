@@ -868,15 +868,13 @@ class _TravelChip extends StatelessWidget {
   }
 }
 
-/// La tira de atajos de la maqueta (Cerca de ti, Moverte, Radar...).
+/// La tira de atajos de la maqueta (Cerca de ti, Radar y Asistente).
 class _MapShortcuts extends StatelessWidget {
   const _MapShortcuts();
 
   static const List<Feature> _features = <Feature>[
     Feature.nearby,
-    Feature.transport,
     Feature.radar,
-    Feature.queues,
     Feature.assistant,
   ];
 
@@ -900,9 +898,7 @@ class _MapShortcuts extends StatelessWidget {
                 onPressed: () => unawaited(
                   context.push(switch (f) {
                     Feature.nearby => Routes.nearby,
-                    Feature.transport => Routes.transport(),
                     Feature.radar => Routes.radar(),
-                    Feature.queues => Routes.queues(),
                     Feature.assistant => Routes.assistant,
                     _ => Routes.home,
                   }),
