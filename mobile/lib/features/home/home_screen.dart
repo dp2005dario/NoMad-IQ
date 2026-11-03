@@ -21,6 +21,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router.dart';
+import '../../widgets/space_background.dart';
+import 'flyra_intro.dart';
 import 'home_album.dart';
 import 'home_sos.dart';
 import 'my_passport.dart';
@@ -44,164 +46,170 @@ class HomeScreen extends StatelessWidget {
     final AppLocalizations t = AppLocalizations.of(context);
     final TextTheme text = Theme.of(context).textTheme;
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(0, 16, 0, 120),
-          children: <Widget>[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: <Widget>[
-                  const Text(
-                    'ECLIPTA',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 3,
+      // El fondo espacial de la maqueta (estrellas y nubes de color).
+      body: SpaceBackground(
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(0, 16, 0, 120),
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: <Widget>[
+                    const Text(
+                      'ECLIPTA',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 3,
+                      ),
                     ),
-                  ),
-                  const Spacer(),
-                  // Ajustes y Avisos están en la barra de abajo (pestaña
-                  // Ajustes), no aquí: así Inicio es igual que la maqueta.
-                  const _WhereChip(),
-                ],
+                    const Spacer(),
+                    // Ajustes y Avisos están en la barra de abajo (pestaña
+                    // Ajustes), no aquí: así Inicio es igual que la maqueta.
+                    const _WhereChip(),
+                  ],
+                ),
               ),
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: _FlyraHero(),
-            ),
-            const SizedBox(height: 28),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  // Como la maqueta: una línea pequeña en mayúsculas y el
-                  // título grande debajo.
-                  Text(
-                    t.homeAllTitle.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.3,
-                      color: NomadColors.textMuted,
-                    ),
-                  ),
-                  Text(t.homeAllSub, style: text.titleLarge),
-                ],
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: _FlyraHero(),
               ),
-            ),
-            const _Carousel(),
-            const SizedBox(height: 28),
-            // "Mi pasaporte": se rellena escaneando pasaporte y DNI.
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Text(
-                    t.homePassEyebrow.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.3,
-                      color: NomadColors.textMuted,
+              const SizedBox(height: 28),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    // Como la maqueta: una línea pequeña en mayúsculas y el
+                    // título grande debajo.
+                    Text(
+                      t.homeAllTitle.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.3,
+                        color: NomadColors.textMuted,
+                      ),
                     ),
-                  ),
-                  Text(t.homePassTitle, style: text.titleLarge),
-                  const SizedBox(height: 12),
-                  const HomePassport(),
-                ],
+                    Text(t.homeAllSub, style: text.titleLarge),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 36),
-            // "Mi álbum de cromos": los sellos de los monumentos.
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Text(
-                    t.homeAlbumEyebrow.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.3,
-                      color: NomadColors.textMuted,
+              const _Carousel(),
+              const SizedBox(height: 28),
+              // "Mi pasaporte": se rellena escaneando pasaporte y DNI.
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Text(
+                      t.homePassEyebrow.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.3,
+                        color: NomadColors.textMuted,
+                      ),
                     ),
-                  ),
-                  Text(t.homeAlbumTitle, style: text.titleLarge),
-                  const SizedBox(height: 12),
-                  const HomeAlbum(),
-                ],
+                    Text(t.homePassTitle, style: text.titleLarge),
+                    const SizedBox(height: 12),
+                    const HomePassport(),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 36),
-            // El SOS de la maqueta: un cuarto de acero; mantener 2 s.
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              child: HomeSos(),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text(t.shortcutsTitle, style: text.titleLarge),
-            ),
-            const SizedBox(height: 12),
-            // Rejilla que se adapta: 2 columnas en móvil, más en tablet. La
-            // altura de cada atajo NO es fija: con letra grande (accesibilidad)
-            // o escrituras altas (árabe, hindi) crece en vez de cortarse.
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: LayoutBuilder(
-                builder: (BuildContext context, BoxConstraints box) {
-                  const double gap = 12;
-                  final int columns = (box.maxWidth / 200).floor().clamp(2, 6);
-                  final double width =
-                      (box.maxWidth - gap * (columns - 1)) / columns;
-                  final List<Widget> tiles = <Widget>[
-                    // Preguntarle a Flyra en voz alta (o escrito).
-                    _Shortcut(
-                      icon: Icons.mic_rounded,
-                      color: NomadColors.group,
-                      label: t.voiceTitle,
-                      onTap: () => context.push(Routes.voice),
+              const SizedBox(height: 36),
+              // "Mi álbum de cromos": los sellos de los monumentos.
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Text(
+                      t.homeAlbumEyebrow.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.3,
+                        color: NomadColors.textMuted,
+                      ),
                     ),
-                    // Liga y cambios de cromos con tus amigos.
-                    _Shortcut(
-                      icon: Icons.style_rounded,
-                      color: NomadColors.group,
-                      label: t.cardsTitle,
-                      onTap: () => context.push(Routes.cards),
-                    ),
-                    // La carta del restaurante, traducida y explicada.
-                    _Shortcut(
-                      icon: Icons.restaurant_menu_rounded,
-                      color: NomadColors.money,
-                      label: t.menuTitle,
-                      onTap: () => context.push(Routes.menu),
-                    ),
-                    // Los sellos de los monumentos que reconoce la cámara.
-                    _Shortcut(
-                      icon: Icons.approval_rounded,
-                      color: const Color(0xFFE9C46A),
-                      label: t.passportTitle,
-                      onTap: () => context.push(Routes.passport),
-                    ),
-                  ];
-                  return Wrap(
-                    spacing: gap,
-                    runSpacing: gap,
-                    children: <Widget>[
-                      for (final Widget tile in tiles)
-                        SizedBox(width: width, child: tile),
-                    ],
-                  );
-                },
+                    Text(t.homeAlbumTitle, style: text.titleLarge),
+                    const SizedBox(height: 12),
+                    const HomeAlbum(),
+                  ],
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 36),
+              // El SOS de la maqueta: un cuarto de acero; mantener 2 s.
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: HomeSos(),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(t.shortcutsTitle, style: text.titleLarge),
+              ),
+              const SizedBox(height: 12),
+              // Rejilla que se adapta: 2 columnas en móvil, más en tablet. La
+              // altura de cada atajo NO es fija: con letra grande (accesibilidad)
+              // o escrituras altas (árabe, hindi) crece en vez de cortarse.
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints box) {
+                    const double gap = 12;
+                    final int columns = (box.maxWidth / 200).floor().clamp(
+                      2,
+                      6,
+                    );
+                    final double width =
+                        (box.maxWidth - gap * (columns - 1)) / columns;
+                    final List<Widget> tiles = <Widget>[
+                      // Preguntarle a Flyra en voz alta (o escrito).
+                      _Shortcut(
+                        icon: Icons.mic_rounded,
+                        color: NomadColors.group,
+                        label: t.voiceTitle,
+                        onTap: () => context.push(Routes.voice),
+                      ),
+                      // Liga y cambios de cromos con tus amigos.
+                      _Shortcut(
+                        icon: Icons.style_rounded,
+                        color: NomadColors.group,
+                        label: t.cardsTitle,
+                        onTap: () => context.push(Routes.cards),
+                      ),
+                      // La carta del restaurante, traducida y explicada.
+                      _Shortcut(
+                        icon: Icons.restaurant_menu_rounded,
+                        color: NomadColors.money,
+                        label: t.menuTitle,
+                        onTap: () => context.push(Routes.menu),
+                      ),
+                      // Los sellos de los monumentos que reconoce la cámara.
+                      _Shortcut(
+                        icon: Icons.approval_rounded,
+                        color: const Color(0xFFE9C46A),
+                        label: t.passportTitle,
+                        onTap: () => context.push(Routes.passport),
+                      ),
+                    ];
+                    return Wrap(
+                      spacing: gap,
+                      runSpacing: gap,
+                      children: <Widget>[
+                        for (final Widget tile in tiles)
+                          SizedBox(width: width, child: tile),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -285,10 +293,25 @@ class _FlyraHeroState extends State<_FlyraHero>
             onLongPressEnd: (_) => unawaited(_holdEnd()),
             child: SizedBox.square(
               dimension: 240,
-              child: AnimatedBuilder(
-                animation: _breath,
-                builder: (BuildContext context, Widget? _) =>
-                    _Orb(breath: _breath.value, listening: _listening),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: <Widget>[
+                  Positioned.fill(
+                    child: AnimatedBuilder(
+                      animation: _breath,
+                      builder: (BuildContext context, Widget? _) =>
+                          _Orb(breath: _breath.value, listening: _listening),
+                    ),
+                  ),
+                  // La entrada: el pájaro de chispas que vuela a la bola.
+                  const Positioned(
+                    left: -110,
+                    top: -110,
+                    width: 460,
+                    height: 460,
+                    child: FlyraIntro(size: 460),
+                  ),
+                ],
               ),
             ),
           ),
@@ -350,9 +373,13 @@ class _Greeting extends StatefulWidget {
 class _GreetingState extends State<_Greeting>
     with SingleTickerProviderStateMixin {
   late final List<String> _words = widget.text.split(' ');
+  // Espera a que el pájaro de la entrada llegue a la bola y luego escribe
+  // una palabra cada 220 ms.
+  late final int _wait = flyraIntroGreetAt.inMilliseconds;
+  late final int _write = 220 * _words.length + 400;
   late final AnimationController _show = AnimationController(
     vsync: this,
-    duration: Duration(milliseconds: 220 * _words.length + 400),
+    duration: Duration(milliseconds: _wait + _write),
   );
 
   @override
@@ -379,7 +406,9 @@ class _GreetingState extends State<_Greeting>
     child: AnimatedBuilder(
       animation: _show,
       builder: (BuildContext context, Widget? _) {
-        final int n = (_words.length * _show.value).ceil();
+        final double start = _wait / (_wait + _write);
+        final double v = ((_show.value - start) / (1 - start)).clamp(0, 1);
+        final int n = (_words.length * v).ceil();
         return Text(
           _words.take(n).join(' '),
           textAlign: TextAlign.center,
