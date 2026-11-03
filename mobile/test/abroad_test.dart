@@ -10,6 +10,7 @@ import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/map/geo.dart';
 import 'package:eclipta/features/map/location.dart';
 import 'package:eclipta/features/money/atms_api.dart';
+import 'package:eclipta/features/money/atms_panel.dart';
 import 'package:eclipta/features/money/expenses_api.dart';
 import 'package:eclipta/features/money/insurance_panel.dart';
 import 'package:eclipta/features/money/money_screen.dart';
@@ -157,6 +158,21 @@ void main() {
       expect(f.endings.last, 79000 + 9875 * 5);
     });
 
+    test('los cajeros guardados solo valen para la misma zona', () async {
+      final MemorySettingsStore prefs = MemorySettingsStore();
+      const GeoPoint shibuya = GeoPoint(35.66, 139.7);
+      await saveAtmCache(prefs, shibuya, AtmList.parse(atmsJson));
+      final (AtmList, DateTime)? back = readAtmCache(
+        prefs,
+        const GeoPoint(35.67, 139.7),
+      );
+      expect(back, isNotNull);
+      expect(back!.$1.atms.length, 2);
+      expect(back.$1.atms.last.name, 'Seven Bank');
+      // Osaka está a cientos de km: no sirven.
+      expect(readAtmCache(prefs, const GeoPoint(34.69, 135.5)), isNull);
+    });
+
     test('los cajeros se ordenan por distancia', () {
       final AtmList list = AtmList.parse(atmsJson);
       expect(
@@ -199,15 +215,28 @@ void main() {
         'lat': '35.66',
         'lon': '139.70',
       });
+      // Pestaña "Sin comisión" (la de por defecto): solo Seven Bank.
+      expect(find.text('Seven Bank'), findsOneWidget);
+      expect(find.text('Japan Post Bank'), findsNothing);
+      expect(find.textContaining('Abierto 24 h'), findsOneWidget);
+      // "Todos los bancos": los dos, el más cercano primero.
+      await tester.tap(find.text('Todos los bancos'));
+      await tester.pumpAndSettle();
       final Offset seven = tester.getTopLeft(find.text('Seven Bank'));
       final Offset post = tester.getTopLeft(find.text('Japan Post Bank'));
       expect(seven.dy, lessThan(post.dy));
-      expect(find.text('Sin comisión'), findsOneWidget);
       expect(find.text('Cobra comisión'), findsOneWidget);
-      expect(find.textContaining('Abierto 24 h'), findsOneWidget);
-      await tester.tap(find.text('Seven Bank'));
+      final Finder osm = find.text('Ver en OSM').first;
+      await tester.ensureVisible(osm);
+      await tester.tap(osm);
       await tester.pumpAndSettle();
       expect(opened.single.host, 'www.openstreetmap.org');
+      final Finder go = find.text('Ir').first;
+      await tester.ensureVisible(go);
+      await tester.tap(go);
+      await tester.pumpAndSettle();
+      expect(opened.last.host, 'www.google.com');
+      expect(opened.last.queryParameters['travelmode'], 'walking');
     });
 
     testWidgets('dos tarjetas: la más barata sale "MEJOR AQUÍ"', (

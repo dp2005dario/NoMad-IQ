@@ -10,13 +10,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api_client.dart';
+import '../../core/money.dart';
 import '../../core/router.dart';
 import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../home/feature.dart';
 import 'fares_api.dart';
-import 'flight_format.dart';
+import 'flight_format.dart' hide currencyDigits;
 import 'watch_sheet.dart';
 
 /// Aeropuerto por defecto ("Empezar en Madrid", como en la maqueta). Más
@@ -228,12 +229,17 @@ class _FlightsScreenState extends State<FlightsScreen> {
               _openRoute(deals.first.fare.route, fare: deals.first.fare),
         ),
         if (deals.first.looksLikeErrorFare) ...<Widget>[
-          const SizedBox(height: 8),
-          Text(
-            t.flightsErrorFareTip,
-            style: text.bodySmall?.copyWith(color: NomadColors.textMuted),
-          ),
+          const SizedBox(height: 10),
+          // Las tarifas error a veces se cancelan: la línea de 48 h.
+          ErrorFareTimeline(seenAt: deals.first.fare.observedAt),
         ],
+        const SizedBox(height: 12),
+        // "Buscar ganga de vuelo": el más barato de hoy hasta lo que digas.
+        OutlinedButton.icon(
+          onPressed: () => unawaited(_bargain(deals)),
+          icon: const Icon(Icons.savings_rounded),
+          label: Text(t.bargainButton),
+        ),
         if (deals.length > 1) ...<Widget>[
           const SizedBox(height: 24),
           Text(t.flightsDeals, style: text.titleLarge),
@@ -271,9 +277,29 @@ class _FlightsScreenState extends State<FlightsScreen> {
             subtitle: w.target == null
                 ? null
                 : t.flightsWatchTarget(priceText(context, w.target!)),
+            // Como la maqueta: "EN OBJETIVO" si ya está por debajo de tu
+            // precio, "AÚN LEJOS" si no (solo si se saben los dos).
+            badge: switch (watchOnTarget(w)) {
+              true => t.flightsOnTarget,
+              false => t.flightsStillFar,
+              null => null,
+            },
             onTap: () => _openRoute(w.route, fare: w.latest),
           ),
     ];
+  }
+
+  /// Abre "Buscar ganga" con los chollos de hoy.
+  Future<void> _bargain(List<Deal> deals) async {
+    final Deal? pick = await showModalBottomSheet<Deal>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => BargainSheet(deals: deals, origin: _origin),
+    );
+    if (pick != null && mounted) {
+      unawaited(_openRoute(pick.fare.route, fare: pick.fare));
+    }
   }
 
   Future<void> _book(Uri url) async {
@@ -601,6 +627,232 @@ class _OriginSheetState extends State<_OriginSheet> {
           ),
           const SizedBox(height: 8),
           FilledButton(onPressed: _save, child: Text(t.flightsOriginSave)),
+        ],
+      ),
+    );
+  }
+}
+
+/// ¿La ruta vigilada ya está en tu precio? null = no se sabe (falta el
+/// precio de ahora o tu objetivo, o están en monedas distintas).
+bool? watchOnTarget(Watch w) {
+  final Money? target = w.target;
+  final Money? now = w.latest?.price;
+  if (target == null || now == null || target.currency != now.currency) {
+    return null;
+  }
+  return now.amountMinor <= target.amountMinor;
+}
+
+/// "Tarifa error": HOY → +24 H → +48 H · YA PUEDES RESERVAR, con lo que va
+/// pasando desde que se vio el precio (como la maqueta).
+class ErrorFareTimeline extends StatelessWidget {
+  const ErrorFareTimeline({super.key, required this.seenAt, this.now});
+
+  final DateTime seenAt;
+
+  /// Para las pruebas (si no, la hora de ahora).
+  final DateTime? now;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final Duration since = (now ?? DateTime.now()).difference(seenAt);
+    final double done = (since.inMinutes / (48 * 60)).clamp(0.0, 1.0);
+    final List<String> steps = <String>[
+      t.errorFareToday,
+      t.errorFare24h,
+      t.errorFare48h,
+    ];
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF2A2418),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: NomadColors.money),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            t.flightsErrorFareTip,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            t.errorFareSeen(_ago(t, since)),
+            style: const TextStyle(fontSize: 12, color: NomadColors.textMuted),
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: done,
+              minHeight: 6,
+              color: done >= 1 ? NomadColors.mint : NomadColors.money,
+              backgroundColor: NomadColors.surfaceHigh,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: <Widget>[
+              for (int i = 0; i < steps.length; i++)
+                Expanded(
+                  child: Text(
+                    steps[i],
+                    textAlign: switch (i) {
+                      0 => TextAlign.start,
+                      1 => TextAlign.center,
+                      _ => TextAlign.end,
+                    },
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w900,
+                      color: done >= i / 2
+                          ? (i == 2 ? NomadColors.mint : NomadColors.text)
+                          : NomadColors.textMuted,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _ago(AppLocalizations t, Duration d) {
+    if (d.inMinutes < 60) return t.cardsAgoMinutes(d.inMinutes.clamp(1, 59));
+    if (d.inHours < 48) return t.cardsAgoHours(d.inHours);
+    return t.cardsAgoDays(d.inDays);
+  }
+}
+
+/// "Buscar ganga de vuelo" (maqueta): ¿cuánto quieres gastar como máximo?
+/// Busca entre los chollos REALES de hoy desde tu aeropuerto el más barato
+/// que no pase de ese precio. Si no hay, "Subir 100 € y reintentar".
+class BargainSheet extends StatefulWidget {
+  const BargainSheet({super.key, required this.deals, required this.origin});
+
+  final List<Deal> deals;
+  final String origin;
+
+  @override
+  State<BargainSheet> createState() => _BargainSheetState();
+}
+
+class _BargainSheetState extends State<BargainSheet> {
+  /// El tope en unidades enteras de la moneda (euros, no céntimos).
+  double _max = 600;
+
+  /// null = aún no se buscó; vacío = no hay ganga hasta ese precio.
+  List<Deal>? _found;
+
+  String get _currency => widget.deals.first.fare.price.currency;
+
+  int get _maxMinor {
+    int scale = 1;
+    for (int i = 0; i < currencyDigits(_currency); i++) {
+      scale *= 10;
+    }
+    return _max.round() * scale;
+  }
+
+  void _search() {
+    final List<Deal> ok =
+        widget.deals
+            .where(
+              (Deal d) =>
+                  d.fare.price.currency == _currency &&
+                  d.fare.price.amountMinor <= _maxMinor,
+            )
+            .toList()
+          ..sort(
+            (Deal a, Deal b) =>
+                a.fare.price.amountMinor.compareTo(b.fare.price.amountMinor),
+          );
+    setState(() => _found = ok);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final TextTheme text = Theme.of(context).textTheme;
+    final String label = formatMoney(
+      _maxMinor,
+      _currency,
+      localeOf(context),
+      compact: true,
+    );
+    final List<Deal>? found = _found;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(t.bargainQuestion, style: text.titleLarge),
+          const SizedBox(height: 4),
+          Text(
+            t.bargainFrom(widget.origin),
+            style: text.bodySmall?.copyWith(color: NomadColors.textMuted),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: text.displaySmall?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: NomadColors.flights,
+            ),
+          ),
+          Slider(
+            value: _max,
+            max: 1200,
+            divisions: 120,
+            label: label,
+            onChanged: (double v) => setState(() => (_max = v, _found = null)),
+          ),
+          FilledButton.icon(
+            onPressed: _search,
+            icon: const Icon(Icons.search_rounded),
+            label: Text(t.bargainSearch),
+          ),
+          const SizedBox(height: 12),
+          if (found != null && found.isEmpty) ...<Widget>[
+            Text(t.bargainNone(label), style: text.bodyLarge),
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: _max >= 1200
+                  ? null
+                  : () {
+                      setState(() => _max = (_max + 100).clamp(0, 1200));
+                      _search();
+                    },
+              child: Text(t.bargainRaise),
+            ),
+          ] else if (found != null)
+            for (final Deal d in found.take(3))
+              Card(
+                child: ListTile(
+                  leading: const Icon(
+                    Icons.flight_rounded,
+                    color: NomadColors.flights,
+                  ),
+                  title: Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Text(routeText(d.fare.route)),
+                  ),
+                  trailing: Text(
+                    priceText(context, d.fare.price),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                    ),
+                  ),
+                  onTap: () => Navigator.of(context).pop(d),
+                ),
+              ),
         ],
       ),
     );

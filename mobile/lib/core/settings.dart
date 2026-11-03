@@ -43,6 +43,9 @@ enum LocalData {
   /// "1" = descargar ciudades solo cuando haya wifi.
   offlineWifiOnly,
 
+  /// Los últimos cajeros que se encontraron (por si luego falla la red).
+  atmsCache,
+
   /// Las descargas de ciudades paradas a medias (para "Seguir").
   offlinePaused,
 

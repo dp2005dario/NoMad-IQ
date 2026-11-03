@@ -33,8 +33,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
 import '../easy/easy_mode.dart';
 import '../map/geo.dart';
-import '../map/map_style.dart';
-import '../map/map_surface.dart';
+import '../map/pin_map.dart';
 import '../stays/pick_point_screen.dart';
 import '../flights/flights_screen.dart' show showOriginSheet;
 import '../group/group_api.dart';
@@ -618,17 +617,28 @@ class _EventsScreenState extends State<EventsScreen> {
                 style: text.bodySmall?.copyWith(color: NomadColors.textMuted),
               ),
               const SizedBox(height: 8),
-              _PinMap(
-                events: pins,
+              PinMap(
+                pins: <MapPin>[
+                  for (final CityEvent e in pins)
+                    MapPin(
+                      id: e.id,
+                      point: GeoPoint(e.lat!, e.lon!),
+                      color: eventColor(e.kind),
+                    ),
+                  if (_hotel != null)
+                    MapPin(id: 'hotel', point: _hotel!, color: Colors.white),
+                ],
                 selected: _pin,
-                hotel: _hotel,
-                onPick: (CityEvent e) => setState(
-                  () => (
-                    _pin = _pin == e.id ? null : e.id,
-                    _day = null,
-                    _cat = null,
-                  ),
-                ),
+                onPick: (MapPin p) {
+                  if (p.id == 'hotel') return;
+                  setState(
+                    () => (
+                      _pin = _pin == p.id ? null : p.id,
+                      _day = null,
+                      _cat = null,
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 8),
               // Tu hotel: para saber qué te queda cerca.
@@ -920,142 +930,6 @@ class _DayChip extends StatelessWidget {
 /// "Dónde pasan": el mapa de verdad (OpenStreetMap, el mismo de la pantalla
 /// Mapa) con un punto de color por evento y uno blanco para tu hotel. Toca
 /// un punto para ver solo su evento.
-class _PinMap extends StatefulWidget {
-  const _PinMap({
-    required this.events,
-    required this.selected,
-    required this.hotel,
-    required this.onPick,
-  });
-
-  final List<CityEvent> events;
-  final String? selected;
-  final GeoPoint? hotel;
-  final ValueChanged<CityEvent> onPick;
-
-  @override
-  State<_PinMap> createState() => _PinMapState();
-}
-
-class _PinMapState extends State<_PinMap> {
-  late final AppServices _services = ServicesScope.of(context);
-  MapSurfaceController? _map;
-  Map<String, Object?>? _style;
-
-  static String _hex(Color c) =>
-      '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
-
-  @override
-  void didUpdateWidget(_PinMap old) {
-    super.didUpdateWidget(old);
-    if (old.selected != widget.selected ||
-        old.hotel != widget.hotel ||
-        old.events != widget.events) {
-      unawaited(_draw());
-    }
-  }
-
-  /// Los puntos (GeoJSON): los eventos con su color y el hotel en blanco.
-  Future<void> _draw() async {
-    final MapSurfaceController? map = _map;
-    if (map == null) return;
-    final GeoPoint? h = widget.hotel;
-    await map.showPins(<String, Object?>{
-      'type': 'FeatureCollection',
-      'features': <Object?>[
-        for (final CityEvent e in widget.events)
-          <String, Object?>{
-            'type': 'Feature',
-            'id': e.id,
-            'geometry': <String, Object?>{
-              'type': 'Point',
-              'coordinates': <double>[e.lon!, e.lat!],
-            },
-            'properties': <String, Object?>{
-              'color': _hex(eventColor(e.kind)),
-              'selected': e.id == widget.selected,
-            },
-          },
-        if (h != null)
-          <String, Object?>{
-            'type': 'Feature',
-            'id': 'hotel',
-            'geometry': <String, Object?>{
-              'type': 'Point',
-              'coordinates': <double>[h.lon, h.lat],
-            },
-            'properties': <String, Object?>{
-              'color': '#ffffff',
-              'selected': false,
-            },
-          },
-      ],
-    });
-  }
-
-  /// Tocar el mapa: el evento más cercano al dedo (si está cerca).
-  void _tap(GeoPoint p) {
-    CityEvent? best;
-    double bestM = double.infinity;
-    for (final CityEvent e in widget.events) {
-      final double m = p.distanceTo(GeoPoint(e.lat!, e.lon!));
-      if (m < bestM) (best, bestM) = (e, m);
-    }
-    // Más lejos de 600 m no cuenta como tocar ese punto.
-    if (best != null && bestM <= 600) widget.onPick(best);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final List<CityEvent> ev = widget.events;
-    double minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
-    for (final CityEvent e in ev) {
-      minLat = math.min(minLat, e.lat!);
-      maxLat = math.max(maxLat, e.lat!);
-      minLon = math.min(minLon, e.lon!);
-      maxLon = math.max(maxLon, e.lon!);
-    }
-    // El zum para que quepan todos: cada nivel ve la mitad que el anterior.
-    final double span = math.max(
-      math.max(maxLat - minLat, maxLon - minLon),
-      0.005,
-    );
-    final double zoom = (math.log(360 / span) / math.ln2 - 1.2).clamp(9, 15);
-    _style ??= buildMapStyle(
-      look: resolveLook(MapLook.auto, DateTime.now()),
-      language: Localizations.localeOf(context).languageCode,
-      tilesUrl: _services.tilesUrl,
-      glyphsUrl: _services.glyphsUrl,
-    );
-    return AspectRatio(
-      aspectRatio: 1.4,
-      child: Container(
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: NomadColors.outline),
-        ),
-        child: _services.mapSurface(
-          MapSurfaceSpec(
-            style: _style!,
-            initialCenter: GeoPoint(
-              (minLat + maxLat) / 2,
-              (minLon + maxLon) / 2,
-            ),
-            initialZoom: zoom,
-            onReady: (MapSurfaceController c) {
-              _map = c;
-              unawaited(_draw());
-            },
-            onIdle: () {},
-            onTap: _tap,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _Tip extends StatelessWidget {
   const _Tip({required this.text});
 

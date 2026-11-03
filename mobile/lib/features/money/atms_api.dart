@@ -41,6 +41,19 @@ class Atm {
   final bool inBank;
   final List<String> currencies;
 
+  Map<String, Object?> toJson() => <String, Object?>{
+    'id': id,
+    'lat': point.lat,
+    'lon': point.lon,
+    'name': ?name,
+    'operator': ?operator,
+    'opening_hours': ?openingHours,
+    'open_24h': open24h,
+    'fee': ?fee,
+    'in_bank': inBank,
+    'currencies': currencies,
+  };
+
   /// El nombre que se enseña: el del cartel, si no el del banco.
   String? get label => name ?? operator;
 
@@ -93,6 +106,11 @@ class AtmList {
 
   final List<Atm> atms;
   final String attribution;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'atms': <Object?>[for (final Atm a in atms) a.toJson()],
+    'attribution': attribution,
+  };
 
   /// Los más cercanos primero; a igualdad, los que no cobran comisión.
   List<Atm> sortedFrom(GeoPoint me) => List<Atm>.of(atms)
