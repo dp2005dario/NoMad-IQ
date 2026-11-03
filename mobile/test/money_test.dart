@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/api_client.dart';
+import 'package:eclipta/core/launch.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/flights/booking.dart';
@@ -183,10 +184,20 @@ Map<String, Object?> kittyGroupJson() =>
 
 /// Un escáner de tickets falso que "lee" las filas que le digamos.
 class FakeScanner implements ReceiptScanner {
-  FakeScanner(this.rows);
+  FakeScanner(this.rows, {this.qr});
 
   final List<String>? rows;
+  final String? qr;
   final List<ReceiptSource> asked = <ReceiptSource>[];
+
+  @override
+  Future<ScannedTicket?> scanTicket(
+    ReceiptSource source, {
+    String currency = 'EUR',
+  }) async {
+    asked.add(source);
+    return rows == null ? null : ScannedTicket(rows: rows!, qr: qr);
+  }
 
   @override
   Future<List<String>?> scan(
@@ -216,6 +227,8 @@ Future<MoneyBackend> pumpMoney(
   FakeLocation? location,
   OpenBooking? openBooking,
   Vault? vault,
+  Future<bool> Function(Uri)? openLink,
+  ShareFiles? share,
 }) async {
   tester.view.physicalSize = const Size(1200, 9000);
   tester.view.devicePixelRatio = 3;
@@ -237,6 +250,8 @@ Future<MoneyBackend> pumpMoney(
       location: location,
       openBooking: openBooking,
       vault: vault,
+      openLink: openLink,
+      share: share,
     ),
   );
   return b;

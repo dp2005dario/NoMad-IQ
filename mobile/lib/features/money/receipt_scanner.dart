@@ -6,16 +6,39 @@
 // líneas que tú confirmas (nombre del plato y precio).
 //
 // En los tests se usa un escáner falso que devuelve filas inventadas.
+//
+// Además del texto, en la MISMA foto se busca el código QR del ticket: en
+// España los tickets nuevos llevan el QR "VeriFactu" de Hacienda, con el
+// total exacto. Así Flyra puede avisar si las líneas leídas no cuadran.
 import 'dart:io';
 import 'dart:ui' show Rect;
 
+import 'package:google_mlkit_barcode_scanning/google_mlkit_barcode_scanning.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 
 /// De dónde sale la foto del ticket.
 enum ReceiptSource { camera, gallery }
 
+/// Lo que se ha leído de la foto de un ticket.
+class ScannedTicket {
+  const ScannedTicket({required this.rows, this.qr});
+
+  /// Las filas de texto, de arriba abajo.
+  final List<String> rows;
+
+  /// El texto del código QR del ticket (null si no tenía o no se leyó).
+  final String? qr;
+}
+
 abstract interface class ReceiptScanner {
+  /// Foto de un ticket: su texto y, si lo tiene, su código QR. null si la
+  /// persona canceló.
+  Future<ScannedTicket?> scanTicket(
+    ReceiptSource source, {
+    String currency = 'EUR',
+  });
+
   /// Las filas del texto de la foto, de arriba abajo, o null si la persona
   /// canceló.
   ///
@@ -32,6 +55,12 @@ abstract interface class ReceiptScanner {
 /// Un escáner que nunca lee nada (aparatos sin cámara y tests).
 class NoReceiptScanner implements ReceiptScanner {
   const NoReceiptScanner();
+
+  @override
+  Future<ScannedTicket?> scanTicket(
+    ReceiptSource source, {
+    String currency = 'EUR',
+  }) async => null;
 
   @override
   Future<List<String>?> scan(
@@ -52,6 +81,20 @@ class DeviceReceiptScanner implements ReceiptScanner {
     ReceiptSource source, {
     String currency = 'EUR',
     String? language,
+  }) async =>
+      (await _read(source, currency: currency, language: language))?.rows;
+
+  @override
+  Future<ScannedTicket?> scanTicket(
+    ReceiptSource source, {
+    String currency = 'EUR',
+  }) => _read(source, currency: currency, withQr: true);
+
+  Future<ScannedTicket?> _read(
+    ReceiptSource source, {
+    required String currency,
+    String? language,
+    bool withQr = false,
   }) async {
     final XFile? photo = await _picker.pickImage(
       source: source == ReceiptSource.camera
@@ -64,20 +107,36 @@ class DeviceReceiptScanner implements ReceiptScanner {
       requestFullMetadata: false,
     );
     if (photo == null) return null;
+    final InputImage image = InputImage.fromFilePath(photo.path);
     final TextRecognizer reader = TextRecognizer(
       script: scriptForLanguage(language) ?? scriptFor(currency),
     );
+    final BarcodeScanner? qrReader = withQr
+        ? BarcodeScanner(formats: <BarcodeFormat>[BarcodeFormat.qrCode])
+        : null;
     try {
-      final RecognizedText text = await reader.processImage(
-        InputImage.fromFilePath(photo.path),
+      final RecognizedText text = await reader.processImage(image);
+      String? qr;
+      if (qrReader != null) {
+        // Si el QR no se lee (foto movida), no pasa nada: queda el texto.
+        try {
+          final List<Barcode> codes = await qrReader.processImage(image);
+          qr = codes.map((Barcode c) => c.rawValue).nonNulls.firstOrNull;
+        } on Exception {
+          qr = null;
+        }
+      }
+      return ScannedTicket(
+        rows: _rowsOf(<_Piece>[
+          for (final TextBlock block in text.blocks)
+            for (final TextLine line in block.lines)
+              _Piece(line.text, line.boundingBox),
+        ]),
+        qr: qr,
       );
-      return _rowsOf(<_Piece>[
-        for (final TextBlock block in text.blocks)
-          for (final TextLine line in block.lines)
-            _Piece(line.text, line.boundingBox),
-      ]);
     } finally {
       await reader.close();
+      await qrReader?.close();
       // Solo se borra la copia temporal de la cámara, nunca una foto de
       // tu galería.
       if (source == ReceiptSource.camera) {

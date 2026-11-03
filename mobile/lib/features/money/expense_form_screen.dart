@@ -8,6 +8,10 @@
 //   - "A partes iguales": el total entre los que participan.
 //   - "Por lo que tomó cada uno": cada línea para quien se la pidió. Las que
 //     nadie marca son "de todos" y se reparten entre todos.
+//
+// Extras de la maqueta: los datos del QR VeriFactu (el total de verdad), el
+// descuento del ticket, la propina (no viene en el ticket: se suma encima),
+// "Lo que paga cada uno" en vivo y el aviso de Flyra si no cuadra.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -20,6 +24,8 @@ import '../../l10n/generated/app_localizations.dart';
 import 'expenses_api.dart';
 import 'money_widgets.dart';
 import 'receipt_parser.dart';
+import 'split_preview.dart';
+import 'ticket_widgets.dart';
 
 class ExpenseFormScreen extends StatefulWidget {
   const ExpenseFormScreen({
@@ -98,7 +104,10 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
     for (final ExpenseMember m in widget.group.members)
       m.seat: widget.group.defaultWeights[m.seat] ?? 50,
   };
-  DateTime _day = DateTime.now();
+  late DateTime _day = _initialDay();
+
+  /// La propina, en % (0 = sin propina).
+  int _tip = 0;
   String? _titleProblem;
   String? _amountProblem;
   String? _problem;
@@ -107,9 +116,46 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
   String _initialAmount() {
     final ParsedReceipt? r = widget.receipt;
     if (r == null) return '';
-    final int total = r.totalMinor ?? r.itemsMinor;
+    final int total = r.trustedTotal ?? r.itemsMinor;
     return total > 0 ? _plain(total, _digits) : '';
   }
+
+  /// El día del ticket si lo trae el QR (y no es del futuro); si no, hoy.
+  DateTime _initialDay() {
+    final DateTime now = DateTime.now();
+    final DateTime? qr = widget.receipt?.veriFactu?.date;
+    return qr != null && !qr.isAfter(now) ? qr : now;
+  }
+
+  /// Las líneas tal y como están ahora (para calcular lo de cada uno).
+  List<TicketItem> _items() => <TicketItem>[
+    for (final _Line l in _lines)
+      if (l.name.text.trim().isNotEmpty &&
+          parseAmount(l.price.text, digits: _digits) != null)
+        TicketItem(
+          name: l.name.text.trim(),
+          qty: l.qty,
+          priceMinor: parseAmount(l.price.text, digits: _digits)!,
+          claimedBy: <int>[
+            for (final int s in l.who)
+              if (_participants.contains(s)) s,
+          ],
+        ),
+  ];
+
+  /// Las líneas no suman lo del ticket: la suma, menos el descuento, no da
+  /// el total (con 1 céntimo de margen por redondeos).
+  bool _mismatch(int? amount, int lines) =>
+      _split == SplitMode.items &&
+      amount != null &&
+      lines > 0 &&
+      (lines - (widget.receipt?.discountMinor ?? 0) - amount).abs() > 1;
+
+  /// "Usar la suma": el total pasa a ser lo que suman las líneas.
+  void _useLinesSum() => setState(() {
+    final int sum = _linesMinor - (widget.receipt?.discountMinor ?? 0);
+    _amount.text = _plain(sum > 0 ? sum : _linesMinor, _digits);
+  });
 
   @override
   void dispose() {
@@ -147,7 +193,9 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
   Future<void> _save() async {
     final AppLocalizations t = AppLocalizations.of(context);
     final String title = _title.text.trim();
-    final int? amount = parseAmount(_amount.text, digits: _digits);
+    final int? ticket = parseAmount(_amount.text, digits: _digits);
+    // Lo que se reparte = el ticket + la propina.
+    final int? amount = ticket == null ? null : ticket + tipFor(ticket, _tip);
     final List<TicketItem> items = <TicketItem>[];
     for (final _Line l in _lines) {
       final String name = l.name.text.trim();
@@ -217,8 +265,23 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
     final AppLocalizations t = AppLocalizations.of(context);
     final ExpenseGroup group = widget.group;
     final TextTheme text = Theme.of(context).textTheme;
-    final int? amount = parseAmount(_amount.text, digits: _digits);
+    final int? ticket = parseAmount(_amount.text, digits: _digits);
+    final int tip = ticket == null ? 0 : tipFor(ticket, _tip);
+    final int? amount = ticket == null ? null : ticket + tip;
     final int lines = _linesMinor;
+    final ParsedReceipt? receipt = widget.receipt;
+    final Map<int, int> preview = amount == null || amount <= 0
+        ? const <int, int>{}
+        : previewShares(
+            amountMinor: amount,
+            split: _split,
+            participants: _participants.toList()..sort(),
+            items: _items(),
+            weights: <int>[
+              for (final int s in _participants.toList()..sort())
+                _weights[s] ?? 50,
+            ],
+          );
     return Scaffold(
       appBar: AppBar(title: Text(t.moneyAddExpense)),
       body: ListView(
@@ -233,6 +296,15 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
                   color: NomadColors.money,
                   fontWeight: FontWeight.w800,
                 ),
+              ),
+            ),
+          if (receipt?.veriFactu != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: VeriFactuCard(
+                data: receipt!.veriFactu!,
+                onCheck: () =>
+                    unawaited(_services.openLink(receipt.veriFactu!.link)),
               ),
             ),
           TextField(
@@ -276,6 +348,75 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
                 ),
               ),
             ],
+          ),
+          if ((receipt?.discountMinor ?? 0) > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                children: <Widget>[
+                  const Icon(
+                    Icons.local_offer_rounded,
+                    size: 18,
+                    color: NomadColors.mint,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      t.ticketDiscount(
+                        money(context, receipt!.discountMinor, group.currency),
+                      ),
+                      style: const TextStyle(
+                        color: NomadColors.textMuted,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 12),
+          // Propina: no viene en el ticket, se suma encima.
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsetsDirectional.only(end: 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    const Icon(Icons.volunteer_activism_rounded, size: 20),
+                    const SizedBox(width: 8),
+                    Text(t.tipTitle, style: text.titleSmall),
+                  ],
+                ),
+              ),
+              for (final int p in const <int>[0, 5, 10])
+                ChoiceChip(
+                  label: Text(p == 0 ? t.tipNone : '$p %'),
+                  selected: _tip == p,
+                  onSelected: (_) => setState(() => _tip = p),
+                ),
+            ],
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 250),
+            child: tip > 0 && amount != null
+                ? Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      t.tipAdded(
+                        money(context, tip, group.currency),
+                        money(context, amount, group.currency),
+                      ),
+                      style: const TextStyle(
+                        color: NomadColors.money,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  )
+                : const SizedBox(width: double.infinity),
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<int>(
@@ -389,14 +530,43 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
                 icon: const Icon(Icons.add_rounded),
                 label: Text(t.moneyAddLine),
               ),
-            if (amount != null && lines > 0 && lines != amount)
-              Text(
-                t.moneyLinesMismatch(
-                  money(context, lines, group.currency),
-                  money(context, amount, group.currency),
-                ),
-                style: const TextStyle(color: NomadColors.money),
+            if (_mismatch(ticket, lines))
+              FlyraMoneyNote(
+                title: t.mismatchTitle,
+                text: receipt?.veriFactu != null
+                    ? t.mismatchQr(
+                        money(context, lines, group.currency),
+                        money(context, ticket!, group.currency),
+                      )
+                    : t.mismatchText(
+                        money(context, lines, group.currency),
+                        money(context, ticket!, group.currency),
+                      ),
+                actions: <Widget>[
+                  if (_lines.length < maxTicketItems)
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(64, 40),
+                      ),
+                      icon: const Icon(Icons.edit_note_rounded, size: 18),
+                      label: Text(t.moneyAddLine),
+                      onPressed: _addLine,
+                    ),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      minimumSize: const Size(64, 40),
+                    ),
+                    onPressed: _useLinesSum,
+                    child: Text(t.mismatchUseSum),
+                  ),
+                ],
               ),
+          ],
+          if (preview.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 20),
+            Text(t.previewTitle, style: text.titleMedium),
+            const SizedBox(height: 6),
+            SharesBars(group: group, shares: preview, payerSeat: _payer),
           ],
           if (_problem != null) ...<Widget>[
             const SizedBox(height: 12),

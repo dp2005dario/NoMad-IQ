@@ -2342,6 +2342,187 @@
   "@moneySettleConfirm": {
     "description": "Button: record payment."
   },
+  "vfTitle": "READ FROM THE RECEIPT'S VERIFACTU QR",
+  "@vfTitle": {
+    "description": "Card title: data read from the VeriFactu QR code on a Spanish receipt, uppercase"
+  },
+  "vfNif": "Shop tax ID",
+  "@vfNif": {
+    "description": "Label: tax ID of the shop"
+  },
+  "vfNumber": "Invoice no.",
+  "@vfNumber": {
+    "description": "Label: invoice number"
+  },
+  "vfDate": "Date",
+  "@vfDate": {
+    "description": "Label: date"
+  },
+  "vfTotal": "Total amount",
+  "@vfTotal": {
+    "description": "Label: total amount"
+  },
+  "vfHelp": "The tax office QR only has these 4 details. I read the dishes from the photo of the receipt.",
+  "@vfHelp": {
+    "description": "Explains what the tax QR contains"
+  },
+  "vfCheck": "Check with the tax office",
+  "@vfCheck": {
+    "description": "Button: verify the invoice on the tax office website"
+  },
+  "ticketDiscount": "Discount on the receipt: −{amount}. It's already taken off the total and split by what each person had.",
+  "@ticketDiscount": {
+    "description": "Note about a discount found on the receipt",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "tipTitle": "Tip",
+  "@tipTitle": {
+    "description": "Label: tip"
+  },
+  "tipNone": "None",
+  "@tipNone": {
+    "description": "Chip: no tip"
+  },
+  "tipAdded": "+{tip} tip · Total to split: {total}",
+  "@tipAdded": {
+    "description": "Shows the tip added and the new total to split",
+    "placeholders": {
+      "tip": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "previewTitle": "What each person pays",
+  "@previewTitle": {
+    "description": "Section title: how much each person pays"
+  },
+  "paidTag": "paid",
+  "@paidTag": {
+    "description": "Small badge next to the person who paid"
+  },
+  "mismatchTitle": "Doesn't match the receipt",
+  "@mismatchTitle": {
+    "description": "Flyra warning title: the lines don't match the receipt total"
+  },
+  "mismatchText": "The lines add up to {lines} and the receipt says {total}. I may have misread a price: check it or add the missing line.",
+  "@mismatchText": {
+    "description": "Flyra explains the mismatch between lines and the printed total",
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "mismatchQr": "The lines add up to {lines} and the receipt's QR says {total}. I may have misread a price: check it or add the missing line.",
+  "@mismatchQr": {
+    "description": "Same as mismatchText but the total comes from the tax QR code",
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "mismatchUseSum": "Use the sum",
+  "@mismatchUseSum": {
+    "description": "Button: use the sum of the lines as the total"
+  },
+  "ticketAdjust": "Tip and adjustments",
+  "@ticketAdjust": {
+    "description": "Receipt row for the difference between total and lines (tip, bread, discount)"
+  },
+  "liveTitle": "Who ticked what",
+  "@liveTitle": {
+    "description": "Card title: who has ticked which dishes"
+  },
+  "liveNone": "Nothing ticked yet",
+  "@liveNone": {
+    "description": "Person hasn't ticked anything yet"
+  },
+  "liveRefresh": "Refresh",
+  "@liveRefresh": {
+    "description": "Button tooltip: refresh to see what others ticked"
+  },
+  "tableTitle": "Split with the table",
+  "@tableTitle": {
+    "description": "Card title: split with everyone at the table"
+  },
+  "tableText": "Send the group code to everyone. Each person joins in the app and ticks their own dishes on their phone.",
+  "@tableText": {
+    "description": "Explains how friends tick their own dishes"
+  },
+  "tableShare": "Send to the group",
+  "@tableShare": {
+    "description": "Button: send to the group"
+  },
+  "tableShareText": "“{expense}”: join the “{group}” group on ECLIPTA with the code {code} and tick what you had.",
+  "@tableShareText": {
+    "description": "Text shared with friends: expense name, group name and join code",
+    "placeholders": {
+      "expense": {
+        "type": "String"
+      },
+      "group": {
+        "type": "String"
+      },
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "settleBizumTitle": "Bizum or bank transfer",
+  "@settleBizumTitle": {
+    "description": "Payment method title: Bizum or bank transfer"
+  },
+  "settleBizum": "No bank lets another app fill in a payment. Copy the amount and description and paste them into your bank app.",
+  "@settleBizum": {
+    "description": "Explains that bank apps can't be filled in by other apps"
+  },
+  "settleCopy": "Copy amount and description",
+  "@settleCopy": {
+    "description": "Button: copy amount and description"
+  },
+  "settleCopied": "Copied",
+  "@settleCopied": {
+    "description": "Button after copying"
+  },
+  "settlePaypalTitle": "PayPal.me link",
+  "@settlePaypalTitle": {
+    "description": "Payment method title"
+  },
+  "settlePaypalNote": "Only if {name} has PayPal.me: it opens with the amount filled in. Fees depend on PayPal.",
+  "@settlePaypalNote": {
+    "description": "Only if the other person has PayPal.me",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settlePaypalHint": "username",
+  "@settlePaypalHint": {
+    "description": "Hint: PayPal.me username"
+  },
+  "settlePaypalOpen": "Open",
+  "@settlePaypalOpen": {
+    "description": "Button: open PayPal"
+  },
+  "settleHonest": "You mark it yourself: ECLIPTA can't see your bank.",
+  "@settleHonest": {
+    "description": "Note that the app doesn't see your bank"
+  },
   "moneyBalances": "Who owes what",
   "@moneyBalances": {
     "description": "Header: who owes what."
