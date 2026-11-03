@@ -22,6 +22,7 @@ import 'package:intl/intl.dart';
 
 import '../../auth/session.dart';
 
+import '../../core/motion.dart';
 import '../../core/services.dart';
 import '../../core/settings.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -147,7 +148,7 @@ class HomePassport extends StatefulWidget {
 
 class _HomePassportState extends State<HomePassport>
     with SingleTickerProviderStateMixin {
-  // La tarjeta "flota" un poco (como en la maqueta). Unas vueltas y para.
+  // La tarjeta "flota" un poco, sin fin (como en la maqueta).
   late final AnimationController _float = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 2250),
@@ -172,7 +173,7 @@ class _HomePassportState extends State<HomePassport>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!MediaQuery.disableAnimationsOf(context) && !_float.isAnimating) {
-      unawaited(_float.repeat(reverse: true, count: 4));
+      Motion.loop(_float, reverse: true);
     }
   }
 

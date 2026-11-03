@@ -22,6 +22,7 @@ import '../features/family/family.dart';
 import '../features/visa/visa_data.dart';
 import '../features/airport/airport_guide.dart';
 import '../features/airport/compass.dart';
+import '../features/flyra/flyra_mini.dart' show noOnlineChanges;
 import '../features/route/world_data.dart';
 import '../features/widgets/home_widgets.dart';
 import '../features/memories/memories.dart';
@@ -98,6 +99,7 @@ class AppServices {
     this.loadVisaData = bundledVisaData,
     this.syncWidgetsOnStart = false,
     this.compass = deviceCompass,
+    this.onlineChanges = noOnlineChanges,
     FamilyStore? family,
     OfflineFiles? offlineFiles,
     OfflineMaps? offlineMaps,
@@ -285,6 +287,11 @@ class AppServices {
 
   /// La brújula (hacia dónde miras). En los tests, una de mentira.
   final Stream<double?> Function() compass;
+
+  /// Si hay internet (true) o no (false) cada vez que cambia, para la mini
+  /// Flyra de la esquina. En la app, la del móvil (main.dart); en los tests,
+  /// ninguna.
+  final Stream<bool> Function() onlineChanges;
 
   /// Guía del aeropuerto (puertas, baños, cafés de OpenStreetMap).
   late final AirportGuideApi airportGuide = AirportGuideApi(api);

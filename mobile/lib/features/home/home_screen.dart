@@ -20,6 +20,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/motion.dart';
 import '../../core/router.dart';
 import '../../widgets/space_background.dart';
 import 'flyra_intro.dart';
@@ -73,7 +74,8 @@ class HomeScreen extends StatelessWidget {
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20),
-                child: _FlyraHero(),
+                // Al bajar y dejar de verse, Flyra deja de moverse.
+                child: OnScreenOnly(child: _FlyraHero()),
               ),
               const SizedBox(height: 28),
               Padding(
@@ -115,7 +117,8 @@ class HomeScreen extends StatelessWidget {
                     ),
                     Text(t.homePassTitle, style: text.titleLarge),
                     const SizedBox(height: 12),
-                    const HomePassport(),
+                    // Deja de flotar cuando no se ve.
+                    const OnScreenOnly(child: HomePassport()),
                   ],
                 ),
               ),
@@ -224,15 +227,18 @@ class _FlyraHero extends StatefulWidget {
   State<_FlyraHero> createState() => _FlyraHeroState();
 }
 
-class _FlyraHeroState extends State<_FlyraHero>
-    with SingleTickerProviderStateMixin {
+class _FlyraHeroState extends State<_FlyraHero> with TickerProviderStateMixin {
   late final AppServices _services = ServicesScope.of(context);
 
-  // Una "respiración" dura 5 s (2,5 s de ida y 2,5 de vuelta). Se repite
-  // unas cuantas veces al abrir Inicio y luego Flyra se queda quieta.
+  // Una "respiración" dura 5 s (2,5 s de ida y 2,5 de vuelta), sin fin.
   late final AnimationController _breath = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 2500),
+  );
+  // El brillo de detrás de Flyra da una vuelta entera en 40 s.
+  late final AnimationController _glow = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 40),
   );
   final TextEditingController _input = TextEditingController();
   bool _listening = false;
@@ -242,8 +248,10 @@ class _FlyraHeroState extends State<_FlyraHero>
     super.didChangeDependencies();
     if (MediaQuery.disableAnimationsOf(context)) {
       _breath.stop();
+      _glow.stop();
     } else if (!_breath.isAnimating && _breath.value == 0) {
-      unawaited(_breath.repeat(reverse: true, count: 8));
+      Motion.loop(_breath, reverse: true);
+      Motion.loop(_glow, testCount: 1);
     }
   }
 
@@ -251,6 +259,7 @@ class _FlyraHeroState extends State<_FlyraHero>
   void dispose() {
     if (_listening) unawaited(_services.speechInput.stop());
     _breath.dispose();
+    _glow.dispose();
     _input.dispose();
     super.dispose();
   }
@@ -296,6 +305,18 @@ class _FlyraHeroState extends State<_FlyraHero>
               child: Stack(
                 clipBehavior: Clip.none,
                 children: <Widget>[
+                  // El brillo de detrás (aurora + aro de colores que gira).
+                  Positioned(
+                    left: -70,
+                    top: -50,
+                    right: -70,
+                    bottom: -90,
+                    child: IgnorePointer(
+                      child: RepaintBoundary(
+                        child: CustomPaint(painter: _GlowPainter(_glow)),
+                      ),
+                    ),
+                  ),
                   Positioned.fill(
                     child: AnimatedBuilder(
                       animation: _breath,
@@ -570,6 +591,89 @@ class _Orb extends StatelessWidget {
       ],
     );
   }
+}
+
+/// El brillo de detrás de Flyra (como la maqueta):
+/// - una "aurora" de tres manchas de color (menta, violeta y azul) que
+///   respira despacio;
+/// - un aro de colores muy borroso que gira (una vuelta en 40 s);
+/// - un anillo más pequeño pegado a la bola que gira más deprisa.
+class _GlowPainter extends CustomPainter {
+  _GlowPainter(this.t) : super(repaint: t);
+
+  /// De 0 a 1 en 40 s.
+  final Animation<double> t;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // La bola está en el centro del cuadrado de 240 (70 y 50 px de margen).
+    const Offset c = Offset(70 + 120, 50 + 120);
+    // La aurora respira 3 veces por vuelta (unos 13 s cada vez).
+    final double pulse = 0.5 - 0.5 * math.cos(t.value * 3 * 2 * math.pi);
+    for (final (Offset at, double r, Color col) in <(Offset, double, Color)>[
+      (c + const Offset(0, -10), 190, const Color(0x333DDC97)),
+      (c + const Offset(80, -40), 170, const Color(0x409B7BFF)),
+      (c + const Offset(-90, 40), 150, const Color(0x305A5BD9)),
+    ]) {
+      final double rr = r * (1 + 0.04 * pulse);
+      canvas.drawCircle(
+        at + Offset(0, 10 * pulse),
+        rr,
+        Paint()
+          ..shader = RadialGradient(
+            colors: <Color>[
+              col.withValues(alpha: col.a * (1 - 0.15 * pulse)),
+              col.withValues(alpha: 0),
+            ],
+          ).createShader(Rect.fromCircle(center: at, radius: rr)),
+      );
+    }
+    // El aro grande y borroso que gira.
+    canvas.save();
+    canvas.translate(c.dx, c.dy);
+    canvas.rotate(t.value * 2 * math.pi);
+    const Rect ring = Rect.fromLTRB(-200, -200, 200, 200);
+    canvas.drawCircle(
+      Offset.zero,
+      190,
+      Paint()
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 36)
+        ..shader = const SweepGradient(
+          colors: <Color>[
+            Color(0x00000000),
+            Color(0x223DDC97),
+            Color(0x269B7BFF),
+            Color(0x00000000),
+            Color(0x00000000),
+          ],
+          stops: <double>[0, 0.2, 0.4, 0.6, 1],
+        ).createShader(ring),
+    );
+    // El anillo pegado a la bola: 4 vueltas por cada vuelta del grande.
+    canvas.rotate(t.value * 3 * 2 * math.pi);
+    canvas.drawCircle(
+      Offset.zero,
+      92,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 14
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)
+        ..shader = const SweepGradient(
+          colors: <Color>[
+            Color(0x00000000),
+            Color(0x883DDC97),
+            Color(0x00000000),
+            Color(0x889B7BFF),
+            Color(0x00000000),
+          ],
+          stops: <double>[0, 0.1, 0.4, 0.6, 0.8],
+        ).createShader(const Rect.fromLTRB(-100, -100, 100, 100)),
+    );
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_GlowPainter old) => false;
 }
 
 /// Una onda: un aro que crece y se desvanece ([t] de 0 a 1).

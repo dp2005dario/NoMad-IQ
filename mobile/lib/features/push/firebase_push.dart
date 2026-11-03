@@ -18,6 +18,7 @@ import 'package:flutter/widgets.dart';
 import '../../core/config.dart';
 import '../../core/settings.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../flyra/flyra_mini.dart';
 import 'notice_log.dart';
 import 'notice_prefs.dart';
 import 'notices.dart';
@@ -92,5 +93,9 @@ Future<void> showPush(Map<String, dynamic> data, PushStateStore store) async {
       at: DateTime.now(),
       route: notice.route,
     ),
+  );
+  // Con la app abierta, la mini Flyra de la esquina lo dice también.
+  FlyraNotes.instance.say(
+    FlyraNote(FlyraNoteKind.tip, '$title. $body', route: notice.route),
   );
 }

@@ -10,6 +10,7 @@ import 'core/router.dart';
 import 'core/services.dart';
 import 'core/settings.dart';
 import 'core/theme.dart';
+import 'features/flyra/flyra_mini.dart';
 import 'features/map/location.dart';
 import 'features/widgets/widget_sync.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -37,6 +38,9 @@ class EcliptaApp extends StatefulWidget {
 }
 
 class _EcliptaAppState extends State<EcliptaApp> {
+  /// La ruta actual (para esconder la mini Flyra en el chat con Flyra).
+  final ValueNotifier<String> _location = ValueNotifier<String>('');
+
   // Se crea UNA vez: si se recreara en cada dibujado, se perdería la pantalla actual.
   late final GoRouter _router =
       widget.router ?? buildRouter(session: widget.session);
@@ -52,6 +56,8 @@ class _EcliptaAppState extends State<EcliptaApp> {
   @override
   void initState() {
     super.initState();
+    _router.routerDelegate.addListener(_onRoute);
+    _onRoute();
     final AppServices services = widget.services;
     // El GPS se apaga al salir de la app (salvo en modo viaje) y vuelve al
     // entrar. Se decide aquí, para toda la app, y no en cada pantalla.
@@ -121,8 +127,20 @@ class _EcliptaAppState extends State<EcliptaApp> {
       );
   }
 
+  /// Apunta en qué pantalla está el usuario.
+  /// Se apunta tras dibujar: el cambio de pantalla avisa a veces en mitad
+  /// de un dibujado, y cambiar algo justo entonces no se permite.
+  void _onRoute() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _location.value = _router.routerDelegate.currentConfiguration.uri.path;
+    });
+  }
+
   @override
   void dispose() {
+    _router.routerDelegate.removeListener(_onRoute);
+    _location.dispose();
     _lifecycle?.dispose();
     unawaited(_taps?.cancel());
     if (widget.router == null) _router.dispose();
@@ -164,7 +182,13 @@ class _EcliptaAppState extends State<EcliptaApp> {
               // idioma actual (para las posiciones y su notificación fija).
               builder: (BuildContext context, Widget? child) {
                 _localizeTracker(context);
-                return child ?? const SizedBox.shrink();
+                // La mini Flyra de la esquina, encima de todas las pantallas.
+                return FlyraMini(
+                  location: _location,
+                  onOpen: (String? route) =>
+                      unawaited(_router.push(route ?? Routes.flyra())),
+                  child: child ?? const SizedBox.shrink(),
+                );
               },
             ),
           ),

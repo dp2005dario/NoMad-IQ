@@ -363,6 +363,15 @@
   "@homeAlbumHowTo": {
     "description": "Album empty: how to get cards"
   },
+  "homeFriendsMissing": "{count, plural, =1{1 friend has stamps you're missing} other{{count} friends have stamps you're missing}}",
+  "@homeFriendsMissing": {
+    "description": "Home album: how many friends have stamps you lack",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "homeTitleHotels": "Hotels",
   "@homeTitleHotels": {
     "description": "Home tile title: Hotels"
@@ -1982,6 +1991,18 @@
   "flyraSend": "Send",
   "@flyraSend": {
     "description": "Send button (screen readers)."
+  },
+  "flyraMiniLabel": "Flyra's alerts",
+  "@flyraMiniLabel": {
+    "description": "Mini Flyra in the corner: accessibility label"
+  },
+  "flyraOffline": "No internet connection. Retrying…",
+  "@flyraOffline": {
+    "description": "Mini Flyra bubble: the internet connection was lost"
+  },
+  "flyraOnline": "You're back online.",
+  "@flyraOnline": {
+    "description": "Mini Flyra bubble: the internet connection is back"
   },
   "flyraThinking": "Flyra is thinking…",
   "@flyraThinking": {

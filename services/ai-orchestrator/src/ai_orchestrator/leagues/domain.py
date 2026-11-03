@@ -109,6 +109,26 @@ def received(league: League, seat: int) -> list[Card]:
     return out
 
 
+def friends_with_missing(leagues: Iterable[League], user_id: str) -> list[str]:
+    """Los nombres de los amigos que tienen algún cromo que yo no tengo.
+
+    Mis cromos son los que subí y las copias que recibí en cambios. Si un
+    amigo está en varias de mis ligas con el mismo nombre, sale una vez.
+    """
+    out: list[str] = []
+    for league in leagues:
+        me = league.member(user_id)
+        if me is None:
+            continue
+        mine = {c.qid for c in me.cards} | {c.qid for c in received(league, me.seat)}
+        for m in league.members:
+            if m.user_id == user_id or m.name in out:
+                continue
+            if any(c.qid not in mine for c in m.cards):
+                out.append(m.name)
+    return out
+
+
 class SwapNotAllowedError(Exception):
     """El cambio no vale (ya lo tiene, no es tuyo...)."""
 

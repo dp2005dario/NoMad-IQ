@@ -33,6 +33,7 @@ import 'features/map/map_surface.dart';
 import 'features/offline/offline_platform.dart';
 import 'features/offline/city_pack.dart';
 import 'features/offline/saved_guides.dart';
+import 'features/flyra/flyra_mini.dart';
 import 'features/push/firebase_push.dart';
 import 'features/money/receipt_scanner.dart';
 import 'features/push/notices.dart';
@@ -81,6 +82,8 @@ Future<void> main() async {
       await startFirebasePush();
   final AppOfflineFiles offlineFiles = AppOfflineFiles();
   final AppServices services = AppServices(
+    // La mini Flyra avisa cuando se va o vuelve internet.
+    onlineChanges: deviceOnlineChanges,
     api: ApiClient(baseUrl: AppConfig.apiBaseUrl, session: session),
     location: const DeviceLocationSource(),
     mapSurface: (MapSurfaceSpec spec) => MapLibreSurface(spec: spec),

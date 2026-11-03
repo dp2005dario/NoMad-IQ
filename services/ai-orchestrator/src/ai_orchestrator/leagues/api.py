@@ -2,7 +2,7 @@
 
     POST   /v1/leagues                              crear una liga (te da el código)
     POST   /v1/leagues/join                         entrar con el código de un amigo
-    GET    /v1/leagues                              mis ligas
+    GET    /v1/leagues                              mis ligas (y qué amigos tienen cromos que me faltan)
     GET    /v1/leagues/{id}                         clasificación, mis cambios y mis copias
     GET    /v1/leagues/{id}/members/{seat}/cards    los cromos de un amigo (para elegir qué pedirle)
     PUT    /v1/leagues/{id}/me                      subir mis cromos (los del Pasaporte)
@@ -35,6 +35,7 @@ from ai_orchestrator.leagues.domain import (
     Swap,
     SwapNotAllowedError,
     SwapStatus,
+    friends_with_missing,
     points,
     rarity_of,
     received,
@@ -189,6 +190,8 @@ class LeagueSummary(BaseModel):
 
 class LeagueList(BaseModel):
     items: list[LeagueSummary]
+    # Para Inicio ("3 amigos tienen cromos que te faltan"): solo nombres.
+    friends_with_missing: list[str] = []
 
 
 class CardList(BaseModel):
@@ -236,7 +239,8 @@ def league_router(
     @router.get("", response_model=LeagueList)
     async def mine(principal: Annotated[Principal, Depends(current_principal)]) -> LeagueList:
         out: list[LeagueSummary] = []
-        for league in await store.list_for_member(principal.user_id):
+        leagues = await store.list_for_member(principal.user_id)
+        for league in leagues:
             view = LeagueView.of(league, principal.user_id, month())
             pos = next(i for i, s in enumerate(view.standings, start=1) if s.me)
             out.append(
@@ -247,7 +251,7 @@ def league_router(
                     my_position=pos,
                 )
             )
-        return LeagueList(items=out)
+        return LeagueList(items=out, friends_with_missing=friends_with_missing(leagues, principal.user_id))
 
     @router.get("/{league_id}", response_model=LeagueView)
     async def get(

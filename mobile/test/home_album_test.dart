@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/camera/stamps.dart';
@@ -96,5 +97,38 @@ void main() {
     await tester.tap(find.text('Cerrar libro'));
     await tester.pumpAndSettle();
     expect(hint, findsOneWidget);
+  });
+
+  testWidgets('con cuenta: las caras de los amigos con cromos que te faltan', (
+    WidgetTester tester,
+  ) async {
+    final FakeGateway g = FakeGateway();
+    g.services['/v1/leagues'] = (http.Request r) =>
+        FakeGateway.json(<String, Object?>{
+          'items': <Object?>[],
+          'friends_with_missing': <String>['Noelia', 'Óscar'],
+        });
+    final session = await signedInSession(g);
+    tester.view.physicalSize = const Size(1200, 3000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.home,
+      services: fakeServices(session, gateway: g),
+    );
+    await tester.pumpAndSettle();
+    final Finder line = find.text('2 amigos tienen cromos que te faltan');
+    await tester.scrollUntilVisible(
+      line,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(line, findsOneWidget);
+    // Sin fotos en el servidor: la inicial de cada uno.
+    expect(find.text('N'), findsOneWidget);
+    expect(find.text('Ó'), findsOneWidget);
   });
 }
