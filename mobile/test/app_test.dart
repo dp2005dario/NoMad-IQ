@@ -95,7 +95,7 @@ void main() {
     await tester.ensureVisible(find.text('Entrar como invitado'));
     await tester.tap(find.text('Entrar como invitado'));
     await tester.pumpAndSettle();
-    expect(find.text('Hola, viajero'), findsOneWidget);
+    expect(find.text('ECLIPTA'), findsOneWidget);
 
     await tester.tap(find.text('Vuelos'));
     await tester.pumpAndSettle();
@@ -113,7 +113,7 @@ void main() {
 
     await tester.tap(find.text('Inicio'));
     await tester.pumpAndSettle();
-    expect(find.text('Hola, viajero'), findsOneWidget);
+    expect(find.text('ECLIPTA'), findsOneWidget);
   });
 
   testWidgets('los atajos abren su pantalla con flecha atrás', (
@@ -150,7 +150,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await pumpApp(tester, locale: 'es', initialLocation: '/soon/nada');
-    expect(find.text('Hola, viajero'), findsOneWidget);
+    expect(find.text('ECLIPTA'), findsOneWidget);
   });
 
   testWidgets('cambiar de idioma cambia toda la app y se recuerda', (

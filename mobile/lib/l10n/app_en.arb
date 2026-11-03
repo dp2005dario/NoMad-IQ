@@ -55,11 +55,11 @@
   "@homeSub1": {
     "description": "Home tile: Nearby"
   },
-  "homeSub2": "Where to sleep nearby",
+  "homeSub2": "Bookings and check-in",
   "@homeSub2": {
-    "description": "Home tile: places to sleep"
+    "description": "Home tile: Hotels"
   },
-  "homeSub3": "Prices and alerts",
+  "homeSub3": "Status and boarding passes",
   "@homeSub3": {
     "description": "Home tile: Flights"
   },
@@ -71,7 +71,7 @@
   "@homeSub5": {
     "description": "Home tile: Visa"
   },
-  "homeSub6": "Gates and times",
+  "homeSub6": "Gates, queues and times",
   "@homeSub6": {
     "description": "Home tile: Airport"
   },
@@ -87,9 +87,9 @@
   "@homeSub9": {
     "description": "Home tile: Currency"
   },
-  "homeSub10": "Vets, parks and hotels",
+  "homeSub10": "Your travel group",
   "@homeSub10": {
-    "description": "Home tile: Travelling with my dog"
+    "description": "Home tile: Travelling with"
   },
   "homeSub11": "Reuse an itinerary",
   "@homeSub11": {
@@ -99,9 +99,9 @@
   "@homeSub12": {
     "description": "Home tile: Memories"
   },
-  "homeSub13": "Driving mode",
+  "homeSub13": "Rental and driving",
   "@homeSub13": {
-    "description": "Home tile: Car (driving mode)"
+    "description": "Home tile: Car"
   },
   "homeSub14": "Listen while you walk",
   "@homeSub14": {
@@ -115,13 +115,29 @@
   "@homeSub16": {
     "description": "Home tile: Widgets"
   },
-  "homeSub17": "Face-to-face interpreter",
+  "homeSub17": "Ask anything",
   "@homeSub17": {
-    "description": "Home tile: face-to-face interpreter"
+    "description": "Home tile: Assistant"
   },
   "homeSub18": "Change the language",
   "@homeSub18": {
     "description": "Home tile: Language"
+  },
+  "homeTitleHotels": "Hotels",
+  "@homeTitleHotels": {
+    "description": "Home tile title: Hotels"
+  },
+  "homeTitleWith": "Travelling with…",
+  "@homeTitleWith": {
+    "description": "Home tile title: Travelling with…"
+  },
+  "homeFlyraHello": "I’m Flyra, how can I help you?",
+  "@homeFlyraHello": {
+    "description": "Greeting typed under the Flyra orb"
+  },
+  "homeWriteFlyra": "Or write to Flyra…",
+  "@homeWriteFlyra": {
+    "description": "Placeholder of the box under the Flyra orb"
   },
   "talkToFlyra": "Talk to Flyra",
   "shortcutsTitle": "Shortcuts",

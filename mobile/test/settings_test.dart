@@ -230,9 +230,10 @@ void main() {
         initialLocation: Routes.home,
         services: fakeServices(session, gateway: g),
       );
-      await tester.tap(find.byTooltip('Cuenta'));
+      // Ajustes está en la barra de abajo.
+      await tester.tap(find.text('Ajustes'));
       await tester.pumpAndSettle();
-      expect(find.text('Ajustes'), findsOneWidget);
+      expect(find.text('Ajustes'), findsWidgets);
       return (g, session, saver);
     }
 

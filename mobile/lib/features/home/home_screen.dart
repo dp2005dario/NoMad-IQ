@@ -1,8 +1,10 @@
 // Inicio (maqueta "ECLIPTA Inicio"):
-//   1. Arriba, el saludo, la campana de avisos y tu cuenta.
+//   1. Arriba, "ECLIPTA" y la ciudad donde estás (si el GPS ya tiene
+//      permiso).
 //   2. Flyra en grande: una bola que "respira" con ondas. TOCARLA abre el
 //      chat; MANTENERLA PULSADA es hablarle (el micro del móvil escucha y la
-//      pregunta llega al chat). Debajo, una caja para escribirle.
+//      pregunta llega al chat). Debajo, Flyra se presenta palabra a palabra
+//      y una caja para escribirle.
 //   3. "Todo en ECLIPTA": un carrusel infinito de cuadrados con foto que se
 //      inclinan en 3D al deslizar (el del centro, grande y nítido).
 //   4. Atajos que aún no están en el carrusel (SOS, cromos, sellos...).
@@ -15,14 +17,18 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../auth/session.dart';
 import '../../core/router.dart';
 import '../../core/services.dart';
 import '../../core/theme.dart';
-import '../../widgets/user_avatar.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
+import '../map/geo.dart';
+import '../map/location.dart' show LocationAccess;
 import '../money/money_screen.dart' show MoneyTab;
+import '../route/geo.dart' show LatLon;
+import '../route/world_data.dart';
+import '../sos/where_am_i.dart' show nearestAirport;
+import '../visa/visa_data.dart' show CountryNames;
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -31,8 +37,6 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
     final TextTheme text = Theme.of(context).textTheme;
-    final SessionController session = SessionScope.of(context);
-    final String? name = displayName(session.user?.email);
     return Scaffold(
       body: SafeArea(
         child: ListView(
@@ -42,21 +46,18 @@ class HomeScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      name == null
-                          ? t.homeGreetingGuest
-                          : t.homeGreetingName(name),
-                      style: text.headlineMedium,
+                  const Text(
+                    'ECLIPTA',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 3,
                     ),
                   ),
-                  // La campana: el historial de avisos (solo en el móvil).
-                  IconButton(
-                    tooltip: t.noticesTitle,
-                    onPressed: () => context.push(Routes.notices),
-                    icon: const Icon(Icons.notifications_none_rounded),
-                  ),
-                  _AccountButton(session: session, name: name),
+                  const Spacer(),
+                  // Ajustes y Avisos están en la barra de abajo (pestaña
+                  // Ajustes), no aquí: así Inicio es igual que la maqueta.
+                  const _WhereChip(),
                 ],
               ),
             ),
@@ -70,11 +71,18 @@ class HomeScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(t.homeAllTitle, style: text.titleLarge),
+                  // Como la maqueta: una línea pequeña en mayúsculas y el
+                  // título grande debajo.
                   Text(
-                    t.homeAllSub,
-                    style: const TextStyle(color: NomadColors.textMuted),
+                    t.homeAllTitle.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.3,
+                      color: NomadColors.textMuted,
+                    ),
                   ),
+                  Text(t.homeAllSub, style: text.titleLarge),
                 ],
               ),
             ),
@@ -236,6 +244,8 @@ class _FlyraHeroState extends State<_FlyraHero>
             ),
           ),
         ),
+        _Greeting(text: t.homeFlyraHello),
+        const SizedBox(height: 6),
         Text(
           _listening ? t.voiceListening : t.homeHoldToTalk,
           style: Theme.of(context).textTheme.titleMedium,
@@ -254,7 +264,7 @@ class _FlyraHeroState extends State<_FlyraHero>
             _openChat(v);
           },
           decoration: InputDecoration(
-            hintText: t.homeFlyraPrompt,
+            hintText: t.homeWriteFlyra,
             filled: true,
             fillColor: NomadColors.surfaceHigh,
             border: OutlineInputBorder(
@@ -273,6 +283,154 @@ class _FlyraHeroState extends State<_FlyraHero>
           ),
         ),
       ],
+    );
+  }
+}
+
+/// "Soy Flyra, ¿en qué puedo ayudarte?" apareciendo palabra a palabra
+/// (como en la maqueta). Con "reducir movimiento", sale entera.
+class _Greeting extends StatefulWidget {
+  const _Greeting({required this.text});
+
+  final String text;
+
+  @override
+  State<_Greeting> createState() => _GreetingState();
+}
+
+class _GreetingState extends State<_Greeting>
+    with SingleTickerProviderStateMixin {
+  late final List<String> _words = widget.text.split(' ');
+  late final AnimationController _show = AnimationController(
+    vsync: this,
+    duration: Duration(milliseconds: 220 * _words.length + 400),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_show.status != AnimationStatus.dismissed) return;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _show.value = 1;
+    } else {
+      unawaited(_show.forward());
+    }
+  }
+
+  @override
+  void dispose() {
+    _show.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: widget.text,
+    excludeSemantics: true,
+    child: AnimatedBuilder(
+      animation: _show,
+      builder: (BuildContext context, Widget? _) {
+        final int n = (_words.length * _show.value).ceil();
+        return Text(
+          _words.take(n).join(' '),
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 19,
+            fontWeight: FontWeight.w800,
+            height: 1.2,
+          ),
+        );
+      },
+    ),
+  );
+}
+
+/// La ciudad donde estás ("Lisboa, Portugal"): la del aeropuerto más cercano
+/// a menos de 80 km. Solo si el GPS ya tiene permiso (Inicio no lo pide).
+/// Sin dato, no se enseña nada (nada inventado).
+class _WhereChip extends StatefulWidget {
+  const _WhereChip();
+
+  @override
+  State<_WhereChip> createState() => _WhereChipState();
+}
+
+class _WhereChipState extends State<_WhereChip> {
+  String? _place;
+  bool _asked = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_asked) return;
+    _asked = true;
+    unawaited(_find());
+  }
+
+  Future<void> _find() async {
+    final AppServices services = ServicesScope.of(context);
+    final String lang = Localizations.localeOf(context).languageCode;
+    try {
+      if (await services.location.check() != LocationAccess.granted) return;
+      final PositionFix? fix = await services.location.current();
+      if (fix == null) return;
+      final Airports airports = await services.loadAirports();
+      final Airport? a = nearestAirport(
+        airports.all,
+        LatLon(fix.point.lat, fix.point.lon),
+      );
+      if (a == null ||
+          fix.point.distanceTo(GeoPoint(a.position.lat, a.position.lon)) >
+              80000) {
+        return;
+      }
+      String place = a.city;
+      try {
+        final CountryNames names = await CountryNames.load();
+        place = '${a.city}, ${names.name(a.country, lang)}';
+      } on Object {
+        // Sin nombres de país: solo la ciudad.
+      }
+      if (mounted) setState(() => _place = place);
+    } on Object {
+      // Sin GPS o sin datos: no se enseña la ciudad.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String? place = _place;
+    if (place == null) return const SizedBox.shrink();
+    return Flexible(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: NomadColors.surfaceHigh,
+          borderRadius: BorderRadius.circular(99),
+          border: Border.all(color: const Color(0xFF243540)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const Icon(
+              Icons.place_outlined,
+              size: 14,
+              color: NomadColors.textMuted,
+            ),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                place,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: NomadColors.textMuted,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -390,7 +548,7 @@ final List<_Tile> _tiles = <_Tile>[
     (BuildContext c) => c.push(Routes.nearby),
   ),
   _Tile(
-    (AppLocalizations t) => t.planCheapSleep,
+    (AppLocalizations t) => t.homeTitleHotels,
     (AppLocalizations t) => t.homeSub2,
     const Color(0xFF9B7BFF),
     (BuildContext c) => c.push(Routes.stays()),
@@ -438,7 +596,7 @@ final List<_Tile> _tiles = <_Tile>[
     (BuildContext c) => c.push(Routes.money(tab: MoneyTab.fx)),
   ),
   _Tile(
-    (AppLocalizations t) => t.twTitle,
+    (AppLocalizations t) => t.homeTitleWith,
     (AppLocalizations t) => t.homeSub10,
     const Color(0xFFFF8A9A),
     (BuildContext c) => c.push(Routes.travelWith),
@@ -733,30 +891,6 @@ String? displayName(String? email) {
       .first;
   if (local.isEmpty) return null;
   return local[0].toUpperCase() + local.substring(1);
-}
-
-/// El círculo con tu inicial (maquetas: "tu avatar D en cada pantalla").
-/// Abre Ajustes: idioma, Bóveda, cerrar sesión, borrar la cuenta...
-class _AccountButton extends StatelessWidget {
-  const _AccountButton({required this.session, required this.name});
-
-  final SessionController session;
-  final String? name;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    return IconButton(
-      tooltip: t.accountMenu,
-      onPressed: () => context.push(Routes.settings),
-      icon: UserAvatar(
-        name: name,
-        photoUrl: session.user?.photoUrl,
-        size: 40,
-        isMe: true,
-      ),
-    );
-  }
 }
 
 class _Shortcut extends StatelessWidget {
