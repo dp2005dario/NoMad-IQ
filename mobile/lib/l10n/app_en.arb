@@ -2919,6 +2919,115 @@
   "@abroadFeeUnknown": {
     "description": "ATM fee unknown."
   },
+  "bargainButton": "Find a flight bargain",
+  "@bargainButton": {
+    "description": "Button: find a flight bargain under a max price"
+  },
+  "bargainQuestion": "What's the most you want to spend?",
+  "@bargainQuestion": {
+    "description": "Sheet title: max you want to spend"
+  },
+  "bargainFrom": "Searches today's real deals from {origin}, price per person.",
+  "@bargainFrom": {
+    "description": "Where the bargains come from",
+    "placeholders": {
+      "origin": {
+        "type": "String"
+      }
+    }
+  },
+  "bargainSearch": "Find bargain",
+  "@bargainSearch": {
+    "description": "Button: search bargain"
+  },
+  "bargainNone": "No bargain up to {price} today.",
+  "@bargainNone": {
+    "description": "No bargain up to that price today",
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "bargainRaise": "Add 100 and try again",
+  "@bargainRaise": {
+    "description": "Button: raise the limit by 100 and retry"
+  },
+  "flightsOnTarget": "ON TARGET",
+  "@flightsOnTarget": {
+    "description": "Watched route already under your target"
+  },
+  "flightsStillFar": "STILL FAR",
+  "@flightsStillFar": {
+    "description": "Watched route still above your target"
+  },
+  "errorFareToday": "TODAY",
+  "@errorFareToday": {
+    "description": "Timeline step: today"
+  },
+  "errorFare24h": "+24 H",
+  "@errorFare24h": {
+    "description": "Timeline step: +24 h"
+  },
+  "errorFare48h": "+48 H · BOOK NOW",
+  "@errorFare48h": {
+    "description": "Timeline step: +48 h, you can book the hotel now"
+  },
+  "errorFareSeen": "Seen {ago}",
+  "@errorFareSeen": {
+    "description": "When the error fare was seen",
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      }
+    }
+  },
+  "atmsTabFree": "No fee",
+  "@atmsTabFree": {
+    "description": "ATM tab: no fee"
+  },
+  "atmsTab24h": "Open 24 h",
+  "@atmsTab24h": {
+    "description": "ATM tab: open 24 h"
+  },
+  "atmsTabAll": "All banks",
+  "@atmsTabAll": {
+    "description": "ATM tab: all banks"
+  },
+  "atmsNoneInTab": "None of the nearby ATMs are of this kind according to OpenStreetMap. Check \"All banks\".",
+  "@atmsNoneInTab": {
+    "description": "No ATMs in this tab"
+  },
+  "atmsWalk": "{min} min walk",
+  "@atmsWalk": {
+    "description": "Walking minutes",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "atmsGo": "Go",
+  "@atmsGo": {
+    "description": "Button: walk there"
+  },
+  "atmsSeeOsm": "See on OSM",
+  "@atmsSeeOsm": {
+    "description": "Button: see it on OpenStreetMap"
+  },
+  "atmsOfflineTitle": "I can't load the ATMs right now",
+  "@atmsOfflineTitle": {
+    "description": "Flyra: can't load ATMs"
+  },
+  "atmsOfflineText": "Here are the last ones I saved for this area ({date}): some may have changed.",
+  "@atmsOfflineText": {
+    "description": "Flyra: showing the last saved ATMs with their date",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "abroadRadarLabel": "{count} ATMs within {range}",
   "@abroadRadarLabel": {
     "description": "Accessibility label of the ATM radar.",

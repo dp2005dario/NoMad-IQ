@@ -11,7 +11,9 @@ import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/flights/fares_api.dart';
 import 'package:eclipta/features/flights/flight_format.dart';
+import 'package:eclipta/features/flights/flights_screen.dart';
 import 'package:eclipta/features/flights/price_chart.dart';
+import 'package:eclipta/l10n/generated/app_localizations.dart';
 
 import 'helpers.dart';
 
@@ -365,6 +367,69 @@ void main() {
       final TextField from = tester.widget(find.byType(TextField).first);
       expect(from.controller!.text, 'MAD');
     });
+  });
+
+  testWidgets('buscar ganga: el más barato hasta tu tope, o subir 100', (
+    WidgetTester tester,
+  ) async {
+    await pumpFlights(tester);
+    // Lisboa vigilada con objetivo 300 € y ahora a 412 €: aún lejos.
+    expect(find.text('AÚN LEJOS'), findsOneWidget);
+    final Finder open = find.text('Buscar ganga de vuelo');
+    await tester.ensureVisible(open);
+    await tester.tap(open);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('desde MAD'), findsOneWidget);
+    // Tope a 0 €: no hay ganga.
+    await tester.drag(find.byType(Slider), const Offset(-2000, 0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Buscar ganga'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Hoy no hay ganga'), findsOneWidget);
+    // "Subir 100 y reintentar": Lisboa (39 €) sí entra; Tokio (389 €) no.
+    await tester.tap(find.text('Subir 100 y reintentar'));
+    await tester.pumpAndSettle();
+    final Finder sheet = find.byType(BottomSheet);
+    expect(
+      find.descendant(of: sheet, matching: find.text('MAD → LIS')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: sheet, matching: find.text('MAD → HND')),
+      findsNothing,
+    );
+    await tester.tap(
+      find.descendant(of: sheet, matching: find.text('MAD → LIS')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(BottomSheet), findsNothing);
+    expect(find.text('El precio en los últimos días'), findsOneWidget);
+  });
+
+  testWidgets('tarifa error: HOY → +24 H → +48 H con lo que va pasando', (
+    WidgetTester tester,
+  ) async {
+    final DateTime seen = DateTime.utc(2026, 10, 23, 10);
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('es'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: ErrorFareTimeline(
+            seenAt: seen,
+            now: seen.add(const Duration(hours: 30)),
+          ),
+        ),
+      ),
+    );
+    expect(find.text('HOY'), findsOneWidget);
+    expect(find.text('+48 H · YA PUEDES RESERVAR'), findsOneWidget);
+    expect(find.textContaining('30'), findsOneWidget);
+    final LinearProgressIndicator bar = tester.widget(
+      find.byType(LinearProgressIndicator),
+    );
+    expect(bar.value, closeTo(30 / 48, 0.01));
   });
 
   testWidgets('avisar si baja: con precio objetivo', (
