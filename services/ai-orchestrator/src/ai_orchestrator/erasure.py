@@ -126,7 +126,7 @@ class PostgresEraser:
                 )
                 negotiation_seats = await conn.execute(
                     "UPDATE ai.group_negotiation_members SET user_id = $2, preferences = NULL,"
-                    " chat_name = NULL WHERE user_id = $1",
+                    " chat_name = NULL, tastes = '{}' WHERE user_id = $1",
                     user_id,
                     anon,
                 )

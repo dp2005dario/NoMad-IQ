@@ -100,6 +100,12 @@ from ai_orchestrator.meetups.api import meetup_router
 from ai_orchestrator.meetups.store import PostgresMeetups
 from ai_orchestrator.menu.service import QUOTA_PREFIX as MENU_QUOTA_PREFIX
 from ai_orchestrator.menu.service import MenuService, MenuSettings
+from ai_orchestrator.nearby.cravings import (
+    CravingService,
+    CravingSettings,
+    CravingsOverpass,
+    RedisCravingCache,
+)
 from ai_orchestrator.nearby.overpass import NearbyOverpass
 from ai_orchestrator.nearby.service import NearbyService, NearbySettings, RedisNearbyCache
 from ai_orchestrator.negotiation.agents import AgentSettings
@@ -362,6 +368,18 @@ def _nearby(
         source=NearbyOverpass(http, url=settings.overpass_servers, limiter=limiter),
         cache=RedisNearbyCache(redis, stale_seconds=settings.overpass_stale_seconds),
         settings=NearbySettings(ttl_seconds=settings.nearby_ttl_seconds),
+    )
+
+
+def _cravings(
+    settings: Settings, redis: Redis, overpass: tuple[httpx.AsyncClient, RateLimiter]
+) -> CravingService:
+    """«¿Qué os apetece?» (Grupo): tapas, pescado, vegetariano, café o vistas cerca."""
+    http, limiter = overpass
+    return CravingService(
+        source=CravingsOverpass(http, url=settings.overpass_servers, limiter=limiter),
+        cache=RedisCravingCache(redis, stale_seconds=settings.overpass_stale_seconds),
+        settings=CravingSettings(ttl_seconds=settings.nearby_ttl_seconds),
     )
 
 
@@ -717,6 +735,10 @@ async def run(settings: Settings) -> int:
         nearby: NearbyService | None = None
         if settings.nearby_enabled and public_redis is not None and overpass is not None:
             nearby = _nearby(settings, public_redis, overpass)
+        # Los antojos van con "Cerca de ti": mismo interruptor, misma caché.
+        cravings: CravingService | None = None
+        if settings.nearby_enabled and public_redis is not None and overpass is not None:
+            cravings = _cravings(settings, public_redis, overpass)
         drive: DriveService | None = None
         if settings.drive_enabled and public_redis is not None and overpass is not None:
             drive = _drive(settings, public_redis, overpass)
@@ -848,6 +870,7 @@ async def run(settings: Settings) -> int:
                 fx=fx,
                 atms=atms,
                 nearby=nearby,
+                cravings=cravings,
                 drive=drive,
                 stays=stays,
                 airport_guide=airport_guide,
