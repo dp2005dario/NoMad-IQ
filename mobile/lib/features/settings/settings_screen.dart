@@ -310,6 +310,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
+              // ECLIPTA Premium: solo el anuncio "Próximamente" (sin precio
+              // ni botón de pagar: todavía no existe).
+              const SizedBox(height: 12),
+              _PremiumSoon(t: t),
               _Header(t.settingsSectionApp),
               Card(
                 child: Column(
@@ -375,6 +379,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       title: Text(t.offlineOpen),
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: () => context.push(Routes.offline),
+                    ),
+                    const Divider(height: 1),
+                    // El historial de avisos (también en la campana de Inicio).
+                    ListTile(
+                      leading: const Icon(
+                        Icons.notifications_rounded,
+                        color: NomadColors.money,
+                      ),
+                      title: Text(t.noticesTitle),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => context.push(Routes.notices),
                     ),
                     const Divider(height: 1),
                     ListTile(
@@ -645,6 +660,89 @@ class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
         ),
         FilledButton(onPressed: _submit, child: Text(t.passwordChangeTitle)),
       ],
+    );
+  }
+}
+
+/// La tarjeta "ECLIPTA Premium · Próximamente", con un brillo que la cruza
+/// una vez al abrir Ajustes (quieta con "reducir movimiento").
+class _PremiumSoon extends StatelessWidget {
+  const _PremiumSoon({required this.t});
+
+  final AppLocalizations t;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool still = MediaQuery.disableAnimationsOf(context);
+    final Widget card = Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          colors: <Color>[Color(0xFF2B1F4F), Color(0xFF14324A)],
+        ),
+        border: Border.all(color: NomadColors.money.withValues(alpha: 0.6)),
+      ),
+      child: Row(
+        children: <Widget>[
+          const Icon(
+            Icons.workspace_premium_rounded,
+            color: NomadColors.money,
+            size: 32,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  t.premiumTitle,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                Text(
+                  t.premiumWhy,
+                  style: const TextStyle(color: NomadColors.textMuted),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: NomadColors.money.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              t.premiumSoon,
+              style: const TextStyle(
+                color: NomadColors.money,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (still) return card;
+    // El brillo: una franja clara que pasa de izquierda a derecha.
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: -1, end: 2),
+      duration: const Duration(milliseconds: 1400),
+      curve: Curves.easeInOut,
+      builder: (BuildContext context, double x, Widget? child) => ShaderMask(
+        blendMode: BlendMode.srcATop,
+        shaderCallback: (Rect r) => LinearGradient(
+          begin: Alignment(x - 1, 0),
+          end: Alignment(x, 0),
+          colors: <Color>[
+            Colors.transparent,
+            Colors.white.withValues(alpha: 0.18),
+            Colors.transparent,
+          ],
+        ).createShader(r),
+        child: child,
+      ),
+      child: card,
     );
   }
 }

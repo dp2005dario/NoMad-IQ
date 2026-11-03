@@ -220,7 +220,7 @@ void main() {
       serveMyData(g);
       final SessionController session = await signedInSession(g);
       final MemorySaver saver = MemorySaver();
-      tester.view.physicalSize = const Size(1200, 2600);
+      tester.view.physicalSize = const Size(1200, 3400);
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
       await pumpApp(
@@ -280,6 +280,10 @@ void main() {
       expect(find.text('ana@example.com'), findsOneWidget);
       expect(find.text('ID: U1 · copiar'), findsOneWidget);
       expect(find.text('Borrar mi cuenta y mis datos'), findsOneWidget);
+      // Premium: solo el aviso, sin precio ni botón de pagar.
+      expect(find.text('ECLIPTA Premium'), findsOneWidget);
+      expect(find.text('Próximamente'), findsOneWidget);
+      expect(find.text('Avisos'), findsOneWidget);
       // Ajustes es una lista larga: la versión está al final.
       await tester.scrollUntilVisible(
         find.textContaining('ECLIPTA 1.0.0'),
@@ -340,7 +344,7 @@ void main() {
     final FakeGateway g = FakeGateway();
     final SessionController session = await signedInSession(g);
     final MemorySettingsStore prefs = MemorySettingsStore();
-    tester.view.physicalSize = const Size(1200, 3000);
+    tester.view.physicalSize = const Size(1200, 3800);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     await pumpApp(

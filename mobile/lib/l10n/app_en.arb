@@ -4119,6 +4119,18 @@
   "@helpTitle": {
     "description": "Title of the help screen."
   },
+  "premiumTitle": "ECLIPTA Premium",
+  "@premiumTitle": {
+    "description": "Name of the future paid plan (brand name, not translated)."
+  },
+  "premiumSoon": "Coming soon",
+  "@premiumSoon": {
+    "description": "Tag: the paid plan is not available yet."
+  },
+  "premiumWhy": "We're working on it.",
+  "@premiumWhy": {
+    "description": "Short line under the Premium card: still being prepared (no price, no promises)."
+  },
   "helpSubtitle": "Flyra first; a person if you need one",
   "@helpSubtitle": {
     "description": "Help screen subtitle."
