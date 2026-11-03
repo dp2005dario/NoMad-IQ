@@ -1,4 +1,5 @@
 // Sin conexión: el paquete de una ciudad, la descarga y la pantalla.
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -277,6 +278,36 @@ void main() {
       expect(OfflineLibrary(store).of('MAD')!.city, 'Madrid');
     });
 
+    test('solo el centro y sin voces: mapa pequeño y ningún audio', () async {
+      final FakeGateway g = FakeGateway();
+      serveCity(g);
+      final SessionController session = await signedInSession(g);
+      final MemorySettingsStore store = MemorySettingsStore();
+      final MemoryOfflineFiles files = MemoryOfflineFiles();
+      final FakeMaps maps = FakeMaps();
+      final List<DownloadStep> steps = <DownloadStep>[];
+      final CityPack pack =
+          await downloaderFor(g, session, store, maps: maps, files: files).run(
+            iata: 'mad',
+            city: 'Madrid',
+            center: const LatLon(40.42, -3.70),
+            language: 'es',
+            wifiOnly: true,
+            onProgress: (DownloadProgress p) => steps.add(p.step),
+            area: OfflineArea.center,
+            withAudio: false,
+          );
+      // El centro: 0,02 grados a cada lado (unos 2 km).
+      expect(maps.asked!.maxLat - maps.asked!.minLat, closeTo(0.04, 1e-9));
+      expect(files.written, isEmpty);
+      expect(steps, isNot(contains(DownloadStep.audio)));
+      // Los textos de las audioguías sí se guardan.
+      expect(pack.zones.first.texts, isNotEmpty);
+      final CityPack again = OfflineLibrary(store).of('MAD')!;
+      expect(again.area, OfflineArea.center);
+      expect(again.withAudio, isFalse);
+    });
+
     test('"Parar descarga" corta a mitad y no guarda la ciudad', () async {
       final FakeGateway g = FakeGateway();
       serveCity(g);
@@ -449,6 +480,8 @@ void main() {
     final SessionController session = await signedInSession(g);
     final MemorySettingsStore store = MemorySettingsStore();
     final FakeMaps maps = FakeMaps();
+    final StreamController<bool> online = StreamController<bool>.broadcast();
+    addTearDown(online.close);
     tester.view.physicalSize = const Size(1200, 4000);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -463,6 +496,7 @@ void main() {
         prefs: store,
         offlineMaps: maps,
         net: FakeNet(NetKind.wifi),
+        onlineChanges: () => online.stream,
       ),
     );
     // Los aeropuertos de verdad (assets/geo) tardan un poco.
@@ -472,6 +506,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Sin conexión'), findsOneWidget);
     expect(find.textContaining('Todavía no has descargado'), findsOneWidget);
+    expect(
+      find.text('Aún no hay zonas listas para usar sin internet'),
+      findsOneWidget,
+    );
 
     // Un código que no existe lo avisa.
     await tester.enterText(find.byType(TextField), 'ZZZ');
@@ -479,6 +517,9 @@ void main() {
     expect(find.text('No conocemos ese aeropuerto.'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'MAD');
+    await tester.pumpAndSettle();
+    // Solo el centro de la ciudad.
+    await tester.tap(find.text('Centro\n2 km'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Descargar'));
     await tester.runAsync(
@@ -488,6 +529,24 @@ void main() {
     expect(find.textContaining('3 audioguías'), findsOneWidget);
     expect(find.textContaining('MB'), findsWidgets);
     expect(store.readData(LocalData.offlineCities), contains('MAD'));
+    expect(find.text('Centro · 2 km'), findsOneWidget);
+    expect(maps.asked!.maxLat - maps.asked!.minLat, closeTo(0.04, 1e-9));
+    // La leyenda de la barra de espacio: la ciudad y lo que ocupa.
+    expect(find.textContaining('Madrid 20'), findsOneWidget);
+    expect(
+      find.text('1 zona lista para usar sin internet', skipOffstage: false),
+      findsOneWidget,
+    );
+
+    // Se va internet: qué sigue funcionando.
+    online.add(false);
+    await tester.pumpAndSettle();
+    expect(find.text('Funciona sin internet ✓'), findsOneWidget);
+    expect(
+      find.text('Tu zona descargada sigue funcionando', skipOffstage: false),
+      findsOneWidget,
+    );
+    await tester.pumpAndSettle(const Duration(seconds: 5));
 
     // "Solo con wifi" se recuerda en el móvil.
     await tester.tap(find.byType(Switch));

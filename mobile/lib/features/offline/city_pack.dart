@@ -106,6 +106,29 @@ class PackZone {
   }
 }
 
+/// Cuánto de la ciudad se baja (como en la maqueta: "Elige la zona").
+enum OfflineArea {
+  /// El centro: unos 2 km a cada lado.
+  center(0.02, 2),
+
+  /// La ciudad: unos 8 km a cada lado.
+  city(0.07, 8),
+
+  /// Con alrededores: unos 20 km a cada lado.
+  around(0.18, 20);
+
+  const OfflineArea(this.halfDeg, this.km);
+
+  /// Medio lado del cuadrado, en grados (1 grado ≈ 111 km).
+  final double halfDeg;
+
+  /// Para enseñarlo: "2 km", "8 km", "20 km".
+  final int km;
+
+  static OfflineArea? byName(Object? name) =>
+      OfflineArea.values.where((OfflineArea a) => a.name == name).firstOrNull;
+}
+
 /// Todo lo guardado de una ciudad.
 class CityPack {
   const CityPack({
@@ -116,7 +139,15 @@ class CityPack {
     required this.tileBytes,
     required this.savedAt,
     this.mapFailed = false,
+    this.area = OfflineArea.city,
+    this.withAudio = true,
   });
+
+  /// Cuánto de la ciudad se bajó.
+  final OfflineArea area;
+
+  /// false = elegiste no bajar las voces de las audioguías (solo el texto).
+  final bool withAudio;
 
   /// El código del aeropuerto, que es como se nombran las ciudades en la app.
   final String iata;
@@ -147,6 +178,8 @@ class CityPack {
     'tile_bytes': tileBytes,
     'saved_at': savedAt.toUtc().toIso8601String(),
     if (mapFailed) 'map_failed': true,
+    'area': area.name,
+    if (!withAudio) 'with_audio': false,
   };
 
   static CityPack? parse(Object? json) {
@@ -171,6 +204,9 @@ class CityPack {
       tileBytes: tiles is int && tiles >= 0 ? tiles : 0,
       savedAt: at.toLocal(),
       mapFailed: json['map_failed'] == true,
+      // Las ciudades bajadas antes de poder elegir eran "la ciudad".
+      area: OfflineArea.byName(json['area']) ?? OfflineArea.city,
+      withAudio: json['with_audio'] != false,
     );
   }
 }

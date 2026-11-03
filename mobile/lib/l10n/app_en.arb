@@ -4443,6 +4443,81 @@
   "@offlineWifiOnlyWhy": {
     "description": "Why the wifi-only switch exists."
   },
+  "offlineReady": "{count, plural, =0{No areas ready to use offline yet} =1{1 area ready to use offline} other{{count} areas ready to use offline}}",
+  "@offlineReady": {
+    "description": "Offline header: how many cities are ready",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineAreaTitle": "Choose the area",
+  "@offlineAreaTitle": {
+    "description": "Offline: pick how much of the city"
+  },
+  "offlineAreaCenter": "Centre",
+  "@offlineAreaCenter": {
+    "description": "Offline area: city centre"
+  },
+  "offlineAreaCity": "City",
+  "@offlineAreaCity": {
+    "description": "Offline area: whole city"
+  },
+  "offlineAreaAround": "With surroundings",
+  "@offlineAreaAround": {
+    "description": "Offline area: city and surroundings"
+  },
+  "offlineKm": "{km} km",
+  "@offlineKm": {
+    "description": "Offline area size",
+    "placeholders": {
+      "km": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineWhatTitle": "What to save",
+  "@offlineWhatTitle": {
+    "description": "Offline: what to save"
+  },
+  "offlinePartMap": "Map, streets and walking routes",
+  "@offlinePartMap": {
+    "description": "Offline part: map, streets and walking routes"
+  },
+  "offlinePartAudio": "Audio guides with voice",
+  "@offlinePartAudio": {
+    "description": "Offline part: audio guides with voice"
+  },
+  "offlinePartAlerts": "Zone alerts",
+  "@offlinePartAlerts": {
+    "description": "Offline part: zone alerts"
+  },
+  "offlinePartsNote": "The map and alerts always come: without them nothing works offline. Voices take the most space.",
+  "@offlinePartsNote": {
+    "description": "Offline: why map and alerts are always included"
+  },
+  "offlineNoNetTitle": "No internet right now",
+  "@offlineNoNetTitle": {
+    "description": "Offline banner: no internet now"
+  },
+  "offlineNoNetWorks": "{count, plural, =0{With no areas downloaded, the map won't work until you're back online} =1{Your downloaded area still works} other{Your {count} downloaded areas still work}}",
+  "@offlineNoNetWorks": {
+    "description": "Offline banner: what still works",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineWorksOffline": "Works offline ✓",
+  "@offlineWorksOffline": {
+    "description": "Offline card: this city works without internet"
+  },
+  "offlineTextOnly": "Audio guides as text only (no voice)",
+  "@offlineTextOnly": {
+    "description": "Offline card: guides saved as text only"
+  },
   "offlineUsed": "ECLIPTA is using {size}",
   "@offlineUsed": {
     "description": "Storage used by the app, with the size.",

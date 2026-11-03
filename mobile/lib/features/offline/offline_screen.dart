@@ -10,9 +10,16 @@
 // un pequeño "estallido" con vibración. Borrar pide confirmación. Si falta
 // el wifi, Flyra te lo dice.
 //
-// Lo que la maqueta tiene y aquí NO (todavía): elegir barrios sueltos
-// dentro de la ciudad, reanudar justo donde se paró (al volver a empezar se
-// baja de nuevo) y la actualización automática en segundo plano.
+// También como la maqueta: eliges cuánto bajar (centro, ciudad o con
+// alrededores), si quieres las voces de las audioguías, ves el espacio de
+// cada ciudad en una barra de colores y, si te quedas sin internet, la
+// pantalla te dice qué sigue funcionando.
+//
+// Lo que la maqueta tiene y aquí NO: el tamaño aproximado ANTES de bajar
+// (no hay forma fiable de saberlo sin bajarlo), reanudar justo donde se paró
+// (al volver a empezar se baja de nuevo), "hay cambios en el mapa" (el
+// servidor no dice qué cambió) y la actualización automática en segundo
+// plano.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -43,6 +50,14 @@ class _OfflineScreenState extends State<OfflineScreen> {
   List<CityPack> _cities = <CityPack>[];
   bool _wifiOnly = true;
 
+  /// Lo que eliges antes de bajar: cuánto de la ciudad y si con voces.
+  OfflineArea _area = OfflineArea.city;
+  bool _audio = true;
+
+  /// Si hay internet ahora (null = aún no se sabe).
+  bool? _online;
+  StreamSubscription<bool>? _net;
+
   /// Qué ciudad se está descargando y por dónde va (null = ninguna).
   String? _busy;
   DownloadProgress? _progress;
@@ -52,7 +67,7 @@ class _OfflineScreenState extends State<OfflineScreen> {
   bool _wifiProblem = false;
 
   /// Ciudades esperando su turno (se bajan de una en una).
-  final List<Airport> _queue = <Airport>[];
+  final List<_Job> _queue = <_Job>[];
 
   /// Has tocado "Parar descarga".
   bool _stop = false;
@@ -66,10 +81,14 @@ class _OfflineScreenState extends State<OfflineScreen> {
     _cities = _services.offlineCities.all();
     _wifiOnly = _services.prefs.readData(LocalData.offlineWifiOnly) != '0';
     unawaited(_loadWorld());
+    _net = _services.onlineChanges().listen((bool on) {
+      if (mounted) setState(() => _online = on);
+    });
   }
 
   @override
   void dispose() {
+    unawaited(_net?.cancel());
     _code.dispose();
     super.dispose();
   }
@@ -100,13 +119,13 @@ class _OfflineScreenState extends State<OfflineScreen> {
   }
 
   /// Añade a la cola; si no hay nada bajando, empieza ya.
-  void _enqueue(Airport airport) {
+  void _enqueue(Airport airport, OfflineArea area, bool audio) {
     if (_busy == airport.iata ||
-        _queue.any((Airport a) => a.iata == airport.iata)) {
+        _queue.any((_Job j) => j.airport.iata == airport.iata)) {
       return;
     }
     setState(() {
-      _queue.add(airport);
+      _queue.add(_Job(airport, area, audio));
       _code.clear();
     });
     if (_busy == null) unawaited(_next());
@@ -114,12 +133,16 @@ class _OfflineScreenState extends State<OfflineScreen> {
 
   Future<void> _next() async {
     while (mounted && _queue.isNotEmpty && _busy == null) {
-      final Airport a = _queue.removeAt(0);
-      await _download(a);
+      final _Job j = _queue.removeAt(0);
+      await _download(j.airport, j.area, j.audio);
     }
   }
 
-  Future<void> _download(Airport airport) async {
+  Future<void> _download(
+    Airport airport,
+    OfflineArea area,
+    bool withAudio,
+  ) async {
     if (_busy != null) return;
     final String language = Localizations.localeOf(context).languageCode;
     final bool hadIt = _cities.any((CityPack c) => c.iata == airport.iata);
@@ -144,6 +167,8 @@ class _OfflineScreenState extends State<OfflineScreen> {
           if (mounted) setState(() => _progress = p);
         },
         stopped: () => _stop,
+        area: area,
+        withAudio: withAudio,
       );
       ok = true;
     } on DownloadException catch (e) {
@@ -221,9 +246,19 @@ class _OfflineScreenState extends State<OfflineScreen> {
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
         children: <Widget>[
           Text(
+            t.offlineReady(_cities.length),
+            style: text.titleSmall?.copyWith(color: NomadColors.mint),
+          ),
+          const SizedBox(height: 4),
+          Text(
             t.offlineIntro,
             style: text.bodyMedium?.copyWith(color: NomadColors.textMuted),
           ),
+          // Sin internet ahora: qué sigue funcionando (de verdad, no de prueba).
+          if (_online == false) ...<Widget>[
+            const SizedBox(height: 12),
+            _NoNet(count: _cities.length),
+          ],
           const SizedBox(height: 20),
           TextField(
             controller: _code,
@@ -244,8 +279,60 @@ class _OfflineScreenState extends State<OfflineScreen> {
           ),
           const SizedBox(height: 12),
           // El botón ocupa el ancho entero: así se pulsa fácil con una mano.
+          // Elige la zona: cuánto de la ciudad.
+          Text(t.offlineAreaTitle, style: text.titleSmall),
+          const SizedBox(height: 6),
+          SegmentedButton<OfflineArea>(
+            showSelectedIcon: false,
+            segments: <ButtonSegment<OfflineArea>>[
+              for (final OfflineArea a in OfflineArea.values)
+                ButtonSegment<OfflineArea>(
+                  value: a,
+                  label: Text(
+                    '${_areaName(t, a)}\n${t.offlineKm(a.km)}',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+            ],
+            selected: <OfflineArea>{_area},
+            onSelectionChanged: (Set<OfflineArea> v) =>
+                setState(() => _area = v.first),
+          ),
+          const SizedBox(height: 14),
+          // Qué guardar: el mapa y los avisos van siempre; las voces, si
+          // quieres (son lo que más ocupa).
+          Text(t.offlineWhatTitle.toUpperCase(), style: text.labelMedium),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: <Widget>[
+              FilterChip(
+                label: Text(t.offlinePartMap),
+                selected: true,
+                onSelected: null,
+              ),
+              FilterChip(
+                label: Text(t.offlinePartAudio),
+                selected: _audio,
+                onSelected: (bool v) => setState(() => _audio = v),
+              ),
+              FilterChip(
+                label: Text(t.offlinePartAlerts),
+                selected: true,
+                onSelected: null,
+              ),
+            ],
+          ),
+          Text(
+            t.offlinePartsNote,
+            style: text.bodySmall?.copyWith(color: NomadColors.textMuted),
+          ),
+          const SizedBox(height: 12),
           FilledButton(
-            onPressed: picked == null || full ? null : () => _enqueue(picked),
+            onPressed: picked == null || full
+                ? null
+                : () => _enqueue(picked, _area, _audio),
             child: Text(t.offlineDownload),
           ),
           if (full)
@@ -272,7 +359,9 @@ class _OfflineScreenState extends State<OfflineScreen> {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                t.offlineQueued(_queue.map((Airport a) => a.iata).join(', ')),
+                t.offlineQueued(
+                  _queue.map((_Job j) => j.airport.iata).join(', '),
+                ),
                 style: const TextStyle(color: NomadColors.textMuted),
               ),
             ),
@@ -287,9 +376,10 @@ class _OfflineScreenState extends State<OfflineScreen> {
               pack: pack,
               fresh: pack.iata == _justDone,
               busy: _busy != null,
+              offline: _online == false,
               onUpdate: () {
                 final Airport? a = _airportOf(pack.iata);
-                if (a != null) _enqueue(a);
+                if (a != null) _enqueue(a, pack.area, pack.withAudio);
               },
               onDelete: () => unawaited(_confirmForget(t, pack)),
             ),
@@ -305,6 +395,141 @@ class _OfflineScreenState extends State<OfflineScreen> {
           Text(
             t.offlineUsed(sizeLabel(_services.offlineCities.totalBytes)),
             style: text.bodyMedium?.copyWith(color: NomadColors.textMuted),
+          ),
+          if (_cities.isNotEmpty) ...<Widget>[
+            const SizedBox(height: 8),
+            _SpaceBar(cities: _cities),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+String _areaName(AppLocalizations t, OfflineArea a) => switch (a) {
+  OfflineArea.center => t.offlineAreaCenter,
+  OfflineArea.city => t.offlineAreaCity,
+  OfflineArea.around => t.offlineAreaAround,
+};
+
+/// Una ciudad en la cola, con lo que elegiste para ella.
+class _Job {
+  const _Job(this.airport, this.area, this.audio);
+
+  final Airport airport;
+  final OfflineArea area;
+  final bool audio;
+}
+
+/// Los colores de cada ciudad en la barra de espacio (como la maqueta).
+const List<Color> _spaceColors = <Color>[
+  Color(0xFF3DDC97),
+  Color(0xFF6CA8FF),
+  Color(0xFFFFB86B),
+  Color(0xFFB69CFF),
+  Color(0xFFFF8FB1),
+  Color(0xFF7FE8E0),
+];
+
+/// Lo que ocupa cada ciudad: una barra con un trozo de color por ciudad.
+class _SpaceBar extends StatelessWidget {
+  const _SpaceBar({required this.cities});
+
+  final List<CityPack> cities;
+
+  @override
+  Widget build(BuildContext context) {
+    final int total = cities.fold(0, (int a, CityPack c) => a + c.bytes);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: SizedBox(
+            height: 12,
+            child: Row(
+              children: <Widget>[
+                for (int i = 0; i < cities.length; i++)
+                  Expanded(
+                    // Al menos un poquito, para que se vea aunque pese poco.
+                    flex: total == 0
+                        ? 1
+                        : (cities[i].bytes * 1000 ~/ total).clamp(20, 1000),
+                    child: ColoredBox(
+                      color: _spaceColors[i % _spaceColors.length],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 12,
+          runSpacing: 4,
+          children: <Widget>[
+            for (int i = 0; i < cities.length; i++)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: _spaceColors[i % _spaceColors.length],
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${cities[i].city} ${sizeLabel(cities[i].bytes)}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Sin internet ahora mismo (como "Modo avión" en la maqueta).
+class _NoNet extends StatelessWidget {
+  const _NoNet({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          colors: <Color>[Color(0xFF2A2140), Color(0xFF141E25)],
+        ),
+        border: Border.all(color: const Color(0xFF4A3D73)),
+      ),
+      child: Row(
+        children: <Widget>[
+          const Text('✈️', style: TextStyle(fontSize: 26)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  t.offlineNoNetTitle,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                Text(
+                  t.offlineNoNetWorks(count),
+                  style: const TextStyle(color: NomadColors.textMuted),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -426,9 +651,13 @@ class _CityCard extends StatelessWidget {
     required this.busy,
     required this.onUpdate,
     required this.onDelete,
+    this.offline = false,
   });
 
   final CityPack pack;
+
+  /// Ahora no hay internet: se dice que esta ciudad sigue funcionando.
+  final bool offline;
 
   /// Acaba de terminar: entra con un "estallido" y un check verde.
   final bool fresh;
@@ -479,6 +708,23 @@ class _CityCard extends StatelessWidget {
               ),
               style: const TextStyle(color: NomadColors.textMuted),
             ),
+            Text(
+              '${_areaName(t, pack.area)} · ${t.offlineKm(pack.area.km)}',
+              style: const TextStyle(color: NomadColors.textMuted),
+            ),
+            if (!pack.withAudio)
+              Text(
+                t.offlineTextOnly,
+                style: const TextStyle(color: NomadColors.textMuted),
+              ),
+            if (offline && !pack.mapFailed)
+              Text(
+                t.offlineWorksOffline,
+                style: const TextStyle(
+                  color: NomadColors.mint,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             if (pack.mapFailed)
               Text(
                 t.offlineMapMissing,

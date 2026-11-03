@@ -131,9 +131,6 @@ class CityDownloader {
   /// para un centro histórico y no se dispara el tamaño.
   static const int maxZones = 40;
 
-  /// El trozo de mapa alrededor del centro: unos 12 km de lado.
-  static const double citySpanDeg = 0.11;
-
   /// Descarga la ciudad [iata] (centrada en [center]) en [language].
   ///
   /// [onProgress] se llama a cada paso para mover la barra. Lanza
@@ -146,6 +143,8 @@ class CityDownloader {
     required bool wifiOnly,
     required void Function(DownloadProgress) onProgress,
     bool Function()? stopped,
+    OfflineArea area = OfflineArea.city,
+    bool withAudio = true,
   }) async {
     // Entre paso y paso se mira si has tocado "Parar descarga".
     void check() {
@@ -164,10 +163,10 @@ class CityDownloader {
     }
     final String code = iata.toUpperCase();
     final GeoBox box = GeoBox(
-      minLon: center.lon - citySpanDeg,
-      minLat: center.lat - citySpanDeg,
-      maxLon: center.lon + citySpanDeg,
-      maxLat: center.lat + citySpanDeg,
+      minLon: center.lon - area.halfDeg,
+      minLat: center.lat - area.halfDeg,
+      maxLon: center.lon + area.halfDeg,
+      maxLat: center.lat + area.halfDeg,
     );
 
     // 1. Las zonas (los barrios con audioguía).
@@ -208,14 +207,16 @@ class CityDownloader {
     }
 
     // 3. Los audios (.opus) en la carpeta de la ciudad.
-    final List<PackZone> withAudio = <PackZone>[];
-    for (int i = 0; i < saved.length; i++) {
+    final List<PackZone> voiced = <PackZone>[];
+    // Sin voces (lo elegiste tú): las audioguías se quedan con su texto.
+    for (int i = 0; i < saved.length && withAudio; i++) {
       check();
       onProgress(
         DownloadProgress(DownloadStep.audio, done: i, total: saved.length),
       );
-      withAudio.add(await _withAudio(code, saved[i], language));
+      voiced.add(await _withAudio(code, saved[i], language));
     }
+    if (!withAudio) voiced.addAll(saved);
 
     check();
     // 4. El mapa. Si falla, la ciudad se guarda igual (con el aviso): las
@@ -244,10 +245,12 @@ class CityDownloader {
       iata: code,
       city: city,
       language: language,
-      zones: withAudio,
+      zones: voiced,
       tileBytes: tiles,
       savedAt: DateTime.now(),
       mapFailed: mapFailed,
+      area: area,
+      withAudio: withAudio,
     );
     await cities.save(pack);
     return pack;
