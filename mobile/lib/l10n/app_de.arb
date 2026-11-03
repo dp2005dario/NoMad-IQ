@@ -61,6 +61,8 @@
   "homePassOnlyPass": "Pass hinzugefügt · tippe für den Ausweis",
   "homePassOnlyId": "Ausweis hinzugefügt · tippe für den Pass",
   "homePassSemantics": "Mein Reisepass, tippe, um deine Dokumente zu scannen",
+  "homePassAddPhoto": "Foto hinzufügen",
+  "homePassPhoto": "Dein Foto, tippe zum Ändern",
   "scanStep1": "Foto 1 von 2 · Reisepass",
   "scanStep2": "Foto 2 von 2 · Ausweis",
   "scanHint1": "Bring die Datenseite des Passes in den Rahmen",

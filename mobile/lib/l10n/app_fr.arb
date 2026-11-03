@@ -61,6 +61,8 @@
   "homePassOnlyPass": "Passeport ajouté · touche pour ajouter la carte",
   "homePassOnlyId": "Carte ajoutée · touche pour ajouter le passeport",
   "homePassSemantics": "Mon passeport, touche pour scanner tes documents",
+  "homePassAddPhoto": "Ajouter une photo",
+  "homePassPhoto": "Ta photo, touche pour la changer",
   "scanStep1": "Photo 1 sur 2 · Passeport",
   "scanStep2": "Photo 2 sur 2 · Carte d’identité",
   "scanHint1": "Place la page de données du passeport dans le cadre",

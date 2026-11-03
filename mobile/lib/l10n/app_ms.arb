@@ -61,6 +61,8 @@
   "homePassOnlyPass": "Pasport ditambah · ketik untuk kad",
   "homePassOnlyId": "Kad ditambah · ketik untuk pasport",
   "homePassSemantics": "Pasport saya, ketik untuk imbas dokumen",
+  "homePassAddPhoto": "Tambah foto",
+  "homePassPhoto": "Foto anda, ketik untuk tukar",
   "scanStep1": "Foto 1 daripada 2 · Pasport",
   "scanStep2": "Foto 2 daripada 2 · Kad pengenalan",
   "scanHint1": "Muatkan halaman data pasport dalam bingkai",

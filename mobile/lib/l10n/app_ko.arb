@@ -61,6 +61,8 @@
   "homePassOnlyPass": "여권 추가됨 · 탭해서 신분증 추가",
   "homePassOnlyId": "신분증 추가됨 · 탭해서 여권 추가",
   "homePassSemantics": "내 여권, 탭해서 서류 스캔",
+  "homePassAddPhoto": "사진 추가",
+  "homePassPhoto": "내 사진, 탭해서 바꾸기",
   "scanStep1": "사진 1/2 · 여권",
   "scanStep2": "사진 2/2 · 신분증",
   "scanHint1": "여권 정보면을 틀 안에 맞추세요",

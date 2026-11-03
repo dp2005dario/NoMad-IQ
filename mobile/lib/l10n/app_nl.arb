@@ -61,6 +61,8 @@
   "homePassOnlyPass": "Paspoort toegevoegd · tik voor je ID-kaart",
   "homePassOnlyId": "ID-kaart toegevoegd · tik voor je paspoort",
   "homePassSemantics": "Mijn paspoort, tik om je documenten te scannen",
+  "homePassAddPhoto": "Foto toevoegen",
+  "homePassPhoto": "Je foto, tik om te wijzigen",
   "scanStep1": "Foto 1 van 2 · Paspoort",
   "scanStep2": "Foto 2 van 2 · ID-kaart",
   "scanHint1": "Plaats de gegevenspagina van je paspoort in het kader",

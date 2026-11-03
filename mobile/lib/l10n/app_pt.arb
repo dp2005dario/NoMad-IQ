@@ -61,6 +61,8 @@
   "homePassOnlyPass": "Passaporte adicionado · toca para o cartão",
   "homePassOnlyId": "Cartão adicionado · toca para o passaporte",
   "homePassSemantics": "O meu passaporte, toca para digitalizar os documentos",
+  "homePassAddPhoto": "Adicionar foto",
+  "homePassPhoto": "A tua foto, toca para a mudar",
   "scanStep1": "Foto 1 de 2 · Passaporte",
   "scanStep2": "Foto 2 de 2 · Cartão",
   "scanHint1": "Encaixa a página de dados do passaporte na moldura",

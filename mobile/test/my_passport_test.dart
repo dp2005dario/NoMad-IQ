@@ -122,6 +122,8 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Sin añadir · escanea tu pasaporte'), findsOneWidget);
+    // Sin foto de perfil: el hueco invita a ponerla (no un icono de persona).
+    expect(find.text('Añadir foto'), findsOneWidget);
     await tester.tap(find.text('Toca para escanear pasaporte y DNI'));
     await tester.pumpAndSettle();
     expect(find.text('Foto 1 de 2 · Pasaporte'), findsOneWidget);

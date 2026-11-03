@@ -61,6 +61,8 @@
   "homePassOnlyPass": "Pașaport adăugat · atinge pentru buletin",
   "homePassOnlyId": "Buletin adăugat · atinge pentru pașaport",
   "homePassSemantics": "Pașaportul meu, atinge ca să scanezi documentele",
+  "homePassAddPhoto": "Adaugă poză",
+  "homePassPhoto": "Poza ta, atinge ca s-o schimbi",
   "scanStep1": "Poza 1 din 2 · Pașaport",
   "scanStep2": "Poza 2 din 2 · Buletin",
   "scanHint1": "Încadrează pagina de date a pașaportului",

@@ -61,6 +61,8 @@
   "homePassOnlyPass": "Dodano paszport · dotknij, aby dodać dowód",
   "homePassOnlyId": "Dodano dowód · dotknij, aby dodać paszport",
   "homePassSemantics": "Mój paszport, dotknij, aby zeskanować dokumenty",
+  "homePassAddPhoto": "Dodaj zdjęcie",
+  "homePassPhoto": "Twoje zdjęcie, dotknij, aby zmienić",
   "scanStep1": "Zdjęcie 1 z 2 · Paszport",
   "scanStep2": "Zdjęcie 2 z 2 · Dowód",
   "scanHint1": "Umieść stronę danych paszportu w ramce",

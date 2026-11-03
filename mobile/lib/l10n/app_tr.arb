@@ -61,6 +61,8 @@
   "homePassOnlyPass": "Pasaport eklendi · kimlik için dokun",
   "homePassOnlyId": "Kimlik eklendi · pasaport için dokun",
   "homePassSemantics": "Pasaportum, belgelerini taramak için dokun",
+  "homePassAddPhoto": "Fotoğraf ekle",
+  "homePassPhoto": "Fotoğrafın, değiştirmek için dokun",
   "scanStep1": "Fotoğraf 1/2 · Pasaport",
   "scanStep2": "Fotoğraf 2/2 · Kimlik",
   "scanHint1": "Pasaportun bilgi sayfasını çerçeveye sığdır",

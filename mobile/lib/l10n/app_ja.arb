@@ -61,6 +61,8 @@
   "homePassOnlyPass": "パスポート追加済み · タップで身分証を追加",
   "homePassOnlyId": "身分証追加済み · タップでパスポートを追加",
   "homePassSemantics": "私のパスポート、タップで書類をスキャン",
+  "homePassAddPhoto": "写真を追加",
+  "homePassPhoto": "あなたの写真、タップで変更",
   "scanStep1": "写真 1/2 · パスポート",
   "scanStep2": "写真 2/2 · 身分証",
   "scanHint1": "パスポートの顔写真ページを枠に合わせて",

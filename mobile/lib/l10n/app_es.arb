@@ -61,6 +61,8 @@
   "homePassOnlyPass": "Pasaporte añadido · toca para añadir el DNI",
   "homePassOnlyId": "DNI añadido · toca para añadir el pasaporte",
   "homePassSemantics": "Mi pasaporte, toca para escanear tus documentos",
+  "homePassAddPhoto": "Añadir foto",
+  "homePassPhoto": "Tu foto, toca para cambiarla",
   "scanStep1": "Foto 1 de 2 · Pasaporte",
   "scanStep2": "Foto 2 de 2 · DNI",
   "scanHint1": "Encaja la página de datos del pasaporte dentro del marco",

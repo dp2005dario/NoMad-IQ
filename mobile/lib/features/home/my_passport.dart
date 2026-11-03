@@ -10,16 +10,23 @@
 //
 // Qué se guarda (solo en este móvil, LocalData.myDocs): nombre, apellidos,
 // nacionalidad y fechas. De los números, solo las 3 últimas cifras
-// ("••••••916"): el número entero no se guarda nunca. La foto tampoco.
+// ("••••••916"): el número entero no se guarda nunca. La foto de la tarjeta
+// es tu foto de perfil (cámara o galería), no la del documento.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+
+import '../../auth/session.dart';
 
 import '../../core/services.dart';
 import '../../core/settings.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../widgets/user_avatar.dart' show isTrustedPhotoUrl;
+import '../settings/profile_photo.dart';
 import '../sos/sos_store.dart';
 import '../vault/doc_source.dart';
 import '../visa/mrz.dart';
@@ -279,24 +286,8 @@ class _HomePassportState extends State<HomePassport>
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    // Sin foto: la del pasaporte no se guarda.
-                    Container(
-                      width: 84,
-                      height: 108,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF26324F),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: const Color(0x30FFFFFF),
-                          width: 2,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.person_rounded,
-                        size: 54,
-                        color: Color(0xFF7D8FB3),
-                      ),
-                    ),
+                    // Tu foto (la misma que la de perfil). Tocar = cambiarla.
+                    const _Photo(),
                     const SizedBox(width: 16),
                     Expanded(
                       child: _Fields(fields: fields, empty: t.homePassEmpty),
@@ -393,6 +384,116 @@ class _Fields extends StatelessWidget {
       },
     );
   }
+}
+
+/// La foto del pasaporte: TU foto de perfil (la que haces o eliges de la
+/// galería, guardada solo en el móvil) o, si no hay, la de tu cuenta de
+/// Google. Sin ninguna, un hueco "Añadir foto". Al tocarla se elige: hacer
+/// una foto o sacarla de la galería (cambia también la de Ajustes).
+class _Photo extends StatelessWidget {
+  const _Photo();
+
+  Future<void> _choose(BuildContext context) async {
+    final ProfilePhotoController photo = ProfilePhotoController.instance;
+    await showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      showDragHandle: true,
+      builder: (BuildContext sheet) {
+        final AppLocalizations t = AppLocalizations.of(sheet);
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.photo_camera_rounded),
+                title: Text(t.profilePhotoTake),
+                onTap: () {
+                  Navigator.pop(sheet);
+                  unawaited(photo.pick(ImageSource.camera));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_rounded),
+                title: Text(t.profilePhotoGallery),
+                onTap: () {
+                  Navigator.pop(sheet);
+                  unawaited(photo.pick(ImageSource.gallery));
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final String? google = SessionScope.read(context).user?.photoUrl;
+    return Semantics(
+      button: true,
+      label: t.homePassPhoto,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: () => _choose(context),
+        child: ListenableBuilder(
+          listenable: ProfilePhotoController.instance,
+          builder: (BuildContext context, Widget? _) {
+            final String? file =
+                ProfilePhotoController.instance.choice.filePath;
+            Widget? image;
+            if (file != null) {
+              image = Image.file(
+                File(file),
+                fit: BoxFit.cover,
+                errorBuilder: (_, Object e, StackTrace? s) => _empty(t),
+              );
+            } else if (isTrustedPhotoUrl(google)) {
+              image = Image.network(
+                google!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, Object e, StackTrace? s) => _empty(t),
+              );
+            }
+            return Container(
+              width: 84,
+              height: 108,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: const Color(0xFF26324F),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0x30FFFFFF), width: 2),
+              ),
+              child: image ?? _empty(t),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Sin foto: un hueco que invita a ponerla.
+  Widget _empty(AppLocalizations t) => Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: <Widget>[
+      const Icon(Icons.add_a_photo_rounded, size: 26, color: Color(0xFF8FF0C3)),
+      const SizedBox(height: 6),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Text(
+          t.homePassAddPhoto,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Color(0xFF8FF0C3),
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    ],
+  );
 }
 
 /// La franja verde de abajo ("Toca para escanear pasaporte y DNI").

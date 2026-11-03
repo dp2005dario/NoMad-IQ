@@ -61,6 +61,8 @@
   "homePassOnlyPass": "已添加护照 · 点按添加身份证",
   "homePassOnlyId": "已添加身份证 · 点按添加护照",
   "homePassSemantics": "我的护照，点按扫描证件",
+  "homePassAddPhoto": "添加照片",
+  "homePassPhoto": "你的照片，点按更换",
   "scanStep1": "照片 1/2 · 护照",
   "scanStep2": "照片 2/2 · 身份证",
   "scanHint1": "将护照资料页对准框内",

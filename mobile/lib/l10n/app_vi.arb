@@ -61,6 +61,8 @@
   "homePassOnlyPass": "Đã thêm hộ chiếu · chạm để thêm CCCD",
   "homePassOnlyId": "Đã thêm CCCD · chạm để thêm hộ chiếu",
   "homePassSemantics": "Hộ chiếu của tôi, chạm để quét giấy tờ",
+  "homePassAddPhoto": "Thêm ảnh",
+  "homePassPhoto": "Ảnh của bạn, chạm để đổi",
   "scanStep1": "Ảnh 1/2 · Hộ chiếu",
   "scanStep2": "Ảnh 2/2 · CCCD",
   "scanHint1": "Đặt trang thông tin hộ chiếu vào trong khung",

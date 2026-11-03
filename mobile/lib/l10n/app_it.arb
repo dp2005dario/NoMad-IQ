@@ -61,6 +61,8 @@
   "homePassOnlyPass": "Passaporto aggiunto · tocca per la carta",
   "homePassOnlyId": "Carta aggiunta · tocca per il passaporto",
   "homePassSemantics": "Il mio passaporto, tocca per scansionare i documenti",
+  "homePassAddPhoto": "Aggiungi foto",
+  "homePassPhoto": "La tua foto, tocca per cambiarla",
   "scanStep1": "Foto 1 di 2 · Passaporto",
   "scanStep2": "Foto 2 di 2 · Carta d’identità",
   "scanHint1": "Inquadra la pagina dati del passaporto nella cornice",

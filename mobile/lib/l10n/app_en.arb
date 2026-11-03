@@ -223,6 +223,14 @@
   "@homePassSemantics": {
     "description": "Screen reader label of the passport card"
   },
+  "homePassAddPhoto": "Add photo",
+  "@homePassAddPhoto": {
+    "description": "Passport card: empty photo slot"
+  },
+  "homePassPhoto": "Your photo, tap to change it",
+  "@homePassPhoto": {
+    "description": "Screen reader: passport card photo, tap to change"
+  },
   "scanStep1": "Photo 1 of 2 · Passport",
   "@scanStep1": {
     "description": "Document scanner: step 1 title"

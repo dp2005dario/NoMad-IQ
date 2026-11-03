@@ -61,6 +61,8 @@
   "homePassOnlyPass": "Paspor ditambahkan · ketuk untuk KTP",
   "homePassOnlyId": "KTP ditambahkan · ketuk untuk paspor",
   "homePassSemantics": "Paspor saya, ketuk untuk memindai dokumen",
+  "homePassAddPhoto": "Tambah foto",
+  "homePassPhoto": "Fotomu, ketuk untuk mengganti",
   "scanStep1": "Foto 1 dari 2 · Paspor",
   "scanStep2": "Foto 2 dari 2 · KTP",
   "scanHint1": "Paskan halaman data paspor di dalam bingkai",
