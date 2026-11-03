@@ -151,6 +151,146 @@
   "@homeSosMore": {
     "description": "Home SOS: manage contacts"
   },
+  "homePassEyebrow": "Your documents",
+  "@homePassEyebrow": {
+    "description": "Home passport section eyebrow"
+  },
+  "homePassTitle": "My passport",
+  "@homePassTitle": {
+    "description": "Home passport section title"
+  },
+  "homePassHead": "Passport",
+  "@homePassHead": {
+    "description": "Passport card header (local word · Passport)"
+  },
+  "homePassSurname": "Surname",
+  "@homePassSurname": {
+    "description": "Passport field: surnames"
+  },
+  "homePassName": "Given names",
+  "@homePassName": {
+    "description": "Passport field: given names"
+  },
+  "homePassNationality": "Nationality",
+  "@homePassNationality": {
+    "description": "Passport field: nationality"
+  },
+  "homePassNumber": "Passport no.",
+  "@homePassNumber": {
+    "description": "Passport field: passport number"
+  },
+  "homePassExpires": "Expires",
+  "@homePassExpires": {
+    "description": "Passport field: expiry date"
+  },
+  "homePassId": "ID card",
+  "@homePassId": {
+    "description": "Passport card field: national ID number (DNI)"
+  },
+  "homePassBirth": "Date of birth",
+  "@homePassBirth": {
+    "description": "Passport field: date of birth"
+  },
+  "homePassIdValid": "ID valid until",
+  "@homePassIdValid": {
+    "description": "Passport card field: ID card valid until"
+  },
+  "homePassEmpty": "Not added",
+  "@homePassEmpty": {
+    "description": "Passport card: field not added yet"
+  },
+  "homePassMrzEmpty": "Not added · scan your passport",
+  "@homePassMrzEmpty": {
+    "description": "Passport card: machine-readable line when empty"
+  },
+  "homePassCta": "Tap to scan your passport and ID card",
+  "@homePassCta": {
+    "description": "Passport card: call to action"
+  },
+  "homePassBoth": "Passport and ID card added",
+  "@homePassBoth": {
+    "description": "Passport card: both documents added"
+  },
+  "homePassOnlyPass": "Passport added · tap to add your ID card",
+  "@homePassOnlyPass": {
+    "description": "Passport card: only passport added"
+  },
+  "homePassOnlyId": "ID card added · tap to add your passport",
+  "@homePassOnlyId": {
+    "description": "Passport card: only ID card added"
+  },
+  "homePassSemantics": "My passport, tap to scan your documents",
+  "@homePassSemantics": {
+    "description": "Screen reader label of the passport card"
+  },
+  "scanStep1": "Photo 1 of 2 · Passport",
+  "@scanStep1": {
+    "description": "Document scanner: step 1 title"
+  },
+  "scanStep2": "Photo 2 of 2 · ID card",
+  "@scanStep2": {
+    "description": "Document scanner: step 2 title"
+  },
+  "scanHint1": "Fit the passport’s data page inside the frame",
+  "@scanHint1": {
+    "description": "Document scanner: passport hint"
+  },
+  "scanHint2": "Now the ID card: the back, with the <<< lines, inside the frame",
+  "@scanHint2": {
+    "description": "Document scanner: ID card hint (back side with <<< lines)"
+  },
+  "scanReading": "Reading {name}…",
+  "@scanReading": {
+    "description": "Document scanner: reading {name}",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Passport"
+      }
+    }
+  },
+  "scanRead": "{name} read",
+  "@scanRead": {
+    "description": "Document scanner: {name} read OK",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Passport"
+      }
+    }
+  },
+  "scanFailed": "I couldn’t read the <<< lines. Try with more light and no glare.",
+  "@scanFailed": {
+    "description": "Document scanner: could not read MRZ"
+  },
+  "scanSkip": "Not now",
+  "@scanSkip": {
+    "description": "Document scanner: skip this step"
+  },
+  "scanDoneTitle": "Documents added",
+  "@scanDoneTitle": {
+    "description": "Document scanner: summary title"
+  },
+  "scanDone": "Done",
+  "@scanDone": {
+    "description": "Document scanner: done button"
+  },
+  "scanShutter": "Take photo",
+  "@scanShutter": {
+    "description": "Document scanner: take photo button"
+  },
+  "scanClose": "Close",
+  "@scanClose": {
+    "description": "Document scanner: close"
+  },
+  "scanPassportName": "Passport",
+  "@scanPassportName": {
+    "description": "Document name: passport"
+  },
+  "scanIdName": "ID card",
+  "@scanIdName": {
+    "description": "Document name: national ID card"
+  },
   "homeTitleHotels": "Hotels",
   "@homeTitleHotels": {
     "description": "Home tile title: Hotels"

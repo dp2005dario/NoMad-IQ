@@ -7,8 +7,9 @@
 //      y una caja para escribirle.
 //   3. "Todo en ECLIPTA": un carrusel infinito de cuadrados con foto que se
 //      inclinan en 3D al deslizar (el del centro, grande y nítido).
-//   4. El SOS: un cuarto de acero que hay que mantener pulsado 2 s.
-//   5. Atajos que aún no están en el carrusel (cromos, sellos...).
+//   4. "Mi pasaporte": se rellena escaneando pasaporte y DNI.
+//   5. El SOS: un cuarto de acero que hay que mantener pulsado 2 s.
+//   6. Atajos que aún no están en el carrusel (cromos, sellos...).
 //
 // Animaciones: duran un rato y se paran (no gastan batería sin fin) y con
 // "reducir movimiento" del móvil no hay ninguna.
@@ -20,6 +21,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/router.dart';
 import 'home_sos.dart';
+import 'my_passport.dart';
 import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -90,8 +92,33 @@ class HomeScreen extends StatelessWidget {
             ),
             const _Carousel(),
             const SizedBox(height: 28),
+            // "Mi pasaporte": se rellena escaneando pasaporte y DNI.
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Text(
+                    t.homePassEyebrow.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.3,
+                      color: NomadColors.textMuted,
+                    ),
+                  ),
+                  Text(t.homePassTitle, style: text.titleLarge),
+                  const SizedBox(height: 12),
+                  const HomePassport(),
+                ],
+              ),
+            ),
+            const SizedBox(height: 36),
             // El SOS de la maqueta: un cuarto de acero; mantener 2 s.
-            const HomeSos(),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: HomeSos(),
+            ),
             const SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),

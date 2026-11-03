@@ -155,3 +155,93 @@ MrzData? _pair(String l1, String l2, DateTime now) {
     sex: sex == 'M' || sex == 'F' ? sex : null,
   );
 }
+
+/// Busca la MRZ de un DNI o tarjeta de identidad (formato TD1: 3 líneas de
+/// 30, en la cara de ATRÁS). Devuelve los mismos datos que el pasaporte;
+/// [MrzData.number] es el número personal si viene (en el DNI español, el
+/// "12345678Z") y si no, el número del documento. null si no aparece o si
+/// los dígitos de control no cuadran.
+MrzData? parseIdMrz(Iterable<String> pages, {DateTime? now}) {
+  final DateTime today = now ?? DateTime.now();
+  final List<String> lines = <String>[
+    for (final String page in pages)
+      for (final String l in page.split('\n'))
+        if (_clean(l).length >= 28) _clean(l),
+  ];
+  for (int i = 0; i + 2 < lines.length; i++) {
+    final MrzData? d = _triple(lines[i], lines[i + 1], lines[i + 2], today);
+    if (d != null) return d;
+  }
+  return null;
+}
+
+MrzData? _triple(String a, String b, String c, DateTime now) {
+  // Línea 1: I + tipo + país(3) + número del documento(9) + control +
+  // datos opcionales (15).
+  if (!RegExp('^[IAC]').hasMatch(a)) return null;
+  final String l1 = a.padRight(30, '<').substring(0, 30);
+  final String l2 = b.padRight(30, '<').substring(0, 30);
+  final String l3 = c.padRight(30, '<').substring(0, 30);
+
+  String doc = l1.substring(5, 14);
+  if (!_checks(doc, l1[14])) {
+    doc = _digits(doc);
+    if (!_checks(doc, _digits(l1[14]))) return null;
+  }
+  // Línea 2: nacimiento(6) control sexo caducidad(6) control nacionalidad(3)
+  final String birthRaw = _digits(l2.substring(0, 6));
+  final String expiryRaw = _digits(l2.substring(8, 14));
+  if (!_checks(birthRaw, _digits(l2[6])) ||
+      !_checks(expiryRaw, _digits(l2[14]))) {
+    return null;
+  }
+  final DateTime? birth = _date(birthRaw, future: false, now: now);
+  final DateTime? expiry = _date(expiryRaw, future: true, now: now);
+  if (birth == null || expiry == null) return null;
+
+  String code(String s) => s.replaceAll('<', '').replaceAll('0', 'O');
+  final String nationality = code(l2.substring(15, 18));
+  final String issuer = code(l1.substring(2, 5));
+  if (!RegExp(r'^[A-Z]{1,3}$').hasMatch(issuer)) return null;
+
+  // Línea 3: APELLIDO<APELLIDO2<<NOMBRE<<<<
+  final String names = l3
+      .replaceFirst(RegExp(r'<+$'), '')
+      .replaceFirst(RegExp(r'K{3,}[<K]*$'), '')
+      .replaceFirst(RegExp(r'<+$'), '');
+  final List<String> parts = names.split('<<');
+  String words(String s) =>
+      s.split('<').where((String w) => w.isNotEmpty).join(' ');
+  final String surname = words(parts.first);
+  final String given = parts.length > 1
+      ? words(parts.sublist(1).join('<'))
+      : '';
+  if (surname.isEmpty || RegExp(r'\d').hasMatch(surname + given)) return null;
+
+  // El número personal (DNI español: 8 cifras y una letra) va en los datos
+  // opcionales de la línea 1.
+  final String optional = l1.substring(15).replaceAll('<', '');
+  final RegExpMatch? personal = RegExp(r'\d{8}[A-Z]')
+      .firstMatch(_fixDniDigits(optional));
+
+  final String sex = l2[7];
+  return MrzData(
+    surname: surname,
+    givenNames: given,
+    number: personal?[0] ?? doc.replaceAll('<', ''),
+    nationality: RegExp(r'^[A-Z]{1,3}$').hasMatch(nationality)
+        ? nationality
+        : issuer,
+    issuer: issuer,
+    birth: birth,
+    expiry: expiry,
+    sex: sex == 'M' || sex == 'F' ? sex : null,
+  );
+}
+
+/// En "1234567BZ" el OCR puede leer O por 0 en las cifras: se arreglan las
+/// 8 primeras y se deja la letra final como está.
+String _fixDniDigits(String s) {
+  if (s.length < 9) return s;
+  return _digits(s.substring(0, 8)) + s.substring(8);
+}
