@@ -8,8 +8,9 @@
 //   3. "Todo en ECLIPTA": un carrusel infinito de cuadrados con foto que se
 //      inclinan en 3D al deslizar (el del centro, grande y nítido).
 //   4. "Mi pasaporte": se rellena escaneando pasaporte y DNI.
-//   5. El SOS: un cuarto de acero que hay que mantener pulsado 2 s.
-//   6. Atajos que aún no están en el carrusel (cromos, sellos...).
+//   5. "Mi álbum de cromos": un libro que se abre y pasa páginas.
+//   6. El SOS: un cuarto de acero que hay que mantener pulsado 2 s.
+//   7. Atajos que aún no están en el carrusel (cromos, sellos...).
 //
 // Animaciones: duran un rato y se paran (no gastan batería sin fin) y con
 // "reducir movimiento" del móvil no hay ninguna.
@@ -20,6 +21,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router.dart';
+import 'home_album.dart';
 import 'home_sos.dart';
 import 'my_passport.dart';
 import '../../core/services.dart';
@@ -110,6 +112,28 @@ class HomeScreen extends StatelessWidget {
                   Text(t.homePassTitle, style: text.titleLarge),
                   const SizedBox(height: 12),
                   const HomePassport(),
+                ],
+              ),
+            ),
+            const SizedBox(height: 36),
+            // "Mi álbum de cromos": los sellos de los monumentos.
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Text(
+                    t.homeAlbumEyebrow.toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.3,
+                      color: NomadColors.textMuted,
+                    ),
+                  ),
+                  Text(t.homeAlbumTitle, style: text.titleLarge),
+                  const SizedBox(height: 12),
+                  const HomeAlbum(),
                 ],
               ),
             ),

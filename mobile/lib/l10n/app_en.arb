@@ -291,6 +291,70 @@
   "@scanIdName": {
     "description": "Document name: national ID card"
   },
+  "homeAlbumEyebrow": "Collection",
+  "@homeAlbumEyebrow": {
+    "description": "Home album eyebrow"
+  },
+  "homeAlbumTitle": "My card album",
+  "@homeAlbumTitle": {
+    "description": "Home album title"
+  },
+  "homeAlbumCover": "CARDS",
+  "@homeAlbumCover": {
+    "description": "Album cover word (short, uppercase)"
+  },
+  "homeAlbumOpen": "Tap to open",
+  "@homeAlbumOpen": {
+    "description": "Album cover hint"
+  },
+  "homeAlbumOpenSem": "Open card album",
+  "@homeAlbumOpenSem": {
+    "description": "Screen reader: open album"
+  },
+  "homeAlbumPages": "Pages {a}–{b} of {n}",
+  "@homeAlbumPages": {
+    "description": "Album open: pages {a}-{b} of {n}",
+    "placeholders": {
+      "a": {
+        "type": "int"
+      },
+      "b": {
+        "type": "int"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "homeAlbumClose": "Close book",
+  "@homeAlbumClose": {
+    "description": "Album: close book button"
+  },
+  "homeAlbumSwipe": "Swipe to turn the page",
+  "@homeAlbumSwipe": {
+    "description": "Album: swipe hint"
+  },
+  "homeAlbumTap": "{count, plural, =1{Tap the book to open it · 1 card} other{Tap the book to open it · {count} cards}}",
+  "@homeAlbumTap": {
+    "description": "Album closed: hint with number of cards",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeAlbumPrev": "Previous page",
+  "@homeAlbumPrev": {
+    "description": "Album: previous page"
+  },
+  "homeAlbumNext": "Next page",
+  "@homeAlbumNext": {
+    "description": "Album: next page"
+  },
+  "homeAlbumHowTo": "Get cards by taking photos of monuments with the camera",
+  "@homeAlbumHowTo": {
+    "description": "Album empty: how to get cards"
+  },
   "homeTitleHotels": "Hotels",
   "@homeTitleHotels": {
     "description": "Home tile title: Hotels"
