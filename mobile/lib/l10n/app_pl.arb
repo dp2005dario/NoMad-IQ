@@ -1383,6 +1383,7 @@
   "assistantDownloadFailed": "Nie udało się pobrać. Połącz się z wifi i spróbuj ponownie.",
   "assistantNeedModels": "Najpierw pobierz języki (powyżej).",
   "assistantDidntHear": "Nie usłyszałam cię. Spróbuj ponownie lub wpisz.",
+  "assistantDetected": "Flyra wykryła język: {lang}. Tłumaczę z tego języka.",
   "assistantType": "Wpisz",
   "assistantTranslate": "Przetłumacz",
   "assistantSpeak": "Mów",

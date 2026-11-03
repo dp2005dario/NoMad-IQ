@@ -1383,6 +1383,7 @@
   "assistantDownloadFailed": "ดาวน์โหลดไม่สำเร็จ เชื่อมต่อ wifi แล้วลองอีกครั้ง",
   "assistantNeedModels": "ดาวน์โหลดภาษาก่อน (ด้านบน)",
   "assistantDidntHear": "ฉันไม่ได้ยิน ลองอีกครั้งหรือพิมพ์",
+  "assistantDetected": "Flyra ตรวจพบภาษา {lang} จะแปลจากภาษานั้น",
   "assistantType": "พิมพ์",
   "assistantTranslate": "แปล",
   "assistantSpeak": "พูด",

@@ -1383,6 +1383,7 @@
   "assistantDownloadFailed": "Không tải được. Hãy kết nối wifi và thử lại.",
   "assistantNeedModels": "Hãy tải ngôn ngữ trước (ở trên).",
   "assistantDidntHear": "Tôi không nghe rõ. Hãy thử lại hoặc gõ chữ.",
+  "assistantDetected": "Flyra nhận ra {lang}: mình dịch từ ngôn ngữ đó.",
   "assistantType": "Gõ",
   "assistantTranslate": "Dịch",
   "assistantSpeak": "Nói",

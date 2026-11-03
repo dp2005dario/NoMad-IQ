@@ -1383,6 +1383,7 @@
   "assistantDownloadFailed": "ダウンロードできませんでした。Wi-Fi に接続して再度お試しください。",
   "assistantNeedModels": "先に言語をダウンロードしてください(上)。",
   "assistantDidntHear": "聞き取れませんでした。もう一度話すか入力してください。",
+  "assistantDetected": "Flyraが{lang}を検出しました。その言語から翻訳します。",
   "assistantType": "入力",
   "assistantTranslate": "翻訳",
   "assistantSpeak": "話す",

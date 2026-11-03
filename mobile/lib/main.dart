@@ -100,6 +100,7 @@ Future<void> main() async {
     speaker: DeviceSpeaker(),
     translator: MlKitTranslator(),
     speechInput: DeviceSpeechInput(),
+    languageGuesser: MlKitLanguageGuesser(),
     receipts: DeviceReceiptScanner(),
     docSource: DeviceDocSource(),
     docReader: const DeviceDocTextReader(),
