@@ -8,11 +8,42 @@ import 'package:http/http.dart' as http;
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/assistant/interpreter.dart';
+import 'package:eclipta/features/camera/speaker.dart';
 import 'package:eclipta/features/flyra/flyra_api.dart';
 
 import 'helpers.dart';
 
 const String chatPath = '/v1/flyra/chat';
+
+/// Una voz de mentira: apunta lo que "lee" y en qué idioma.
+class SaidSpeaker implements Speaker {
+  final List<String> said = <String>[];
+
+  @override
+  Future<void> speak(String text, String language) async =>
+      said.add('$language:$text');
+
+  @override
+  Future<void> stop() async {}
+}
+
+/// Un micro de mentira que "oye" siempre la misma frase.
+class OneMic implements SpeechInput {
+  OneMic(this.phrase);
+
+  final String phrase;
+  final List<String> langs = <String>[];
+
+  @override
+  Future<String?> listen(String lang) async {
+    langs.add(lang);
+    return phrase;
+  }
+
+  @override
+  Future<void> stop() async {}
+}
 
 /// Un ai-orchestrator falso para Flyra: apunta lo que recibe.
 class FlyraBackend {
@@ -40,6 +71,8 @@ Future<FlyraBackend> pumpFlyra(
   FlyraBackend? backend,
   MemorySettingsStore? prefs,
   bool guest = false,
+  Speaker? speaker,
+  SpeechInput? speechInput,
 }) async {
   tester.view.physicalSize = const Size(1200, 3000);
   tester.view.devicePixelRatio = 3;
@@ -53,7 +86,13 @@ Future<FlyraBackend> pumpFlyra(
     locale: 'es',
     session: s,
     initialLocation: Routes.flyra(),
-    services: fakeServices(s, gateway: b.g, prefs: prefs),
+    services: fakeServices(
+      s,
+      gateway: b.g,
+      prefs: prefs,
+      speaker: speaker,
+      speechInput: speechInput,
+    ),
   );
   return b;
 }
@@ -115,6 +154,52 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('pastel de nata'), findsNothing);
     expect(prefs.flyraChat, isNull);
+  });
+
+  testWidgets('dictar con el micro, ver a Flyra teclear y escucharla', (
+    WidgetTester tester,
+  ) async {
+    final SaidSpeaker voice = SaidSpeaker();
+    final OneMic mic = OneMic('¿Qué veo en Lisboa?');
+    final FlyraBackend b = await pumpFlyra(
+      tester,
+      speaker: voice,
+      speechInput: mic,
+    );
+
+    // El micro escribe en la caja lo oído (no lo envía solo).
+    await tester.tap(find.byTooltip('Hablar'));
+    await tester.pumpAndSettle();
+    expect(mic.langs, <String>['es']);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      '¿Qué veo en Lisboa?',
+    );
+    expect(b.sent, isEmpty);
+
+    await tester.tap(find.byTooltip('Enviar'));
+    // Al poco de llegar, la respuesta aún se está "tecleando"...
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(
+      find.text('En Lisboa: Alfama, Belém y un pastel de nata.'),
+      findsNothing,
+    );
+    // ...y al acabar se ve entera.
+    await tester.pumpAndSettle();
+    expect(
+      find.text('En Lisboa: Alfama, Belém y un pastel de nata.'),
+      findsOneWidget,
+    );
+
+    // El altavoz de su bocadillo la lee en el idioma de la app. El primero
+    // es el saludo; el último, su respuesta.
+    await tester.tap(find.byTooltip('Escuchar').last);
+    await tester.pump();
+    expect(voice.said, <String>[
+      'es:En Lisboa: Alfama, Belém y un pastel de nata.',
+    ]);
   });
 
   testWidgets('una sugerencia se envía al tocarla', (
