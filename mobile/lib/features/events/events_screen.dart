@@ -32,6 +32,10 @@ import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
 import '../easy/easy_mode.dart';
+import '../map/geo.dart';
+import '../map/map_style.dart';
+import '../map/map_surface.dart';
+import '../stays/pick_point_screen.dart';
 import '../flights/flights_screen.dart' show showOriginSheet;
 import '../group/group_api.dart';
 import '../plans/plans_api.dart';
@@ -104,6 +108,60 @@ class _EventsScreenState extends State<EventsScreen> {
   late Set<String> _saved = <String>{
     ...?(_decode(_services.prefs.readData(LocalData.savedEvents))),
   };
+
+  /// Dónde está tu hotel en esta ciudad (lo marcas tú en el mapa).
+  late GeoPoint? _hotel = _hotelFor(_iata);
+
+  /// El centro de unos eventos (para empezar el mapa ahí).
+  static GeoPoint _centerOf(List<CityEvent> pins) => GeoPoint(
+    pins.map((CityEvent e) => e.lat!).reduce((double a, double b) => a + b) /
+        pins.length,
+    pins.map((CityEvent e) => e.lon!).reduce((double a, double b) => a + b) /
+        pins.length,
+  );
+
+  /// El hotel guardado, solo si es de esta ciudad.
+  GeoPoint? _hotelFor(String? iata) {
+    final String? raw = _services.prefs.readData(LocalData.eventsHotel);
+    if (raw == null || iata == null) return null;
+    try {
+      final Object? v = jsonDecode(raw);
+      if (v is! Map<String, Object?> || v['iata'] != iata) return null;
+      final Object? lat = v['lat'];
+      final Object? lon = v['lon'];
+      if (lat is! num || lon is! num) return null;
+      return GeoPoint(lat.toDouble(), lon.toDouble());
+    } on FormatException {
+      return null;
+    }
+  }
+
+  /// Marcar el hotel en el mapa (con la diana) y guardarlo.
+  Future<void> _pickHotel(GeoPoint around) async {
+    final String? iata = _iata;
+    if (iata == null) return;
+    final GeoPoint? p = await Navigator.of(context).push<GeoPoint>(
+      MaterialPageRoute<GeoPoint>(
+        builder: (_) => PickPointScreen(initial: _hotel ?? around),
+      ),
+    );
+    if (p == null || !mounted) return;
+    await _services.prefs.writeData(
+      LocalData.eventsHotel,
+      jsonEncode(<String, Object?>{'iata': iata, 'lat': p.lat, 'lon': p.lon}),
+    );
+    if (mounted) setState(() => _hotel = p);
+  }
+
+  /// "A 12 min andando de tu hotel" (a 80 m por minuto) o, si está lejos,
+  /// "A 7,5 km de tu hotel".
+  String? _fromHotel(AppLocalizations t, CityEvent e, String locale) {
+    final GeoPoint? h = _hotel;
+    if (h == null || e.lat == null || e.lon == null) return null;
+    final double m = h.distanceTo(GeoPoint(e.lat!, e.lon!));
+    if (m <= 3000) return t.eventsWalkFromHotel(math.max(1, (m / 80).round()));
+    return t.eventsKmFromHotel(NumberFormat('0.#', locale).format(m / 1000));
+  }
 
   /// La zona horaria de la ciudad ("Europe/Lisbon"), para la cuenta atrás.
   tz.Location? _zone;
@@ -182,7 +240,7 @@ class _EventsScreenState extends State<EventsScreen> {
   Future<void> _pickCity() async {
     final String? code = await showOriginSheet(context, current: _iata ?? '');
     if (code == null || !mounted) return;
-    setState(() => (_iata = code, _zone = null));
+    setState(() => (_iata = code, _zone = null, _hotel = _hotelFor(code)));
     await _load();
   }
 
@@ -535,6 +593,7 @@ class _EventsScreenState extends State<EventsScreen> {
                 saved: _saved.contains(e.id),
                 planned: _planned.contains(e.id),
                 start: _startOf(e),
+                fromHotel: _fromHotel(t, e, locale),
                 onSave: () => unawaited(_toggleSave(e)),
                 onPlans: e.kind == EventKind.holiday
                     ? null
@@ -555,11 +614,24 @@ class _EventsScreenState extends State<EventsScreen> {
               _PinMap(
                 events: pins,
                 selected: _pin,
+                hotel: _hotel,
                 onPick: (CityEvent e) => setState(
                   () => (
                     _pin = _pin == e.id ? null : e.id,
                     _day = null,
                     _cat = null,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Tu hotel: para saber qué te queda cerca.
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton.icon(
+                  onPressed: () => unawaited(_pickHotel(_centerOf(pins))),
+                  icon: const Icon(Icons.hotel_rounded),
+                  label: Text(
+                    _hotel == null ? t.eventsSetHotel : t.eventsChangeHotel,
                   ),
                 ),
               ),
@@ -838,112 +910,143 @@ class _DayChip extends StatelessWidget {
   );
 }
 
-/// "Dónde pasan": los pines en su posición real (latitud y longitud de
-/// Ticketmaster), colocados unos respecto a otros. Toca uno para ver solo
-/// su evento.
-class _PinMap extends StatelessWidget {
+/// "Dónde pasan": el mapa de verdad (OpenStreetMap, el mismo de la pantalla
+/// Mapa) con un punto de color por evento y uno blanco para tu hotel. Toca
+/// un punto para ver solo su evento.
+class _PinMap extends StatefulWidget {
   const _PinMap({
     required this.events,
     required this.selected,
+    required this.hotel,
     required this.onPick,
   });
 
   final List<CityEvent> events;
   final String? selected;
+  final GeoPoint? hotel;
   final ValueChanged<CityEvent> onPick;
 
   @override
+  State<_PinMap> createState() => _PinMapState();
+}
+
+class _PinMapState extends State<_PinMap> {
+  late final AppServices _services = ServicesScope.of(context);
+  MapSurfaceController? _map;
+  Map<String, Object?>? _style;
+
+  static String _hex(Color c) =>
+      '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
+
+  @override
+  void didUpdateWidget(_PinMap old) {
+    super.didUpdateWidget(old);
+    if (old.selected != widget.selected ||
+        old.hotel != widget.hotel ||
+        old.events != widget.events) {
+      unawaited(_draw());
+    }
+  }
+
+  /// Los puntos (GeoJSON): los eventos con su color y el hotel en blanco.
+  Future<void> _draw() async {
+    final MapSurfaceController? map = _map;
+    if (map == null) return;
+    final GeoPoint? h = widget.hotel;
+    await map.showPins(<String, Object?>{
+      'type': 'FeatureCollection',
+      'features': <Object?>[
+        for (final CityEvent e in widget.events)
+          <String, Object?>{
+            'type': 'Feature',
+            'id': e.id,
+            'geometry': <String, Object?>{
+              'type': 'Point',
+              'coordinates': <double>[e.lon!, e.lat!],
+            },
+            'properties': <String, Object?>{
+              'color': _hex(eventColor(e.kind)),
+              'selected': e.id == widget.selected,
+            },
+          },
+        if (h != null)
+          <String, Object?>{
+            'type': 'Feature',
+            'id': 'hotel',
+            'geometry': <String, Object?>{
+              'type': 'Point',
+              'coordinates': <double>[h.lon, h.lat],
+            },
+            'properties': <String, Object?>{
+              'color': '#ffffff',
+              'selected': false,
+            },
+          },
+      ],
+    });
+  }
+
+  /// Tocar el mapa: el evento más cercano al dedo (si está cerca).
+  void _tap(GeoPoint p) {
+    CityEvent? best;
+    double bestM = double.infinity;
+    for (final CityEvent e in widget.events) {
+      final double m = p.distanceTo(GeoPoint(e.lat!, e.lon!));
+      if (m < bestM) (best, bestM) = (e, m);
+    }
+    // Más lejos de 600 m no cuenta como tocar ese punto.
+    if (best != null && bestM <= 600) widget.onPick(best);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final List<CityEvent> ev = widget.events;
     double minLat = 90, maxLat = -90, minLon = 180, maxLon = -180;
-    for (final CityEvent e in events) {
+    for (final CityEvent e in ev) {
       minLat = math.min(minLat, e.lat!);
       maxLat = math.max(maxLat, e.lat!);
       minLon = math.min(minLon, e.lon!);
       maxLon = math.max(maxLon, e.lon!);
     }
-    final double dLat = math.max(maxLat - minLat, 0.0005);
-    final double dLon = math.max(maxLon - minLon, 0.0005);
+    // El zum para que quepan todos: cada nivel ve la mitad que el anterior.
+    final double span = math.max(
+      math.max(maxLat - minLat, maxLon - minLon),
+      0.005,
+    );
+    final double zoom = (math.log(360 / span) / math.ln2 - 1.2).clamp(9, 15);
+    _style ??= buildMapStyle(
+      look: resolveLook(MapLook.auto, DateTime.now()),
+      language: Localizations.localeOf(context).languageCode,
+      tilesUrl: _services.tilesUrl,
+      glyphsUrl: _services.glyphsUrl,
+    );
     return AspectRatio(
       aspectRatio: 1.4,
-      child: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints box) {
-          const double pad = 28;
-          final double w = box.maxWidth - pad * 2;
-          final double h = box.maxHeight - pad * 2;
-          return Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              color: const Color(0xFF101A21),
-              border: Border.all(color: NomadColors.outline),
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: NomadColors.outline),
+        ),
+        child: _services.mapSurface(
+          MapSurfaceSpec(
+            style: _style!,
+            initialCenter: GeoPoint(
+              (minLat + maxLat) / 2,
+              (minLon + maxLon) / 2,
             ),
-            child: Stack(
-              children: <Widget>[
-                Positioned.fill(child: CustomPaint(painter: const _Grid())),
-                for (final CityEvent e in events)
-                  Positioned(
-                    left: pad + (e.lon! - minLon) / dLon * w - 19,
-                    // El norte arriba: más latitud = más arriba.
-                    top: pad + (maxLat - e.lat!) / dLat * h - 19,
-                    child: Tooltip(
-                      message: e.name,
-                      child: GestureDetector(
-                        onTap: () => onPick(e),
-                        child: AnimatedScale(
-                          scale: selected == e.id ? 1.25 : 1,
-                          duration: const Duration(milliseconds: 200),
-                          child: Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: eventColor(e.kind),
-                              border: Border.all(color: Colors.white, width: 3),
-                              boxShadow: const <BoxShadow>[
-                                BoxShadow(
-                                  color: Color(0x73000000),
-                                  blurRadius: 10,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Icon(
-                              eventIcon(e.kind),
-                              size: 18,
-                              color: const Color(0xFF0B1217),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          );
-        },
+            initialZoom: zoom,
+            onReady: (MapSurfaceController c) {
+              _map = c;
+              unawaited(_draw());
+            },
+            onIdle: () {},
+            onTap: _tap,
+          ),
+        ),
       ),
     );
   }
-}
-
-/// Las líneas de fondo del mapa (como el estilo de Cajeros).
-class _Grid extends CustomPainter {
-  const _Grid();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint line = Paint()
-      ..color = const Color(0xFF1C2A33)
-      ..strokeWidth = 1;
-    for (double x = 0; x < size.width; x += 28) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), line);
-    }
-    for (double y = 0; y < size.height; y += 28) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), line);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_Grid old) => false;
 }
 
 class _Tip extends StatelessWidget {
@@ -988,7 +1091,11 @@ class _EventCard extends StatelessWidget {
     required this.onSave,
     required this.onPlans,
     required this.onOpen,
+    this.fromHotel,
   });
+
+  /// "A 12 min andando de tu hotel" (null = sin hotel o sin sitio).
+  final String? fromHotel;
 
   final CityEvent event;
   final bool saved;
@@ -1158,6 +1265,14 @@ class _EventCard extends StatelessWidget {
                         when,
                         style: const TextStyle(color: NomadColors.textMuted),
                       ),
+                      if (fromHotel case final String h)
+                        Text(
+                          '🏨 $h',
+                          style: const TextStyle(
+                            color: NomadColors.mint,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       if (e.kind == EventKind.holiday)
                         Text(
                           e.regional

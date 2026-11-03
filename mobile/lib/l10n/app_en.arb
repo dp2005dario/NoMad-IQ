@@ -8189,6 +8189,32 @@
   "@eventsVoteLink": {
     "description": "Events: link to group voting"
   },
+  "eventsWalkFromHotel": "{minutes, plural, =1{1 min walk from your hotel} other{{minutes} min walk from your hotel}}",
+  "@eventsWalkFromHotel": {
+    "description": "Events card: walking minutes from your hotel",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "eventsKmFromHotel": "{km} km from your hotel",
+  "@eventsKmFromHotel": {
+    "description": "Events card: distance in km from your hotel",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "eventsSetHotel": "Mark your hotel to see what's nearby",
+  "@eventsSetHotel": {
+    "description": "Events map: button to mark your hotel on the map"
+  },
+  "eventsChangeHotel": "Change where your hotel is",
+  "@eventsChangeHotel": {
+    "description": "Events map: button to change the marked hotel"
+  },
   "eventsSavedToast": "Saved. Flyra will remind you the day before and 2 hours before.",
   "@eventsSavedToast": {
     "description": "Events: after saving with the heart"

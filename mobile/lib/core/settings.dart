@@ -74,6 +74,9 @@ enum LocalData {
   /// Qué pasa en tus fechas: los eventos que guardaste (con la estrella).
   savedEvents,
 
+  /// Dónde está tu hotel en la ciudad de "Qué pasa" ({iata, lat, lon}).
+  eventsHotel,
+
   /// "Mi pasaporte" de Inicio: nombre, nacionalidad y fechas leídos del
   /// pasaporte y del DNI. De los números solo se guardan las 3 últimas
   /// cifras (el número entero nunca se guarda).

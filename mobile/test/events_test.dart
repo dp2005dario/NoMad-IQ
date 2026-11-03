@@ -8,6 +8,7 @@ import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/easy/easy_mode.dart';
 import 'package:eclipta/features/events/event_reminders.dart';
 import 'package:eclipta/features/events/events_api.dart';
+import 'package:eclipta/features/map/geo.dart';
 
 import 'helpers.dart';
 
@@ -142,5 +143,61 @@ void main() {
       find.text('Guardado. Flyra te avisa la víspera y 2 horas antes.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('mapa de verdad con los puntos y lo lejos que está tu hotel', (
+    WidgetTester tester,
+  ) async {
+    final Map<String, Object?> data = json();
+    final List<Object?> events = data['events']! as List<Object?>;
+    (events[1]! as Map<String, Object?>).addAll(<String, Object?>{
+      'lat': 38.768,
+      'lon': -9.094,
+    });
+    (events[2]! as Map<String, Object?>).addAll(<String, Object?>{
+      'lat': 38.7527,
+      'lon': -9.1847,
+    });
+    final FakeGateway g = FakeGateway()..publicPrefixes.add('/v1/events');
+    g.services['/v1/events'] = (http.Request r) => FakeGateway.json(data);
+    final MemorySettingsStore store = MemorySettingsStore('es');
+    // El hotel ya marcado en Lisboa.
+    const GeoPoint hotel = GeoPoint(38.76, -9.10);
+    await store.writeData(
+      LocalData.eventsHotel,
+      '{"iata":"LIS","lat":38.76,"lon":-9.1}',
+    );
+    final FakeMap map = FakeMap();
+    final session = newSession()..continueAsGuest();
+    tester.view.physicalSize = const Size(1200, 4000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.events(iata: 'LIS'),
+      services: fakeServices(session, gateway: g, prefs: store, map: map),
+    );
+    await tester.pumpAndSettle();
+
+    final int walk = (hotel.distanceTo(const GeoPoint(38.768, -9.094)) / 80)
+        .round();
+    expect(find.text('🏨 A $walk min andando de tu hotel'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Cambiar dónde está tu hotel'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    // Dos eventos y el hotel (en blanco).
+    final List<Object?> pins = map.pins!['features']! as List<Object?>;
+    expect(pins, hasLength(3));
+    expect((pins.last! as Map<String, Object?>)['id'], 'hotel');
+
+    // Tocar el mapa junto al estadio: solo ese evento.
+    map.spec!.onTap(const GeoPoint(38.7530, -9.1850));
+    await tester.pumpAndSettle();
+    expect(find.text('Benfica - Porto'), findsOneWidget);
+    expect(find.text('Concierto en el estadio'), findsNothing);
   });
 }
