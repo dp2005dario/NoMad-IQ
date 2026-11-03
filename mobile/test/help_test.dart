@@ -50,10 +50,10 @@ void main() {
     expect(find.text('Gestor de visados'), findsNothing);
     expect(find.text('Soporte de ECLIPTA'), findsNothing);
 
-    // La primera está abierta: lleva a Papeles.
-    await tester.tap(find.text('Ver mis derechos'));
+    // La primera está abierta: lleva a la Bóveda (billetes y reservas).
+    await tester.tap(find.text('Abrir la Bóveda'));
     await tester.pumpAndSettle();
-    expect(find.text('Papeles y derechos'), findsOneWidget);
+    expect(find.text('Bóveda'), findsWidgets);
   });
 
   testWidgets('con socios: avisan de la comisión y abren su web', (

@@ -1,12 +1,7 @@
 // Perfiles de familia: lo que se guarda, los consejos que salen de cada
-// persona y la pantalla entera (añadir, editar, borrar).
-import 'package:flutter/material.dart';
+// persona. (La pantalla ya no existe: los datos se guardan para borrarlos.)
 import 'package:flutter_test/flutter_test.dart';
-import 'package:eclipta/auth/session.dart';
-import 'package:eclipta/core/router.dart';
 import 'package:eclipta/features/family/family.dart';
-
-import 'helpers.dart';
 
 void main() {
   group('perfiles', () {
@@ -75,51 +70,5 @@ void main() {
     expect(store.raw, isNull);
     store.raw = 'basura';
     expect(await store.load(), isEmpty);
-  });
-
-  testWidgets('pantalla: añadir a la abuela y ver sus consejos', (
-    WidgetTester tester,
-  ) async {
-    final FakeGateway g = FakeGateway();
-    final SessionController session = await signedInSession(g);
-    final MemoryFamilyStore store = MemoryFamilyStore();
-    tester.view.physicalSize = const Size(1200, 3600);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
-    await pumpApp(
-      tester,
-      locale: 'es',
-      session: session,
-      initialLocation: Routes.family,
-      services: fakeServices(session, gateway: g, family: store),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Perfiles de familia'), findsOneWidget);
-
-    await tester.tap(find.text('Añadir persona'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.widgetWithText(TextField, 'Nombre'), 'Carmen');
-    await tester.enterText(find.widgetWithText(TextField, 'Edad'), '72');
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Alergias o comida (separadas por comas)'),
-      'gluten',
-    );
-    await tester.tap(find.widgetWithText(FilterChip, 'Camina poco'));
-    await tester.pumpAndSettle();
-    final Finder save = find.widgetWithText(FilledButton, 'Guardar');
-    await tester.ensureVisible(save);
-    await tester.tap(save);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Carmen · 72 años'), findsOneWidget);
-    expect(find.text('Alergia: gluten'), findsOneWidget);
-    expect(
-      find.text('Tranvía o taxi en las cuestas, y descansos a menudo.'),
-      findsOneWidget,
-    );
-    expect(find.text('Por Carmen'), findsWidgets);
-    final List<FamilyMember> saved = await store.load();
-    expect(saved.single.needs, <Need>{Need.walksLittle});
-    expect(saved.single.allergies, <String>['gluten']);
   });
 }

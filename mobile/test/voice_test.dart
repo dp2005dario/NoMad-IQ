@@ -60,12 +60,10 @@ void main() {
     }
   });
 
-  test('palabras enteras, problemas antes que el vuelo y SOS primero', () {
+  test('palabras enteras y SOS primero', () {
     expect(normalizeSpeech('¿Cuánto?'), '¿cuanto?');
     // "vol" no está dentro de "volver".
     expect(matchIntent('quiero volver', 'fr'), isNull);
-    expect(matchIntent('perdí el vuelo', 'es'), VoiceIntent.trouble);
-    expect(matchIntent('I missed my flight', 'en'), VoiceIntent.trouble);
     expect(matchIntent('ambulancia para el hotel', 'es'), VoiceIntent.sos);
     // Mezclar inglés también vale.
     expect(matchIntent('dónde hay wifi', 'es'), VoiceIntent.nearby);

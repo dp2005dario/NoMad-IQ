@@ -155,7 +155,8 @@ class PushNotice {
   String get route => switch (kind) {
     // El nombre de la zona no viaja en el aviso: la audioguía lo pide luego.
     PushKind.zoneAudioguide => Routes.audioguide(zoneId, ''),
-    PushKind.airportArrival => Routes.transport(),
+    // Al llegar al aeropuerto: la guía para moverte por dentro.
+    PushKind.airportArrival => Routes.airport(),
     PushKind.zoneSafety => Routes.map,
     // La lista de tus alertas de precio (con el botón de reservar).
     PushKind.fareAlert => Routes.fareAlerts,

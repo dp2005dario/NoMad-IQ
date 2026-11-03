@@ -502,7 +502,6 @@ class _PlanShortcuts extends StatelessWidget {
           Feature.flightRoute,
           Feature.explore,
           Feature.cheapSleep,
-          Feature.stopover,
           Feature.events,
           Feature.copyTrip,
         ])
@@ -513,7 +512,6 @@ class _PlanShortcuts extends StatelessWidget {
             onPressed: () => context.push(switch (f) {
               Feature.flightRoute => Routes.flightRoute(from: origin),
               Feature.explore => Routes.explore(origin: origin),
-              Feature.stopover => Routes.stopover(from: origin),
               Feature.copyTrip => Routes.copyTrip(),
               Feature.cheapSleep => Routes.stays(),
               Feature.events => Routes.events(),

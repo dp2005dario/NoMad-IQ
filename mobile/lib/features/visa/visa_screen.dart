@@ -26,7 +26,7 @@ import '../../core/settings.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../easy/easy_mode.dart';
-import '../papers/trip_check.dart' show entryPermits, passportMarginMonths;
+import '../trip/trip_check.dart' show entryPermits, passportMarginMonths;
 import '../passport/passport.dart' show flagOf;
 import '../route/flight3d.dart' show CountryCodes;
 import '../route/world_data.dart';

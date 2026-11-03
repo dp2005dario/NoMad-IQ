@@ -18,9 +18,7 @@ enum VoiceIntent {
   sos,
   nearby,
   translate,
-  meetups,
   drive,
-  trouble,
 }
 
 /// Quita tildes y mayúsculas: "Cuánto" y "cuanto" son lo mismo.
@@ -37,8 +35,7 @@ String normalizeSpeech(String text) {
 }
 
 /// Palabras clave por idioma (ya sin tildes). El orden de los intentos
-/// importa: el primero que encaje gana (SOS va primero, y los problemas
-/// antes que el vuelo).
+/// importa: el primero que encaje gana (SOS va primero).
 const Map<VoiceIntent, Map<String, List<String>>>
 _keywords = <VoiceIntent, Map<String, List<String>>>{
   VoiceIntent.sos: <String, List<String>>{
@@ -52,25 +49,6 @@ _keywords = <VoiceIntent, Map<String, List<String>>>{
     'zh': <String>['紧急', '救命', '救护车', '警察'],
     'ja': <String>['緊急', '助けて', '救急車', '警察'],
     'hi': <String>['आपातकाल', 'बचाओ', 'एम्बुलेंस', 'पुलिस'],
-  },
-  // Antes que "vuelo": "perdí el vuelo" es un problema, no la hora.
-  VoiceIntent.trouble: <String, List<String>>{
-    'es': <String>['maleta', 'equipaje', 'perdi el vuelo', 'escala'],
-    'en': <String>[
-      'suitcase',
-      'luggage',
-      'baggage',
-      'missed my flight',
-      'missed connection',
-    ],
-    'fr': <String>['valise', 'bagage', 'rate mon vol', 'correspondance'],
-    'de': <String>['koffer', 'gepack', 'flug verpasst', 'anschluss'],
-    'it': <String>['valigia', 'bagaglio', 'perso il volo', 'coincidenza'],
-    'pt': <String>['mala', 'bagagem', 'perdi o voo', 'ligacao'],
-    'ar': <String>['حقيبة', 'أمتعة'],
-    'zh': <String>['行李', '转机'],
-    'ja': <String>['荷物', 'スーツケース', '乗り継ぎ'],
-    'hi': <String>['सामान', 'बैग'],
   },
   VoiceIntent.flight: <String, List<String>>{
     'es': <String>['vuelo', 'avion', 'embarque', 'puerta de embarque'],
@@ -169,18 +147,6 @@ _keywords = <VoiceIntent, Map<String, List<String>>>{
     'zh': <String>['水', '厕所', '洗手间', '无线网'],
     'ja': <String>['水', 'トイレ', 'ワイファイ', '充電'],
     'hi': <String>['पानी', 'शौचालय', 'वाईफाई', 'चार्ज'],
-  },
-  VoiceIntent.meetups: <String, List<String>>{
-    'es': <String>['quedada', 'conocer gente', 'viajeros'],
-    'en': <String>['meetup', 'meet people', 'travellers', 'travelers'],
-    'fr': <String>['rencontre', 'voyageurs'],
-    'de': <String>['treffen', 'leute kennenlernen', 'reisende'],
-    'it': <String>['incontro', 'conoscere gente', 'viaggiatori'],
-    'pt': <String>['encontro', 'conhecer pessoas', 'viajantes'],
-    'ar': <String>['لقاء', 'مسافرين'],
-    'zh': <String>['聚会', '旅友'],
-    'ja': <String>['ミートアップ', '旅行者'],
-    'hi': <String>['मुलाकात', 'यात्री'],
   },
   VoiceIntent.drive: <String, List<String>>{
     'es': <String>['gasolina', 'gasolinera', 'aparcar', 'parking', 'ztl'],

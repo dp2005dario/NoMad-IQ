@@ -33,25 +33,18 @@ import '../features/cards/cards_screen.dart';
 import '../features/memories/memories_screen.dart';
 import '../features/memories/travel_camera_screen.dart';
 import '../features/airport/airport_screen.dart';
-import '../features/stopover/stopover_screen.dart';
 import '../features/widgets/widgets_screen.dart';
 import '../features/copy_trip/copy_trip_screen.dart';
 import '../features/copy_trip/share_trip_screen.dart';
-import '../features/family/family_screen.dart';
 import '../features/help/help_screen.dart';
 import '../features/nearby/nearby_screen.dart';
-import '../features/meetups/meetups_screen.dart';
 import '../features/drive/drive_screen.dart';
 import '../features/map/geo.dart';
 import '../features/events/events_screen.dart';
 import '../features/stays/stays_screen.dart';
-import '../features/queues/queues_screen.dart';
 import '../features/radar/radar_screen.dart';
-import '../features/transport/transport_screen.dart';
-import '../features/trouble/trouble_screen.dart';
 import '../features/assistant/assistant_screen.dart';
 import '../features/voice/voice_screen.dart';
-import '../features/papers/papers_screen.dart';
 import '../features/visa/visa_screen.dart';
 import '../features/travel_with/travel_with_screen.dart';
 import '../features/passport/passport_screen.dart';
@@ -78,7 +71,6 @@ abstract final class Routes {
   static const String vault = '/vault';
   static const String settings = '/settings';
   static const String sos = '/sos';
-  static const String papers = '/papers';
   static const String passport = '/passport';
   static const String notices = '/notices';
   static const String menu = '/menu';
@@ -86,7 +78,6 @@ abstract final class Routes {
   static const String offline = '/offline';
   static const String travelWith = '/travel-with';
   static const String help = '/help';
-  static const String family = '/family';
   static const String shareTrip = '/copy-trip/share';
   static const String cards = '/cards';
   static const String memories = '/memories';
@@ -94,7 +85,6 @@ abstract final class Routes {
   static const String widgets = '/widgets';
   static const String nearby = '/nearby';
   static const String drive = '/drive';
-  static const String trouble = '/trouble';
   static const String assistant = '/assistant';
   static const String voice = '/voice';
 
@@ -110,18 +100,6 @@ abstract final class Routes {
     },
   ).toString();
 
-  /// Moverte: del aeropuerto [iata] al hotel, bonos y billetes.
-  static String transport({String? iata}) => Uri(
-    path: '/transport',
-    queryParameters: iata == null ? null : <String, String>{'iata': iata},
-  ).toString();
-
-  /// Sin colas: esperas en los sitios famosos de [city] y mesas con reserva.
-  static String queues({String? city}) => Uri(
-    path: '/queues',
-    queryParameters: city == null ? null : <String, String>{'city': city},
-  ).toString();
-
   /// Radar local: lluvia real y avisos/precios de otros viajeros en [iata].
   static String radar({String? iata}) => Uri(
     path: '/radar',
@@ -132,10 +110,6 @@ abstract final class Routes {
   static String events({String? iata}) => Uri(
     path: '/events',
     queryParameters: iata == null ? null : <String, String>{'iata': iata},
-  ).toString();
-  static String meetups({String? city}) => Uri(
-    path: '/meetups',
-    queryParameters: <String, String>{'city': ?city},
   ).toString();
 
   /// "Copia este viaje"; con [code] abre directamente ese viaje.
@@ -191,12 +165,6 @@ abstract final class Routes {
   static String visa({String? to}) => Uri(
     path: '/visa',
     queryParameters: <String, String>{'to': ?to},
-  ).toString();
-
-  /// Escala de regalo: dónde parar unos días de camino a [to].
-  static String stopover({String? from, String? to}) => Uri(
-    path: '/stopover',
-    queryParameters: <String, String>{'from': ?from, 'to': ?to},
   ).toString();
 
   /// La Ruta del vuelo en el mapamundi (sin destino, se pregunta).
@@ -399,11 +367,6 @@ GoRouter buildRouter({
           const PrivacyScreen(),
     ),
     GoRoute(
-      path: Routes.papers,
-      builder: (BuildContext context, GoRouterState state) =>
-          const PapersScreen(),
-    ),
-    GoRoute(
       path: '/explore',
       builder: (BuildContext context, GoRouterState state) =>
           ExploreScreen(origin: state.uri.queryParameters['from'] ?? ''),
@@ -456,25 +419,9 @@ GoRouter buildRouter({
           const AssistantScreen(),
     ),
     GoRoute(
-      path: Routes.trouble,
-      builder: (BuildContext context, GoRouterState state) =>
-          const TroubleScreen(),
-    ),
-    GoRoute(
       path: Routes.drive,
       builder: (BuildContext context, GoRouterState state) =>
           const DriveScreen(),
-    ),
-    GoRoute(
-      path: '/queues',
-      builder: (BuildContext context, GoRouterState state) {
-        final String? city = state.uri.queryParameters['city'];
-        return QueuesScreen(
-          city: city != null && RegExp(r'^[A-Za-z]{3}$').hasMatch(city)
-              ? city.toUpperCase()
-              : null,
-        );
-      },
     ),
     GoRoute(
       path: '/radar',
@@ -483,17 +430,6 @@ GoRouter buildRouter({
         return RadarScreen(
           iata: iata != null && RegExp(r'^[A-Za-z]{3}$').hasMatch(iata)
               ? iata.toUpperCase()
-              : null,
-        );
-      },
-    ),
-    GoRoute(
-      path: '/transport',
-      builder: (BuildContext context, GoRouterState state) {
-        final String? iata = state.uri.queryParameters['iata'];
-        return TransportScreen(
-          iata: iata != null && RegExp(r'^[A-Za-z]{3}$').hasMatch(iata)
-              ? iata
               : null,
         );
       },
@@ -522,21 +458,9 @@ GoRouter buildRouter({
       },
     ),
     GoRoute(
-      path: '/meetups',
-      builder: (BuildContext context, GoRouterState state) =>
-          MeetupsScreen(city: state.uri.queryParameters['city']),
-    ),
-    GoRoute(
       path: '/visa',
       builder: (BuildContext context, GoRouterState state) =>
           VisaScreen(to: state.uri.queryParameters['to']),
-    ),
-    GoRoute(
-      path: '/stopover',
-      builder: (BuildContext context, GoRouterState state) => StopoverScreen(
-        from: state.uri.queryParameters['from'],
-        to: state.uri.queryParameters['to'],
-      ),
     ),
     GoRoute(
       path: Routes.widgets,
@@ -567,11 +491,6 @@ GoRouter buildRouter({
       path: Routes.shareTrip,
       builder: (BuildContext context, GoRouterState state) =>
           const ShareTripScreen(),
-    ),
-    GoRoute(
-      path: Routes.family,
-      builder: (BuildContext context, GoRouterState state) =>
-          const FamilyScreen(),
     ),
     GoRoute(
       path: Routes.travelWith,
