@@ -85,6 +85,7 @@ from ai_orchestrator.flyra.service import KEY_PREFIX as FLYRA_QUOTA_PREFIX
 from ai_orchestrator.flyra.service import FlyraService, FlyraSettings
 from ai_orchestrator.fx.ecb import EcbClient
 from ai_orchestrator.fx.service import FxService, RedisRatesCache
+from ai_orchestrator.geocode.api import NominatimGeocoder, geocode_router
 from ai_orchestrator.group_chat.api import chat_router
 from ai_orchestrator.group_chat.push import ChatPusher, PushThrottle
 from ai_orchestrator.group_chat.store import PostgresChat
@@ -825,6 +826,9 @@ async def run(settings: Settings) -> int:
                 checks["outbox_relay"] = relay.running
             return checks
 
+        # Buscar tu hotel (Nominatim): su propio cliente, con poco tiempo de espera.
+        geo_http = httpx.AsyncClient(timeout=httpx.Timeout(8.0, connect=5.0), follow_redirects=False)
+        stack.push_async_callback(geo_http.aclose)
         api = _server(
             create_api(
                 recommendations,
@@ -855,6 +859,7 @@ async def run(settings: Settings) -> int:
                 else None,
                 queues=queues_router(PostgresQueues(pool)) if settings.queues_enabled else None,
                 menu=menu,
+                geocode=geocode_router(NominatimGeocoder(geo_http)),
                 eraser=PostgresEraser(pool),
                 expose_docs=settings.expose_api_docs,
             ),

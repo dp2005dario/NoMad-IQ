@@ -267,6 +267,7 @@ def create_api(
     rain: RainService | None = None,
     radar: APIRouter | None = None,
     queues: APIRouter | None = None,
+    geocode: APIRouter | None = None,
     eraser: UserDataEraser | None = None,
     expose_docs: bool = False,
 ) -> FastAPI:
@@ -533,6 +534,10 @@ def create_api(
     if queues is not None:
         # Esperas que avisan los viajeros (/v1/queues) en queues/api.py.
         app.include_router(queues)
+
+    if geocode is not None:
+        # Buscar tu hotel en OpenStreetMap (solo con cuenta).
+        app.include_router(geocode)
 
     if city_events is not None:
 

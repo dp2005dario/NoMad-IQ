@@ -8290,6 +8290,50 @@
   "@eventsChangeHotel": {
     "description": "Events map: button to change the marked hotel"
   },
+  "eventsHotelTitle": "Where is your hotel?",
+  "@eventsHotelTitle": {
+    "description": "Sheet title: where is your hotel"
+  },
+  "eventsHotelSearchHint": "Hotel name or address",
+  "@eventsHotelSearchHint": {
+    "description": "Search field hint: hotel name or address"
+  },
+  "eventsHotelFromEasy": "From Easy mode",
+  "@eventsHotelFromEasy": {
+    "description": "Chip group label: hotel saved in Easy mode"
+  },
+  "eventsHotelFromVault": "Your bookings in the Vault",
+  "@eventsHotelFromVault": {
+    "description": "Chip group label: bookings saved in the Vault"
+  },
+  "eventsHotelOpenVault": "Look at my bookings in the Vault",
+  "@eventsHotelOpenVault": {
+    "description": "Button: unlock the Vault to look at your bookings"
+  },
+  "eventsHotelHonest": "We search the name you typed when you saved the booking; the app doesn't read the document. You pick the right result.",
+  "@eventsHotelHonest": {
+    "description": "Honest note: the app searches the name you typed, it does not read the document"
+  },
+  "eventsHotelNone": "Not found on OpenStreetMap. Try the address or mark it on the map.",
+  "@eventsHotelNone": {
+    "description": "Search found nothing"
+  },
+  "eventsHotelError": "Couldn't search right now. Try again in a moment.",
+  "@eventsHotelError": {
+    "description": "Search failed"
+  },
+  "eventsHotelGuest": "Searching by name needs an account. Without one, mark it on the map.",
+  "@eventsHotelGuest": {
+    "description": "Guest: name search needs an account"
+  },
+  "eventsHotelOnMap": "Mark it myself on the map",
+  "@eventsHotelOnMap": {
+    "description": "Button: mark the hotel on the map yourself"
+  },
+  "eventsHotelSource": "Search: OpenStreetMap (Nominatim)",
+  "@eventsHotelSource": {
+    "description": "Data source line for the search"
+  },
   "eventsSavedToast": "Saved. Flyra will remind you the day before and 2 hours before.",
   "@eventsSavedToast": {
     "description": "Events: after saving with the heart"
