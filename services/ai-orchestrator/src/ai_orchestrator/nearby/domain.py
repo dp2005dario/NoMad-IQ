@@ -13,7 +13,9 @@ __all__ = ["ATTRIBUTION", "CELL_DEGREES", "LICENSE_URL", "Nearby", "NearbySpot",
 # water: agua potable · toilets: baños · wifi: wifi gratis · charging: cargar
 # el móvil · sight: algo que ver (monumento, mirador, museo...) · table:
 # restaurante que según OSM acepta reservas (para "Colas": mesa para cenar).
-SpotKind = Literal["water", "toilets", "wifi", "charging", "sight", "table"]
+# Para "Viajo con mi perro": vet = veterinario · dog_park = parque para
+# perros · pet_stay = alojamiento que en OSM dice que admite perros.
+SpotKind = Literal["water", "toilets", "wifi", "charging", "sight", "table", "vet", "dog_park", "pet_stay"]
 
 
 class NearbySpot(BaseModel):

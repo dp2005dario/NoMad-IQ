@@ -1,7 +1,8 @@
 // "Cerca de ti": la app pregunta al ai-orchestrator
 //   GET /v1/nearby?lat=40.42&lon=-3.70
 // y él saca de OpenStreetMap (gratis) el agua potable, los baños, el wifi
-// gratis, dónde cargar el móvil y los sitios que ver, con una semana de caché.
+// gratis, dónde cargar el móvil, los sitios que ver y, para tu perro,
+// veterinarios, parques y hoteles que lo admiten, con una semana de caché.
 //
 // Igual que los cajeros: se manda el punto YA REDONDEADO a ~1 km. Las
 // distancias se calculan aquí, con tu posición de verdad.
@@ -16,11 +17,24 @@ enum NearbyKind {
   sight,
 
   /// Restaurante que, según OpenStreetMap, acepta reservas (para "Colas").
-  table;
+  table,
+
+  /// "Viajo con mi perro": veterinario, parque para perros y alojamiento
+  /// que en OpenStreetMap dice que admite perros.
+  vet,
+  dogPark,
+  petStay;
+
+  /// Cómo lo escribe el servidor ("dog_park" en vez de "dogPark").
+  String get wire => switch (this) {
+    NearbyKind.dogPark => 'dog_park',
+    NearbyKind.petStay => 'pet_stay',
+    _ => name,
+  };
 
   static NearbyKind? parse(Object? raw) {
     for (final NearbyKind k in values) {
-      if (k.name == raw) return k;
+      if (k.wire == raw) return k;
     }
     return null;
   }

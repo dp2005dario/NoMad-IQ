@@ -195,3 +195,63 @@ Turn turnFor(double relative) {
 
 /// Minutos andando (unos 75 m por minuto, con maleta y gente).
 int walkMinutes(double meters) => (meters / 75).ceil().clamp(1, 120);
+
+/// Lo que Flyra te dice abajo: un giro, seguir recto o que ya has llegado.
+enum Cue { straight, left, right, back, arrived }
+
+/// A menos de 15 m se da por llegado (el GPS dentro de un edificio no da
+/// para más precisión).
+Cue cueFor(double meters, double relative) => meters < 15
+    ? Cue.arrived
+    : switch (turnFor(relative)) {
+        Turn.straight => Cue.straight,
+        Turn.left => Cue.left,
+        Turn.right => Cue.right,
+        Turn.back => Cue.back,
+      };
+
+/// Decide CUÁNDO decir en voz alta (y vibrar) un giro. La brújula tiembla
+/// mucho: si Flyra hablara con cada temblor no pararía. Por eso:
+///   - la primera indicación se dice enseguida;
+///   - un cambio solo se dice si dura [steady] sin volver atrás;
+///   - entre dos avisos pasan al menos [gap] (salvo "ya has llegado").
+class TurnAnnouncer {
+  TurnAnnouncer({
+    this.steady = const Duration(milliseconds: 1200),
+    this.gap = const Duration(seconds: 3),
+  });
+
+  final Duration steady;
+  final Duration gap;
+
+  Cue? _said;
+  Cue? _pending;
+  DateTime? _since;
+  DateTime? _lastSaid;
+
+  /// Lo que hay que decir ahora, o null si toca callarse.
+  Cue? update(Cue cue, DateTime now) {
+    if (cue != _pending) {
+      _pending = cue;
+      _since = now;
+    }
+    if (cue == _said) return null;
+    final DateTime? last = _lastSaid;
+    if (last != null) {
+      if (now.difference(_since!) < steady) return null;
+      if (cue != Cue.arrived && now.difference(last) < gap) return null;
+    }
+    _said = cue;
+    _lastSaid = now;
+    return cue;
+  }
+
+  /// Al cambiar de destino se empieza de cero (la primera vuelve a ser
+  /// inmediata).
+  void reset() {
+    _said = null;
+    _pending = null;
+    _since = null;
+    _lastSaid = null;
+  }
+}

@@ -10,6 +10,13 @@
 //   - Reconocido / ¿Es este?: un punto sobre el monumento, la etiqueta
 //     arriba y la ficha abajo (Escuchar, sello, Wikipedia).
 //   - Nada: "No reconozco ningún lugar famoso aquí" y, si hay, otros cerca.
+//
+// Detección automática (maqueta 14): mientras apuntas, cada pocos segundos
+// la cámara mira sola SI tienes el móvil quieto. Si encuentra un monumento,
+// Flyra pregunta "¿Te pongo su audioguía?" con Aceptar / Cancelar (se cierra
+// sola a los 8 s). Aceptar abre la ficha y la lee en voz alta (la audioguía
+// de ese monumento). Cancelar no vuelve a preguntar por él. Para no gastar
+// los usos del día, como mucho [maxAutoScans] miradas solas por sesión.
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -24,6 +31,7 @@ import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../map/geo.dart';
 import '../map/location.dart';
+import '../../widgets/flyra_avatar.dart';
 import 'camera_device.dart';
 import 'landmarks_api.dart';
 import 'stamps.dart';
@@ -32,8 +40,21 @@ enum _Phase { starting, noAccess, noCamera, aiming, working, result }
 
 enum _Problem { outOfScans, busy, network, noLocation, off }
 
+/// Miradas automáticas como mucho cada vez que abres la cámara.
+const int maxAutoScans = 12;
+
 class CameraScreen extends StatefulWidget {
-  const CameraScreen({super.key});
+  const CameraScreen({
+    super.key,
+    this.autoEvery = const Duration(seconds: 8),
+    this.askFor = const Duration(seconds: 8),
+  });
+
+  /// Cada cuánto mira sola (null = nunca, solo con el botón).
+  final Duration? autoEvery;
+
+  /// Cuánto espera Flyra la respuesta antes de cerrar el aviso.
+  final Duration askFor;
 
   @override
   State<CameraScreen> createState() => _CameraScreenState();
@@ -54,6 +75,19 @@ class _CameraScreenState extends State<CameraScreen>
   Recognition? _result;
   Landmark? _shown;
   bool _speaking = false;
+
+  // Detección automática.
+  Timer? _autoTimer;
+  Timer? _askTimer;
+  int _autoScans = 0;
+  double? _lastAutoHeading;
+  double? _headingAtTick;
+
+  /// Lo que encontró la mirada automática y Flyra está preguntando.
+  Recognition? _offer;
+
+  /// Los que ya dijiste que no (no se vuelve a preguntar por ellos).
+  final Set<String> _declined = <String>{};
 
   // La cámara solo está encendida mientras ves esta pestaña y la app está
   // delante. Las pestañas siguen "vivas" al cambiar (para no perder lo que
@@ -103,6 +137,7 @@ class _CameraScreenState extends State<CameraScreen>
     await camera?.dispose();
     unawaited(_compass?.cancel());
     _compass = null;
+    _stopAuto();
     unawaited(_services.speaker.stop());
     if (mounted && _phase != _Phase.result) {
       setState(() => _phase = _Phase.starting);
@@ -113,6 +148,7 @@ class _CameraScreenState extends State<CameraScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _scan.dispose();
+    _stopAuto();
     unawaited(_compass?.cancel());
     unawaited(_camera?.dispose());
     unawaited(_services.speaker.stop());
@@ -147,6 +183,76 @@ class _CameraScreenState extends State<CameraScreen>
     _camera = camera;
     _compass = camera.heading().listen((double? h) => _heading = h);
     setState(() => _phase = _Phase.aiming);
+    _startAuto();
+  }
+
+  void _startAuto() {
+    final Duration? every = widget.autoEvery;
+    if (every == null || _autoTimer != null) return;
+    _autoTimer = Timer.periodic(every, (_) => _autoTick());
+  }
+
+  void _stopAuto() {
+    _autoTimer?.cancel();
+    _autoTimer = null;
+    _askTimer?.cancel();
+    _askTimer = null;
+  }
+
+  /// ¿Toca mirar sola? Solo apuntando, sin avisos pendientes, con el móvil
+  /// quieto (la brújula casi no se ha movido desde la vez anterior) y
+  /// mirando a otro sitio que la última vez.
+  void _autoTick() {
+    final double? h = _heading;
+    final double? before = _headingAtTick;
+    _headingAtTick = h;
+    if (!mounted ||
+        _phase != _Phase.aiming ||
+        _offer != null ||
+        _problem == _Problem.outOfScans ||
+        _problem == _Problem.off ||
+        _autoScans >= maxAutoScans) {
+      return;
+    }
+    bool near(double? a, double? b, double deg) =>
+        a == null || b == null || ((a - b + 540) % 360 - 180).abs() < deg;
+    final bool steady = before == null ? h == null : near(h, before, 12);
+    final bool sameView =
+        _lastAutoHeading != null && near(h, _lastAutoHeading, 20);
+    if (!steady || (sameView && _autoScans > 0)) return;
+    _autoScans++;
+    _lastAutoHeading = h;
+    unawaited(_recognize(auto: true));
+  }
+
+  /// Flyra pregunta por [found] (un monumento que la cámara vio sola).
+  void _ask(Recognition found) {
+    setState(() => _offer = found);
+    _askTimer?.cancel();
+    _askTimer = Timer(widget.askFor, () => _answer(accept: false));
+  }
+
+  void _answer({required bool accept}) {
+    _askTimer?.cancel();
+    _askTimer = null;
+    final Recognition? found = _offer;
+    final Landmark? l = found?.landmark;
+    if (!mounted || found == null || l == null) return;
+    if (!accept) {
+      setState(() {
+        _declined.add(l.qid);
+        _offer = null;
+      });
+      return;
+    }
+    setState(() {
+      _offer = null;
+      _result = found;
+      _shown = l;
+      _phase = _Phase.result;
+    });
+    // La audioguía del monumento: su ficha leída en voz alta.
+    unawaited(_listen(l));
   }
 
   /// Una posición del GPS (pide permiso si hace falta). null = no hay.
@@ -164,9 +270,14 @@ class _CameraScreenState extends State<CameraScreen>
     }
   }
 
-  Future<void> _recognize() async {
+  Future<void> _recognize({bool auto = false}) async {
     final CameraDevice? camera = _camera;
     if (camera == null || _phase == _Phase.working) return;
+    if (!auto) {
+      // Si tocas el botón, el aviso de Flyra sobra.
+      _askTimer?.cancel();
+      _offer = null;
+    }
     final String language = Localizations.localeOf(context).languageCode;
     setState(() {
       _phase = _Phase.working;
@@ -183,7 +294,8 @@ class _CameraScreenState extends State<CameraScreen>
     if (fix == null) {
       setState(() {
         _phase = _Phase.aiming;
-        _problem = _Problem.noLocation;
+        // Mirando sola no se avisa de nada: ya lo dirá el botón.
+        if (!auto) _problem = _Problem.noLocation;
       });
       return;
     }
@@ -197,6 +309,13 @@ class _CameraScreenState extends State<CameraScreen>
         jpeg: jpeg,
       );
       if (!mounted) return;
+      if (auto) {
+        // Mirando sola: solo se dice algo si hay un monumento nuevo.
+        setState(() => _phase = _Phase.aiming);
+        final Landmark? l = found.landmark;
+        if (l != null && !_declined.contains(l.qid)) _ask(found);
+        return;
+      }
       setState(() {
         _result = found;
         _shown = found.landmark;
@@ -206,6 +325,8 @@ class _CameraScreenState extends State<CameraScreen>
       if (!mounted) return;
       setState(() {
         _phase = _Phase.aiming;
+        // Mirando sola, un fallo de red pasajero no se enseña.
+        if (auto && e.error != ApiError.rateLimited) return;
         _problem = switch (e.error) {
           ApiError.rateLimited => _Problem.outOfScans,
           ApiError.network => _Problem.network,
@@ -430,6 +551,20 @@ class _CameraScreenState extends State<CameraScreen>
                           onOpen: (Uri url) => _services.openBooking(url),
                         ),
                 ),
+                if (_offer?.landmark case final Landmark l)
+                  Positioned(
+                    left: 16,
+                    right: 16,
+                    bottom: 150,
+                    child: _FlyraAsk(
+                      title: t.cameraAutoTitle,
+                      body: t.cameraAutoAsk(l.name),
+                      yes: t.cameraAutoYes,
+                      no: t.cameraAutoNo,
+                      onYes: () => _answer(accept: true),
+                      onNo: () => _answer(accept: false),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -929,6 +1064,85 @@ class _Fact extends StatelessWidget {
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
         ),
       ],
+    ),
+  );
+}
+
+/// El aviso de Flyra cuando la cámara ve un monumento sola: entra desde
+/// abajo con un pequeño rebote y tiene Aceptar / Cancelar.
+class _FlyraAsk extends StatelessWidget {
+  const _FlyraAsk({
+    required this.title,
+    required this.body,
+    required this.yes,
+    required this.no,
+    required this.onYes,
+    required this.onNo,
+  });
+
+  final String title;
+  final String body;
+  final String yes;
+  final String no;
+  final VoidCallback onYes;
+  final VoidCallback onNo;
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: Tween<double>(begin: 0, end: 1),
+    duration: MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 450),
+    curve: Curves.easeOutBack,
+    builder: (BuildContext context, double v, Widget? child) => Opacity(
+      opacity: v.clamp(0, 1),
+      child: Transform.translate(offset: Offset(0, 40 * (1 - v)), child: child),
+    ),
+    child: Semantics(
+      liveRegion: true,
+      container: true,
+      child: Material(
+        color: NomadColors.surfaceHigh,
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  const FlyraAvatar(size: 36),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        color: NomadColors.mint,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(body),
+              const SizedBox(height: 8),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: TextButton(onPressed: onNo, child: Text(no)),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton(onPressed: onYes, child: Text(yes)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     ),
   );
 }

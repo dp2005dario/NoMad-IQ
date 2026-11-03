@@ -46,6 +46,9 @@ enum LocalData {
   /// Lo que ya tienes listo para viajar con tu mascota (chip, vacuna...).
   petChecks,
 
+  /// "Viajo con mi perro": su nombre y dónde está su foto (solo en el móvil).
+  dogProfile,
+
   /// "1" = la app se abre en Modo fácil (letras grandes, solo lo importante).
   easyMode,
 

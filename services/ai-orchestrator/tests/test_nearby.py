@@ -84,6 +84,21 @@ def test_parse_spot_kinds() -> None:
     assert parse_spot(node(5, historic="castle", name="Castillo", wikidata="nope")) is None
 
 
+def test_query_and_parse_dog_kinds() -> None:
+    q = build_query(40.4, -3.71, 40.43, -3.69)
+    for tag in ("veterinary", "dog_park", '["dog"~"^(yes|leashed)$"]'):
+        assert tag in q
+    vet = parse_spot(node(11, amenity="veterinary", name="Clínica", phone="+34 911 22 33 44"))
+    assert vet is not None and vet.kind == "vet" and vet.phone == "+34 911 22 33 44"
+    park = parse_spot(node(12, leisure="dog_park"))
+    assert park is not None and park.kind == "dog_park"
+    hotel = parse_spot(node(13, tourism="hotel", dog="yes", name="Hotel Can", website="https://can.es"))
+    assert hotel is not None and hotel.kind == "pet_stay" and hotel.website == "https://can.es"
+    # Sin nombre o sin permitir perros: fuera.
+    assert parse_spot(node(14, tourism="hotel", dog="yes")) is None
+    assert parse_spot(node(15, tourism="hotel", dog="no", name="Sin perros")) is None
+
+
 def test_parse_restaurant_with_reservation() -> None:
     table = parse_spot(
         node(

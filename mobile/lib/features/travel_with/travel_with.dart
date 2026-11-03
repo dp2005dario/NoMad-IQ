@@ -1,38 +1,10 @@
-// "Viajo con…" (maqueta "ViajoCon"): las normas para viajar con tu mascota o
-// estando embarazada. Aquí solo están las cuentas (sin pantalla): son reglas
-// generales que usan casi todas las aerolíneas europeas, y la pantalla
-// siempre dice que cada aerolínea tiene las suyas.
+// "Viajo con mi perro" (maqueta 49 "ViajoCon"): las normas para viajar con
+// tu perro. Aquí solo están las cuentas y lo que se guarda (sin pantalla):
+// son reglas generales que usan casi todas las aerolíneas europeas, y la
+// pantalla siempre dice que cada aerolínea tiene las suyas.
 import 'dart:convert';
 
 import '../../core/settings.dart';
-
-// --- Embarazo ----------------------------------------------------------------
-
-/// Lo que suelen decir las aerolíneas según las semanas de embarazo.
-enum PregnancyVerdict {
-  /// Hasta la semana 28 no suelen pedir nada.
-  fly,
-
-  /// De la 28 a la 36 (32 si son gemelos) piden un certificado médico.
-  certificate,
-
-  /// Desde la 36 (32 con gemelos) la mayoría no dejan embarcar.
-  dontFly,
-}
-
-/// Semana a partir de la que hace falta el certificado.
-const int certificateFromWeek = 28;
-
-/// Semana a partir de la que casi ninguna aerolínea deja volar.
-int noFlyFromWeek({required bool twins}) => twins ? 32 : 36;
-
-/// El veredicto para las semanas que tendrás el día del vuelo de VUELTA (es
-/// el que cuenta: si a la vuelta ya no te dejan, el viaje no sirve).
-PregnancyVerdict pregnancyVerdict(int weeks, {bool twins = false}) {
-  if (weeks >= noFlyFromWeek(twins: twins)) return PregnancyVerdict.dontFly;
-  if (weeks >= certificateFromWeek) return PregnancyVerdict.certificate;
-  return PregnancyVerdict.fly;
-}
 
 // --- Mascota -----------------------------------------------------------------
 
@@ -101,4 +73,53 @@ class PetChecks {
       jsonEncode(<String>[for (final PetCheck c in all) c.name]),
     );
   }
+}
+
+/// El nombre y la foto de tu perro. Viven SOLO en el móvil (nada se sube).
+class DogProfile {
+  const DogProfile({this.name, this.photoPath});
+
+  /// null = aún no le has puesto nombre (la pantalla dice "tu perro").
+  final String? name;
+
+  /// Ruta de la foto dentro de la carpeta privada de la app.
+  final String? photoPath;
+
+  /// Como mucho 30 letras: es un nombre, no una redacción.
+  static const int maxName = 30;
+
+  /// Lee lo guardado. Datos rotos = perfil vacío (nunca falla).
+  static DogProfile load(SettingsStore store) {
+    try {
+      final Object? raw = jsonDecode(
+        store.readData(LocalData.dogProfile) ?? '{}',
+      );
+      if (raw is! Map<String, Object?>) return const DogProfile();
+      final Object? name = raw['name'];
+      final Object? photo = raw['photo'];
+      return DogProfile(
+        name: name is String ? cleanName(name) : null,
+        photoPath: photo is String && photo.isNotEmpty ? photo : null,
+      );
+    } on FormatException {
+      return const DogProfile();
+    }
+  }
+
+  /// Quita espacios de más y corta a [maxName]. Vacío = null.
+  static String? cleanName(String raw) {
+    final String clean = raw.trim().split(RegExp(r'\s+')).join(' ');
+    if (clean.isEmpty) return null;
+    return clean.length > maxName ? clean.substring(0, maxName) : clean;
+  }
+
+  Future<void> save(SettingsStore store) => store.writeData(
+    LocalData.dogProfile,
+    jsonEncode(<String, String>{'name': ?name, 'photo': ?photoPath}),
+  );
+
+  DogProfile withName(String raw) =>
+      DogProfile(name: cleanName(raw), photoPath: photoPath);
+
+  DogProfile withPhoto(String? path) => DogProfile(name: name, photoPath: path);
 }

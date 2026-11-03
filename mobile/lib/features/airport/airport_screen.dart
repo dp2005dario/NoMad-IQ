@@ -7,9 +7,14 @@
 // no existe gratis para todos los aeropuertos), pero dentro de una terminal
 // "por ahí y a 300 m" ya ayuda mucho; y la pantalla avisa de que sigas
 // también los carteles.
+//
+// Abajo, Flyra te dice el giro ("Gira a la izquierda") en voz alta y con
+// una vibración distinta para cada lado, por si no sabes leer las flechas
+// o vas mirando la maleta. La voz se puede apagar con el altavoz.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/api_client.dart';
@@ -22,7 +27,36 @@ import '../map/location.dart';
 import '../route/geo.dart' show LatLon;
 import '../route/world_data.dart';
 import '../sos/where_am_i.dart' show nearestAirport;
+import '../../widgets/flyra_avatar.dart';
 import 'airport_guide.dart';
+
+/// El texto de cada indicación (en la tarjeta y en el aviso de Flyra).
+String cueText(AppLocalizations t, Cue cue, int meters) => switch (cue) {
+  Cue.arrived => t.airportArrived,
+  Cue.straight => t.airportStraight(meters),
+  Cue.left => t.airportLeft,
+  Cue.right => t.airportRight,
+  Cue.back => t.airportBack,
+};
+
+/// La vibración de cada giro: izquierda = 1 toque, derecha = 2, darse la
+/// vuelta = 3 y llegar = uno suave. Así se nota sin mirar el móvil.
+Future<void> vibrateFor(Cue cue) async {
+  final int times = switch (cue) {
+    Cue.left => 1,
+    Cue.right => 2,
+    Cue.back => 3,
+    Cue.arrived || Cue.straight => 0,
+  };
+  if (cue == Cue.arrived) {
+    await HapticFeedback.lightImpact();
+    return;
+  }
+  for (int i = 0; i < times; i++) {
+    if (i > 0) await Future<void>.delayed(const Duration(milliseconds: 220));
+    await HapticFeedback.heavyImpact();
+  }
+}
 
 String spotKindLabel(AppLocalizations t, SpotKind k) => switch (k) {
   SpotKind.gate => t.airportKindGate,
@@ -112,6 +146,10 @@ class _AirportScreenState extends State<AirportScreen> {
   StreamSubscription<PositionFix>? _fixes;
   StreamSubscription<double?>? _compass;
 
+  /// Flyra habla (true) o solo enseña el aviso (false).
+  bool _voice = true;
+  final TurnAnnouncer _announcer = TurnAnnouncer();
+
   @override
   void initState() {
     super.initState();
@@ -168,14 +206,14 @@ class _AirportScreenState extends State<AirportScreen> {
   }
 
   void _listen() {
-    _fixes ??= _services.location.watch().listen(
-      (PositionFix f) => setState(() => _here = f.point),
-      onError: (Object _) {},
-    );
-    _compass ??= _services.compass().listen(
-      (double? h) => setState(() => _heading = h),
-      onError: (Object _) {},
-    );
+    _fixes ??= _services.location.watch().listen((PositionFix f) {
+      setState(() => _here = f.point);
+      _announce();
+    }, onError: (Object _) {});
+    _compass ??= _services.compass().listen((double? h) {
+      setState(() => _heading = h);
+      _announce();
+    }, onError: (Object _) {});
   }
 
   Future<void> _allow() async {
@@ -204,6 +242,8 @@ class _AirportScreenState extends State<AirportScreen> {
         // Sin número de puerta, empieza por el baño.
         if (_gate.text.trim().isEmpty) _target = SpotKind.toilets;
       });
+      _announcer.reset();
+      _announce();
     } on ApiException catch (e) {
       if (!mounted) return;
       setState(() {
@@ -213,6 +253,44 @@ class _AirportScreenState extends State<AirportScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  /// La indicación de ahora (y a cuántos metros), o null si falta algo.
+  (Cue, int)? _cue() {
+    final AirportGuide? g = _guide;
+    final GeoPoint? me = _here;
+    if (g == null || me == null) return null;
+    final AirportSpot? s = _targetSpot(g);
+    if (s == null) return null;
+    final double bearing = bearingTo(me, s.point);
+    final double? facing = _heading;
+    final double relative = facing == null ? bearing : bearing - facing;
+    final double meters = me.distanceTo(s.point);
+    return (cueFor(meters, relative), meters.round());
+  }
+
+  /// Si toca, Flyra dice el giro en voz alta y el móvil vibra.
+  void _announce() {
+    if (!mounted) return;
+    final (Cue, int)? now = _cue();
+    if (now == null) return;
+    final Cue? say = _announcer.update(now.$1, DateTime.now());
+    if (say == null) return;
+    unawaited(vibrateFor(say));
+    if (!_voice) return;
+    final AppLocalizations t = AppLocalizations.of(context);
+    unawaited(
+      _services.speaker.speak(
+        cueText(t, say, now.$2),
+        Localizations.localeOf(context).languageCode,
+      ),
+    );
+  }
+
+  void _retarget(SpotKind k) {
+    setState(() => _target = k);
+    _announcer.reset();
+    _announce();
   }
 
   AirportSpot? _targetSpot(AirportGuide g) {
@@ -230,8 +308,20 @@ class _AirportScreenState extends State<AirportScreen> {
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
     final AirportGuide? g = _guide;
+    final (Cue, int)? cue = _cue();
     return Scaffold(
       appBar: AppBar(title: Text(t.airportTitle)),
+      bottomNavigationBar: cue == null
+          ? null
+          : _FlyraTurn(
+              text: cueText(t, cue.$1, cue.$2),
+              cue: cue.$1,
+              voice: _voice,
+              onVoice: () {
+                setState(() => _voice = !_voice);
+                if (!_voice) unawaited(_services.speaker.stop());
+              },
+            ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
         children: <Widget>[
@@ -324,7 +414,7 @@ class _AirportScreenState extends State<AirportScreen> {
           controller: _gate,
           textCapitalization: TextCapitalization.characters,
           decoration: InputDecoration(labelText: t.airportGateField),
-          onChanged: (_) => setState(() {}),
+          onChanged: (_) => _retarget(_target),
         ),
       const SizedBox(height: 12),
       Wrap(
@@ -336,7 +426,7 @@ class _AirportScreenState extends State<AirportScreen> {
               selected: k == _target,
               avatar: Icon(spotKindIcon(k), size: 18),
               label: Text(spotKindLabel(t, k)),
-              onSelected: (_) => setState(() => _target = k),
+              onSelected: (_) => _retarget(k),
             ),
         ],
       ),
@@ -426,15 +516,7 @@ class _Navigator extends StatelessWidget {
     final double? facing = heading;
     // Sin brújula, la flecha apunta al rumbo respecto al norte.
     final double relative = facing == null ? bearing : bearing - facing;
-    final Turn turn = turnFor(relative);
-    final String instruction = meters < 15
-        ? t.airportArrived
-        : switch (turn) {
-            Turn.straight => t.airportStraight(m),
-            Turn.left => t.airportLeft,
-            Turn.right => t.airportRight,
-            Turn.back => t.airportBack,
-          };
+    final String instruction = cueText(t, cueFor(meters, relative), m);
     final int minutes = walkMinutes(meters);
     final DateTime? board = boarding?.subtract(const Duration(minutes: 40));
     String? timing;
@@ -505,4 +587,74 @@ class _Navigator extends StatelessWidget {
     ),
     child: child,
   );
+}
+
+/// El aviso de Flyra abajo del todo: su cara, el giro en letras grandes y
+/// el altavoz para callarla. Entra con un pequeño salto cada vez que cambia.
+class _FlyraTurn extends StatelessWidget {
+  const _FlyraTurn({
+    required this.text,
+    required this.cue,
+    required this.voice,
+    required this.onVoice,
+  });
+
+  final String text;
+  final Cue cue;
+  final bool voice;
+  final VoidCallback onVoice;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final IconData icon = switch (cue) {
+      Cue.left => Icons.turn_left_rounded,
+      Cue.right => Icons.turn_right_rounded,
+      Cue.back => Icons.u_turn_left_rounded,
+      Cue.straight => Icons.straight_rounded,
+      Cue.arrived => Icons.flag_rounded,
+    };
+    return SafeArea(
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+        decoration: BoxDecoration(
+          color: NomadColors.surfaceHigh,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: NomadColors.mint),
+        ),
+        child: Row(
+          children: <Widget>[
+            const FlyraAvatar(size: 40),
+            const SizedBox(width: 10),
+            Icon(icon, color: NomadColors.mint, size: 32),
+            const SizedBox(width: 8),
+            Expanded(
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                transitionBuilder: (Widget child, Animation<double> a) =>
+                    ScaleTransition(scale: a, child: child),
+                child: Text(
+                  text,
+                  key: ValueKey<String>(text),
+                  semanticsLabel: text,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
+            IconButton(
+              tooltip: t.airportVoice,
+              isSelected: voice,
+              icon: const Icon(Icons.volume_off_rounded),
+              selectedIcon: const Icon(Icons.volume_up_rounded),
+              onPressed: onVoice,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
