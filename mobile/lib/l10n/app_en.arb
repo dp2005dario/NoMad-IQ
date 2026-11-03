@@ -4443,6 +4443,154 @@
   "@offlineWifiOnlyWhy": {
     "description": "Why the wifi-only switch exists."
   },
+  "offlineReady": "{count, plural, =0{No areas ready to use offline yet} =1{1 area ready to use offline} other{{count} areas ready to use offline}}",
+  "@offlineReady": {
+    "description": "Offline header: how many cities are ready",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineAreaTitle": "Choose the area",
+  "@offlineAreaTitle": {
+    "description": "Offline: pick how much of the city"
+  },
+  "offlineAreaCenter": "Centre",
+  "@offlineAreaCenter": {
+    "description": "Offline area: city centre"
+  },
+  "offlineAreaCity": "City",
+  "@offlineAreaCity": {
+    "description": "Offline area: whole city"
+  },
+  "offlineAreaAround": "With surroundings",
+  "@offlineAreaAround": {
+    "description": "Offline area: city and surroundings"
+  },
+  "offlineKm": "{km} km",
+  "@offlineKm": {
+    "description": "Offline area size",
+    "placeholders": {
+      "km": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineWhatTitle": "What to save",
+  "@offlineWhatTitle": {
+    "description": "Offline: what to save"
+  },
+  "offlinePartMap": "Map, streets and walking routes",
+  "@offlinePartMap": {
+    "description": "Offline part: map, streets and walking routes"
+  },
+  "offlinePartAudio": "Audio guides with voice",
+  "@offlinePartAudio": {
+    "description": "Offline part: audio guides with voice"
+  },
+  "offlinePartAlerts": "Zone alerts",
+  "@offlinePartAlerts": {
+    "description": "Offline part: zone alerts"
+  },
+  "offlinePartsNote": "The map and alerts always come: without them nothing works offline. Voices take the most space.",
+  "@offlinePartsNote": {
+    "description": "Offline: why map and alerts are always included"
+  },
+  "offlineNoNetTitle": "No internet right now",
+  "@offlineNoNetTitle": {
+    "description": "Offline banner: no internet now"
+  },
+  "offlineNoNetWorks": "{count, plural, =0{With no areas downloaded, the map won't work until you're back online} =1{Your downloaded area still works} other{Your {count} downloaded areas still work}}",
+  "@offlineNoNetWorks": {
+    "description": "Offline banner: what still works",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineWorksOffline": "Works offline ✓",
+  "@offlineWorksOffline": {
+    "description": "Offline card: this city works without internet"
+  },
+  "offlineTextOnly": "Audio guides as text only (no voice)",
+  "@offlineTextOnly": {
+    "description": "Offline card: guides saved as text only"
+  },
+  "offlineEstimate": "About {size} (based on your other cities)",
+  "@offlineEstimate": {
+    "description": "Approximate size, computed from cities already downloaded",
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineEstimateUnknown": "The size will be known after your first city.",
+  "@offlineEstimateUnknown": {
+    "description": "No size estimate yet: no city downloaded"
+  },
+  "offlinePaused": "{city} · stopped halfway",
+  "@offlinePaused": {
+    "description": "A download stopped halfway",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineResumeNote": "What's already downloaded won't be downloaded again.",
+  "@offlineResumeNote": {
+    "description": "What resume does"
+  },
+  "offlineResume": "Resume",
+  "@offlineResume": {
+    "description": "Button: resume download"
+  },
+  "offlineNewMap": "A newer map is out ({date}) · tap Update",
+  "@offlineNewMap": {
+    "description": "A newer map version exists (date of publication)",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineAutoTitle": "Update automatically",
+  "@offlineAutoTitle": {
+    "description": "Switch: update cities automatically"
+  },
+  "offlineAutoWhy": "On wifi and while charging, when a new map is out or after 30 days. It runs with the app open or when you come back to it.",
+  "@offlineAutoWhy": {
+    "description": "Explains when automatic update happens, honestly: only with the app open"
+  },
+  "offlineAutoBusy": "{city} is being updated. Wait until it finishes.",
+  "@offlineAutoBusy": {
+    "description": "Another city is being updated automatically",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineAutoDone": "{city} is up to date for offline use ✓",
+  "@offlineAutoDone": {
+    "description": "Mini Flyra note: a city was updated automatically",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineTry": "Try it: I lose internet",
+  "@offlineTry": {
+    "description": "Button: preview how it looks with no internet"
+  },
+  "offlineTryStop": "Back to online",
+  "@offlineTryStop": {
+    "description": "Button: stop the no-internet preview"
+  },
   "offlineUsed": "ECLIPTA is using {size}",
   "@offlineUsed": {
     "description": "Storage used by the app, with the size.",
@@ -8214,6 +8362,50 @@
   "eventsChangeHotel": "Change where your hotel is",
   "@eventsChangeHotel": {
     "description": "Events map: button to change the marked hotel"
+  },
+  "eventsHotelTitle": "Where is your hotel?",
+  "@eventsHotelTitle": {
+    "description": "Sheet title: where is your hotel"
+  },
+  "eventsHotelSearchHint": "Hotel name or address",
+  "@eventsHotelSearchHint": {
+    "description": "Search field hint: hotel name or address"
+  },
+  "eventsHotelFromEasy": "From Easy mode",
+  "@eventsHotelFromEasy": {
+    "description": "Chip group label: hotel saved in Easy mode"
+  },
+  "eventsHotelFromVault": "Your bookings in the Vault",
+  "@eventsHotelFromVault": {
+    "description": "Chip group label: bookings saved in the Vault"
+  },
+  "eventsHotelOpenVault": "Look at my bookings in the Vault",
+  "@eventsHotelOpenVault": {
+    "description": "Button: unlock the Vault to look at your bookings"
+  },
+  "eventsHotelHonest": "We search the name you typed when you saved the booking; the app doesn't read the document. You pick the right result.",
+  "@eventsHotelHonest": {
+    "description": "Honest note: the app searches the name you typed, it does not read the document"
+  },
+  "eventsHotelNone": "Not found on OpenStreetMap. Try the address or mark it on the map.",
+  "@eventsHotelNone": {
+    "description": "Search found nothing"
+  },
+  "eventsHotelError": "Couldn't search right now. Try again in a moment.",
+  "@eventsHotelError": {
+    "description": "Search failed"
+  },
+  "eventsHotelGuest": "Searching by name needs an account. Without one, mark it on the map.",
+  "@eventsHotelGuest": {
+    "description": "Guest: name search needs an account"
+  },
+  "eventsHotelOnMap": "Mark it myself on the map",
+  "@eventsHotelOnMap": {
+    "description": "Button: mark the hotel on the map yourself"
+  },
+  "eventsHotelSource": "Search: OpenStreetMap (Nominatim)",
+  "@eventsHotelSource": {
+    "description": "Data source line for the search"
   },
   "eventsSavedToast": "Saved. Flyra will remind you the day before and 2 hours before.",
   "@eventsSavedToast": {

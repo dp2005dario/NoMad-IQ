@@ -1,5 +1,7 @@
 // Qué pasa en tus fechas: festivos y eventos reales (con su fuente), días
 // del viaje, filtro por día y guardados (solo en el móvil).
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -9,8 +11,21 @@ import 'package:eclipta/features/easy/easy_mode.dart';
 import 'package:eclipta/features/events/event_reminders.dart';
 import 'package:eclipta/features/events/events_api.dart';
 import 'package:eclipta/features/map/geo.dart';
+import 'package:eclipta/features/vault/vault.dart';
+import 'package:eclipta/features/vault/vault_store.dart';
 
 import 'helpers.dart';
+
+/// La huella siempre "coincide".
+class _Finger implements Unlocker {
+  int asked = 0;
+
+  @override
+  Future<UnlockResult> unlock(String reason) async {
+    asked++;
+    return UnlockResult.ok;
+  }
+}
 
 String day(DateTime d) =>
     '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
@@ -199,5 +214,99 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Benfica - Porto'), findsOneWidget);
     expect(find.text('Concierto en el estadio'), findsNothing);
+  });
+
+  testWidgets('el hotel sale de una reserva de la Bóveda y lo eliges tú', (
+    WidgetTester tester,
+  ) async {
+    final Map<String, Object?> data = json();
+    final List<Object?> events = data['events']! as List<Object?>;
+    (events[1]! as Map<String, Object?>).addAll(<String, Object?>{
+      'lat': 38.768,
+      'lon': -9.094,
+    });
+    (events[2]! as Map<String, Object?>).addAll(<String, Object?>{
+      'lat': 38.7527,
+      'lon': -9.1847,
+    });
+    final FakeGateway g = FakeGateway()..publicPrefixes.add('/v1/events');
+    g.services['/v1/events'] = (http.Request r) => FakeGateway.json(data);
+    final List<String> asked = <String>[];
+    g.services['/v1/geocode'] = (http.Request r) {
+      asked.add(r.url.queryParameters['q']!);
+      return FakeGateway.json(<String, Object?>{
+        'items': <Object?>[
+          <String, Object?>{
+            'name': 'Avenida Palace',
+            'address': 'Rua 1º de Dezembro 123, Lisboa, Portugal',
+            'lat': 38.7146,
+            'lon': -9.1408,
+          },
+        ],
+        'source': 'OpenStreetMap (Nominatim)',
+      });
+    };
+    final MemorySettingsStore store = MemorySettingsStore('es');
+    final _Finger finger = _Finger();
+    final Vault vault = Vault(
+      keys: MemoryVaultKeyStore(),
+      files: MemoryVaultFiles(),
+      unlocker: finger,
+    );
+    // Una reserva guardada en la Bóveda (el título lo escribió la persona).
+    await vault.open('test');
+    await vault.add(
+      kind: DocKind.booking,
+      title: 'Hotel Avenida Palace',
+      mime: 'image/jpeg',
+      bytes: Uint8List.fromList(<int>[1, 2, 3]),
+    );
+    vault.close();
+    final session = await signedInSession(g);
+    tester.view.physicalSize = const Size(1200, 4000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.events(iata: 'LIS'),
+      services: fakeServices(
+        session,
+        gateway: g,
+        prefs: store,
+        map: FakeMap(),
+        vault: vault,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Marca tu hotel para ver qué te pilla cerca'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(
+      find.text('Marca tu hotel para ver qué te pilla cerca'),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Marca tu hotel para ver qué te pilla cerca'));
+    await tester.pumpAndSettle();
+    expect(find.text('¿Dónde está tu hotel?'), findsOneWidget);
+
+    // La Bóveda está cerrada: se abre con la huella y sale la reserva.
+    await tester.tap(find.text('Mirar mis reservas de la Bóveda'));
+    await tester.pumpAndSettle();
+    expect(finger.asked, 2);
+    await tester.tap(find.text('Hotel Avenida Palace'));
+    await tester.pumpAndSettle();
+    // Se busca el título que escribiste, no se lee el documento.
+    expect(asked, <String>['Hotel Avenida Palace']);
+    expect(find.text('Avenida Palace'), findsOneWidget);
+    await tester.tap(find.text('Avenida Palace'));
+    await tester.pumpAndSettle();
+
+    expect(store.readData(LocalData.eventsHotel), contains('38.7146'));
+    expect(find.textContaining('de tu hotel'), findsWidgets);
+    vault.close();
   });
 }

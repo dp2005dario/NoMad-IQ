@@ -18,6 +18,10 @@ abstract interface class OfflineFiles {
 
   /// Borra una carpeta entera con lo que haya dentro.
   Future<void> deleteFolder(String path);
+
+  /// Lo que ocupa un archivo ya guardado (null = no está). Sirve para
+  /// SEGUIR una descarga parada sin volver a bajar lo que ya está.
+  Future<int?> sizeOf(String path);
 }
 
 /// Guardar y borrar el mapa descargado (las teselas de MapLibre).
@@ -36,6 +40,33 @@ abstract interface class OfflineMaps {
 /// Qué red hay ahora (wifi, datos o nada).
 abstract interface class NetProbe {
   Future<NetKind> now();
+}
+
+/// La versión del mapa que publica ahora el servidor de mapas
+/// ("20261025_080012"). null = no se sabe (sin red o servidor sin versión).
+abstract interface class MapVersionProbe {
+  Future<String?> latest();
+}
+
+/// Sin versión de mapa (tests y servidores de mapas que no la dicen).
+class NoMapVersion implements MapVersionProbe {
+  const NoMapVersion();
+
+  @override
+  Future<String?> latest() async => null;
+}
+
+/// ¿El móvil está cargando? (para actualizar solas sin gastar batería)
+abstract interface class PowerProbe {
+  Future<bool> charging();
+}
+
+/// En los tests, por defecto, nunca está cargando.
+class NeverCharging implements PowerProbe {
+  const NeverCharging();
+
+  @override
+  Future<bool> charging() async => false;
 }
 
 /// Lo que puede fallar al descargar una ciudad.
@@ -79,6 +110,9 @@ class MemoryOfflineFiles implements OfflineFiles {
   Future<void> deleteFolder(String path) async {
     written.removeWhere((String key, int _) => key.startsWith(path));
   }
+
+  @override
+  Future<int?> sizeOf(String path) async => written[path];
 }
 
 /// Sin mapa descargable (tests): la ciudad se guarda con el aviso de que el
@@ -115,7 +149,11 @@ class CityDownloader {
     required this.maps,
     required this.net,
     required this.cities,
+    this.mapVersion = const NoMapVersion(),
   });
+
+  /// Qué versión del mapa hay ahora (se guarda con la ciudad).
+  final MapVersionProbe mapVersion;
 
   final ApiClient api;
   final GeoApi geo;
@@ -131,9 +169,6 @@ class CityDownloader {
   /// para un centro histórico y no se dispara el tamaño.
   static const int maxZones = 40;
 
-  /// El trozo de mapa alrededor del centro: unos 12 km de lado.
-  static const double citySpanDeg = 0.11;
-
   /// Descarga la ciudad [iata] (centrada en [center]) en [language].
   ///
   /// [onProgress] se llama a cada paso para mover la barra. Lanza
@@ -146,6 +181,8 @@ class CityDownloader {
     required bool wifiOnly,
     required void Function(DownloadProgress) onProgress,
     bool Function()? stopped,
+    OfflineArea area = OfflineArea.city,
+    bool withAudio = true,
   }) async {
     // Entre paso y paso se mira si has tocado "Parar descarga".
     void check() {
@@ -164,10 +201,10 @@ class CityDownloader {
     }
     final String code = iata.toUpperCase();
     final GeoBox box = GeoBox(
-      minLon: center.lon - citySpanDeg,
-      minLat: center.lat - citySpanDeg,
-      maxLon: center.lon + citySpanDeg,
-      maxLat: center.lat + citySpanDeg,
+      minLon: center.lon - area.halfDeg,
+      minLat: center.lat - area.halfDeg,
+      maxLon: center.lon + area.halfDeg,
+      maxLat: center.lat + area.halfDeg,
     );
 
     // 1. Las zonas (los barrios con audioguía).
@@ -208,19 +245,29 @@ class CityDownloader {
     }
 
     // 3. Los audios (.opus) en la carpeta de la ciudad.
-    final List<PackZone> withAudio = <PackZone>[];
-    for (int i = 0; i < saved.length; i++) {
+    final List<PackZone> voiced = <PackZone>[];
+    // Sin voces (lo elegiste tú): las audioguías se quedan con su texto.
+    for (int i = 0; i < saved.length && withAudio; i++) {
       check();
       onProgress(
         DownloadProgress(DownloadStep.audio, done: i, total: saved.length),
       );
-      withAudio.add(await _withAudio(code, saved[i], language));
+      voiced.add(await _withAudio(code, saved[i], language));
     }
+    if (!withAudio) voiced.addAll(saved);
 
     check();
     // 4. El mapa. Si falla, la ciudad se guarda igual (con el aviso): las
     // audioguías ya descargadas siguen valiendo.
     onProgress(const DownloadProgress(DownloadStep.map, total: 1));
+    // La versión se pide ANTES de bajar: así, si sale un mapa nuevo durante
+    // la descarga, la próxima vez se avisa en vez de creer que está al día.
+    String? version;
+    try {
+      version = await mapVersion.latest();
+    } on Object {
+      version = null;
+    }
     int tiles = 0;
     bool mapFailed = false;
     try {
@@ -244,10 +291,13 @@ class CityDownloader {
       iata: code,
       city: city,
       language: language,
-      zones: withAudio,
+      zones: voiced,
       tileBytes: tiles,
       savedAt: DateTime.now(),
       mapFailed: mapFailed,
+      area: area,
+      withAudio: withAudio,
+      mapVersion: mapFailed ? null : version,
     );
     await cities.save(pack);
     return pack;
@@ -299,8 +349,11 @@ class CityDownloader {
           '${cityFolder(iata)}/${_safe(zone.id)}-'
           '${part.index}.opus';
       try {
-        final Uint8List bytes = await api.getBytes(part.url.toString());
-        final int size = await files.write(file, bytes);
+        // Ya bajado en un intento anterior (descarga parada): no se repite.
+        final int? had = await files.sizeOf(file);
+        final int size =
+            had ??
+            await files.write(file, await api.getBytes(part.url.toString()));
         parts.add(
           PackAudio(
             index: part.index,

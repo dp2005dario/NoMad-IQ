@@ -11,6 +11,7 @@ import 'core/services.dart';
 import 'core/settings.dart';
 import 'core/theme.dart';
 import 'features/flyra/flyra_mini.dart';
+import 'features/offline/offline_auto.dart';
 import 'features/map/location.dart';
 import 'features/widgets/widget_sync.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -183,11 +184,15 @@ class _EcliptaAppState extends State<EcliptaApp> {
               builder: (BuildContext context, Widget? child) {
                 _localizeTracker(context);
                 // La mini Flyra de la esquina, encima de todas las pantallas.
-                return FlyraMini(
-                  location: _location,
-                  onOpen: (String? route) =>
-                      unawaited(_router.push(route ?? Routes.flyra())),
-                  child: child ?? const SizedBox.shrink(),
+                // Y "actualizar solas" las ciudades sin conexión, si lo
+                // activaste.
+                return OfflineAutoRunner(
+                  child: FlyraMini(
+                    location: _location,
+                    onOpen: (String? route) =>
+                        unawaited(_router.push(route ?? Routes.flyra())),
+                    child: child ?? const SizedBox.shrink(),
+                  ),
                 );
               },
             ),

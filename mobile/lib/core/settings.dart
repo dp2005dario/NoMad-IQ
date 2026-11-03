@@ -43,6 +43,15 @@ enum LocalData {
   /// "1" = descargar ciudades solo cuando haya wifi.
   offlineWifiOnly,
 
+  /// Las descargas de ciudades paradas a medias (para "Seguir").
+  offlinePaused,
+
+  /// "1" = las ciudades se actualizan solas (con wifi y cargando).
+  offlineAutoUpdate,
+
+  /// Cuándo se miró por última vez si había que actualizar (una vez al día).
+  offlineAutoChecked,
+
   /// Lo que ya tienes listo para viajar con tu mascota (chip, vacuna...).
   petChecks,
 

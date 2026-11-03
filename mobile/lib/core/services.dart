@@ -37,6 +37,7 @@ import '../features/radar/radar_api.dart';
 import '../features/stays/stays_api.dart';
 import '../features/help/help_contacts.dart';
 import '../features/map/geo_api.dart';
+import '../features/map/geocode_api.dart';
 import '../features/map/location.dart';
 import '../features/map/location_tracker.dart';
 import '../features/map/map_surface.dart';
@@ -106,6 +107,8 @@ class AppServices {
     OfflineFiles? offlineFiles,
     OfflineMaps? offlineMaps,
     NetProbe? net,
+    MapVersionProbe? mapVersion,
+    PowerProbe? power,
     Vault? vault,
     SettingsStore? prefs,
   }) : geo = GeoApi(api),
@@ -126,6 +129,8 @@ class AppServices {
        prefs = prefs ?? MemorySettingsStore(),
        offlineFiles = offlineFiles ?? MemoryOfflineFiles(),
        offlineMaps = offlineMaps ?? const NoOfflineMaps(),
+       mapVersion = mapVersion ?? const NoMapVersion(),
+       power = power ?? const NeverCharging(),
        net = net ?? const AlwaysWifi(),
        family = family ?? MemoryFamilyStore(),
        memoryFiles = memoryFiles ?? MemoryMemoryFiles(),
@@ -304,6 +309,7 @@ class AppServices {
 
   /// Festivos y eventos de una ciudad en unas fechas (público).
   late final EventsApi events = EventsApi(api);
+  late final GeocodeApi geocode = GeocodeApi(api);
 
   /// Radar local: lluvia, timos y precios de viajeros.
   late final RadarApi radar = RadarApi(api);
@@ -338,6 +344,16 @@ class AppServices {
   /// ¿Wifi, datos o nada? Decide si se puede descargar ahora.
   final NetProbe net;
 
+  /// La versión del mapa publicada ahora (para avisar de mapas nuevos).
+  final MapVersionProbe mapVersion;
+
+  /// ¿Está cargando? ("actualizar solas" solo cargando)
+  final PowerProbe power;
+
+  /// La ciudad que se está bajando ahora, la baje quien la baje (la pantalla
+  /// o la actualización sola). Así nunca se bajan dos a la vez.
+  final ValueNotifier<String?> offlineBusy = ValueNotifier<String?>(null);
+
   /// Las ciudades descargadas (la lista vive solo en el móvil).
   late final OfflineLibrary offlineCities = OfflineLibrary(prefs);
 
@@ -350,6 +366,7 @@ class AppServices {
     maps: offlineMaps,
     net: net,
     cities: offlineCities,
+    mapVersion: mapVersion,
   );
 
   /// De dónde salen los mapas (ver AppConfig).

@@ -41,6 +41,7 @@ import '../group/group_api.dart';
 import '../plans/plans_api.dart';
 import '../route/world_data.dart';
 import 'event_reminders.dart';
+import 'hotel_sheet.dart';
 import 'events_api.dart';
 
 IconData eventIcon(EventKind k) => switch (k) {
@@ -136,15 +137,21 @@ class _EventsScreenState extends State<EventsScreen> {
     }
   }
 
-  /// Marcar el hotel en el mapa (con la diana) y guardarlo.
+  /// Decir dónde está el hotel: buscándolo (Modo fácil, una reserva de la
+  /// Bóveda o escribiendo el nombre) o marcándolo en el mapa con la diana.
   Future<void> _pickHotel(GeoPoint around) async {
     final String? iata = _iata;
     if (iata == null) return;
-    final GeoPoint? p = await Navigator.of(context).push<GeoPoint>(
-      MaterialPageRoute<GeoPoint>(
-        builder: (_) => PickPointScreen(initial: _hotel ?? around),
+    final HotelChoice? choice = await showHotelSheet(context, around);
+    if (choice == null || !mounted) return;
+    final GeoPoint? p = switch (choice) {
+      HotelFound(:final GeoPoint point) => point,
+      HotelOnMap() => await Navigator.of(context).push<GeoPoint>(
+        MaterialPageRoute<GeoPoint>(
+          builder: (_) => PickPointScreen(initial: _hotel ?? around),
+        ),
       ),
-    );
+    };
     if (p == null || !mounted) return;
     await _services.prefs.writeData(
       LocalData.eventsHotel,
