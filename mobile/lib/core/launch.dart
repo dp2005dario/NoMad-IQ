@@ -25,7 +25,11 @@ typedef ShareFiles = Future<void> Function(List<String> paths, {String? text});
 Future<void> shareFiles(List<String> paths, {String? text}) async {
   await SharePlus.instance.share(
     ShareParams(
-      files: <XFile>[for (final String p in paths) XFile(p)],
+      // Sin archivos (solo texto) se pasa null: share_plus no quiere listas
+      // vacías.
+      files: paths.isEmpty
+          ? null
+          : <XFile>[for (final String p in paths) XFile(p)],
       text: text,
     ),
   );
