@@ -254,9 +254,10 @@ void main() {
       await tester.enterText(find.byType(TextFormField).at(1), password);
       await tester.tap(find.widgetWithText(FilledButton, 'Crear cuenta'));
       await tester.pumpAndSettle();
-      expect(find.text('Hola, Dario'), findsOneWidget);
+      expect(find.text('ECLIPTA'), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Cuenta'));
+      // Ajustes está en la barra de abajo.
+      await tester.tap(find.text('Ajustes'));
       await tester.pumpAndSettle();
       expect(find.text(email), findsOneWidget);
       // Ajustes es una lista larga: hay que llegar hasta el botón.
@@ -304,8 +305,9 @@ void main() {
       WidgetTester tester,
     ) async {
       await pumpApp(tester, locale: 'es', initialLocation: Routes.home);
-      expect(find.text('Hola, viajero'), findsOneWidget);
-      await tester.tap(find.byTooltip('Cuenta'));
+      expect(find.text('ECLIPTA'), findsOneWidget);
+      // Ajustes está en la barra de abajo.
+      await tester.tap(find.text('Ajustes'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
         find.text('Inicia sesión o crea una cuenta'),

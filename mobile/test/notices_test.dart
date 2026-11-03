@@ -84,7 +84,15 @@ void main() {
       initialLocation: Routes.home,
       services: fakeServices(session, gateway: g, prefs: prefs),
     );
-    await tester.tap(find.byTooltip('Avisos'));
+    // Los Avisos están dentro de Ajustes (pestaña de la barra de abajo).
+    await tester.tap(find.text('Ajustes'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.text('Avisos'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.tap(find.text('Avisos'));
     await tester.pumpAndSettle();
     expect(find.text('Chollo'), findsOneWidget);
     expect(find.text('Estás en Sol'), findsOneWidget);
