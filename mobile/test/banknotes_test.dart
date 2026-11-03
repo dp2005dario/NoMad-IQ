@@ -1,5 +1,8 @@
 // Billetes: las formas de juntar una cantidad, y banderas de las monedas.
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:eclipta/features/money/currency_photos.dart';
 import 'package:eclipta/features/money/banknotes.dart';
 import 'package:eclipta/features/money/currency_info.dart';
 
@@ -31,5 +34,41 @@ void main() {
     for (final BanknoteSet s in banknotes.values) {
       expect(s.source, startsWith('https://'));
     }
+  });
+
+  test('monedas: las más grandes primero, y nada si no las conocemos', () {
+    // 1,88 € = 1 € + 50 + 20 + 10 + 5 + 2 + 1 céntimos.
+    expect(coinPiles(188, 'EUR'), const <NotePile>[
+      NotePile(100, 1),
+      NotePile(50, 1),
+      NotePile(20, 1),
+      NotePile(10, 1),
+      NotePile(5, 1),
+      NotePile(2, 1),
+      NotePile(1, 1),
+    ]);
+    expect(coinPiles(161, 'JPY'), const <NotePile>[
+      NotePile(100, 1),
+      NotePile(50, 1),
+      NotePile(10, 1),
+      NotePile(1, 1),
+    ]);
+    expect(coinPiles(100, 'XXX'), isEmpty);
+    expect(coinPiles(0, 'EUR'), isEmpty);
+  });
+
+  test('cada foto de la lista existe en assets/divisas', () {
+    for (final MapEntry<String, Set<int>> e in notePhotos.entries) {
+      for (final int v in e.value) {
+        expect(File(notePhoto(e.key, v)!).existsSync(), isTrue, reason: '$v');
+      }
+    }
+    for (final MapEntry<String, Set<int>> e in coinPhotos.entries) {
+      for (final int v in e.value) {
+        expect(File(coinPhoto(e.key, v)!).existsSync(), isTrue, reason: '$v');
+      }
+    }
+    expect(notePhoto('EUR', 50), 'assets/divisas/eur/b-50.webp');
+    expect(coinPhoto('EUR', 3), isNull);
   });
 }

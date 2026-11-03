@@ -449,6 +449,17 @@ void main() {
         guest: true, // los tipos son públicos
         prefs: prefs,
       );
+      // Flyra avisa siempre de que es solo informativa.
+      expect(find.textContaining('Solo informativa'), findsOneWidget);
+      // Botón rápido: escribe 20 en la caja.
+      await tester.tap(find.widgetWithText(ChoiceChip, '20'));
+      await tester.pump();
+      expect(
+        tester.widget<TextField>(find.byType(TextField).first).controller!.text,
+        '20',
+      );
+      await tester.tap(find.widgetWithText(ChoiceChip, '50'));
+      await tester.pump();
       // Cada moneda con su bandera y su país.
       expect(find.text('🇺🇸 USD · Estados Unidos'), findsOneWidget);
       await tester.tap(find.textContaining('USD').first);
@@ -468,9 +479,18 @@ void main() {
         300,
         scrollable: find.byType(Scrollable).last,
       );
-      expect(find.text('En billetes'), findsOneWidget);
-      expect(find.textContaining('5.000'), findsOneWidget);
-      expect(find.textContaining('en monedas'), findsWidgets);
+      expect(find.text('Cómo llevarlo en efectivo'), findsOneWidget);
+      expect(find.text('Menos piezas'), findsOneWidget);
+      expect(find.text('Equilibrado'), findsOneWidget);
+      expect(find.text('Sueltos y propinas'), findsOneWidget);
+      // El billete de 5000 ¥ sale con su foto (el lector dice su valor).
+      expect(find.bySemanticsLabel(RegExp('5.000')), findsOneWidget);
+      expect(find.byType(Image), findsWidgets);
+      // Los 161 ¥ que sobran salen como monedas dibujadas (el yen las
+      // tiene en la lista), no como texto.
+      expect(find.textContaining('en monedas'), findsNothing);
+      expect(find.text('¥500'), findsNothing);
+      expect(find.bySemanticsLabel(RegExp('100')), findsWidgets);
       // Se guardó una copia para usarla sin red.
       expect(prefs.data[LocalData.fxRates], contains('163.21'));
     });
