@@ -249,6 +249,14 @@ class LeagueApi {
           .map(LeagueSummary.parse)
           .toList();
 
+  /// Los nombres de los amigos (de todas mis ligas) que tienen algún cromo
+  /// que yo no tengo. Para Inicio: "3 amigos tienen cromos que te faltan".
+  Future<List<String>> friendsWithMissing() async {
+    final Object? v = _map(await _api.getJson(_base))['friends_with_missing'];
+    if (v is! List<Object?>) return const <String>[];
+    return v.whereType<String>().toList();
+  }
+
   Future<LeagueView> create({
     required String title,
     required String myName,

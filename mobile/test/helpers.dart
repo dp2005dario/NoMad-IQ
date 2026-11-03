@@ -23,6 +23,7 @@ import 'package:eclipta/core/api_client.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/launch.dart';
 import 'package:eclipta/core/services.dart';
+import 'package:eclipta/features/flyra/flyra_mini.dart';
 import 'package:eclipta/features/family/family.dart';
 import 'package:eclipta/features/memories/memories.dart';
 import 'package:eclipta/features/memories/travel_camera.dart';
@@ -220,6 +221,7 @@ AppServices fakeServices(
   Future<Airports> Function()? loadAirports,
   Future<VisaData> Function()? loadVisaData,
   Stream<double?> Function()? compass,
+  Stream<bool> Function()? onlineChanges,
   DocSource? docSource,
   DocTextReader? docReader,
 }) {
@@ -278,6 +280,7 @@ AppServices fakeServices(
           ),
         ),
     compass: compass ?? () => Stream<double?>.value(0),
+    onlineChanges: onlineChanges ?? noOnlineChanges,
     docSource: docSource ?? const NoDocSource(),
     docReader: docReader ?? const NoDocTextReader(),
   );
@@ -389,6 +392,14 @@ class FakeMap implements MapSurfaceController {
 
   @override
   Future<void> showMe(GeoPoint? point) async => me = point;
+
+  Map<String, Object?>? pins;
+
+  @override
+  Future<void> showPins(Map<String, Object?> features) async {
+    pins = features;
+    calls.add('pins');
+  }
 
   @override
   Future<void> flyTo(GeoPoint target, {double? zoom}) async =>

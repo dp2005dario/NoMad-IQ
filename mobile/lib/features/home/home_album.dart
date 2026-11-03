@@ -17,6 +17,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../auth/session.dart';
 import '../../core/router.dart';
 import '../../core/services.dart';
 import '../../core/theme.dart';
@@ -90,10 +91,30 @@ class _HomeAlbumState extends State<HomeAlbum> with TickerProviderStateMixin {
   bool _swiped = false; // tras el primer giro se quita "Desliza..."
   double _dragDx = 0;
 
+  // Los amigos con cromos que te faltan (del servidor, solo con cuenta).
+  // null = aún no se sabe o no hay datos: se enseña la línea de siempre.
+  List<String>? _friends;
+  bool _askedFriends = false;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_pages == null) _load(StampBook(ServicesScope.of(context).prefs).all());
+    if (!_askedFriends &&
+        SessionScope.of(context).status == SessionStatus.signedIn) {
+      _askedFriends = true;
+      unawaited(_loadFriends());
+    }
+  }
+
+  Future<void> _loadFriends() async {
+    try {
+      final List<String> f = await ServicesScope.of(context).leagues
+          .friendsWithMissing();
+      if (mounted && f.isNotEmpty) setState(() => _friends = f);
+    } on Object {
+      // Sin conexión o sin ligas: se queda la línea de siempre.
+    }
   }
 
   void _load(List<Stamp> stamps) {
@@ -296,15 +317,18 @@ class _HomeAlbumState extends State<HomeAlbum> with TickerProviderStateMixin {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: Row(
                 children: <Widget>[
-                  const CircleAvatar(
-                    radius: 17,
-                    backgroundColor: Color(0x333DDC97),
-                    child: Icon(
-                      Icons.groups_rounded,
-                      size: 20,
-                      color: Color(0xFF3DDC97),
+                  if (_friends case final List<String> f?)
+                    _Faces(names: f.take(3).toList())
+                  else
+                    const CircleAvatar(
+                      radius: 17,
+                      backgroundColor: Color(0x333DDC97),
+                      child: Icon(
+                        Icons.groups_rounded,
+                        size: 20,
+                        color: Color(0xFF3DDC97),
+                      ),
                     ),
-                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -318,7 +342,9 @@ class _HomeAlbumState extends State<HomeAlbum> with TickerProviderStateMixin {
                           ),
                         ),
                         Text(
-                          t.cardsSubtitle,
+                          _friends == null
+                              ? t.cardsSubtitle
+                              : t.homeFriendsMissing(_friends!.length),
                           style: const TextStyle(
                             color: NomadColors.textMuted,
                             fontSize: 12,
@@ -717,6 +743,56 @@ class _Arrow extends StatelessWidget {
           padding: EdgeInsets.zero,
         ),
         icon: Icon(icon, color: Colors.white, size: 18),
+      ),
+    );
+  }
+}
+
+/// Las caras de los amigos, una encima de otra (como en la maqueta). No hay
+/// fotos de los amigos en el servidor: cada cara es la inicial de su nombre
+/// sobre un color.
+class _Faces extends StatelessWidget {
+  const _Faces({required this.names});
+
+  final List<String> names;
+
+  static const List<Color> _colors = <Color>[
+    Color(0xFF3DDC97),
+    Color(0xFF9B7BFF),
+    Color(0xFFFF8A65),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final Color ring = Theme.of(context).colorScheme.surfaceContainerHighest;
+    return SizedBox(
+      width: 34 + 25.0 * (names.length - 1),
+      height: 34,
+      child: Stack(
+        children: <Widget>[
+          for (int i = 0; i < names.length; i++)
+            Positioned(
+              left: 25.0 * i,
+              child: Container(
+                width: 34,
+                height: 34,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _colors[i % _colors.length],
+                  border: Border.all(color: ring, width: 2),
+                ),
+                child: Text(
+                  names[i].characters.firstOrNull?.toUpperCase() ?? '?',
+                  style: const TextStyle(
+                    color: Color(0xFF0B1217),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -363,6 +363,15 @@
   "@homeAlbumHowTo": {
     "description": "Album empty: how to get cards"
   },
+  "homeFriendsMissing": "{count, plural, =1{1 friend has stamps you're missing} other{{count} friends have stamps you're missing}}",
+  "@homeFriendsMissing": {
+    "description": "Home album: how many friends have stamps you lack",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "homeTitleHotels": "Hotels",
   "@homeTitleHotels": {
     "description": "Home tile title: Hotels"
@@ -1982,6 +1991,18 @@
   "flyraSend": "Send",
   "@flyraSend": {
     "description": "Send button (screen readers)."
+  },
+  "flyraMiniLabel": "Flyra's alerts",
+  "@flyraMiniLabel": {
+    "description": "Mini Flyra in the corner: accessibility label"
+  },
+  "flyraOffline": "No internet connection. Retrying…",
+  "@flyraOffline": {
+    "description": "Mini Flyra bubble: the internet connection was lost"
+  },
+  "flyraOnline": "You're back online.",
+  "@flyraOnline": {
+    "description": "Mini Flyra bubble: the internet connection is back"
   },
   "flyraThinking": "Flyra is thinking…",
   "@flyraThinking": {
@@ -8167,6 +8188,32 @@
   "eventsVoteLink": "Vote on it in “Pick plans” and find your match",
   "@eventsVoteLink": {
     "description": "Events: link to group voting"
+  },
+  "eventsWalkFromHotel": "{minutes, plural, =1{1 min walk from your hotel} other{{minutes} min walk from your hotel}}",
+  "@eventsWalkFromHotel": {
+    "description": "Events card: walking minutes from your hotel",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "eventsKmFromHotel": "{km} km from your hotel",
+  "@eventsKmFromHotel": {
+    "description": "Events card: distance in km from your hotel",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "eventsSetHotel": "Mark your hotel to see what's nearby",
+  "@eventsSetHotel": {
+    "description": "Events map: button to mark your hotel on the map"
+  },
+  "eventsChangeHotel": "Change where your hotel is",
+  "@eventsChangeHotel": {
+    "description": "Events map: button to change the marked hotel"
   },
   "eventsSavedToast": "Saved. Flyra will remind you the day before and 2 hours before.",
   "@eventsSavedToast": {

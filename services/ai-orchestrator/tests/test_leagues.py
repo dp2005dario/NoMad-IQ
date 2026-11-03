@@ -22,6 +22,7 @@ from ai_orchestrator.leagues.domain import (
     Swap,
     SwapNotAllowedError,
     check_swap,
+    friends_with_missing,
     points,
     rarity_of,
     received,
@@ -174,6 +175,21 @@ def test_swap_rules() -> None:
         check_swap(league, me, them, TOKYO_TOWER.qid, FUSHIMI.qid)
 
 
+def test_friends_with_missing() -> None:
+    me = Member(1, DARIO, "Darío", cards=(TOKYO_TOWER,))
+    noelia = Member(2, NOELIA, "Noelia", cards=(FUSHIMI, TOKYO_TOWER))
+    same = Member(3, STRANGER, "Ana", cards=(TOKYO_TOWER,))
+    league = League("l", "Liga", "7K2M9QXD", (me, noelia, same))
+    # Noelia tiene Fushimi y yo no; Ana solo tiene lo que yo ya tengo.
+    assert friends_with_missing([league], DARIO) == ["Noelia"]
+    # Con la copia recibida en un cambio, ya no me falta nada.
+    got = replace(league, swaps=(Swap("s", 1, 2, EIFFEL, FUSHIMI, "accepted", NOW),))
+    assert friends_with_missing([got], DARIO) == []
+    # La misma persona en dos ligas sale una vez; y en ligas ajenas, nada.
+    assert friends_with_missing([league, replace(league, league_id="m")], DARIO) == ["Noelia"]
+    assert friends_with_missing([league], "nadie") == []
+
+
 # --- API -----------------------------------------------------------------------------------
 
 
@@ -252,8 +268,12 @@ async def test_full_flow() -> None:
         # La copia no da puntos de liga.
         assert next(s for s in mine["standings"] if s["me"])["points_month"] == 10
 
-        listed = (await c.get("/v1/leagues", headers=h(DARIO))).json()["items"]
-        assert listed == [{"league_id": lid, "title": "Exploradores", "members": 2, "my_position": 2}]
+        listed = (await c.get("/v1/leagues", headers=h(DARIO))).json()
+        assert listed["items"] == [
+            {"league_id": lid, "title": "Exploradores", "members": 2, "my_position": 2}
+        ]
+        # Noelia tiene el Coliseo y Darío no.
+        assert listed["friends_with_missing"] == ["Noelia"]
 
         await c.put(f"/v1/leagues/{lid}/me/city", json={"city": None}, headers=h(NOELIA))
         assert (await c.get(f"/v1/leagues/{lid}", headers=h(DARIO))).json()["standings"][0]["city"] is None
