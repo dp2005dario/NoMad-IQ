@@ -110,3 +110,29 @@ async def test_plan_limits(pool: asyncpg.Pool[asyncpg.Record]) -> None:
     assert (
         len((await store.add(trip_id, beto, [NewPlanBody(title="El mío")])).plans) == MAX_PLANS_PER_MEMBER + 1
     )
+
+
+async def test_cravings_sleep_and_tastes(pool: asyncpg.Pool[asyncpg.Record]) -> None:
+    """Pantalla Grupo: antojos y zonas para dormir en el mismo tablero (sin
+    repetirse ni gastar el tope de planes) y los gustos visibles de cada uno."""
+    ana, beto = person(), person()
+    trip_id = await trip(pool, ana, beto)
+    store = PostgresPlans(pool)
+    await store.add(trip_id, ana, [NewPlanBody(title=f"Plan {i}") for i in range(MAX_PLANS_PER_MEMBER)])
+    board = await store.add(
+        trip_id,
+        ana,
+        [
+            NewPlanBody(title="Taberna do Largo", kind="crave"),
+            NewPlanBody(title="taberna do largo", kind="crave"),
+            NewPlanBody(title="Alfama", kind="sleep"),
+        ],
+    )
+    extras = [(p.kind, p.title) for p in board.plans if p.kind != "plan"]
+    assert extras == [("crave", "Taberna do Largo"), ("sleep", "Alfama")]
+    again = await store.add(trip_id, beto, [NewPlanBody(title="ALFAMA", kind="sleep")])
+    assert sum(1 for p in again.plans if p.kind == "sleep") == 1
+
+    negotiations = PostgresNegotiations(pool, requests_topic="ai.group-negotiation-requests.v1")
+    record = await negotiations.set_tastes(trip_id, beto, ("fish", "views"))
+    assert [m.tastes for m in record.members] == [(), ("fish", "views")]

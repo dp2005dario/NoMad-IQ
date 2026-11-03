@@ -24,6 +24,7 @@ import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
 import 'group_api.dart';
+import 'group_hub.dart';
 import 'group_widgets.dart';
 import 'trip_create_screen.dart' show TagPicker;
 
@@ -175,18 +176,10 @@ class _TripScreenState extends State<TripScreen> {
     ],
     TripStatus.concluded => <Widget>[
       if (trip.result != null) _ResultCard(trip: trip, result: trip.result!),
-      const SizedBox(height: 12),
-      // Con el destino elegido, toca decidir qué hacer allí (todos votan).
-      FilledButton.icon(
-        icon: const Icon(Icons.swipe_rounded),
-        label: Text(t.plansOpen),
-        onPressed: () => context.push(
-          Routes.groupPlans(
-            trip.id,
-            city: trip.option(trip.result?.chosenOptionId)?.label,
-          ),
-        ),
-      ),
+      const SizedBox(height: 16),
+      // Con el destino elegido: atajos, gustos, dónde dormir y qué os
+      // apetece (maqueta 7). Ver group_hub.dart.
+      TripHub(trip: trip, onTrip: _show),
       const SizedBox(height: 20),
       if (trip.result != null) _AgentsSaid(trip: trip, result: trip.result!),
       const SizedBox(height: 20),

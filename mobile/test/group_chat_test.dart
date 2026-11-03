@@ -185,4 +185,81 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Valorar en Google Play'), findsOneWidget);
   });
+
+  testWidgets('el chat apunta tus gustos por palabras clave (sin IA)', (
+    WidgetTester tester,
+  ) async {
+    final FakeGateway g = FakeGateway();
+    final FakeChat server = FakeChat()
+      ..kind = 'friends'
+      ..install(g);
+    List<String> mine = <String>['late'];
+    final List<List<String>> sent = <List<String>>[];
+    Map<String, Object?> tripJson() => <String, Object?>{
+      'negotiation_id': trip,
+      'title': 'Lisboa',
+      'status': 'concluded',
+      'currency': 'EUR',
+      'options': <Object?>[
+        <String, Object?>{
+          'option_id': 'a',
+          'label': 'Lisboa',
+          'price_minor': 100,
+        },
+        <String, Object?>{
+          'option_id': 'b',
+          'label': 'Roma',
+          'price_minor': 200,
+        },
+      ],
+      'deadline': '2026-10-26T16:00:00Z',
+      'members': <Object?>[
+        <String, Object?>{
+          'alias': 'Viajero 1',
+          'name': 'Darío',
+          'tastes': mine,
+          'submitted': true,
+          'me': true,
+        },
+      ],
+      'my_alias': 'Viajero 1',
+      'i_organize': true,
+    };
+    g.services['/v1/group-negotiations/$trip'] = (_) =>
+        FakeGateway.json(tripJson());
+    g.services['/v1/group-negotiations/$trip/tastes'] = (http.Request r) {
+      mine = <String>[
+        for (final Object? t
+            in (jsonDecode(r.body) as Map<String, Object?>)['tastes']!
+                as List<Object?>)
+          t! as String,
+      ];
+      sent.add(mine);
+      return FakeGateway.json(tripJson());
+    };
+    final session = await signedInSession(g);
+    tester.view.physicalSize = const Size(1200, 3000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    server.msg(2, 'Hola');
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.groupChat(trip),
+      services: fakeServices(session, gateway: g),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(TextField),
+      'Esta noche me apetece algo de fado y cenar pescado',
+    );
+    await tester.tap(find.byTooltip('Enviar'));
+    await tester.pumpAndSettle();
+    expect(sent.single, <String>['late', 'music', 'fish']);
+    expect(
+      find.text('Apuntado en tus gustos: Música en directo, Pescado'),
+      findsOneWidget,
+    );
+  });
 }

@@ -18,6 +18,8 @@ Flujo para la app:
     3. Todos consultan cómo va y, al final, el resultado:
            GET  /v1/group-negotiations/{id}                  -> 200
            GET  /v1/group-negotiations                       -> mis negociaciones
+    4. "Gustos de cada uno" (los ve todo el grupo, en cualquier momento):
+           PUT  /v1/group-negotiations/{id}/tastes           -> 200
 
 Privacidad y control de acceso:
     - Solo los miembros ven una negociación. A quien no lo es se le responde
@@ -50,10 +52,12 @@ from ai_orchestrator.negotiation.domain import (
     MAX_MEMBERS,
     MAX_OPTIONS,
     MIN_OPTIONS,
+    TASTES,
     GroupOption,
     MemberPreferences,
     NegotiationResult,
     Status,
+    Taste,
     clean_text,
 )
 from ai_orchestrator.negotiation.engine import HARD_MAX_ROUNDS
@@ -130,12 +134,26 @@ class JoinNegotiation(BaseModel):
     my_name: DisplayName = None
 
 
+def _unique(values: list[Taste]) -> list[Taste]:
+    return list(dict.fromkeys(values))
+
+
+class SetTastes(BaseModel):
+    """ "Gustos de cada uno": los tuyos, que verá todo el grupo."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    tastes: Annotated[list[Taste], Field(max_length=len(TASTES)), AfterValidator(_unique)]
+
+
 class MemberView(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     alias: str
     # El nombre que ese miembro eligió para su grupo (None = no puso).
     name: str | None
+    # Sus gustos visibles (los marca él; los ve todo el grupo).
+    tastes: list[str] = Field(default_factory=list)
     submitted: bool
     me: bool
 
@@ -180,6 +198,7 @@ class NegotiationView(BaseModel):
                 MemberView(
                     alias=m.alias,
                     name=m.display_name,
+                    tastes=list(m.tastes),
                     submitted=m.submitted_at is not None,
                     me=m.user_id == user_id,
                 )
@@ -291,6 +310,19 @@ def negotiation_router(
         record = await store.get_for_member(str(negotiation_id), principal.user_id)
         if record is None:
             raise HTTPException(status_code=404, detail="negociación no encontrada")
+        return NegotiationView.of(record, principal.user_id)
+
+    @router.put("/{negotiation_id}/tastes", response_model=NegotiationView)
+    async def set_tastes(
+        principal: Annotated[Principal, Depends(current_principal)],
+        negotiation_id: Annotated[uuid.UUID, Path()],
+        body: SetTastes,
+    ) -> NegotiationView:
+        """Tus gustos visibles (Grupo > "Gustos de cada uno"). Sin IA."""
+        try:
+            record = await store.set_tastes(str(negotiation_id), principal.user_id, tuple(body.tastes))
+        except NegotiationNotFoundError:
+            raise HTTPException(status_code=404, detail="negociación no encontrada") from None
         return NegotiationView.of(record, principal.user_id)
 
     @router.put("/{negotiation_id}/preferences", response_model=NegotiationView)

@@ -8932,5 +8932,429 @@
   "nearbyNoSignal": "I can't get a GPS fix yet. If you're indoors, move near a window or outside and try again.",
   "@nearbyNoSignal": {
     "description": "Nearby: permission and GPS are fine but no position fix arrived yet."
+  },
+  "tasteTapas": "Tapas",
+  "@tasteTapas": {
+    "description": "Taste chip: small plates / tapas"
+  },
+  "tasteMusic": "Live music",
+  "@tasteMusic": {
+    "description": "Taste chip: live music (fado, jazz...)"
+  },
+  "tasteViews": "With a view",
+  "@tasteViews": {
+    "description": "Taste chip: places with a view"
+  },
+  "tasteFish": "Fish",
+  "@tasteFish": {
+    "description": "Taste chip: fish and seafood"
+  },
+  "tasteVeggie": "Vegetarian",
+  "@tasteVeggie": {
+    "description": "Taste chip: vegetarian food"
+  },
+  "tasteLate": "No early starts",
+  "@tasteLate": {
+    "description": "Taste chip: no early mornings"
+  },
+  "craveCafe": "Café",
+  "@craveCafe": {
+    "description": "Craving chip: a café"
+  },
+  "tastesTitle": "Everyone's tastes",
+  "@tastesTitle": {
+    "description": "Section title: each traveller's tastes, visible to the group"
+  },
+  "tastesSubtitle": "This is how Flyra knows what each traveller prefers",
+  "@tastesSubtitle": {
+    "description": "Subtitle under the tastes section"
+  },
+  "tastesNone": "Nothing marked yet.",
+  "@tastesNone": {
+    "description": "Shown when another traveller has not marked any taste yet"
+  },
+  "tastesHintMine": "Tap to add or remove your tastes. Flyra matches them with the group's.",
+  "@tastesHintMine": {
+    "description": "Hint under your own taste chips"
+  },
+  "tastesHintOther": "{name} marked this on their phone.",
+  "@tastesHintOther": {
+    "description": "Hint when looking at another traveller's tastes",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tastesChatTitle": "OR BY TELLING FLYRA IN THE CHAT",
+  "@tastesChatTitle": {
+    "description": "Small caps title: you can also tell Flyra in the chat"
+  },
+  "tastesChatExample": "Write in the trip chat, for example: \"tonight I fancy live music and fish for dinner\".",
+  "@tastesChatExample": {
+    "description": "Example of a chat message that adds tastes"
+  },
+  "tastesNoAi": "Marking tastes and voting \"I'm in / Pass\" uses no AI. In the chat, Flyra notes your tastes by keywords.",
+  "@tastesNoAi": {
+    "description": "Honest note: tapping tastes and voting uses no AI; the chat understands tastes by keywords"
+  },
+  "tastesNoted": "Added to your tastes: {list}",
+  "@tastesNoted": {
+    "description": "Snackbar after a chat message named tastes",
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "hubStepsTitle": "How Flyra searches",
+  "@hubStepsTitle": {
+    "description": "Section title: how Flyra searches, in 4 steps"
+  },
+  "hubStep1": "1 · Reads what everyone wants",
+  "@hubStep1": {
+    "description": "Step 1 title"
+  },
+  "hubStep1Empty": "Once you mark tastes, Flyra matches them here.",
+  "@hubStep1Empty": {
+    "description": "Step 1 when nobody marked tastes"
+  },
+  "hubStep1Text": "Most common: {list}",
+  "@hubStep1Text": {
+    "description": "Step 1: the most repeated tastes with counts",
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "hubStep2": "2 · Picks the area that fits",
+  "@hubStep2": {
+    "description": "Step 2 title"
+  },
+  "hubStep2Text": "Neighbourhoods and distances from OpenStreetMap: areas with places to stay near {city}.",
+  "@hubStep2Text": {
+    "description": "Step 2 text",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "hubStep2Zone": "First choice: {zone}",
+  "@hubStep2Zone": {
+    "description": "Step 2: the area that comes first",
+    "placeholders": {
+      "zone": {
+        "type": "String"
+      }
+    }
+  },
+  "hubStep3": "3 · Looks for a place to sleep",
+  "@hubStep3": {
+    "description": "Step 3 title"
+  },
+  "hubStep3Text": "Opens Booking with these filters set. You see the final price there.",
+  "@hubStep3Text": {
+    "description": "Step 3 text: Booking opens with filters; price is seen there"
+  },
+  "hubOpenBooking": "Open Booking",
+  "@hubOpenBooking": {
+    "description": "Button: open Booking for the area"
+  },
+  "hubStep4": "4 · Checks what's on those days",
+  "@hubStep4": {
+    "description": "Step 4 title"
+  },
+  "hubStep4Text": "Real events from Ticketmaster and public holidays.",
+  "@hubStep4Text": {
+    "description": "Step 4 text"
+  },
+  "hubSeeEvents": "See it all in \"What's on your dates\"",
+  "@hubSeeEvents": {
+    "description": "Button to the events screen"
+  },
+  "hubNoCity": "I can't find \"{city}\" on the map: no data on areas or places nearby.",
+  "@hubNoCity": {
+    "description": "The destination could not be found on the map",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "sleepTitle": "Vote where to sleep",
+  "@sleepTitle": {
+    "description": "Section title: vote where to sleep"
+  },
+  "sleepSubtitle": "I suggest 2 areas. Once you've all voted, I'll give you the booking link.",
+  "@sleepSubtitle": {
+    "description": "Subtitle of the sleep vote"
+  },
+  "sleepZoneCenter": "Right by {city}",
+  "@sleepZoneCenter": {
+    "description": "Name of the area right next to the destination",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "sleepWalk": "{minutes} min on foot",
+  "@sleepWalk": {
+    "description": "Estimated minutes walking to the destination",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "sleepTrain": "{minutes} min by train",
+  "@sleepTrain": {
+    "description": "Estimated minutes by train to the destination",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "sleepLodgings": "Places to stay: {count}",
+  "@sleepLodgings": {
+    "description": "How many places to stay OpenStreetMap shows in the area",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sleepVotes": "{yes} of {total}",
+  "@sleepVotes": {
+    "description": "How many of the group chose this area",
+    "placeholders": {
+      "yes": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "sleepVoted": "You've voted. Votes still missing: {missing}.",
+  "@sleepVoted": {
+    "description": "After voting: how many votes are still missing",
+    "placeholders": {
+      "missing": {
+        "type": "int"
+      }
+    }
+  },
+  "sleepNotVoted": "Votes still missing, yours included: {missing}.",
+  "@sleepNotVoted": {
+    "description": "Before voting: votes missing, including yours",
+    "placeholders": {
+      "missing": {
+        "type": "int"
+      }
+    }
+  },
+  "sleepDeal": "Deal! Here's the link to book.",
+  "@sleepDeal": {
+    "description": "Everyone chose the same area"
+  },
+  "sleepNoZones": "I found no areas with places to stay on OpenStreetMap.",
+  "@sleepNoZones": {
+    "description": "No areas with places to stay were found"
+  },
+  "sourcesTitle": "Where Flyra gets its data",
+  "@sourcesTitle": {
+    "description": "Section title: where Flyra's data comes from"
+  },
+  "sourcePlaces": "Nearby places",
+  "@sourcePlaces": {
+    "description": "Data source: nearby places"
+  },
+  "sourcePlacesText": "Streets, neighbourhoods, bars and monuments from OpenStreetMap.",
+  "@sourcePlacesText": {
+    "description": "Data source text: OpenStreetMap"
+  },
+  "sourceFree": "Free",
+  "@sourceFree": {
+    "description": "Badge: free data source"
+  },
+  "sourceEvents": "Plans and events",
+  "@sourceEvents": {
+    "description": "Data source: plans and events"
+  },
+  "sourceEventsText": "Ticketmaster: what's on, where and when.",
+  "@sourceEventsText": {
+    "description": "Data source text: Ticketmaster"
+  },
+  "sourceHotels": "Hotel prices",
+  "@sourceHotels": {
+    "description": "Data source: hotel prices"
+  },
+  "sourceHotelsText": "There's no free reliable source. Flyra opens Booking with your filters and you see the price there.",
+  "@sourceHotelsText": {
+    "description": "Data source text: no free reliable hotel prices"
+  },
+  "sourceLink": "Link",
+  "@sourceLink": {
+    "description": "Badge: it's a link to another website"
+  },
+  "sourcePicks": "Recommended places",
+  "@sourcePicks": {
+    "description": "Data source: recommended places"
+  },
+  "sourcePicksText": "Flyra ranks them by how close they are and how you vote, based on your tastes. No prices.",
+  "@sourcePicksText": {
+    "description": "Data source text: how places are ranked"
+  },
+  "sourceOurs": "Tastes, votes and expenses",
+  "@sourceOurs": {
+    "description": "Data source: your own tastes, votes and expenses"
+  },
+  "sourceOursText": "You add them in the app; they're stored on our server.",
+  "@sourceOursText": {
+    "description": "Data source text: you enter it; stored on our server"
+  },
+  "sourceYours": "Yours",
+  "@sourceYours": {
+    "description": "Badge: it's your own data"
+  },
+  "nearHowTitle": "How it picks places nearby, in any city",
+  "@nearHowTitle": {
+    "description": "Section title: how nearby places are chosen in any city"
+  },
+  "nearHowRadius": "Walking radius · 1 km",
+  "@nearHowRadius": {
+    "description": "Badge: search radius on foot"
+  },
+  "nearHowWhereCity": "Where you are: the centre of {city} (your GPS if you're there and allowed location).",
+  "@nearHowWhereCity": {
+    "description": "Where: the city centre of the trip (no GPS used)",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "nearHowWhereGps": "Where you are: your phone's GPS (you're in the trip's city).",
+  "@nearHowWhereGps": {
+    "description": "Where: your phone's GPS (you're in the city)"
+  },
+  "nearHowWhat": "What's nearby: OpenStreetMap places within a radius, from our server.",
+  "@nearHowWhat": {
+    "description": "What's nearby: OpenStreetMap places from our server"
+  },
+  "nearHowTime": "How long: walking time estimated from the straight-line distance.",
+  "@nearHowTime": {
+    "description": "How long: walking time estimated from straight-line distance"
+  },
+  "nearHowOrder": "Order: closeness + the group's tastes + \"I'm in / Pass\".",
+  "@nearHowOrder": {
+    "description": "Order: closeness + group tastes + votes"
+  },
+  "nearHowNoReviews": "No reviews or \"most popular\" (those are paid) and no prices.",
+  "@nearHowNoReviews": {
+    "description": "Honest note: no reviews, popularity or prices"
+  },
+  "craveTitle": "What do you fancy?",
+  "@craveTitle": {
+    "description": "Section title: what do you fancy?"
+  },
+  "craveSubtitle": "Pick a craving and Flyra suggests places nearby",
+  "@craveSubtitle": {
+    "description": "Subtitle under the craving section"
+  },
+  "craveWalk": "{minutes} min walk",
+  "@craveWalk": {
+    "description": "Estimated walking minutes to a place",
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "craveFits": "Fits {names}",
+  "@craveFits": {
+    "description": "Which travellers marked this taste",
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "craveLike": "I'm in",
+  "@craveLike": {
+    "description": "Vote button: I'm in"
+  },
+  "craveSkip": "Pass",
+  "@craveSkip": {
+    "description": "Vote button: pass"
+  },
+  "craveJoined": "{yes} of {total} are in",
+  "@craveJoined": {
+    "description": "How many of the group are in",
+    "placeholders": {
+      "yes": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "craveNone": "No such places within walking distance on OpenStreetMap.",
+  "@craveNone": {
+    "description": "No places of this craving within walking distance"
+  },
+  "craveGolden": "Golden hour today around {time} (estimated from the sun's position): a good time for a viewpoint.",
+  "@craveGolden": {
+    "description": "Golden hour estimated from the sun's position",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "craveSource": "Places from OpenStreetMap. The app shows no prices for places.",
+  "@craveSource": {
+    "description": "Attribution under the places"
+  },
+  "hubTabTastes": "Tastes",
+  "@hubTabTastes": {
+    "description": "Tab label: tastes"
+  },
+  "hubTabZone": "Area",
+  "@hubTabZone": {
+    "description": "Tab label: zone to stay"
+  },
+  "hubTabSleep": "Sleep",
+  "@hubTabSleep": {
+    "description": "Tab label: where to sleep"
+  },
+  "hubTabEvents": "Events",
+  "@hubTabEvents": {
+    "description": "Tab label: events"
+  },
+  "hubReplay": "Replay",
+  "@hubReplay": {
+    "description": "Button: replay the demo animation"
+  },
+  "hubExample": "EXAMPLE",
+  "@hubExample": {
+    "description": "Small badge marking a sample, uppercase"
+  },
+  "hubChatSample": "tonight I fancy some fado and a fish dinner",
+  "@hubChatSample": {
+    "description": "Sample chat message showing tastes"
+  },
+  "craveGo": "Go",
+  "@craveGo": {
+    "description": "Button: go there walking"
+  },
+  "hubYouPin": "YOU",
+  "@hubYouPin": {
+    "description": "Map marker for the user's position, very short, uppercase"
   }
 }

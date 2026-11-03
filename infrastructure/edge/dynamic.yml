@@ -112,6 +112,14 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 
+    # «¿Qué os apetece?» de la pantalla Grupo (OpenStreetMap): tapas,
+    # pescado, vegetariano, café o vistas cerca. Público como "Cerca de ti".
+    cravings:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/cravings`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
     # Modo coche (OpenStreetMap): gasolineras, aparcamientos, cargadores y
     # zonas ZTL/ZBE. Público; la app manda una casilla de ~5 km.
     drive:

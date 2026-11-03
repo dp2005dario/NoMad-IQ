@@ -78,6 +78,13 @@ from ai_orchestrator.landmarks.domain import Landmark, Recognition, RecognizeReq
 from ai_orchestrator.landmarks.service import LandmarkBusyError, LandmarkService
 from ai_orchestrator.menu.domain import MenuReply, MenuRequest
 from ai_orchestrator.menu.service import MenuBusyError, MenuService
+from ai_orchestrator.nearby.cravings import (
+    Craving,
+    Cravings,
+    CravingsBusyError,
+    CravingService,
+    CravingsUnavailableError,
+)
 from ai_orchestrator.nearby.domain import Nearby
 from ai_orchestrator.nearby.service import NearbyBusyError, NearbyService, NearbyUnavailableError
 from ai_orchestrator.places.domain import PlaceCard
@@ -259,6 +266,7 @@ def create_api(
     fx: FxService | None = None,
     atms: AtmService | None = None,
     nearby: NearbyService | None = None,
+    cravings: CravingService | None = None,
     drive: DriveService | None = None,
     stays: StayService | None = None,
     airport_guide: AirportGuideService | None = None,
@@ -441,6 +449,24 @@ def create_api(
                 found = await nearby.near(lat, lon)
             except (NearbyBusyError, NearbyUnavailableError):
                 resp = _problem(503, "Servicio no disponible temporalmente", "cerca de ti ocupado")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            # Sin sitios también es 200 (lista vacía): la app lo explica.
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": NEARBY_CACHE})
+
+    if cravings is not None:
+
+        @app.get("/v1/cravings", response_model=Cravings)
+        async def get_cravings(
+            lat: Annotated[float, Query(ge=-85, le=85)],
+            lon: Annotated[float, Query(ge=-180, le=180)],
+            kind: Craving,
+        ) -> JSONResponse:
+            """«¿Qué os apetece?»: sitios de OSM para un antojo, cerca."""
+            try:
+                found = await cravings.near(lat, lon, kind)
+            except (CravingsBusyError, CravingsUnavailableError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "antojos ocupados")
                 resp.headers["Retry-After"] = "60"
                 return resp
             # Sin sitios también es 200 (lista vacía): la app lo explica.

@@ -21,7 +21,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from enum import StrEnum
-from typing import Annotated, Literal
+from typing import Annotated, Literal, get_args
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
@@ -34,6 +34,26 @@ MIN_OPTIONS = 2
 MAX_OPTIONS = 10
 MAX_TAGS = 10
 MAX_NOTES_CHARS = 280
+
+# "Gustos de cada uno" (pantalla Grupo): los gustos que el grupo SÍ ve.
+# Son identificadores fijos; la app los traduce. Los de la maqueta (tapas,
+# fado -> música en directo, playa, museos, vistas, pescado, vegetariano y
+# sin madrugar) y cuatro más para viajes que no son de ciudad.
+Taste = Literal[
+    "tapas",
+    "music",
+    "beach",
+    "museums",
+    "views",
+    "fish",
+    "veggie",
+    "late",
+    "nightlife",
+    "nature",
+    "shopping",
+    "history",
+]
+TASTES: tuple[str, ...] = get_args(Taste)
 
 # Identificador de opción: lo elige quien crea la negociación ("lisboa", "op-2").
 OptionId = Annotated[str, Field(pattern=r"^[A-Za-z0-9_-]{1,64}$")]

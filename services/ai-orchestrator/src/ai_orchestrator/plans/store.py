@@ -3,7 +3,8 @@
 Reglas que se comprueban aquí, dentro de la transacción:
     - Solo los miembros del viaje ven y votan sus planes. A quien no lo es,
       "no existe" (igual que en la negociación).
-    - Topes: 60 planes por viaje y 15 por persona (con FOR UPDATE sobre el
+    - Topes: 60 planes por viaje y 15 por persona; aparte, 40 sitios o zonas
+      ("crave"/"sleep") por viaje (con FOR UPDATE sobre el
       viaje, para que dos personas a la vez no se salten el tope).
     - Un plan solo lo borra quien lo propuso.
 """
@@ -17,6 +18,7 @@ import asyncpg
 
 from ai_orchestrator.erasure import ERASED_PREFIX
 from ai_orchestrator.plans.domain import (
+    MAX_EXTRAS,
     MAX_PLANS,
     MAX_PLANS_PER_MEMBER,
     Board,
@@ -55,6 +57,8 @@ class NewPlan(Protocol):
 
     @property
     def article_url(self) -> str | None: ...
+    @property
+    def kind(self) -> str: ...
 
 
 class PlanStore(Protocol):
@@ -98,7 +102,7 @@ class PostgresPlans:
         )
         rows = await conn.fetch(
             "SELECT plan_id, added_by_seat, title, note, wikidata_id, photo_url, article_url, created_at,"
-            " planned_at IS NOT NULL AS planned"
+            " planned_at IS NOT NULL AS planned, kind"
             " FROM ai.group_plans WHERE negotiation_id = $1::uuid ORDER BY created_at, plan_id",
             negotiation_id,
         )
@@ -127,6 +131,7 @@ class PostgresPlans:
                     created_at=r["created_at"],
                     votes=by_plan.get(str(r["plan_id"]), {}),
                     planned=bool(r["planned"]),
+                    kind=str(r["kind"]),
                 )
                 for r in rows
             ),
@@ -145,24 +150,41 @@ class PostgresPlans:
             async with self._pool.acquire() as conn, conn.transaction():
                 seat = await self._seat(conn, negotiation_id, user_id, lock=True)
                 counts = await conn.fetchrow(
-                    "SELECT count(*) AS total, count(*) FILTER (WHERE added_by_seat = $2) AS mine"
+                    "SELECT count(*) FILTER (WHERE kind = 'plan') AS total,"
+                    " count(*) FILTER (WHERE kind = 'plan' AND added_by_seat = $2) AS mine,"
+                    " count(*) FILTER (WHERE kind <> 'plan') AS extras"
                     " FROM ai.group_plans WHERE negotiation_id = $1::uuid",
                     negotiation_id,
                     seat,
                 )
                 total = int(counts["total"]) if counts else 0
                 mine = int(counts["mine"]) if counts else 0
-                known = {
-                    r["wikidata_id"]
-                    for r in await conn.fetch(
-                        "SELECT wikidata_id FROM ai.group_plans"
-                        " WHERE negotiation_id = $1::uuid AND wikidata_id IS NOT NULL",
-                        negotiation_id,
-                    )
-                }
-                # Una atracción que ya está en el viaje no se repite (no es error).
-                fresh = [p for p in plans if p.wikidata_id is None or p.wikidata_id not in known]
-                if total + len(fresh) > MAX_PLANS or mine + len(fresh) > MAX_PLANS_PER_MEMBER:
+                extras = int(counts["extras"]) if counts else 0
+                rows = await conn.fetch(
+                    "SELECT wikidata_id, kind, lower(title) AS title FROM ai.group_plans"
+                    " WHERE negotiation_id = $1::uuid",
+                    negotiation_id,
+                )
+                known = {r["wikidata_id"] for r in rows if r["wikidata_id"] is not None}
+                named = {(r["kind"], r["title"]) for r in rows if r["kind"] != "plan"}
+                # Lo que ya está en el viaje no se repite (no es error): una
+                # atracción por su Wikidata; un sitio o zona por su nombre.
+                fresh: list[NewPlan] = []
+                for p in plans:
+                    if p.wikidata_id is not None and p.wikidata_id in known:
+                        continue
+                    if p.kind != "plan" and (p.kind, p.title.lower()) in named:
+                        continue
+                    if p.kind != "plan":
+                        named.add((p.kind, p.title.lower()))
+                    fresh.append(p)
+                new_plans = sum(1 for p in fresh if p.kind == "plan")
+                new_extras = len(fresh) - new_plans
+                if (
+                    total + new_plans > MAX_PLANS
+                    or mine + new_plans > MAX_PLANS_PER_MEMBER
+                    or extras + new_extras > MAX_EXTRAS
+                ):
                     raise PlanLimitError(negotiation_id)
                 for p in fresh:
                     await conn.execute(
@@ -170,8 +192,10 @@ class PostgresPlans:
                         # toda la transacción, y los planes añadidos de golpe
                         # saldrían en orden al azar. Así salen en el orden enviado.
                         "INSERT INTO ai.group_plans (plan_id, negotiation_id, added_by_seat, title, note,"
-                        " wikidata_id, photo_url, article_url, created_at)"
-                        " VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, clock_timestamp())",
+                        " wikidata_id, photo_url, article_url, created_at, kind)"
+                        " VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, clock_timestamp(), $9)"
+                        # Un sitio o zona que otro añadió justo a la vez: no se repite.
+                        " ON CONFLICT DO NOTHING",
                         str(uuid.uuid4()),
                         negotiation_id,
                         seat,
@@ -180,6 +204,7 @@ class PostgresPlans:
                         p.wikidata_id,
                         p.photo_url,
                         p.article_url,
+                        p.kind,
                     )
                 return await self._board(conn, negotiation_id, seat)
         except _DB_ERRORS as exc:
