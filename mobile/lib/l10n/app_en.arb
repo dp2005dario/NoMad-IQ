@@ -31,6 +31,98 @@
   "@homeFlyraPrompt": {
     "description": "Placeholder of the ask-Flyra box."
   },
+  "homeHoldToTalk": "Press and hold to talk",
+  "@homeHoldToTalk": {
+    "description": "Hold-to-talk hint under the big Flyra orb"
+  },
+  "homeHearsYou": "Flyra listens in your language",
+  "@homeHearsYou": {
+    "description": "Subtitle under the orb"
+  },
+  "homeAllTitle": "Everything in ECLIPTA",
+  "@homeAllTitle": {
+    "description": "Title of the Home carousel"
+  },
+  "homeAllSub": "Your trip, step by step",
+  "@homeAllSub": {
+    "description": "Subtitle of the Home carousel"
+  },
+  "homeSub0": "Places and plans nearby",
+  "@homeSub0": {
+    "description": "Home tile: Explore"
+  },
+  "homeSub1": "What’s around you",
+  "@homeSub1": {
+    "description": "Home tile: Nearby"
+  },
+  "homeSub2": "Where to sleep nearby",
+  "@homeSub2": {
+    "description": "Home tile: places to sleep"
+  },
+  "homeSub3": "Prices and alerts",
+  "@homeSub3": {
+    "description": "Home tile: Flights"
+  },
+  "homeSub4": "Your packing checklist",
+  "@homeSub4": {
+    "description": "Home tile: Before you go"
+  },
+  "homeSub5": "Requirements by country",
+  "@homeSub5": {
+    "description": "Home tile: Visa"
+  },
+  "homeSub6": "Gates and times",
+  "@homeSub6": {
+    "description": "Home tile: Airport"
+  },
+  "homeSub7": "Encrypted documents",
+  "@homeSub7": {
+    "description": "Home tile: Vault"
+  },
+  "homeSub8": "Trip accounts",
+  "@homeSub8": {
+    "description": "Home tile: Expenses"
+  },
+  "homeSub9": "Convert instantly",
+  "@homeSub9": {
+    "description": "Home tile: Currency"
+  },
+  "homeSub10": "Vets, parks and hotels",
+  "@homeSub10": {
+    "description": "Home tile: Travelling with my dog"
+  },
+  "homeSub11": "Reuse an itinerary",
+  "@homeSub11": {
+    "description": "Home tile: Copy this trip"
+  },
+  "homeSub12": "Photos and story",
+  "@homeSub12": {
+    "description": "Home tile: Memories"
+  },
+  "homeSub13": "Driving mode",
+  "@homeSub13": {
+    "description": "Home tile: Car (driving mode)"
+  },
+  "homeSub14": "Listen while you walk",
+  "@homeSub14": {
+    "description": "Home tile: Audio guides"
+  },
+  "homeSub15": "Rain, scams and fair prices",
+  "@homeSub15": {
+    "description": "Home tile: Radar"
+  },
+  "homeSub16": "Shortcuts on your screen",
+  "@homeSub16": {
+    "description": "Home tile: Widgets"
+  },
+  "homeSub17": "Face-to-face interpreter",
+  "@homeSub17": {
+    "description": "Home tile: face-to-face interpreter"
+  },
+  "homeSub18": "Change the language",
+  "@homeSub18": {
+    "description": "Home tile: Language"
+  },
   "talkToFlyra": "Talk to Flyra",
   "shortcutsTitle": "Shortcuts",
   "shortcutVault": "Vault",

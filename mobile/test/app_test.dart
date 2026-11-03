@@ -120,12 +120,30 @@ void main() {
     WidgetTester tester,
   ) async {
     await pumpApp(tester, locale: 'es', initialLocation: Routes.home);
+    // La Bóveda está en el carrusel: se desliza hasta ella, se centra con
+    // un toque y otro toque la abre.
+    await tester.scrollUntilVisible(
+      find.byType(PageView),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.dragUntilVisible(
+      find.text('Bóveda'),
+      find.byType(PageView),
+      const Offset(-250, 0),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Bóveda'));
+    await tester.pumpAndSettle();
+    if (find.text('Bóveda').evaluate().isNotEmpty) {
+      await tester.tap(find.text('Bóveda'));
+    }
     await tester.pumpAndSettle();
     expect(find.text('Toca para abrir con tu huella'), findsOneWidget);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
-    expect(find.text('Hola, viajero'), findsOneWidget);
+    // De vuelta en Inicio (por donde estaba: el carrusel).
+    expect(find.byType(PageView), findsOneWidget);
   });
 
   testWidgets('una dirección inventada no rompe la app', (

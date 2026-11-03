@@ -106,6 +106,8 @@ flutter:
     - assets/video/bienvenida.mp4
     - assets/brand/eclipta_spark.png
     - assets/brand/google_g.png
+    # Inicio: fotos e iconos de los cuadrados del carrusel (de la maqueta).
+    - assets/inicio/
   # Genera el código de traducciones a partir de lib/l10n/*.arb (ver l10n.yaml).
   generate: true
   # Las fuentes van DENTRO de la app (no se descargan de Internet al abrirla):

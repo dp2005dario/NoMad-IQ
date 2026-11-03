@@ -326,7 +326,23 @@ void main() {
     WidgetTester tester,
   ) async {
     await pumpMoney(tester, initialLocation: Routes.home);
+    // Gastos está en el carrusel de Inicio: deslizar, centrar y abrir.
+    await tester.scrollUntilVisible(
+      find.byType(PageView),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.dragUntilVisible(
+      find.text('Gastos'),
+      find.byType(PageView),
+      const Offset(-250, 0),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Gastos'));
+    await tester.pumpAndSettle();
+    if (find.text('Gastos').evaluate().isNotEmpty) {
+      await tester.tap(find.text('Gastos'));
+    }
     await tester.pumpAndSettle();
     expect(find.text('Dinero'), findsOneWidget);
     expect(find.text('Tu dinero'), findsOneWidget);
