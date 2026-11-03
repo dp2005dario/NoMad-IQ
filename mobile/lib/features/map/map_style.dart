@@ -1319,6 +1319,23 @@ Map<String, Object?> buildMapStyle({
           'text-halo-width': 1.8,
         },
       },
+      // Puntos con color (cada uno trae su "color"; el elegido, más grande).
+      <String, Object?>{
+        'id': 'nomad-pins',
+        'type': 'circle',
+        'source': MapIds.pinsSource,
+        'paint': <String, Object?>{
+          'circle-color': <Object?>['get', 'color'],
+          'circle-radius': <Object?>[
+            'case',
+            <Object?>['get', 'selected'],
+            13,
+            10,
+          ],
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 3,
+        },
+      },
       // Tú: un punto menta con un halo que indica el error del GPS.
       <String, Object?>{
         'id': 'nomad-me-halo',
@@ -1339,23 +1356,6 @@ Map<String, Object?> buildMapStyle({
           'circle-radius': 7,
           'circle-stroke-color': '#ffffff',
           'circle-stroke-width': 2.5,
-        },
-      },
-      // Puntos con color (cada uno trae su "color"; el elegido, más grande).
-      <String, Object?>{
-        'id': 'nomad-pins',
-        'type': 'circle',
-        'source': MapIds.pinsSource,
-        'paint': <String, Object?>{
-          'circle-color': <Object?>['get', 'color'],
-          'circle-radius': <Object?>[
-            'case',
-            <Object?>['get', 'selected'],
-            13,
-            10,
-          ],
-          'circle-stroke-color': '#ffffff',
-          'circle-stroke-width': 3,
         },
       },
     ],
