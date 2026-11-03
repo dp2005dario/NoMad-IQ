@@ -30,6 +30,7 @@ class EasyTrip {
     this.gate,
     this.hotelName,
     this.hotelAddress,
+    this.help,
   });
 
   /// Día y hora de salida del vuelo (hora del sitio de donde sales).
@@ -39,6 +40,21 @@ class EasyTrip {
   final String? gate;
   final String? hotelName;
   final String? hotelAddress;
+
+  /// La ayuda del aeropuerto que ya pediste: 0 = silla de ruedas, 1 = que te
+  /// acompañen andando, 2 = solo la maleta. null = aún no la has pedido.
+  final int? help;
+
+  /// El mismo viaje con otra ayuda pedida (o ninguna si [help] es null).
+  EasyTrip withHelp(int? help) => EasyTrip(
+    departure: departure,
+    from: from,
+    to: to,
+    gate: gate,
+    hotelName: hotelName,
+    hotelAddress: hotelAddress,
+    help: help,
+  );
 
   bool get hasFlight => departure != null && from != null && to != null;
   bool get isEmpty => !hasFlight && hotelAddress == null;
@@ -50,6 +66,7 @@ class EasyTrip {
     'gate': ?gate,
     'hotel_name': ?hotelName,
     'hotel_address': ?hotelAddress,
+    'help': ?help,
   };
 
   static EasyTrip parse(Object? json) {
@@ -74,6 +91,10 @@ class EasyTrip {
       gate: text('gate', max: 8),
       hotelName: text('hotel_name'),
       hotelAddress: text('hotel_address', max: 300),
+      help: switch (json['help']) {
+        final int h when h >= 0 && h <= 2 => h,
+        _ => null,
+      },
     );
   }
 }
@@ -104,8 +125,10 @@ DateTime leaveHomeAt(DateTime departure) => departure.subtract(leaveBefore);
 /// El enlace "llévame a esta dirección": Google Maps lo entiende en todos los
 /// Android (y si no está instalado, se abre en el navegador). Es gratis y no
 /// necesita ninguna clave.
-Uri directionsTo(String address) => Uri.https(
-  'www.google.com',
-  '/maps/dir/',
-  <String, String>{'api': '1', 'destination': address, 'travelmode': 'transit'},
-);
+/// [walking] = true: la ruta andando (el botón "Ir andando · te guío").
+Uri directionsTo(String address, {bool walking = false}) =>
+    Uri.https('www.google.com', '/maps/dir/', <String, String>{
+      'api': '1',
+      'destination': address,
+      'travelmode': walking ? 'walking' : 'transit',
+    });

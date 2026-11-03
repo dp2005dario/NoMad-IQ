@@ -98,20 +98,64 @@ void main() {
         },
       ),
     );
-    await tester.pumpAndSettle();
-    expect(find.text('MAD → LIS'), findsOneWidget);
-    expect(find.text('Puerta B12'), findsOneWidget);
-    expect(find.text('Sal de casa a las 7:30'), findsOneWidget);
+    // Los aeropuertos de verdad (assets/geo) tardan un poco en cargarse.
+    // (Son tres archivos seguidos: se deja avanzar varias veces.)
+    for (int i = 0; i < 4; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 600)),
+      );
+      await tester.pumpAndSettle();
+    }
+    expect(find.text('Madrid → Lisbon'), findsOneWidget);
+    expect(find.textContaining('B12'), findsOneWidget);
+    expect(find.textContaining('sal de casa a las 7:30'), findsOneWidget);
 
+    // El hotel: ir andando abre la ruta a pie con la dirección.
     await tester.tap(find.text('Llévame al hotel'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('🚶 Ir andando · te guío'));
+    await tester.pumpAndSettle();
     expect(opened.last.queryParameters['destination'], contains('Augusta'));
+    expect(opened.last.queryParameters['travelmode'], 'walking');
+    // Para el taxista: la frase en portugués (el idioma de Lisboa).
+    await tester.tap(find.text('🚕 Enseñar al taxista'));
+    await tester.pumpAndSettle();
+    expect(find.text('POR FAVOR, LLÉVEME A:'), findsOneWidget);
+    expect(
+      find.text('Por favor, leve-me a este hotel. Obrigado.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Volver'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Cerrar'));
+    await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Llamar a la familia'));
+    // La familia: tocar la persona llama; el botón verde abre WhatsApp.
+    await tester.tap(find.text('Ver a la familia'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Noelia'));
     await tester.pumpAndSettle();
     expect(opened.last.scheme, 'tel');
+    await tester.tap(find.text('Ver a la familia'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('WhatsApp'));
+    await tester.pumpAndSettle();
+    expect(opened.last.toString(), 'https://wa.me/34600112233');
+
+    // La ayuda del aeropuerto: se pide, se guarda y cambia el cuadrado.
+    await tester.tap(find.text('Ayuda en el aeropuerto'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Que me acompañen andando'));
+    await tester.tap(find.text('Pedirla ahora'));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Hecho: que me acompañen andando'),
+      findsOneWidget,
+    );
+    expect(loadEasyTrip(store).help, 1);
+    await tester.tap(find.byTooltip('Cerrar'));
+    await tester.pumpAndSettle();
+    expect(find.text('✓ Ayuda pedida'), findsOneWidget);
 
     // "Modo normal" vuelve a la Inicio de siempre y se recuerda.
     await tester.tap(find.text('Modo normal'));
