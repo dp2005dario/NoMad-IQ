@@ -13,6 +13,7 @@ import 'auth/token_store.dart';
 import 'core/api_client.dart';
 import 'auth/google_id_token.dart';
 import 'core/config.dart';
+import 'features/events/event_reminders.dart';
 import 'features/settings/profile_photo.dart';
 import 'core/services.dart';
 import 'features/vault/doc_source.dart';
@@ -99,6 +100,7 @@ Future<void> main() async {
     memoryFiles: AppMemoryFiles(),
     homeWidgets: DeviceHomeWidgets(),
     liveFlight: DeviceLiveFlight(),
+    eventReminders: DeviceEventReminders(),
     syncWidgetsOnStart: true,
     speaker: DeviceSpeaker(),
     translator: MlKitTranslator(),

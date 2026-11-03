@@ -9,6 +9,7 @@ import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
 
 import '../auth/google_id_token.dart';
+import '../features/events/event_reminders.dart';
 import '../features/audioguide/audioguide_api.dart';
 import '../features/audioguide/guide_player.dart';
 import '../features/camera/camera_device.dart';
@@ -95,6 +96,7 @@ class AppServices {
     MemoryFiles? memoryFiles,
     HomeWidgets? homeWidgets,
     LiveFlight? liveFlight,
+    EventReminders? eventReminders,
     this.loadAirports = worldAirports,
     this.loadVisaData = bundledVisaData,
     this.syncWidgetsOnStart = false,
@@ -129,6 +131,7 @@ class AppServices {
        memoryFiles = memoryFiles ?? MemoryMemoryFiles(),
        homeWidgets = homeWidgets ?? MemoryHomeWidgets(),
        liveFlight = liveFlight ?? MemoryLiveFlight(),
+       eventReminders = eventReminders ?? MemoryEventReminders(),
        vault =
            vault ??
            Vault(
@@ -284,6 +287,9 @@ class AppServices {
 
   /// El aviso "en directo" del día del vuelo (programado en el móvil).
   final LiveFlight liveFlight;
+
+  /// Los avisos de los eventos guardados (víspera y 2 horas antes).
+  final EventReminders eventReminders;
 
   /// La brújula (hacia dónde miras). En los tests, una de mentira.
   final Stream<double?> Function() compass;

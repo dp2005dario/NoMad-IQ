@@ -11,7 +11,15 @@ from conftest import InMemoryStore
 
 from ai_orchestrator.api import create_api
 from ai_orchestrator.plans.api import plan_router
-from ai_orchestrator.plans.domain import MAX_PLANS_PER_MEMBER, Board, Plan, PlanLimitError, is_match
+from ai_orchestrator.plans.domain import (
+    MAX_PLANS_PER_MEMBER,
+    Board,
+    NotMatchError,
+    Plan,
+    PlanLimitError,
+    is_match,
+    match_with,
+)
 from ai_orchestrator.plans.store import NewPlan, PlanNotFoundError, TripNotFoundError
 
 NOW = datetime(2026, 10, 25, 12, 0, tzinfo=UTC)
@@ -25,15 +33,30 @@ def plan(votes: dict[int, bool]) -> Plan:
     return Plan("p", 1, "Fado", None, None, None, None, NOW, votes)
 
 
-def test_match_needs_every_active_member() -> None:
+def test_match_needs_two_yes() -> None:
     both = frozenset({1, 2})
     assert is_match(plan({1: True, 2: True}), both)
     assert not is_match(plan({1: True}), both)
     assert not is_match(plan({1: True, 2: False}), both)
     # El voto de una cuenta borrada (asiento 3, ya no activo) no cuenta.
     assert is_match(plan({1: True, 2: True, 3: False}), both)
+    assert not is_match(plan({1: True, 3: True}), both)
     # Solo, no hay match: hace falta un grupo.
     assert not is_match(plan({1: True}), frozenset({1}))
+    # En un grupo de 4, con que dos digan que sí ya es match viajero.
+    four = frozenset({1, 2, 3, 4})
+    assert is_match(plan({2: True, 4: True, 1: False}), four)
+
+
+def test_match_with_is_secret_until_you_coincide() -> None:
+    names = {1: "Dario", 2: "Marta", 3: "Álex"}
+    seats = frozenset({1, 2, 3})
+    p = plan({2: True, 3: True})
+    # Yo no he dicho que sí: no veo quién lo marcó.
+    assert match_with(p, Board(TRIP, 1, seats, (p,), names)) == []
+    # Yo sí: veo con quién coincido (sin mí).
+    p = plan({1: True, 2: True, 3: False})
+    assert match_with(p, Board(TRIP, 1, seats, (p,), names)) == ["Marta"]
 
 
 class MemoryPlans:
@@ -47,7 +70,7 @@ class MemoryPlans:
         return self.seats[user]
 
     def _board(self, seat: int) -> Board:
-        return Board(TRIP, seat, frozenset(self.seats.values()), tuple(self.plans))
+        return Board(TRIP, seat, frozenset(self.seats.values()), tuple(self.plans), {1: "Dario", 2: "Noelia"})
 
     async def board(self, negotiation_id: str, user_id: str) -> Board:
         return self._board(self._seat(negotiation_id, user_id))
@@ -79,6 +102,17 @@ class MemoryPlans:
         for i, p in enumerate(self.plans):
             if p.plan_id == plan_id:
                 self.plans[i] = replace(p, votes={**p.votes, seat: yes})
+                return self._board(seat)
+        raise PlanNotFoundError(plan_id)
+
+    async def plan(self, negotiation_id: str, user_id: str, plan_id: str) -> Board:
+        seat = self._seat(negotiation_id, user_id)
+        board = self._board(seat)
+        for i, p in enumerate(self.plans):
+            if p.plan_id == plan_id:
+                if p.votes.get(seat) is not True or not is_match(p, board.active_seats):
+                    raise NotMatchError(plan_id)
+                self.plans[i] = replace(p, planned=True)
                 return self._board(seat)
         raise PlanNotFoundError(plan_id)
 
@@ -137,6 +171,22 @@ async def test_add_vote_and_match() -> None:
         # Nadie ve quién votó qué: solo cuántos.
         assert by_title["Fado en Alfama"]["yes"] == 1 and by_title["Fado en Alfama"]["voted"] == 2
         assert by_title["Fado en Alfama"]["my_vote"] is False
+        # Con quién coincides: solo en el match y sin ti.
+        assert by_title["Torre de Belém"]["match_with"] == ["Dario"]
+        assert by_title["Fado en Alfama"]["match_with"] == []
+        assert view["people"] == [
+            {"name": "Dario", "me": False, "voted": True},
+            {"name": "Noelia", "me": True, "voted": True},
+        ]
+        # "Añadir al plan": el match sí; lo que no es match, no.
+        r = await c.put(f"{URL}/{fado}/planned", headers=h(DARIO))
+        assert r.status_code == 409
+        r = await c.put(f"{URL}/{belem}/planned", headers=h(NOELIA))
+        assert r.status_code == 200
+        assert {p["title"]: p["planned"] for p in r.json()["plans"]} == {
+            "Torre de Belém": True,
+            "Fado en Alfama": False,
+        }
         assert not by_title["Fado en Alfama"]["mine"]
 
         # Solo quien lo puso puede quitarlo.
