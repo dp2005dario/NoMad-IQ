@@ -537,7 +537,7 @@ class _PlanShortcuts extends StatelessWidget {
             // Las que ya existen abren su pantalla; el resto, "muy pronto".
             onPressed: () => context.push(switch (f) {
               Feature.flightRoute => Routes.flightRoute(from: origin),
-              Feature.explore => Routes.explore(origin: origin),
+              Feature.explore => Routes.explore(),
               Feature.copyTrip => Routes.copyTrip(),
               Feature.cheapSleep => Routes.stays(),
               Feature.events => Routes.events(),

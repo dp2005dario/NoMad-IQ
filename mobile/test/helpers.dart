@@ -38,6 +38,7 @@ import 'package:eclipta/features/map/location.dart';
 import 'package:eclipta/features/map/location_tracker.dart';
 import 'package:eclipta/features/map/position_reporter.dart';
 import 'package:eclipta/features/push/notices.dart';
+import 'package:eclipta/features/route/flight3d.dart' show WebSceneBuilder;
 import 'package:eclipta/features/map/map_surface.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/camera/camera_device.dart';
@@ -226,6 +227,7 @@ AppServices fakeServices(
   Stream<bool> Function()? onlineChanges,
   DocSource? docSource,
   DocTextReader? docReader,
+  WebSceneBuilder? webScene,
 }) {
   final FakeGateway g = gateway ?? FakeGateway();
   final FakeMap m = map ?? FakeMap();
@@ -247,6 +249,7 @@ AppServices fakeServices(
     tilesUrl: Uri.parse('https://tiles.test/planet'),
     glyphsUrl: 'https://tiles.test/fonts/{fontstack}/{range}.pbf',
     notices: notices ?? FakeNotices(),
+    webScene: webScene,
     prefs: prefs,
     openBooking: openBooking ?? (Uri _) async => true,
     openLink: openLink ?? (Uri _) async => true,

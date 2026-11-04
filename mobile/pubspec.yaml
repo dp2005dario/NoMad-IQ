@@ -112,6 +112,8 @@ flutter:
     - assets/geo/fact_names.txt
     # El Vuelo 3D: una página con three.js ya empaquetado (ver tool/flight3d/).
     - assets/flight3d/vuelo.html
+    # Explorar: el globo y el mapa de la maqueta (ver tool/build_explore_page.py).
+    - assets/explore/explorar.html
     # La Bienvenida: vídeo de fondo (720x1280, ~1 MB), logo y la G de Google.
     - assets/video/bienvenida.mp4
     - assets/brand/eclipta_spark.png

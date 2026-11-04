@@ -1,4 +1,7 @@
-// Explorar: precio por meses + clima medio, y el veredicto.
+// Explorar: la página de la maqueta con el clima real de cada país.
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -6,166 +9,105 @@ import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/features/flights/climate_api.dart';
 import 'package:eclipta/features/flights/explore_screen.dart';
-import 'package:eclipta/features/flights/fares_api.dart';
+import 'package:eclipta/l10n/generated/app_localizations.dart';
 
 import 'helpers.dart';
 
-Map<String, Object?> month(
-  String m,
-  int price, {
-  String link = 'https://www.aviasales.com/search/x',
-}) => <String, Object?>{
-  'month': m,
-  'price_per_adult': <String, Object?>{
-    'amount_minor': price,
-    'currency': 'EUR',
-  },
-  'carrier': 'IB',
-  'departure_at': '$m-11',
-  'return_at': '$m-20',
-  'transfers': 0,
-  'booking_url': link,
-};
-
-Map<String, Object?> climateMonth(int m, double temp, double rain) =>
-    <String, Object?>{
-      'month': m,
-      'temp_c': temp,
-      'temp_max_c': temp + 6,
-      'rain_mm': rain,
-    };
-
-void serveExplore(FakeGateway g) {
-  g.publicPrefixes.addAll(<String>['/v1/fares/months', '/v1/climate']);
-  g.services['/v1/fares/months'] = (http.Request r) => FakeGateway.json(
-    <String, Object?>{
-      'origin': r.url.queryParameters['origin'],
-      'destination': r.url.queryParameters['destination'],
-      'months': <Object?>[
-        month('2026-11', 64000),
-        month('2027-03', 41200),
-        // Enlace que no es https: no se enseña.
-        month('2027-04', 9900, link: 'http://insecure.example'),
-        // Mes imposible: tampoco.
-        <String, Object?>{'month': '2027-13', 'booking_url': 'https://x.test'},
-      ],
-    },
-  );
-  g.services['/v1/climate'] = (_) => FakeGateway.json(<String, Object?>{
-    'lat': 35.5,
-    'lon': 140.0,
-    'months': <Object?>[climateMonth(3, 12.0, 40), climateMonth(11, 14.0, 300)],
-  });
-}
+List<Object?> year(double temp, double rain) => <Object?>[
+  for (int m = 0; m < 12; m++) <Object?>[temp + m, rain],
+];
 
 void main() {
-  test('el mes más barato y el buen tiempo', () {
-    final List<MonthFare> months = <MonthFare>[
-      MonthFare.parse(month('2026-11', 64000))!,
-      MonthFare.parse(month('2027-03', 41200))!,
-    ];
-    expect(cheapestMonth(months)!.month, 3);
-    expect(cheapestMonth(<MonthFare>[]), isNull);
-    expect(niceWeather(MonthClimate.parse(climateMonth(3, 18, 30))!), isTrue);
-    // Demasiada lluvia.
-    expect(niceWeather(MonthClimate.parse(climateMonth(7, 22, 300))!), isFalse);
-    // Demasiado frío.
-    expect(niceWeather(MonthClimate.parse(climateMonth(1, 2, 10))!), isFalse);
+  test('el clima de los países: solo lo que está bien formado', () {
+    final CountryClimate c = CountryClimate.parse(<String, Object?>{
+      'complete': true,
+      'countries': <String, Object?>{
+        'ES': year(10, 40),
+        'JP': <Object?>[
+          <Object?>[1, 2],
+        ], // le faltan meses
+        'xx': year(1, 1), // código raro
+        'FR': <Object?>[for (int m = 0; m < 12; m++) 'nada'],
+      },
+    });
+    expect(c.complete, isTrue);
+    expect(c.byCountry.keys, <String>['ES']);
+    expect(c.byCountry['ES']![3], <double>[13, 40]);
+    expect(CountryClimate.parse('nada').byCountry, isEmpty);
   });
 
-  test('un mes raro o con enlace no https se descarta', () {
-    expect(MonthFare.parse(month('2027-13', 1)), isNull);
-    expect(MonthFare.parse(month('2027-03', 1, link: 'http://x.test')), isNull);
-    expect(MonthFare.parse('nada'), isNull);
-    final MonthFare? ok = MonthFare.parse(month('2027-03', 41200));
-    expect(ok!.year, 2027);
-    expect(ok.month, 3);
-  });
+  test(
+    'la página lleva los textos y el clima, y nada puede cerrar el script',
+    () {
+      final String page = File('assets/explore/explorar.html')
+          .readAsStringSync();
+      // La maqueta ya no trae datos de ejemplo ni sus notas.
+      expect(page, isNot(contains('Datos de ejemplo')));
+      expect(page, isNot(contains('datos de ejemplo')));
+      expect(page, contains(exploreMarker));
+      final String html = explorePageWith(
+        page,
+        language: 'es',
+        texts: <String, String>{'title': 'Explorar </script>'},
+        climate: CountryClimate.parse(<String, Object?>{
+          'countries': <String, Object?>{'ES': year(10, 40)},
+        }),
+      );
+      expect(html, isNot(contains(exploreMarker)));
+      expect(html, contains(r'"title":"Explorar <\/script>"'));
+      expect(html, contains('"ES":[[10.0,40.0]'));
+    },
+  );
 
-  test('los días de lluvia salen del total de mm', () {
-    expect(MonthClimate.parse(climateMonth(3, 12, 40))!.rainyDays, 8);
-    expect(MonthClimate.parse(climateMonth(3, 12, 0))!.rainyDays, 0);
-    expect(MonthClimate.parse(climateMonth(13, 12, 0)), isNull);
-  });
-
-  testWidgets('se eligen dos aeropuertos y sale el año con su veredicto', (
+  testWidgets('abre la maqueta con el clima del servidor y en tu idioma', (
     WidgetTester tester,
   ) async {
     final FakeGateway g = FakeGateway();
-    serveExplore(g);
+    int asked = 0;
+    g.publicPrefixes.add('/v1/climate');
+    g.services['/v1/climate/countries'] = (http.Request r) {
+      asked++;
+      return FakeGateway.json(<String, Object?>{
+        'complete': true,
+        'countries': <String, Object?>{'ES': year(10, 40)},
+      });
+    };
+    final List<String> pages = <String>[];
     final SessionController session = await signedInSession(g);
-    tester.view.physicalSize = const Size(1200, 2600);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
     await pumpApp(
       tester,
       locale: 'es',
       session: session,
-      initialLocation: Routes.explore(origin: 'MAD'),
-      services: fakeServices(session, gateway: g),
+      initialLocation: Routes.explore(),
+      services: fakeServices(
+        session,
+        gateway: g,
+        webScene: (String html, void Function(String) _) {
+          pages.add(html);
+          return const SizedBox.expand();
+        },
+      ),
     );
-    // Los aeropuertos de verdad (para el clima del destino) tardan un poco.
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(seconds: 2)),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Explorar'), findsOneWidget);
-
-    await tester.enterText(find.widgetWithText(TextField, 'Destino'), 'nrt');
-    await tester.tap(find.text('Ver el año'));
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(seconds: 1)),
-    );
-    await tester.pumpAndSettle();
-
-    // Solo los dos meses buenos, y marzo (el más barato) sale elegido.
-    expect(find.text('El más barato: marzo'), findsOneWidget);
-    expect(find.textContaining('412'), findsWidgets);
-    // Marzo: 12°, 8 días de lluvia → buen tiempo.
-    expect(find.text('8 días'), findsOneWidget);
-    expect(
-      find.text('marzo es el punto justo: barato y con buen tiempo.'),
-      findsOneWidget,
-    );
-
-    // Noviembre llueve mucho: cambia el veredicto.
-    await tester.tap(find.text('nov'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('el tiempo es peor'), findsOneWidget);
-
-    // Y de ahí al buscador, ya con la ruta y las fechas de ese mes puestas.
-    await tester.tap(find.textContaining('Ver vuelos a'));
-    await tester.pumpAndSettle();
-    expect(find.text('NRT'), findsWidgets);
-    expect(find.textContaining('11 nov'), findsWidgets);
-  });
-
-  testWidgets('sin precios del mes lo dice, y 429 avisa de que esperes', (
-    WidgetTester tester,
-  ) async {
-    final FakeGateway g = FakeGateway();
-    serveExplore(g);
-    g.services['/v1/fares/months'] = (_) =>
-        FakeGateway.json(<String, Object?>{'months': <Object?>[]});
-    final SessionController session = await signedInSession(g);
-    tester.view.physicalSize = const Size(1200, 2600);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
-    await pumpApp(
-      tester,
-      locale: 'es',
-      session: session,
-      initialLocation: Routes.explore(origin: 'MAD'),
-      services: fakeServices(session, gateway: g),
-    );
-    await tester.enterText(find.widgetWithText(TextField, 'Destino'), 'NRT');
-    await tester.tap(find.text('Ver el año'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Nadie ha buscado esta ruta'), findsOneWidget);
-
-    g.services['/v1/fares/months'] = (_) => http.Response('{}', 429);
-    await tester.tap(find.text('Ver el año'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Mucha gente buscando'), findsOneWidget);
+    // La página (casi 1 MB) se lee de los assets de verdad.
+    for (int i = 0; i < 10 && pages.isEmpty; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 300)),
+      );
+      await tester.pump();
+    }
+    expect(asked, 1);
+    expect(pages, isNotEmpty);
+    final String html = pages.last;
+    final Map<String, Object?> data = jsonDecode(
+      html.substring(
+        html.indexOf('var ECL=') + 8,
+        html.indexOf(';\nvar T=ECL.t'),
+      ),
+    ) as Map<String, Object?>;
+    expect(data['lang'], 'es');
+    final AppLocalizations t = lookupAppLocalizations(const Locale('es'));
+    expect((data['t']! as Map<String, Object?>)['title'], t.exwTitle);
+    expect((data['t']! as Map<String, Object?>)['count'], '{n} de {total}');
+    expect((data['climate']! as Map<String, Object?>).keys, <String>['ES']);
   });
 }

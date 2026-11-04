@@ -121,11 +121,8 @@ abstract final class Routes {
     queryParameters: code == null ? null : <String, String>{'code': code},
   ).toString();
 
-  /// Explorar: precio por meses y clima. `from` = aeropuerto de salida.
-  static String explore({String? origin}) => Uri(
-    path: '/explore',
-    queryParameters: origin == null ? null : <String, String>{'from': origin},
-  ).toString();
+  /// Explorar: cuándo conviene viajar a cada país del mundo.
+  static String explore() => '/explore';
   static const String privacy = '/settings/privacy';
 
   /// La audioguía de una zona. El nombre va en la dirección para poder
@@ -386,7 +383,7 @@ GoRouter buildRouter({
     GoRoute(
       path: '/explore',
       builder: (BuildContext context, GoRouterState state) =>
-          ExploreScreen(origin: state.uri.queryParameters['from'] ?? ''),
+          const ExploreScreen(),
     ),
     GoRoute(
       path: Routes.before,

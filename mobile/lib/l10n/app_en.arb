@@ -3152,6 +3152,158 @@
       }
     }
   },
+  "exwTitle": "Explore",
+  "@exwTitle": {
+    "description": "Explore screen title"
+  },
+  "exwSub": "Pick a month and see when it's best to visit each country in the world.",
+  "@exwSub": {
+    "description": "Explore subtitle"
+  },
+  "exwMap": "Map",
+  "@exwMap": {
+    "description": "Toggle: flat map"
+  },
+  "exwGlobe": "Globe",
+  "@exwGlobe": {
+    "description": "Toggle: 3D globe"
+  },
+  "exwClouds": "Clouds",
+  "@exwClouds": {
+    "description": "Toggle: show clouds"
+  },
+  "exwLoading": "Drawing the terrain…",
+  "@exwLoading": {
+    "description": "While the globe is being drawn"
+  },
+  "exwHintGlobe": "Drag any way · pinch to zoom",
+  "@exwHintGlobe": {
+    "description": "Hint on the globe"
+  },
+  "exwHintMap": "Drag and pinch to zoom in",
+  "@exwHintMap": {
+    "description": "Hint on the flat map"
+  },
+  "exwAvoid": "Avoid",
+  "@exwAvoid": {
+    "description": "Legend: worst time"
+  },
+  "exwBestTime": "Best time",
+  "@exwBestTime": {
+    "description": "Legend: best time"
+  },
+  "exwSource": "Terrain: NASA Blue Marble. Climate: NASA POWER (30-year averages).",
+  "@exwSource": {
+    "description": "Data source under the map"
+  },
+  "exwTopNow": "Best right now",
+  "@exwTopNow": {
+    "description": "Section: best places this month"
+  },
+  "exwAllCountries": "All countries",
+  "@exwAllCountries": {
+    "description": "Section: all countries"
+  },
+  "exwSearch": "Search country",
+  "@exwSearch": {
+    "description": "Search field placeholder"
+  },
+  "exwCount": "{n} of {total}",
+  "@exwCount": {
+    "description": "How many countries are listed",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "exwShow": "Show",
+  "@exwShow": {
+    "description": "Button: show the list"
+  },
+  "exwHide": "Hide",
+  "@exwHide": {
+    "description": "Button: hide the list"
+  },
+  "exwNoData": "No data",
+  "@exwNoData": {
+    "description": "No data for this"
+  },
+  "exwGreat": "Great time to go",
+  "@exwGreat": {
+    "description": "Verdict: very good time"
+  },
+  "exwGood": "Good time",
+  "@exwGood": {
+    "description": "Verdict: good time"
+  },
+  "exwFair": "So-so time",
+  "@exwFair": {
+    "description": "Verdict: so-so time"
+  },
+  "exwAvoidVerdict": "Better to avoid",
+  "@exwAvoidVerdict": {
+    "description": "Verdict: better avoid"
+  },
+  "exwBestMonth": "{month}. Best month: {best}.",
+  "@exwBestMonth": {
+    "description": "Under the verdict: chosen month and best month",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "best": {
+        "type": "String"
+      }
+    }
+  },
+  "exwTemp": "Average temperature",
+  "@exwTemp": {
+    "description": "Stat: average temperature"
+  },
+  "exwRain": "Rain this month",
+  "@exwRain": {
+    "description": "Stat: rain this month"
+  },
+  "exwTourists": "Tourists",
+  "@exwTourists": {
+    "description": "Stat: how many tourists"
+  },
+  "exwCost": "Daily cost",
+  "@exwCost": {
+    "description": "Stat: daily cost"
+  },
+  "exwSafety": "Safety",
+  "@exwSafety": {
+    "description": "Stat: safety"
+  },
+  "exwYear": "Score through the year",
+  "@exwYear": {
+    "description": "Chart title: score through the year"
+  },
+  "exwClose": "Close",
+  "@exwClose": {
+    "description": "Close button label"
+  },
+  "exwZoomIn": "Zoom in",
+  "@exwZoomIn": {
+    "description": "Zoom in button"
+  },
+  "exwZoomOut": "Zoom out",
+  "@exwZoomOut": {
+    "description": "Zoom out button"
+  },
+  "exwZoomAll": "See the whole world",
+  "@exwZoomAll": {
+    "description": "Button: see the whole world"
+  },
+  "exwLoadFail": "Couldn't load the map",
+  "@exwLoadFail": {
+    "description": "The globe could not be drawn"
+  },
   "moneyBalances": "Who owes what",
   "@moneyBalances": {
     "description": "Header: who owes what."
