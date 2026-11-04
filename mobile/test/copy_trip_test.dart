@@ -168,7 +168,7 @@ void main() {
       tester,
       locale: 'es',
       session: session,
-      initialLocation: Routes.copyTrip(),
+      initialLocation: Routes.copyCode,
       services: fakeServices(session, gateway: g, prefs: store),
     );
     await tester.pumpAndSettle();
@@ -229,7 +229,7 @@ void main() {
       tester,
       locale: 'es',
       session: session,
-      initialLocation: Routes.copyTrip(),
+      initialLocation: Routes.copyCode,
       services: fakeServices(session, gateway: g),
     );
     await tester.pumpAndSettle();
@@ -271,6 +271,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(sent!['items'], <Object?>[line('stay', 'Hotel Trastevere', 24000)]);
     expect(sent!['days'], 7);
+    // Sin marcar "Publicar en el muro": solo con el código.
+    expect(sent!['public'], isFalse);
     expect(find.text('7K2M-9QXD'), findsOneWidget);
     await tester.tap(find.text('Hecho'));
     await tester.pumpAndSettle();

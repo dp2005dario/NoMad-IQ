@@ -15,7 +15,10 @@ __all__ = ["ATTRIBUTION", "CELL_DEGREES", "LICENSE_URL", "Nearby", "NearbySpot",
 # restaurante que según OSM acepta reservas (para "Colas": mesa para cenar).
 # Para "Viajo con mi perro": vet = veterinario · dog_park = parque para
 # perros · pet_stay = alojamiento que en OSM dice que admite perros.
-SpotKind = Literal["water", "toilets", "wifi", "charging", "sight", "table", "vet", "dog_park", "pet_stay"]
+# place = la ciudad, el distrito o el barrio donde cae la zona (su nombre).
+SpotKind = Literal[
+    "water", "toilets", "wifi", "charging", "sight", "table", "vet", "dog_park", "pet_stay", "place"
+]
 
 
 class NearbySpot(BaseModel):
@@ -39,6 +42,9 @@ class NearbySpot(BaseModel):
     phone: str | None = None
     cuisine: str | None = None
     reservation: str | None = None
+    # Sitios que ver: museum, viewpoint, park, worship, monument...
+    # Zonas ("place"): su nivel, "8" ciudad, "9" distrito, "10" barrio.
+    sub: str | None = None
 
 
 class Nearby(BaseModel):

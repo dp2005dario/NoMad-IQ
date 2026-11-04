@@ -109,6 +109,25 @@ def shares(expense: Expense) -> dict[int, int]:
     return divide(expense.amount_minor, consumed)
 
 
+TIP_PCTS = (0, 5, 10)
+
+
+def with_extras(ticket_minor: int, cover_minor: int, discount_minor: int, tip_pct: int) -> tuple[int, int]:
+    """(lo que se reparte, la propina) a partir del ticket y sus extras.
+
+    El ticket ya lleva el cubierto y el descuento; la propina va encima:
+        86,00 + 6,00 de pan - 5,00 de descuento = 87,00; con un 10 % de
+        propina (8,70) se reparten 95,70.
+    """
+    if tip_pct not in TIP_PCTS:
+        raise ValueError("la propina es 0, 5 o 10 %")
+    base = ticket_minor + cover_minor - discount_minor
+    if base <= 0:
+        raise ValueError("el descuento no puede ser mayor que el ticket")
+    tip = (base * tip_pct + 50) // 100
+    return base + tip, tip
+
+
 def balances(
     seats: Iterable[int], expenses: Iterable[Expense], payments: Iterable[Payment]
 ) -> dict[int, int]:

@@ -141,6 +141,14 @@
 
          In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
     <queries>
+        <!-- "Abrir Bizum en tu banco": Android 11+ solo deja ver (y abrir) las
+             apps que se nombran aquí. Son las apps oficiales de cada banco. -->
+        <package android:name="es.lacaixa.mobile.android.newwapicon"/>
+        <package android:name="com.bbva.bbvacontigo"/>
+        <package android:name="es.bancosantander.apps"/>
+        <package android:name="net.inverline.bancosabadell.officelocator.android"/>
+        <package android:name="www.ingdirect.nativeframe"/>
+        <package android:name="es.openbank.mobile"/>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>

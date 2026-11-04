@@ -88,6 +88,8 @@ dependencies:
   flutter_svg: ^2.3.2
   # Sin conexión: "actualizar solas" solo cuando el móvil está cargando.
   battery_plus: ^7.1.2
+  google_mlkit_barcode_scanning: ^0.16.1
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:
@@ -110,6 +112,12 @@ flutter:
     - assets/geo/fact_names.txt
     # El Vuelo 3D: una página con three.js ya empaquetado (ver tool/flight3d/).
     - assets/flight3d/vuelo.html
+    # Explorar: el globo y el mapa de la maqueta (ver tool/build_explore_page.py).
+    - assets/explore/explorar.html
+    - assets/nearby/cerca.html
+    - assets/stays/hoteles.html
+    - assets/copy_trip/copiar.html
+    - assets/vault/boveda.html
     # La Bienvenida: vídeo de fondo (720x1280, ~1 MB), logo y la G de Google.
     - assets/video/bienvenida.mp4
     - assets/brand/eclipta_spark.png
@@ -139,3 +147,9 @@ flutter:
     - family: BricolageGrotesque
       fonts:
         - asset: assets/fonts/BricolageGrotesque.ttf
+    # La letra de máquina de los tickets (Apache 2.0, como Courier New).
+    - family: Cousine
+      fonts:
+        - asset: assets/fonts/Cousine-Regular.ttf
+        - asset: assets/fonts/Cousine-Bold.ttf
+          weight: 700

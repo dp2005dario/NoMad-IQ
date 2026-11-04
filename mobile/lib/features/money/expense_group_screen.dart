@@ -21,6 +21,7 @@ import 'expenses_api.dart';
 import 'money_widgets.dart';
 import 'receipt_parser.dart';
 import 'receipt_scanner.dart';
+import 'settle_sheet.dart';
 
 class ExpenseGroupScreen extends StatefulWidget {
   const ExpenseGroupScreen({super.key, required this.groupId});
@@ -106,12 +107,17 @@ class _ExpenseGroupScreenState extends State<ExpenseGroupScreen> {
       _AddWay.byHand => null,
     };
     if (source != null) {
-      final List<String>? rows = await _services.receipts.scan(
+      final ScannedTicket? scanned = await _services.receipts.scanTicket(
         source,
         currency: group.currency,
       );
-      if (!mounted || rows == null) return;
-      receipt = parseReceipt(rows, digits: currencyDigits(group.currency));
+      if (!mounted || scanned == null) return;
+      receipt = parseReceipt(
+        scanned.rows,
+        digits: currencyDigits(group.currency),
+        // El QR de Hacienda solo vale para tickets en euros.
+        qr: group.currency == 'EUR' ? scanned.qr : null,
+      );
       if (receipt.isEmpty) _say(t.moneyScanNothing);
     }
     final Expense? added = await Navigator.of(context).push(
@@ -136,66 +142,33 @@ class _ExpenseGroupScreenState extends State<ExpenseGroupScreen> {
     if (changed == true && mounted) await _load();
   }
 
-  /// "Saldar": confirma el importe y apunta el pago.
+  /// "Saldar": cómo pagarle (Bizum, PayPal.me...) y apuntar el pago.
   Future<void> _settle(ExpenseGroup group, Payment debt) async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final int digits = currencyDigits(group.currency);
-    final TextEditingController amount = TextEditingController(
-      text: (debt.amountMinor / _pow10(digits)).toStringAsFixed(digits),
+    final bool paid = await showSettleSheet(
+      context,
+      group: group,
+      debt: debt,
+      concept: group.title,
+      onPay: (int minor) async {
+        try {
+          await _services.expenses.pay(
+            group.id,
+            toSeat: debt.toSeat,
+            amountMinor: minor,
+          );
+          return true;
+        } on ApiException catch (e) {
+          if (mounted) {
+            _say(
+              e.error == ApiError.network ? t.errorNetwork : t.errorUnavailable,
+            );
+          }
+          return false;
+        }
+      },
     );
-    final int? minor = await showDialog<int>(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(t.moneySettleTitle(personName(t, group, debt.toSeat))),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(t.moneySettleHelp),
-            const SizedBox(height: 12),
-            TextField(
-              controller: amount,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: InputDecoration(
-                labelText: t.moneyAmount,
-                suffixText: group.currency,
-              ),
-            ),
-          ],
-        ),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
-          ),
-          FilledButton(
-            onPressed: () =>
-                Navigator.of(context)
-                    .pop(parseAmount(amount.text, digits: digits)),
-            child: Text(t.moneySettleConfirm),
-          ),
-        ],
-      ),
-    );
-    amount.dispose();
-    if (minor == null || !mounted) return;
-    try {
-      await _services.expenses.pay(
-        group.id,
-        toSeat: debt.toSeat,
-        amountMinor: minor,
-      );
-      if (mounted) {
-        _say(t.moneySettled);
-        await _load();
-      }
-    } on ApiException catch (e) {
-      if (mounted) {
-        _say(e.error == ApiError.network ? t.errorNetwork : t.errorUnavailable);
-      }
-    }
+    if (paid && mounted) await _load();
   }
 
   @override
@@ -328,8 +301,6 @@ class _ExpenseGroupScreenState extends State<ExpenseGroupScreen> {
 
 /// Las tres formas de apuntar un gasto.
 enum _AddWay { camera, gallery, byHand }
-
-int _pow10(int n) => n == 0 ? 1 : 10 * _pow10(n - 1);
 
 /// La tarjeta de arriba: "Le debes a Álex 21,50 € [Saldar]" o "Estáis en paz".
 class _MyBalance extends StatelessWidget {

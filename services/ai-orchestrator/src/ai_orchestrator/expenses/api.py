@@ -23,13 +23,23 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Response
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
 from ai_orchestrator.domain import CurrencyCode
-from ai_orchestrator.expenses.domain import KITTY, MAX_ITEMS, Item, Split, balances, kitty, settle, shares
+from ai_orchestrator.expenses.domain import (
+    KITTY,
+    MAX_ITEMS,
+    Item,
+    Split,
+    balances,
+    kitty,
+    settle,
+    shares,
+    with_extras,
+)
 from ai_orchestrator.expenses.store import (
     ExpenseNotFoundError,
     ExpenseRecord,
@@ -40,6 +50,7 @@ from ai_orchestrator.expenses.store import (
     NewExpense,
     NotAllowedError,
     PaymentRecord,
+    Rework,
     TooManyExpensesError,
 )
 from ai_orchestrator.identity import Principal, current_principal
@@ -102,6 +113,11 @@ class CreateExpense(BaseModel):
     spent_on: date
     original_minor: Minor | None = None
     original_currency: CurrencyCode | None = None
+    # Extras del ticket (pantalla Gastos). amount_minor es lo que dice el
+    # ticket (ya con el cubierto y el descuento); la propina va encima.
+    cover_minor: int = Field(default=0, ge=0, le=MAX_MINOR)
+    discount_minor: int = Field(default=0, ge=0, le=MAX_MINOR)
+    tip_pct: Literal[0, 5, 10] = 0
 
     @model_validator(mode="after")
     def _check(self) -> Self:
@@ -110,6 +126,18 @@ class CreateExpense(BaseModel):
         if len(set(self.participants)) != len(self.participants):
             raise ValueError("participantes repetidos")
         return self
+
+
+class ReworkIn(BaseModel):
+    """Cambiar cómo se reparte un gasto: modo, quién tomó cada línea y extras."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    split: Literal["equal", "items"]
+    owners: list[list[Seat]] | None = Field(default=None, max_length=MAX_ITEMS)
+    cover_minor: int = Field(default=0, ge=0, le=MAX_MINOR)
+    discount_minor: int = Field(default=0, ge=0, le=MAX_MINOR)
+    tip_pct: Literal[0, 5, 10] = 0
 
 
 class Claim(BaseModel):
@@ -181,6 +209,10 @@ class ExpenseView(BaseModel):
     original_minor: int | None
     original_currency: str | None
     weights: list[int]
+    cover_minor: int
+    discount_minor: int
+    tip_pct: int
+    tip_minor: int
 
     @classmethod
     def of(cls, e: ExpenseRecord) -> ExpenseView:
@@ -202,6 +234,10 @@ class ExpenseView(BaseModel):
             original_minor=e.original_minor,
             original_currency=e.original_currency,
             weights=list(e.weights),
+            cover_minor=e.cover_minor,
+            discount_minor=e.discount_minor,
+            tip_pct=e.tip_pct,
+            tip_minor=e.tip_minor,
         )
 
 
@@ -382,9 +418,18 @@ def expense_router(store: ExpenseStore) -> APIRouter:
     async def add_expense(
         principal: Annotated[Principal, Depends(current_principal)], group_id: GroupId, body: CreateExpense
     ) -> ExpenseView:
+        try:
+            amount, tip = with_extras(
+                body.amount_minor - body.cover_minor + body.discount_minor,
+                body.cover_minor,
+                body.discount_minor,
+                body.tip_pct,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         new = NewExpense(
             title=body.title,
-            amount_minor=body.amount_minor,
+            amount_minor=amount,
             payer_seat=body.payer_seat,
             split=body.split,
             participants=tuple(body.participants),
@@ -395,6 +440,10 @@ def expense_router(store: ExpenseStore) -> APIRouter:
             original_minor=body.original_minor,
             original_currency=body.original_currency,
             weights=tuple(body.weights),
+            cover_minor=body.cover_minor,
+            discount_minor=body.discount_minor,
+            tip_pct=body.tip_pct,
+            tip_minor=tip,
         )
         try:
             return ExpenseView.of(await store.add_expense(str(group_id), principal.user_id, new))
@@ -419,6 +468,30 @@ def expense_router(store: ExpenseStore) -> APIRouter:
             raise HTTPException(status_code=404, detail="gasto no encontrado") from exc
         except NotAllowedError as exc:
             raise HTTPException(status_code=403, detail=str(exc)) from exc
+        return ExpenseView.of(record)
+
+    @router.put("/{group_id}/expenses/{expense_id}/split", response_model=ExpenseView)
+    async def rework_expense(
+        principal: Annotated[Principal, Depends(current_principal)],
+        group_id: GroupId,
+        expense_id: Annotated[uuid.UUID, Path()],
+        body: ReworkIn,
+    ) -> ExpenseView:
+        change = Rework(
+            split=body.split,
+            owners=None if body.owners is None else tuple(tuple(o) for o in body.owners),
+            cover_minor=body.cover_minor,
+            discount_minor=body.discount_minor,
+            tip_pct=body.tip_pct,
+        )
+        try:
+            record = await store.rework(str(group_id), str(expense_id), principal.user_id, change)
+        except (GroupNotFoundError, ExpenseNotFoundError) as exc:
+            raise HTTPException(status_code=404, detail="gasto no encontrado") from exc
+        except NotAllowedError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         return ExpenseView.of(record)
 
     @router.delete("/{group_id}/expenses/{expense_id}", status_code=204)

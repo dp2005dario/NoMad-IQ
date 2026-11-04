@@ -1,6 +1,7 @@
 // Tests de pantallas: comprueban lo que VE el usuario, como si tocara el móvil.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:eclipta/features/vault/vault_screen.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/auth/google_id_token.dart';
 import 'package:eclipta/auth/session.dart';
@@ -139,8 +140,10 @@ void main() {
       await tester.tap(find.text('Bóveda'));
     }
     await tester.pumpAndSettle();
-    expect(find.text('Toca para abrir con tu huella'), findsOneWidget);
-    await tester.tap(find.byType(BackButton));
+    // La Bóveda es la maqueta (sin barra de arriba): se vuelve con el
+    // botón "atrás" del móvil.
+    expect(find.byType(VaultScreen), findsOneWidget);
+    await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     // De vuelta en Inicio (por donde estaba: el carrusel).
     expect(find.byType(PageView), findsOneWidget);

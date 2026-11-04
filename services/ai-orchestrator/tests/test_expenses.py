@@ -24,6 +24,7 @@ from ai_orchestrator.expenses.domain import (
     kitty,
     settle,
     shares,
+    with_extras,
 )
 from ai_orchestrator.expenses.store import (
     ExpenseNotFoundError,
@@ -35,6 +36,7 @@ from ai_orchestrator.expenses.store import (
     NewExpense,
     NotAllowedError,
     PaymentRecord,
+    Rework,
 )
 
 NOW = datetime(2026, 10, 23, 20, 0, tzinfo=UTC)
@@ -106,6 +108,17 @@ def test_balances_and_settle() -> None:
     assert set(bal.values()) == {0}
 
 
+def test_extras_of_the_ticket() -> None:
+    # El ejemplo de la maqueta: 86 + 6 de pan - 5 de descuento, 10 % de propina.
+    assert with_extras(8600, 600, 500, 10) == (9570, 870)
+    assert with_extras(8600, 0, 0, 0) == (8600, 0)
+    assert with_extras(8600, 0, 0, 5) == (9030, 430)
+    with pytest.raises(ValueError):
+        with_extras(8600, 0, 0, 15)
+    with pytest.raises(ValueError):
+        with_extras(500, 0, 600, 0)
+
+
 def test_check_expense() -> None:
     check_expense(Expense(100, 1, "equal", (1, 2)), [1, 2])
     with pytest.raises(ValueError):
@@ -174,9 +187,47 @@ class MemoryExpenses:
             new.original_minor,
             new.original_currency,
             new.weights,
+            new.cover_minor,
+            new.discount_minor,
+            new.tip_pct,
+            new.tip_minor,
         )
         self.groups[group_id] = replace(g, expenses=(rec, *g.expenses))
         return rec
+
+    async def rework(self, group_id: str, expense_id: str, user_id: str, change: Rework) -> ExpenseRecord:
+        g = self._find(group_id, user_id)
+        me = g.seat_of(user_id) or 0
+        e = next((e for e in g.expenses if e.expense_id == expense_id), None)
+        if e is None:
+            raise ExpenseNotFoundError(expense_id)
+        if me not in e.participants:
+            raise NotAllowedError("no participas")
+        if change.owners is not None and len(change.owners) != len(e.items):
+            raise ValueError("hace falta quién tomó cada línea")
+        amount, tip = with_extras(e.ticket_minor, change.cover_minor, change.discount_minor, change.tip_pct)
+        items = e.items
+        if change.owners is not None:
+            items = tuple(
+                replace(i, claimed_by=tuple(dict.fromkeys(o)))
+                for i, o in zip(e.items, change.owners, strict=True)
+            )
+        check_expense(
+            Expense(amount, e.payer_seat, change.split, e.participants, items), [m.seat for m in g.members]
+        )
+        new = replace(
+            e,
+            split=change.split,
+            amount_minor=amount,
+            items=items,
+            weights=(),
+            cover_minor=change.cover_minor,
+            discount_minor=change.discount_minor,
+            tip_pct=change.tip_pct,
+            tip_minor=tip,
+        )
+        self.groups[group_id] = replace(g, expenses=tuple(new if x is e else x for x in g.expenses))
+        return new
 
     async def claim(
         self, group_id: str, expense_id: str, user_id: str, index: int, claimed: bool
@@ -273,6 +324,15 @@ async def test_full_flow() -> None:
         await c.post("/v1/expense-groups/join", json={"code": code, "my_name": "Marta"}, headers=h(MARTA))
         assert (await c.get(f"/v1/expense-groups/{gid}", headers=h(STRANGER))).status_code == 404
 
+        tipped = await c.post(
+            f"/v1/expense-groups/{gid}/expenses",
+            json={**DINNER, "tip_pct": 10, "discount_minor": 500},
+            headers=h(DARIO),
+        )
+        # El ticket dice 86,00 (ya con el descuento): con la propina, 94,60.
+        assert (tipped.json()["amount_minor"], tipped.json()["tip_minor"]) == (9460, 860)
+        await c.delete(f"/v1/expense-groups/{gid}/expenses/{tipped.json()['expense_id']}", headers=h(DARIO))
+
         e = await c.post(f"/v1/expense-groups/{gid}/expenses", json=DINNER, headers=h(DARIO))
         assert e.status_code == 201, e.text
         eid = e.json()["expense_id"]
@@ -297,6 +357,43 @@ async def test_full_flow() -> None:
         assert paid.status_code == 201
         listed = (await c.get("/v1/expense-groups", headers=h(MARTA))).json()["items"]
         assert listed[0]["my_balance_minor"] == 0 and listed[0]["total_minor"] == 8600
+
+        # "Repartir" desde la pantalla del gasto (maqueta 8): Marta (no lo
+        # pagó) pone quién tomó cada línea, el pan, un descuento y un 10 %.
+        rw = await c.put(
+            f"/v1/expense-groups/{gid}/expenses/{eid}/split",
+            json={
+                "split": "items",
+                "owners": [[1, 2, 3], [1], [2]],
+                "cover_minor": 600,
+                "discount_minor": 500,
+                "tip_pct": 10,
+            },
+            headers=h(MARTA),
+        )
+        assert rw.status_code == 200, rw.text
+        body = rw.json()
+        # Ticket 86,00 + 6 de pan - 5 de descuento = 87,00; +10 % = 8,70 → 95,70.
+        assert (body["tip_minor"], body["amount_minor"]) == (870, 9570)
+        assert [i["claimed_by"] for i in body["items"]] == [[1, 2, 3], [1], [2]]
+        assert sum(s["amount_minor"] for s in body["shares"]) == 9570
+        # Volver a "a partes iguales" y sin extras: vuelve el ticket solo.
+        back = await c.put(
+            f"/v1/expense-groups/{gid}/expenses/{eid}/split", json={"split": "equal"}, headers=h(DARIO)
+        )
+        assert back.json()["amount_minor"] == 8600 and back.json()["split"] == "equal"
+        # Las líneas tienen que ir todas, y nadie de fuera.
+        bad = await c.put(
+            f"/v1/expense-groups/{gid}/expenses/{eid}/split",
+            json={"split": "items", "owners": [[1]]},
+            headers=h(DARIO),
+        )
+        assert bad.status_code == 400
+        assert (
+            await c.put(
+                f"/v1/expense-groups/{gid}/expenses/{eid}/split", json={"split": "equal"}, headers=h(STRANGER)
+            )
+        ).status_code == 404
 
         # Marta no lo apuntó ni lo pagó: no puede borrarlo. Álex (pagó) sí.
         assert (

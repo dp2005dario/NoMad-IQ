@@ -2,6 +2,7 @@
 // contacto configurado no salen.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:eclipta/features/vault/vault_screen.dart';
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/features/help/help_contacts.dart';
@@ -38,7 +39,7 @@ void main() {
     return opened;
   }
 
-  testWidgets('sin socios configurados solo salen aerolínea y seguro', (
+  testWidgets('sin socios configurados salen las cinco y avisan', (
     WidgetTester tester,
   ) async {
     await open(tester);
@@ -46,14 +47,21 @@ void main() {
     expect(find.text('Pregunta a Flyra'), findsOneWidget);
     expect(find.text('La aerolínea o agencia donde compraste'), findsOneWidget);
     expect(find.text('Asistencia de tu seguro de viaje'), findsOneWidget);
-    expect(find.text('Expertos en reclamaciones'), findsNothing);
-    expect(find.text('Gestor de visados'), findsNothing);
-    expect(find.text('Soporte de ECLIPTA'), findsNothing);
+    // Las cinco salen como en la maqueta; sin socio, avisan de que llega
+    // pronto en vez de abrir nada.
+    expect(find.text('Expertos en reclamaciones'), findsOneWidget);
+    expect(find.text('Gestor de visados'), findsOneWidget);
+    expect(find.text('Soporte de ECLIPTA'), findsOneWidget);
+    await tester.tap(find.text('Que lo reclamen por mí'));
+    await tester.pump();
+    expect(find.textContaining('Aún no está disponible'), findsOneWidget);
+    await tester.tap(find.text('La aerolínea o agencia donde compraste'));
+    await tester.pumpAndSettle();
 
     // La primera está abierta: lleva a la Bóveda (billetes y reservas).
     await tester.tap(find.text('Abrir la Bóveda'));
     await tester.pumpAndSettle();
-    expect(find.text('Bóveda'), findsWidgets);
+    expect(find.byType(VaultScreen), findsOneWidget);
   });
 
   testWidgets('con socios: avisan de la comisión y abren su web', (
@@ -67,8 +75,7 @@ void main() {
         visaUrl: Uri.parse('https://visados.example'),
       ),
     );
-    await tester.tap(find.text('Expertos en reclamaciones'));
-    await tester.pumpAndSettle();
+    // Como en la maqueta, la de reclamaciones sale ya abierta.
     expect(find.textContaining('comisión'), findsOneWidget);
     await tester.tap(find.text('Que lo reclamen por mí'));
     await tester.pumpAndSettle();

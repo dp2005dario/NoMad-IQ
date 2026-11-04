@@ -8,6 +8,7 @@ Orden de cada petición (de lo más barato a lo más caro):
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from dataclasses import dataclass
 from typing import Protocol
@@ -17,6 +18,7 @@ from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
 from ai_orchestrator.audioguides.cache import CacheError, SingleFlight
+from ai_orchestrator.climate.countries import COUNTRY_POINTS
 from ai_orchestrator.climate.domain import Climate, cell_of
 from ai_orchestrator.climate.nasa import NasaBusyError, NasaClient, NasaError
 
@@ -82,6 +84,8 @@ class ClimateService:
         self._cache = cache
         self._settings = settings or ClimateSettings()
         self._flight: SingleFlight[Climate] = SingleFlight()
+        # Rellena poco a poco los países que faltan (Explorar), de uno en uno.
+        self._filler: asyncio.Task[None] | None = None
 
     async def at(self, lat: float, lon: float) -> Climate:
         """El clima medio de cada mes alrededor de un punto."""
@@ -105,3 +109,37 @@ class ClimateService:
         ttl = self._settings.ttl_seconds if len(months) == 12 else 24 * 3600
         await self._cache.put(result, ttl_seconds=ttl)
         return result
+
+    async def countries(
+        self, points: tuple[tuple[str, float, float], ...] = COUNTRY_POINTS
+    ) -> tuple[dict[str, Climate], bool]:
+        """El clima de cada país que ya esté en la caché, y si están todos.
+
+        Los que faltan se piden a la NASA en segundo plano, de uno en uno (con
+        su límite de ritmo): la primera vez el mapa sale a medias y se va
+        completando; luego ya está todo en Redis.
+        """
+        found: dict[str, Climate] = {}
+        missing: list[tuple[str, float, float]] = []
+        for iso, lat, lon in points:
+            try:
+                cached = await self._cache.get(*cell_of(lat, lon))
+            except CacheError:
+                cached = None
+            if cached is not None and len(cached.months) == 12:
+                found[iso] = cached
+            else:
+                missing.append((iso, lat, lon))
+        if missing and (self._filler is None or self._filler.done()):
+            self._filler = asyncio.create_task(self._fill(missing))
+        return found, not missing
+
+    async def _fill(self, missing: list[tuple[str, float, float]]) -> None:
+        for _, lat, lon in missing:
+            try:
+                await self.at(lat, lon)
+            except ClimateBusyError:
+                # Hemos llegado al límite: se sigue en la próxima petición.
+                return
+            except (ClimateUnavailableError, CacheError):
+                continue

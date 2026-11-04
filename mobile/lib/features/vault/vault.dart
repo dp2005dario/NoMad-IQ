@@ -28,6 +28,39 @@ enum DocKind {
   other,
 }
 
+/// Las tarjetas de la maqueta (de la 1 a la 13).
+const int vaultSlots = 13;
+
+/// El "tipo" de un documento que solo tiene datos escritos a mano.
+const String dataMime = 'application/json';
+
+/// El tipo de documento de cada tarjeta (los que no tienen uno propio van
+/// como "otro"; su tarjeta la dice [VaultDoc.slot]).
+DocKind kindOfSlot(int slot) => switch (slot) {
+  1 => DocKind.passport,
+  2 => DocKind.boarding,
+  3 => DocKind.insurance,
+  4 => DocKind.idCard,
+  5 => DocKind.visa,
+  6 => DocKind.booking,
+  10 => DocKind.medical,
+  _ => DocKind.other,
+};
+
+/// La tarjeta de un documento (los antiguos, por su tipo; null = ninguna).
+int? slotOf(VaultDoc d) =>
+    d.slot ??
+    switch (d.kind) {
+      DocKind.passport => 1,
+      DocKind.boarding => 2,
+      DocKind.insurance => 3,
+      DocKind.idCard => 4,
+      DocKind.visa => 5,
+      DocKind.booking => 6,
+      DocKind.medical => 10,
+      DocKind.other => null,
+    };
+
 /// Como mucho estos documentos y este tamaño cada uno (un PDF de una póliza
 /// larga ronda 1-3 MB; una foto, 0,5 MB).
 const int maxVaultDocs = 100;
@@ -43,6 +76,8 @@ class VaultDoc {
     this.detail,
     this.expires,
     this.pages = 1,
+    this.slot,
+    this.fields = const <String>[],
   });
 
   final String id;
@@ -62,7 +97,20 @@ class VaultDoc {
   final int pages;
   final DateTime added;
 
+  /// En qué tarjeta de la maqueta va (1-13: pasaporte, tarjeta de
+  /// embarque, seguro, DNI, visado, hotel, entradas, contactos SOS, carnet
+  /// de conducir, tarjeta sanitaria, coche, tren/bus, eSIM). Null en los
+  /// documentos antiguos: se deduce de su tipo (ver [slotOf]).
+  final int? slot;
+
+  /// Los tres datos de la tarjeta (los que escribes o se leen del
+  /// documento), en el orden del formulario de esa tarjeta. "" = sin dato.
+  final List<String> fields;
+
   bool get isPdf => mime == 'application/pdf';
+
+  /// Solo datos escritos a mano (sin foto ni PDF).
+  bool get isData => mime == dataMime;
 
   VaultDoc copyWith({
     DocKind? kind,
@@ -70,6 +118,7 @@ class VaultDoc {
     String? detail,
     DateTime? expires,
     bool clearExpires = false,
+    List<String>? fields,
   }) => VaultDoc(
     id: id,
     kind: kind ?? this.kind,
@@ -79,6 +128,8 @@ class VaultDoc {
     mime: mime,
     pages: pages,
     added: added,
+    slot: slot,
+    fields: fields ?? this.fields,
   );
 
   Map<String, Object?> toJson() => <String, Object?>{
@@ -90,6 +141,8 @@ class VaultDoc {
     'mime': mime,
     'pages': pages,
     'added': added.toIso8601String(),
+    if (slot != null) 'slot': slot,
+    if (fields.isNotEmpty) 'fields': fields,
   };
 
   static VaultDoc? parse(Object? json) {
@@ -104,12 +157,16 @@ class VaultDoc {
         !RegExp(r'^[a-f0-9]{32}$').hasMatch(id) ||
         kind == null ||
         title is! String ||
-        (mime != 'image/jpeg' && mime != 'application/pdf') ||
+        (mime != 'image/jpeg' &&
+            mime != 'application/pdf' &&
+            mime != dataMime) ||
         added == null) {
       return null;
     }
     final Object? detail = json['detail'];
     final Object? expires = json['expires'];
+    final Object? slot = json['slot'];
+    final Object? fields = json['fields'];
     return VaultDoc(
       id: id,
       kind: kind,
@@ -119,6 +176,11 @@ class VaultDoc {
       mime: mime! as String,
       pages: pages is int && pages > 0 ? pages : 1,
       added: added,
+      slot: slot is int && slot >= 1 && slot <= vaultSlots ? slot : null,
+      fields: <String>[
+        if (fields is List<Object?>)
+          for (final Object? f in fields.take(3)) f is String ? f : '',
+      ],
     );
   }
 }
@@ -264,6 +326,8 @@ class Vault extends ChangeNotifier {
     DateTime? expires,
     List<String> text = const <String>[],
     int pages = 1,
+    int? slot,
+    List<String> fields = const <String>[],
   }) async {
     if (_docs.length >= maxVaultDocs) throw const VaultFull();
     if (bytes.isEmpty || bytes.length > maxDocBytes) throw const DocTooBig();
@@ -276,6 +340,8 @@ class Vault extends ChangeNotifier {
       mime: mime,
       pages: pages,
       added: DateTime.now(),
+      slot: slot,
+      fields: fields,
     );
     await _files.write(
       '${doc.id}.bin',

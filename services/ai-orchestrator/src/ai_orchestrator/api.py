@@ -64,7 +64,7 @@ from ai_orchestrator.audioguides.service import AudioguideService
 from ai_orchestrator.city_events.domain import CityEvents
 from ai_orchestrator.city_events.service import BadDatesError, CityEventService
 from ai_orchestrator.city_events.service import UnknownAirportError as UnknownEventAirportError
-from ai_orchestrator.climate.domain import Climate
+from ai_orchestrator.climate.domain import ATTRIBUTION, Climate
 from ai_orchestrator.climate.service import ClimateBusyError, ClimateService, ClimateUnavailableError
 from ai_orchestrator.domain import Recommendation, Verdict
 from ai_orchestrator.drive.domain import DriveArea
@@ -537,6 +537,23 @@ def create_api(
                 resp.headers["Retry-After"] = "60"
                 return resp
             return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": CLIMATE_CACHE})
+
+        @app.get("/v1/climate/countries")
+        async def get_country_climate() -> JSONResponse:
+            # Pública: Explorar pinta el mundo con la temperatura y la lluvia
+            # medias de cada país (NASA POWER). "complete" = false mientras
+            # se van pidiendo los que faltan (la app vuelve a preguntar).
+            found, complete = await climate.countries()
+            body = {
+                "complete": complete,
+                "countries": {
+                    iso: [[m.temp_c, m.rain_mm] for m in sorted(c.months, key=lambda m: m.month)]
+                    for iso, c in found.items()
+                },
+                "attribution": ATTRIBUTION,
+            }
+            cache = "public, max-age=3600" if complete else "no-store"
+            return JSONResponse(body, headers={"Cache-Control": cache})
 
     if rain is not None:
 

@@ -50,3 +50,4 @@ lib/l10n/generated/
 
 # Datos de TU proyecto de Firebase (se copian de firebase.example.json).
 firebase.json
+test/failures/

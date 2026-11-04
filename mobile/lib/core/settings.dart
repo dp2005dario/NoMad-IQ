@@ -97,6 +97,9 @@ enum LocalData {
   /// Elegid planes: los match viajeros que ya te enseñamos en grande (para
   /// no repetir la celebración cada vez que entras).
   plansSeen,
+
+  /// Desde qué banco haces Bizum ("BBVA"), para "Abrir Bizum en tu banco".
+  bizumBank,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real
