@@ -58,6 +58,9 @@ class ShareTrip(BaseModel):
     days: int = Field(ge=1, le=60)
     currency: CurrencyCode
     items: list[TripItem] = Field(min_length=1, max_length=MAX_ITEMS)
+    # "Publicar en el muro": True = sale en el muro de "Copia este viaje"
+    # para todos. Por defecto no (solo con el código).
+    public: bool = False
 
 
 class SharedTrip(BaseModel):
@@ -78,10 +81,28 @@ class SharedTrip(BaseModel):
     # True si es tuyo (para enseñar "Dejar de compartir").
     mine: bool
     created_at: datetime
+    # ¿Sale en el muro?
+    public: bool = False
+    # Estrellas: la media (None si nadie ha votado), cuántos votos y la tuya.
+    rating_avg: float | None = None
+    rating_count: int = 0
+    my_rating: int | None = None
 
 
 class MySharedTrips(BaseModel):
     items: list[SharedTrip]
+
+
+class SharedTripFeed(BaseModel):
+    """El muro: los viajes que la gente ha publicado, del más nuevo."""
+
+    items: list[SharedTrip]
+
+
+class RateRequest(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    stars: int = Field(ge=1, le=5)
 
 
 class AdaptRequest(BaseModel):

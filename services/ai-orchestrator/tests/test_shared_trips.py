@@ -50,6 +50,7 @@ class MemoryTrips:
     def __init__(self) -> None:
         self.trips: dict[str, TripRecord] = {}
         self.copied: set[tuple[str, str]] = set()
+        self.ratings: dict[tuple[str, str], int] = {}
         self._n = 0
 
     async def share(self, owner_id: str, trip: ShareTrip) -> TripRecord:
@@ -68,6 +69,7 @@ class MemoryTrips:
             items=tuple(trip.items),
             copies=0,
             created_at=NOW,
+            public=trip.public,
         )
         self.trips[code] = record
         return record
@@ -94,6 +96,24 @@ class MemoryTrips:
             return False
         del self.trips[code]
         return True
+
+    async def feed(self, limit: int) -> list[TripRecord]:
+        return [t for t in reversed(self.trips.values()) if t.public][:limit]
+
+    async def rate(self, code: str, user_id: str, stars: int) -> TripRecord | None:
+        t = self.trips.get(code)
+        if t is None or t.owner_id == user_id:
+            return None
+        old = self.ratings.get((code, user_id))
+        self.ratings[(code, user_id)] = stars
+        t = replace(
+            t, rating_sum=t.rating_sum + stars - (old or 0), rating_count=t.rating_count + (0 if old else 1)
+        )
+        self.trips[code] = t
+        return t
+
+    async def my_ratings(self, user_id: str, codes: list[str]) -> dict[str, int]:
+        return {c: v for (c, u), v in self.ratings.items() if u == user_id and c in codes}
 
 
 class MemoryCache:
@@ -297,3 +317,29 @@ async def test_api_quota_and_busy() -> None:
         code = (await c.post("/v1/shared-trips", json=JAPAN, headers=h(LAURA))).json()["code"]
         busy = await c.post(f"/v1/shared-trips/{code}/adapt", json={"budget_minor": 100000}, headers=h(DARIO))
         assert busy.status_code == 503 and busy.headers["retry-after"] == "30"
+
+
+async def test_feed_only_public_and_stars_once_per_person() -> None:
+    store = MemoryTrips()
+    async with client(store) as c:
+        hidden = (await c.post("/v1/shared-trips", json=JAPAN, headers=h(LAURA))).json()["code"]
+        public = (await c.post("/v1/shared-trips", json={**JAPAN, "public": True}, headers=h(LAURA))).json()
+        assert public["public"] and public["rating_avg"] is None
+        code = public["code"]
+        wall = (await c.get("/v1/shared-trips/feed", headers=h(DARIO))).json()["items"]
+        assert [t["code"] for t in wall] == [code] and hidden != code
+        # Votar dos veces cambia el voto; la autora no puede votarse.
+        await c.post(f"/v1/shared-trips/{code}/rate", json={"stars": 2}, headers=h(DARIO))
+        again = await c.post(f"/v1/shared-trips/{code}/rate", json={"stars": 5}, headers=h(DARIO))
+        assert (again.json()["rating_avg"], again.json()["rating_count"], again.json()["my_rating"]) == (
+            5.0,
+            1,
+            5,
+        )
+        own = await c.post(f"/v1/shared-trips/{code}/rate", json={"stars": 5}, headers=h(LAURA))
+        assert own.status_code == 404
+        bad = await c.post(f"/v1/shared-trips/{code}/rate", json={"stars": 6}, headers=h(DARIO))
+        assert bad.status_code in (400, 422)
+        wall = (await c.get("/v1/shared-trips/feed", headers=h(DARIO))).json()["items"]
+        assert wall[0]["my_rating"] == 5
+        assert (await c.get("/v1/shared-trips/feed")).status_code == 401
