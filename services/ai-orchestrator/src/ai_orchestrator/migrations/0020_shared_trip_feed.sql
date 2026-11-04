@@ -6,6 +6,9 @@
 
 ALTER TABLE ai.shared_trips
     ADD COLUMN public       boolean NOT NULL DEFAULT false,
+    -- Unas líneas que escribe quien lo comparte ("Dormimos lejos y fuimos en
+    -- tren..."). Vacío si no escribe nada.
+    ADD COLUMN note         text    NOT NULL DEFAULT '' CHECK (char_length(note) <= 280),
     ADD COLUMN rating_sum   integer NOT NULL DEFAULT 0 CHECK (rating_sum >= 0),
     ADD COLUMN rating_count integer NOT NULL DEFAULT 0 CHECK (rating_count >= 0);
 

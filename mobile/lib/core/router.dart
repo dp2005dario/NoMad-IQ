@@ -34,6 +34,7 @@ import '../features/memories/memories_screen.dart';
 import '../features/memories/travel_camera_screen.dart';
 import '../features/airport/airport_screen.dart';
 import '../features/widgets/widgets_screen.dart';
+import '../features/copy_trip/copy_feed_screen.dart';
 import '../features/copy_trip/copy_trip_screen.dart';
 import '../features/copy_trip/share_trip_screen.dart';
 import '../features/help/help_screen.dart';
@@ -82,6 +83,9 @@ abstract final class Routes {
   static const String travelWith = '/travel-with';
   static const String help = '/help';
   static const String shareTrip = '/copy-trip/share';
+
+  /// Abrir un viaje con su código (y ver tus copiados y compartidos).
+  static const String copyCode = '/copy-trip/code';
   static const String cards = '/cards';
   static const String memories = '/memories';
   static const String travelCamera = '/memories/camera';
@@ -498,8 +502,18 @@ GoRouter buildRouter({
     ),
     GoRoute(
       path: '/copy-trip',
+      // Con código (un enlace) se abre ese viaje; sin código, el muro.
+      builder: (BuildContext context, GoRouterState state) {
+        final String? code = state.uri.queryParameters['code'];
+        return code == null
+            ? const CopyFeedScreen()
+            : CopyCodeScreen(code: code);
+      },
+    ),
+    GoRoute(
+      path: Routes.copyCode,
       builder: (BuildContext context, GoRouterState state) =>
-          CopyTripScreen(code: state.uri.queryParameters['code']),
+          const CopyCodeScreen(),
     ),
     GoRoute(
       path: Routes.shareTrip,

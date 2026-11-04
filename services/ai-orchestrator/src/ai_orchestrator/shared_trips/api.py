@@ -59,6 +59,7 @@ def view(record: TripRecord, user_id: str, my_rating: int | None = None) -> Shar
         mine=record.owner_id == user_id,
         created_at=record.created_at,
         public=record.public,
+        note=record.note,
         rating_avg=round(record.rating_sum / record.rating_count, 2) if record.rating_count else None,
         rating_count=record.rating_count,
         my_rating=my_rating,

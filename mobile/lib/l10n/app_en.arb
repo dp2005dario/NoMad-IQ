@@ -3862,6 +3862,148 @@
       }
     }
   },
+  "cpSub": "Routes from other travellers, ready to make your own",
+  "@cpSub": {
+    "description": "Copy trip feed subtitle"
+  },
+  "cpCodeBtn": "I have a code",
+  "@cpCodeBtn": {
+    "description": "Header button: open a trip by its code"
+  },
+  "cpMap1": "3D route · 1 stop",
+  "@cpMap1": {
+    "description": "3D route label, one stop"
+  },
+  "cpMapN": "3D route · {n} stops",
+  "@cpMapN": {
+    "description": "3D route label, several stops",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "cpDuration": "Length",
+  "@cpDuration": {
+    "description": "Stat label: trip length"
+  },
+  "cpStops": "Stops",
+  "@cpStops": {
+    "description": "Stat label: number of stops"
+  },
+  "cpCost": "Cost",
+  "@cpCost": {
+    "description": "Stat label: total cost"
+  },
+  "cpPerDay": "Per day",
+  "@cpPerDay": {
+    "description": "Stat label: cost per day"
+  },
+  "cpVote1": "1 vote",
+  "@cpVote1": {
+    "description": "Rating count, exactly one"
+  },
+  "cpVotesN": "{n} votes",
+  "@cpVotesN": {
+    "description": "Rating count, several",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "cpNoVotes": "no votes yet",
+  "@cpNoVotes": {
+    "description": "Nobody has rated yet"
+  },
+  "cpYourVote": "your vote: {n}",
+  "@cpYourVote": {
+    "description": "Your own rating",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "cpTapRate": "tap to rate",
+  "@cpTapRate": {
+    "description": "Hint to rate the trip"
+  },
+  "cpYours": "it’s your trip",
+  "@cpYours": {
+    "description": "Shown instead of the rate hint on your own trip"
+  },
+  "cpCopy": "Copy this trip",
+  "@cpCopy": {
+    "description": "Button: copy this trip"
+  },
+  "cpCopied": "Copied to My trips",
+  "@cpCopied": {
+    "description": "Button after copying"
+  },
+  "cpThanks1": "Thanks for rating it 1 star",
+  "@cpThanks1": {
+    "description": "Toast after giving 1 star"
+  },
+  "cpThanksN": "Thanks for rating it {n} stars",
+  "@cpThanksN": {
+    "description": "Toast after giving several stars",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "cpCopiedToast": "Trip copied to My trips",
+  "@cpCopiedToast": {
+    "description": "Toast after copying a trip"
+  },
+  "cpRouteTitle": "The route, stop by stop",
+  "@cpRouteTitle": {
+    "description": "Story slide title about the route"
+  },
+  "cpRouteBody": "See the route in 3D and turn the map in your head: {list}.",
+  "@cpRouteBody": {
+    "description": "Story slide text, list of stops",
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "cpStop": "Stop {n}",
+  "@cpStop": {
+    "description": "Map pin label, stop number",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "cpEmpty": "Nobody has posted a trip yet. Share yours and tick “Post on the wall”.",
+  "@cpEmpty": {
+    "description": "Feed is empty"
+  },
+  "cpPublic": "Post on the wall",
+  "@cpPublic": {
+    "description": "Switch when sharing: show on the public wall"
+  },
+  "cpPublicHint": "It will appear in Copy this trip for everyone, not only for people with the code.",
+  "@cpPublicHint": {
+    "description": "Explains the public wall switch"
+  },
+  "cpNote": "Tell it in a few lines (optional)",
+  "@cpNote": {
+    "description": "Optional text field when sharing"
+  },
+  "cpOwnRate": "You can’t rate your own trip",
+  "@cpOwnRate": {
+    "description": "Toast: you cannot rate your own trip"
+  },
+  "cpLoading": "Looking for trips…",
+  "@cpLoading": {
+    "description": "Loading the trips wall"
+  },
   "moneyBalances": "Who owes what",
   "@moneyBalances": {
     "description": "Header: who owes what."

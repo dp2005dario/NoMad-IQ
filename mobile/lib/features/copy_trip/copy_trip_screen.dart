@@ -1,10 +1,12 @@
-// "Copia este viaje" (maqueta "Copiar"): escribes el código que te pasó
-// alguien, ves su viaje con el precio de cada cosa, eliges tu presupuesto y
-// Flyra cambia lo caro por opciones más baratas. "Copiar a mis viajes" lo
-// guarda en tu móvil.
+// "Copia este viaje" con código: escribes el código que te pasó alguien, ves
+// su viaje con el precio de cada cosa, eliges tu presupuesto y Flyra cambia
+// lo caro por opciones más baratas. "Copiar a mis viajes" lo guarda en tu
+// móvil.
 //
 // Sin código, la pantalla enseña tus viajes copiados y los que has
 // compartido tú (con su código y cuánta gente los ha copiado).
+//
+// La pantalla principal (el muro de la maqueta) está en copy_feed_screen.dart.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -51,17 +53,19 @@ List<int> budgetSteps(int totalMinor, String currency) {
   ];
 }
 
-class CopyTripScreen extends StatefulWidget {
-  const CopyTripScreen({super.key, this.code});
+/// Abrir un viaje con el código que te pasaron (y ver tus copiados y los
+/// que compartes). Se llega desde el botón "#" del muro o con un enlace.
+class CopyCodeScreen extends StatefulWidget {
+  const CopyCodeScreen({super.key, this.code});
 
   /// Si llega un código (un enlace), se abre directamente ese viaje.
   final String? code;
 
   @override
-  State<CopyTripScreen> createState() => _CopyTripScreenState();
+  State<CopyCodeScreen> createState() => _CopyCodeScreenState();
 }
 
-class _CopyTripScreenState extends State<CopyTripScreen> {
+class _CopyCodeScreenState extends State<CopyCodeScreen> {
   late final AppServices _services = ServicesScope.of(context);
   late final CopiedTrips _copied = CopiedTrips(_services.prefs);
   final TextEditingController _code = TextEditingController();

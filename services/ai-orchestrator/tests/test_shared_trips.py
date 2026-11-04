@@ -70,6 +70,7 @@ class MemoryTrips:
             copies=0,
             created_at=NOW,
             public=trip.public,
+            note=trip.note,
         )
         self.trips[code] = record
         return record
@@ -323,8 +324,15 @@ async def test_feed_only_public_and_stars_once_per_person() -> None:
     store = MemoryTrips()
     async with client(store) as c:
         hidden = (await c.post("/v1/shared-trips", json=JAPAN, headers=h(LAURA))).json()["code"]
-        public = (await c.post("/v1/shared-trips", json={**JAPAN, "public": True}, headers=h(LAURA))).json()
+        public = (
+            await c.post(
+                "/v1/shared-trips",
+                json={**JAPAN, "public": True, "note": " Ramen\nbarato "},
+                headers=h(LAURA),
+            )
+        ).json()
         assert public["public"] and public["rating_avg"] is None
+        assert public["note"] == "Ramen barato"
         code = public["code"]
         wall = (await c.get("/v1/shared-trips/feed", headers=h(DARIO))).json()["items"]
         assert [t["code"] for t in wall] == [code] and hidden != code

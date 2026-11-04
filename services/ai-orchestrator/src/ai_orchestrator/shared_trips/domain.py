@@ -61,6 +61,8 @@ class ShareTrip(BaseModel):
     # "Publicar en el muro": True = sale en el muro de "Copia este viaje"
     # para todos. Por defecto no (solo con el código).
     public: bool = False
+    # Unas líneas contando el viaje (opcional, sale en la tarjeta del muro).
+    note: Annotated[str, Field(max_length=280), AfterValidator(clean_text)] = ""
 
 
 class SharedTrip(BaseModel):
@@ -83,6 +85,7 @@ class SharedTrip(BaseModel):
     created_at: datetime
     # ¿Sale en el muro?
     public: bool = False
+    note: str = ""
     # Estrellas: la media (None si nadie ha votado), cuántos votos y la tuya.
     rating_avg: float | None = None
     rating_count: int = 0

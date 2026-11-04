@@ -35,7 +35,11 @@ class _ShareTripScreenState extends State<ShareTripScreen> {
   final TextEditingController _destination = TextEditingController();
   final TextEditingController _days = TextEditingController(text: '7');
   final TextEditingController _currency = TextEditingController(text: 'EUR');
+  final TextEditingController _note = TextEditingController();
   final List<TripLine> _lines = <TripLine>[];
+
+  /// "Publicar en el muro": por defecto no (solo con el código).
+  bool _public = false;
   bool _sending = false;
   String? _error;
 
@@ -47,6 +51,7 @@ class _ShareTripScreenState extends State<ShareTripScreen> {
       _destination,
       _days,
       _currency,
+      _note,
     ]) {
       c.dispose();
     }
@@ -152,6 +157,8 @@ class _ShareTripScreenState extends State<ShareTripScreen> {
           days: days,
           currency: _cur,
           lines: List<TripLine>.of(_lines),
+          isPublic: _public,
+          note: _note.text.trim(),
         ),
       );
       if (!mounted) return;
@@ -297,6 +304,20 @@ class _ShareTripScreenState extends State<ShareTripScreen> {
               t.copyTotal(formatMoney(linesTotal(_lines), cur, locale)),
               style: text.titleMedium,
             ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _note,
+            maxLines: 3,
+            maxLength: 280,
+            decoration: InputDecoration(labelText: t.cpNote),
+          ),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _public,
+            onChanged: (bool v) => setState(() => _public = v),
+            title: Text(t.cpPublic),
+            subtitle: Text(t.cpPublicHint),
+          ),
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(top: 12),

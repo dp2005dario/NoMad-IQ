@@ -41,6 +41,7 @@ class TripRecord:
     copies: int
     created_at: datetime
     public: bool = False
+    note: str = ""
     rating_sum: int = 0
     rating_count: int = 0
 
@@ -64,24 +65,25 @@ class SharedTripStore(Protocol):
 
 
 _INSERT = (
-    "INSERT INTO ai.shared_trips (code, owner_id, author, title, destination, days, currency, items, public) "
-    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9) "
+    "INSERT INTO ai.shared_trips "
+    "(code, owner_id, author, title, destination, days, currency, items, public, note) "
+    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10) "
     "RETURNING code, owner_id, author, title, destination, days, currency, items, copies, created_at, "
-    "public, rating_sum, rating_count"
+    "public, note, rating_sum, rating_count"
 )
 _GET = (
     "SELECT code, owner_id, author, title, destination, days, currency, items, copies, created_at, "
-    "public, rating_sum, rating_count "
+    "public, note, rating_sum, rating_count "
     "FROM ai.shared_trips WHERE code = $1"
 )
 _FEED = (
     "SELECT code, owner_id, author, title, destination, days, currency, items, copies, created_at, "
-    "public, rating_sum, rating_count "
+    "public, note, rating_sum, rating_count "
     "FROM ai.shared_trips WHERE public ORDER BY created_at DESC LIMIT $1"
 )
 _MINE = (
     "SELECT code, owner_id, author, title, destination, days, currency, items, copies, created_at, "
-    "public, rating_sum, rating_count "
+    "public, note, rating_sum, rating_count "
     "FROM ai.shared_trips WHERE owner_id = $1 ORDER BY created_at DESC LIMIT $2"
 )
 
@@ -101,6 +103,7 @@ def _record(row: asyncpg.Record) -> TripRecord:
         copies=row["copies"],
         created_at=row["created_at"],
         public=row["public"],
+        note=row["note"],
         rating_sum=row["rating_sum"],
         rating_count=row["rating_count"],
     )
@@ -134,6 +137,7 @@ class PostgresSharedTrips:
                         trip.currency,
                         items,
                         trip.public,
+                        trip.note,
                     )
             except asyncpg.UniqueViolationError as exc:
                 # Solo puede chocar el código: se prueba otro.
