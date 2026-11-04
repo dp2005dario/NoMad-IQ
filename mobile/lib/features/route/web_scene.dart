@@ -4,15 +4,15 @@
 // se bloquea CUALQUIER intento de ir a otra dirección (aunque la página no
 // tiene enlaces, así un fallo no puede abrir webs dentro de la app). La
 // página solo puede mandar a la app avisos cortos por el canal "ECLIPTA":
-// una palabra y, como mucho, un número ("landed", "done", "back",
-// "route:105"...). Cualquier otra cosa se tira. Cada pantalla decide qué
+// una palabra y, como mucho, dos números ("landed", "done", "back",
+// "route:105", "night:2:9000"...). Cualquier otra cosa se tira. Cada pantalla decide qué
 // hace con los avisos que entiende.
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-/// Los únicos avisos que pasan: una palabra en minúsculas y, si acaso, ":"
-/// y un número.
-final RegExp webSceneMessage = RegExp(r'^[a-z]{1,12}(:[0-9]{1,6})?$');
+/// Los únicos avisos que pasan: una palabra en minúsculas y, si acaso, uno
+/// o dos números separados por ":" ("night:2:9000").
+final RegExp webSceneMessage = RegExp(r'^[a-z]{1,12}(:[0-9]{1,8}){0,2}$');
 
 class WebScene extends StatefulWidget {
   const WebScene({super.key, required this.html, required this.onMessage});

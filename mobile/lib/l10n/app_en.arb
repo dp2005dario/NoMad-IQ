@@ -3585,6 +3585,283 @@
   "@nbSight": {
     "description": "Kind of place: something to see"
   },
+  "hoTitle": "Hotels",
+  "@hoTitle": {
+    "description": "Hotels screen brand subtitle"
+  },
+  "hoLegend": "Sleep cheap",
+  "@hoLegend": {
+    "description": "Map legend title"
+  },
+  "hoCheap": "Cheap",
+  "@hoCheap": {
+    "description": "Legend: cheap"
+  },
+  "hoMid": "Medium",
+  "@hoMid": {
+    "description": "Legend: medium price"
+  },
+  "hoDear": "Expensive",
+  "@hoDear": {
+    "description": "Legend: expensive"
+  },
+  "hoCenter": "Center on the landmark",
+  "@hoCenter": {
+    "description": "Map control: center on the monument"
+  },
+  "hoBest": "Best total",
+  "@hoBest": {
+    "description": "Pin badge: best total price"
+  },
+  "hoPerNight": "per night",
+  "@hoPerNight": {
+    "description": "Small label: per night"
+  },
+  "hoNightsTrain": "{n} nights with train",
+  "@hoNightsTrain": {
+    "description": "Small label: n nights with train",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "hoChosen": "Chosen area",
+  "@hoChosen": {
+    "description": "Strip: chosen zone"
+  },
+  "hoTapZone": "Tap an area on the map",
+  "@hoTapZone": {
+    "description": "Strip hint: tap a zone"
+  },
+  "hoAway": "{km} from {place}",
+  "@hoAway": {
+    "description": "Distance from the place",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      },
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "hoNightCap": "Per night",
+  "@hoNightCap": {
+    "description": "Stat: per night"
+  },
+  "hoToMon": "To the landmark",
+  "@hoToMon": {
+    "description": "Stat: time to the landmark"
+  },
+  "hoRound": "Round trip",
+  "@hoRound": {
+    "description": "Stat: round trip ticket"
+  },
+  "hoByTrain": "Train or metro from {name}",
+  "@hoByTrain": {
+    "description": "Line: by train or metro from station",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "hoByWalk": "On foot to {place}",
+  "@hoByWalk": {
+    "description": "Line: walking to the place",
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "hoExamples": "For example: {list}",
+  "@hoExamples": {
+    "description": "Sample lodging names",
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "hoStay": "Lodging",
+  "@hoStay": {
+    "description": "Breakdown: lodging"
+  },
+  "hoTransport": "Transport",
+  "@hoTransport": {
+    "description": "Breakdown: transport"
+  },
+  "hoNightsN": "{n} nights",
+  "@hoNightsN": {
+    "description": "n nights",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "hoDaysN": "{n} days",
+  "@hoDaysN": {
+    "description": "n days",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "hoTotal": "Total with train",
+  "@hoTotal": {
+    "description": "Breakdown: total with train"
+  },
+  "hoSave": "You save {money} over {n} nights versus sleeping next to {place}.",
+  "@hoSave": {
+    "description": "Savings vs sleeping next to the place",
+    "placeholders": {
+      "money": {
+        "type": "String"
+      },
+      "n": {
+        "type": "String"
+      },
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "hoNearest": "It's the closest area.",
+  "@hoNearest": {
+    "description": "The chosen zone is the nearest"
+  },
+  "hoEnterHint": "Check the price on Booking and note it here.",
+  "@hoEnterHint": {
+    "description": "Hint to enter real prices"
+  },
+  "hoRoute": "Show route on the map",
+  "@hoRoute": {
+    "description": "Button: show route on map"
+  },
+  "hoPinCount": "{n} stays",
+  "@hoPinCount": {
+    "description": "Pin label: n lodgings",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "hoEnter": "Enter",
+  "@hoEnter": {
+    "description": "Placeholder: enter a price"
+  },
+  "hoMoreNights": "More nights",
+  "@hoMoreNights": {
+    "description": "Stepper: more nights"
+  },
+  "hoLessNights": "Fewer nights",
+  "@hoLessNights": {
+    "description": "Stepper: fewer nights"
+  },
+  "hoLoading": "Looking for places to stay…",
+  "@hoLoading": {
+    "description": "Searching lodgings"
+  },
+  "hoTarget": "Your destination",
+  "@hoTarget": {
+    "description": "Chip: your destination"
+  },
+  "hoMinutes": "~{n} min",
+  "@hoMinutes": {
+    "description": "About n minutes",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "hoEiffel": "Eiffel Tower",
+  "@hoEiffel": {
+    "description": "Landmark name"
+  },
+  "hoEiffelS": "Eiffel",
+  "@hoEiffelS": {
+    "description": "Landmark short name"
+  },
+  "hoSagrada": "Sagrada Família",
+  "@hoSagrada": {
+    "description": "Landmark name"
+  },
+  "hoSagradaS": "Sagrada",
+  "@hoSagradaS": {
+    "description": "Landmark short name"
+  },
+  "hoColiseo": "Colosseum",
+  "@hoColiseo": {
+    "description": "Landmark name"
+  },
+  "hoBigBen": "Big Ben",
+  "@hoBigBen": {
+    "description": "Landmark name"
+  },
+  "hoBrandenburg": "Brandenburg Gate",
+  "@hoBrandenburg": {
+    "description": "Landmark name"
+  },
+  "hoBrandenburgS": "Brandenburg",
+  "@hoBrandenburgS": {
+    "description": "Landmark short name"
+  },
+  "hoDisney": "Disneyland Paris",
+  "@hoDisney": {
+    "description": "Landmark name"
+  },
+  "hoDisneyS": "Disneyland",
+  "@hoDisneyS": {
+    "description": "Landmark short name"
+  },
+  "hoParis": "Paris",
+  "@hoParis": {
+    "description": "City name"
+  },
+  "hoBarcelona": "Barcelona",
+  "@hoBarcelona": {
+    "description": "City name"
+  },
+  "hoRome": "Rome",
+  "@hoRome": {
+    "description": "City name"
+  },
+  "hoLondon": "London",
+  "@hoLondon": {
+    "description": "City name"
+  },
+  "hoBerlin": "Berlin",
+  "@hoBerlin": {
+    "description": "City name"
+  },
+  "hoMarne": "Marne-la-Vallée",
+  "@hoMarne": {
+    "description": "Town name"
+  },
+  "hoSince": "since {year}",
+  "@hoSince": {
+    "description": "Built since a year",
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "hoAD": "AD {year}",
+  "@hoAD": {
+    "description": "Year AD",
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
   "moneyBalances": "Who owes what",
   "@moneyBalances": {
     "description": "Header: who owes what."
