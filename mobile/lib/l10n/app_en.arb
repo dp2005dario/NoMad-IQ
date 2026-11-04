@@ -3304,6 +3304,287 @@
   "@exwLoadFail": {
     "description": "The globe could not be drawn"
   },
+  "nbOffers": "Deals now",
+  "@nbOffers": {
+    "description": "Nearby tab: deals right now"
+  },
+  "nbTwoHours": "I have 2 hours",
+  "@nbTwoHours": {
+    "description": "Nearby tab: plans for 2 hours"
+  },
+  "nbNow": "now {time}",
+  "@nbNow": {
+    "description": "Nearby header: current time",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "nbBack": "Back",
+  "@nbBack": {
+    "description": "Back button label"
+  },
+  "nbTilt": "3D tilt",
+  "@nbTilt": {
+    "description": "Map control: 3D tilt"
+  },
+  "nbCenter": "Center on my position",
+  "@nbCenter": {
+    "description": "Map control: center on me"
+  },
+  "nbExpand": "Enlarge map",
+  "@nbExpand": {
+    "description": "Map control: enlarge map"
+  },
+  "nbCredit": "Generated illustrative map",
+  "@nbCredit": {
+    "description": "Note on the map: it is an illustration"
+  },
+  "nbInfoOffers": "Active deals",
+  "@nbInfoOffers": {
+    "description": "Map badge: active deals"
+  },
+  "nbInfoFree": "Free places and plans",
+  "@nbInfoFree": {
+    "description": "Map badge: free places"
+  },
+  "nbInfoPlans": "Plans up to 2 h",
+  "@nbInfoPlans": {
+    "description": "Map badge: plans up to 2 h"
+  },
+  "nbFit": "Plans that fit in 2 h",
+  "@nbFit": {
+    "description": "List header: plans that fit in 2 h"
+  },
+  "nbSortTime": "Duration",
+  "@nbSortTime": {
+    "description": "Sort by duration"
+  },
+  "nbSortWalk": "Walking",
+  "@nbSortWalk": {
+    "description": "Sort by walking time"
+  },
+  "nbSortPrice": "Price",
+  "@nbSortPrice": {
+    "description": "Sort by price"
+  },
+  "nbEndsAt": "You finish at {time}",
+  "@nbEndsAt": {
+    "description": "Plan card: finish time",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "nbClosesIn": "Closes in {time}",
+  "@nbClosesIn": {
+    "description": "Card: place closes in X",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "nbEndsIn": "Ends in {time}",
+  "@nbEndsIn": {
+    "description": "Card: deal ends in X",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "nbOpen24": "Open 24 h",
+  "@nbOpen24": {
+    "description": "Card: open 24 hours"
+  },
+  "nbWalkMin": "{n} min walk",
+  "@nbWalkMin": {
+    "description": "Minutes walking",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "nbToFirst": "to the first stop",
+  "@nbToFirst": {
+    "description": "Plan card: to the first stop"
+  },
+  "nbMin": "{n} min",
+  "@nbMin": {
+    "description": "Duration in minutes",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "nbMinWalk": "{n} min on foot",
+  "@nbMinWalk": {
+    "description": "Map ring: minutes on foot",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "nbPlan": "Plan",
+  "@nbPlan": {
+    "description": "Badge on a plan card"
+  },
+  "nbOneStop": "One stop",
+  "@nbOneStop": {
+    "description": "Plan with one stop"
+  },
+  "nbStops": "{n} stops",
+  "@nbStops": {
+    "description": "Plan with n stops",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "nbJoin": "{a} and {b}",
+  "@nbJoin": {
+    "description": "Join the last two names: A and B",
+    "placeholders": {
+      "a": {
+        "type": "String"
+      },
+      "b": {
+        "type": "String"
+      }
+    }
+  },
+  "nbArrived": "You've arrived",
+  "@nbArrived": {
+    "description": "Walk panel: you arrived"
+  },
+  "nbLeft": "{min} min · {m} m to go",
+  "@nbLeft": {
+    "description": "Walk panel: time and distance left",
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "nbTurnRight": "Turn right",
+  "@nbTurnRight": {
+    "description": "Walk: turn right"
+  },
+  "nbTurnLeft": "Turn left",
+  "@nbTurnLeft": {
+    "description": "Walk: turn left"
+  },
+  "nbStraight": "Go straight",
+  "@nbStraight": {
+    "description": "Walk: go straight"
+  },
+  "nbInMeters": "in {m} m",
+  "@nbInMeters": {
+    "description": "Walk: in X meters",
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "nbPause": "Pause",
+  "@nbPause": {
+    "description": "Walk: pause"
+  },
+  "nbResume": "Continue",
+  "@nbResume": {
+    "description": "Walk: continue"
+  },
+  "nbExit": "Exit",
+  "@nbExit": {
+    "description": "Walk: exit"
+  },
+  "nbRoute": "Route",
+  "@nbRoute": {
+    "description": "Walk: open real route in maps"
+  },
+  "nbHere": "You're already here",
+  "@nbHere": {
+    "description": "Toast: you are already here"
+  },
+  "nbYou": "You",
+  "@nbYou": {
+    "description": "Map marker: you"
+  },
+  "nbNoOffers": "No deal data near you",
+  "@nbNoOffers": {
+    "description": "Empty deals tab"
+  },
+  "nbNoPlans": "No well-known places close enough for a 2 h plan.",
+  "@nbNoPlans": {
+    "description": "Empty plans tab"
+  },
+  "nbLoading": "Looking for what's nearby…",
+  "@nbLoading": {
+    "description": "Nearby: searching"
+  },
+  "nbMuseum": "Museum",
+  "@nbMuseum": {
+    "description": "Kind of place: museum"
+  },
+  "nbGallery": "Gallery",
+  "@nbGallery": {
+    "description": "Kind of place: art gallery"
+  },
+  "nbViewpoint": "Viewpoint",
+  "@nbViewpoint": {
+    "description": "Kind of place: viewpoint"
+  },
+  "nbAttraction": "Attraction",
+  "@nbAttraction": {
+    "description": "Kind of place: attraction"
+  },
+  "nbArtwork": "Artwork",
+  "@nbArtwork": {
+    "description": "Kind of place: public artwork"
+  },
+  "nbMonument": "Monument",
+  "@nbMonument": {
+    "description": "Kind of place: monument"
+  },
+  "nbCastle": "Castle",
+  "@nbCastle": {
+    "description": "Kind of place: castle"
+  },
+  "nbMemorial": "Memorial",
+  "@nbMemorial": {
+    "description": "Kind of place: memorial"
+  },
+  "nbRuins": "Ruins",
+  "@nbRuins": {
+    "description": "Kind of place: ruins"
+  },
+  "nbSite": "Archaeological site",
+  "@nbSite": {
+    "description": "Kind of place: archaeological site"
+  },
+  "nbPark": "Park",
+  "@nbPark": {
+    "description": "Kind of place: park"
+  },
+  "nbWorship": "Place of worship",
+  "@nbWorship": {
+    "description": "Kind of place: church, temple…"
+  },
+  "nbSight": "Place to see",
+  "@nbSight": {
+    "description": "Kind of place: something to see"
+  },
   "moneyBalances": "Who owes what",
   "@moneyBalances": {
     "description": "Header: who owes what."
