@@ -6,6 +6,9 @@ cuando dos personas pueden tocar lo mismo a la vez):
     - Como mucho 20 personas por bote y 1.000 gastos.
     - Un gasto lo borra quien lo apuntó o quien lo pagó.
     - "Me lo pedí yo" en una línea del ticket solo lo marca cada uno para sí.
+    - Pero en "Repartir" (pantalla del gasto) cualquiera que participa puede
+      cambiar cómo se reparte, quién tomó cada línea y los extras: es la
+      cuenta de la mesa y se arregla entre todos.
 """
 
 from __future__ import annotations
@@ -27,6 +30,7 @@ from ai_orchestrator.expenses.domain import (
     Payment,
     Split,
     check_expense,
+    with_extras,
 )
 from ai_orchestrator.negotiation.store import new_invite_code
 from ai_orchestrator.store import Conn, Pool, StoreError
@@ -77,6 +81,15 @@ class ExpenseRecord:
     original_minor: int | None = None
     original_currency: str | None = None
     weights: tuple[int, ...] = ()
+    cover_minor: int = 0
+    discount_minor: int = 0
+    tip_pct: int = 0
+    tip_minor: int = 0
+
+    @property
+    def ticket_minor(self) -> int:
+        """Lo que suma el ticket sin sus extras (cubierto, descuento, propina)."""
+        return self.amount_minor - self.tip_minor - self.cover_minor + self.discount_minor
 
     def as_expense(self) -> Expense:
         return Expense(
@@ -132,6 +145,22 @@ class NewExpense:
     original_minor: int | None = None
     original_currency: str | None = None
     weights: tuple[int, ...] = ()
+    cover_minor: int = 0
+    discount_minor: int = 0
+    tip_pct: int = 0
+    tip_minor: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class Rework:
+    """Cambiar cómo se reparte un gasto ya apuntado (pantalla del gasto)."""
+
+    split: Split
+    # Quién tomó cada línea, en orden (None = no tocar las líneas).
+    owners: tuple[tuple[int, ...], ...] | None
+    cover_minor: int
+    discount_minor: int
+    tip_pct: int
 
 
 class ExpenseStore(Protocol):
@@ -150,6 +179,8 @@ class ExpenseStore(Protocol):
     ) -> ExpenseRecord: ...
 
     async def delete_expense(self, group_id: str, expense_id: str, user_id: str) -> None: ...
+
+    async def rework(self, group_id: str, expense_id: str, user_id: str, change: Rework) -> ExpenseRecord: ...
 
     async def add_payment(
         self, group_id: str, user_id: str, to_seat: int, amount_minor: int, *, from_kitty: bool = False
@@ -271,9 +302,10 @@ class PostgresExpenses:
                     """
                     INSERT INTO ai.expenses
                         (expense_id, group_id, title, amount_minor, payer_seat, split, participants,
-                         original_minor, original_currency, spent_on, created_by, weights)
+                         original_minor, original_currency, spent_on, created_by, weights,
+                         cover_minor, discount_minor, tip_pct, tip_minor)
                     VALUES ($1::uuid, $2::uuid, $3, $4, $5, $6, $7::smallint[], $8, $9, $10, $11,
-                            $12::smallint[])
+                            $12::smallint[], $13, $14, $15, $16)
                     """,
                     expense_id,
                     group_id,
@@ -287,6 +319,10 @@ class PostgresExpenses:
                     new.spent_on,
                     me,
                     list(new.weights) or None,
+                    new.cover_minor,
+                    new.discount_minor,
+                    new.tip_pct,
+                    new.tip_minor,
                 )
                 await conn.executemany(
                     "INSERT INTO ai.expense_items (expense_id, idx, name, qty, price_minor, claimed_by) "
@@ -354,6 +390,61 @@ class PostgresExpenses:
                 await self._touch(conn, group_id)
         except _DB_ERRORS as exc:
             raise StoreError(f"borrar gasto: {exc}") from exc
+
+    async def rework(self, group_id: str, expense_id: str, user_id: str, change: Rework) -> ExpenseRecord:
+        try:
+            async with self._pool.acquire() as conn, conn.transaction():
+                seats = await self._lock_seats(conn, group_id, user_id)
+                me = seats[user_id]
+                locked = await conn.fetchval(
+                    "SELECT 1 FROM ai.expenses "
+                    "WHERE expense_id = $1::uuid AND group_id = $2::uuid FOR UPDATE",
+                    expense_id,
+                    group_id,
+                )
+                if locked is None:
+                    raise ExpenseNotFoundError(expense_id)
+                old = (await self._expenses(conn, group_id, expense_id))[0]
+                if me not in old.participants:
+                    raise NotAllowedError("no participas en este gasto")
+                if change.owners is not None and len(change.owners) != len(old.items):
+                    raise ValueError("hace falta quién tomó cada línea del ticket")
+                amount, tip = with_extras(
+                    old.ticket_minor, change.cover_minor, change.discount_minor, change.tip_pct
+                )
+                items = old.items
+                if change.owners is not None:
+                    items = tuple(
+                        Item(i.name, i.qty, i.price_minor, tuple(dict.fromkeys(o)))
+                        for i, o in zip(old.items, change.owners, strict=True)
+                    )
+                check_expense(
+                    Expense(amount, old.payer_seat, change.split, old.participants, items, ()),
+                    list(seats.values()),
+                )
+                await conn.execute(
+                    "UPDATE ai.expenses SET split = $2, amount_minor = $3, cover_minor = $4, "
+                    "discount_minor = $5, tip_pct = $6, tip_minor = $7, weights = NULL "
+                    "WHERE expense_id = $1::uuid",
+                    expense_id,
+                    change.split,
+                    amount,
+                    change.cover_minor,
+                    change.discount_minor,
+                    change.tip_pct,
+                    tip,
+                )
+                if change.owners is not None:
+                    await conn.executemany(
+                        "UPDATE ai.expense_items SET claimed_by = $3::smallint[] "
+                        "WHERE expense_id = $1::uuid AND idx = $2",
+                        [(expense_id, i, list(it.claimed_by)) for i, it in enumerate(items)],
+                    )
+                await self._touch(conn, group_id)
+                found = await self._expenses(conn, group_id, expense_id)
+        except _DB_ERRORS as exc:
+            raise StoreError(f"repartir gasto: {exc}") from exc
+        return found[0]
 
     async def add_payment(
         self, group_id: str, user_id: str, to_seat: int, amount_minor: int, *, from_kitty: bool = False
@@ -482,7 +573,8 @@ class PostgresExpenses:
     ) -> list[ExpenseRecord]:
         rows = await conn.fetch(
             "SELECT expense_id, title, amount_minor, payer_seat, split, participants, original_minor, "
-            "original_currency, spent_on, created_by, created_at, weights FROM ai.expenses "
+            "original_currency, spent_on, created_by, created_at, weights, cover_minor, discount_minor, "
+            "tip_pct, tip_minor FROM ai.expenses "
             "WHERE group_id = $1::uuid AND ($2::uuid IS NULL OR expense_id = $2::uuid) "
             "ORDER BY spent_on DESC, created_at DESC",
             group_id,
@@ -517,4 +609,8 @@ def _expense(r: asyncpg.Record, items: Sequence[Item]) -> ExpenseRecord:
         original_minor=r["original_minor"],
         original_currency=r["original_currency"],
         weights=tuple(r["weights"] or ()),
+        cover_minor=r["cover_minor"],
+        discount_minor=r["discount_minor"],
+        tip_pct=r["tip_pct"],
+        tip_minor=r["tip_minor"],
     )
