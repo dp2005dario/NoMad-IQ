@@ -11,8 +11,12 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 /// Los únicos avisos que pasan: una palabra en minúsculas y, si acaso, uno
-/// o dos números separados por ":" ("night:2:9000").
-final RegExp webSceneMessage = RegExp(r'^[a-z]{1,12}(:[0-9]{1,8}){0,2}$');
+/// o dos números separados por ":" ("night:2:9000"). Y uno más: "save" con
+/// el número de la tarjeta y sus datos en base64url (la Bóveda), que solo
+/// lleva letras, números, "-" y "_".
+final RegExp webSceneMessage = RegExp(
+  r'^([a-z]{1,12}(:[0-9]{1,8}){0,2}|save:[0-9]{1,2}:[A-Za-z0-9_-]{1,4000})$',
+);
 
 class WebScene extends StatefulWidget {
   const WebScene({super.key, required this.html, required this.onMessage});

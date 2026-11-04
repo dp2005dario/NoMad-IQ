@@ -4008,6 +4008,30 @@
   "@helpSoon": {
     "description": "Help option whose partner is not set up yet"
   },
+  "vaultSlotTicket": "Tickets",
+  "@vaultSlotTicket": {
+    "description": "Vault card: event tickets"
+  },
+  "vaultSlotContacts": "Emergency contacts",
+  "@vaultSlotContacts": {
+    "description": "Vault card: emergency contacts"
+  },
+  "vaultSlotDriving": "Driving licence",
+  "@vaultSlotDriving": {
+    "description": "Vault card: driving licence"
+  },
+  "vaultSlotCar": "Car rental",
+  "@vaultSlotCar": {
+    "description": "Vault card: car rental"
+  },
+  "vaultSlotTrain": "Train / bus",
+  "@vaultSlotTrain": {
+    "description": "Vault card: train or bus ticket"
+  },
+  "vaultSlotEsim": "eSIM",
+  "@vaultSlotEsim": {
+    "description": "Vault card: eSIM"
+  },
   "moneyBalances": "Who owes what",
   "@moneyBalances": {
     "description": "Header: who owes what."

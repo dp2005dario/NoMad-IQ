@@ -236,7 +236,7 @@ Map<String, Object?> staysPageData({
 
 /// La página lista para enseñar.
 String staysPageWith(String page, Map<String, Object?> data) {
-  // "<" como <: ningún nombre de OpenStreetMap puede cerrar el script.
+  // "<" como \u003c: ningún nombre de OpenStreetMap puede cerrar el script.
   final String json = jsonEncode(data).replaceAll('<', r'\u003c');
   return page.replaceFirst(staysMarker, json);
 }

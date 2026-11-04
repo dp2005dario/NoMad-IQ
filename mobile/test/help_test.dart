@@ -2,6 +2,7 @@
 // contacto configurado no salen.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:eclipta/features/vault/vault_screen.dart';
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/features/help/help_contacts.dart';
@@ -60,7 +61,7 @@ void main() {
     // La primera está abierta: lleva a la Bóveda (billetes y reservas).
     await tester.tap(find.text('Abrir la Bóveda'));
     await tester.pumpAndSettle();
-    expect(find.text('Bóveda'), findsWidgets);
+    expect(find.byType(VaultScreen), findsOneWidget);
   });
 
   testWidgets('con socios: avisan de la comisión y abren su web', (
