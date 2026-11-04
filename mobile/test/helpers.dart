@@ -309,6 +309,17 @@ class FakeNotices implements NoticeCenter {
 
   @override
   Future<String?> launchRoute() async => launch;
+
+  /// Las notificaciones de datos para copiar (título, texto, botones).
+  final List<(String, String, List<(String, String)>)> copyData =
+      <(String, String, List<(String, String)>)>[];
+
+  @override
+  Future<void> showCopyData({
+    required String title,
+    required String body,
+    required List<(String, String)> copies,
+  }) async => copyData.add((title, body, copies));
 }
 
 /// Un GPS falso: el test decide la respuesta al permiso y manda posiciones.

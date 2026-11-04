@@ -89,6 +89,7 @@ dependencies:
   # Sin conexión: "actualizar solas" solo cuando el móvil está cargando.
   battery_plus: ^7.1.2
   google_mlkit_barcode_scanning: ^0.16.1
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:
@@ -140,3 +141,9 @@ flutter:
     - family: BricolageGrotesque
       fonts:
         - asset: assets/fonts/BricolageGrotesque.ttf
+    # La letra de máquina de los tickets (Apache 2.0, como Courier New).
+    - family: Cousine
+      fonts:
+        - asset: assets/fonts/Cousine-Regular.ttf
+        - asset: assets/fonts/Cousine-Bold.ttf
+          weight: 700

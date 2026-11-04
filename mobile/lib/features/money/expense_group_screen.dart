@@ -145,23 +145,30 @@ class _ExpenseGroupScreenState extends State<ExpenseGroupScreen> {
   /// "Saldar": cómo pagarle (Bizum, PayPal.me...) y apuntar el pago.
   Future<void> _settle(ExpenseGroup group, Payment debt) async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final int? minor = await showSettleSheet(context, group: group, debt: debt);
-    if (minor == null || !mounted) return;
-    try {
-      await _services.expenses.pay(
-        group.id,
-        toSeat: debt.toSeat,
-        amountMinor: minor,
-      );
-      if (mounted) {
-        _say(t.moneySettled);
-        await _load();
-      }
-    } on ApiException catch (e) {
-      if (mounted) {
-        _say(e.error == ApiError.network ? t.errorNetwork : t.errorUnavailable);
-      }
-    }
+    final bool paid = await showSettleSheet(
+      context,
+      group: group,
+      debt: debt,
+      concept: group.title,
+      onPay: (int minor) async {
+        try {
+          await _services.expenses.pay(
+            group.id,
+            toSeat: debt.toSeat,
+            amountMinor: minor,
+          );
+          return true;
+        } on ApiException catch (e) {
+          if (mounted) {
+            _say(
+              e.error == ApiError.network ? t.errorNetwork : t.errorUnavailable,
+            );
+          }
+          return false;
+        }
+      },
+    );
+    if (paid && mounted) await _load();
   }
 
   @override

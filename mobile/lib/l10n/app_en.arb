@@ -2342,6 +2342,489 @@
   "@moneySettleConfirm": {
     "description": "Button: record payment."
   },
+  "gastosYourMoney": "YOUR MONEY",
+  "@gastosYourMoney": {
+    "description": "Section label above the 3 money tiles, uppercase"
+  },
+  "gastosPaidBy": "{name} paid",
+  "@gastosPaidBy": {
+    "description": "Under the expense title: who paid",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosPaidByRead": "{name} paid · receipt read by Flyra",
+  "@gastosPaidByRead": {
+    "description": "Under the expense title: who paid and that Flyra read the receipt",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosPaidByMe": "You paid",
+  "@gastosPaidByMe": {
+    "description": "Under the expense title: you paid"
+  },
+  "gastosPaidByMeRead": "You paid · receipt read by Flyra",
+  "@gastosPaidByMeRead": {
+    "description": "Under the expense title: you paid and Flyra read the receipt"
+  },
+  "gastosMyProfile": "Your profile photo and settings",
+  "@gastosMyProfile": {
+    "description": "Accessibility label of your avatar button: profile and settings"
+  },
+  "gastosPrinting": "PRINTING THE RECEIPT…",
+  "@gastosPrinting": {
+    "description": "Stage label while the receipt animation prints, uppercase"
+  },
+  "gastosReading": "FLYRA IS READING THE LINES…",
+  "@gastosReading": {
+    "description": "Stage label while Flyra reads the lines, uppercase"
+  },
+  "gastosReady": "DONE · {n} LINES SPLIT",
+  "@gastosReady": {
+    "description": "Stage label when done, n = number of lines, uppercase",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosReprint": "Print again",
+  "@gastosReprint": {
+    "description": "Button to replay the printing animation"
+  },
+  "gastosScanQr": "Scan the receipt's QR",
+  "@gastosScanQr": {
+    "description": "Button: scan the tax QR code of the receipt"
+  },
+  "gastosEqual": "Equal parts",
+  "@gastosEqual": {
+    "description": "Split option: equal parts"
+  },
+  "gastosByItem": "By what each person had",
+  "@gastosByItem": {
+    "description": "Split option: by what each person had"
+  },
+  "gastosTable": "Let everyone mark theirs on their phone",
+  "@gastosTable": {
+    "description": "Button: let everyone mark their own dishes from their phone"
+  },
+  "gastosLinesTitle": "DISHES READ FROM THE RECEIPT · TAP WHO HAD IT",
+  "@gastosLinesTitle": {
+    "description": "Label above the receipt dishes, uppercase"
+  },
+  "gastosForOne": "for 1",
+  "@gastosForOne": {
+    "description": "Status of a dish that only one person had"
+  },
+  "gastosEach": "÷{n} · {amount} each",
+  "@gastosEach": {
+    "description": "Status of a shared dish: split among n people, amount each",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosExtras": "EXTRAS · SPLIT BY WHAT EACH PERSON HAD",
+  "@gastosExtras": {
+    "description": "Card label for extras split by consumption, uppercase"
+  },
+  "gastosCover": "Bread and cover charge on the receipt",
+  "@gastosCover": {
+    "description": "Row: bread and cover charge on the receipt"
+  },
+  "gastosDiscount": "Discount on the receipt",
+  "@gastosDiscount": {
+    "description": "Row: discount on the receipt"
+  },
+  "gastosVatNote": "VAT is already in each price, it isn't split separately. The tip isn't on the receipt: it's added on top.",
+  "@gastosVatNote": {
+    "description": "Note under extras: VAT is already included, tip goes on top"
+  },
+  "gastosMyPart": "Your share: dishes {amount}",
+  "@gastosMyPart": {
+    "description": "Start of your breakdown: dishes amount",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosMyCover": "+ cover {amount}",
+  "@gastosMyCover": {
+    "description": "Breakdown part: plus cover charge",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosMyDiscount": "− discount {amount}",
+  "@gastosMyDiscount": {
+    "description": "Breakdown part: minus discount",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosMyTip": "+ tip {amount}",
+  "@gastosMyTip": {
+    "description": "Breakdown part: plus tip",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosMyTotal": "= {amount}",
+  "@gastosMyTotal": {
+    "description": "Breakdown end: equals total",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosSumBad": "Doesn't match: the dishes add up to {lines} and the receipt says {total}",
+  "@gastosSumBad": {
+    "description": "Status: dishes don't add up to the receipt total",
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosSumBadQr": "Doesn't match: the receipt adds up to {lines} and the QR says {total}",
+  "@gastosSumBadQr": {
+    "description": "Status: the receipt lines don't add up to the tax QR total",
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosSumOk": "Split {total} · matches the receipt total",
+  "@gastosSumOk": {
+    "description": "Status: everything split and matches the receipt total",
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosSumOkQr": "Split {total} · matches the QR total",
+  "@gastosSumOkQr": {
+    "description": "Status: everything split and matches the QR total",
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosSumTip": "(+ {amount} tip)",
+  "@gastosSumTip": {
+    "description": "Added to the status when there is a tip",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosPaidTag": "PAID",
+  "@gastosPaidTag": {
+    "description": "Small badge on the card of who paid, uppercase"
+  },
+  "gastosSettledTag": "SETTLED",
+  "@gastosSettledTag": {
+    "description": "Small badge: you owe nothing, uppercase"
+  },
+  "gastosYouOwe": "You owe {name}",
+  "@gastosYouOwe": {
+    "description": "Debt card: you owe this person",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosOwedToYou": "You're owed",
+  "@gastosOwedToYou": {
+    "description": "Debt card when you paid: they owe you"
+  },
+  "gastosSettle": "Settle",
+  "@gastosSettle": {
+    "description": "Button: settle the debt"
+  },
+  "gastosSettledButton": "Settled ✓",
+  "@gastosSettledButton": {
+    "description": "Button label when already settled"
+  },
+  "gastosQrMismatch": "The dishes add up to {lines} and the receipt's QR says {total}. I may have misread a line: check them on the receipt.",
+  "@gastosQrMismatch": {
+    "description": "Flyra alert after scanning the QR: lines total vs QR total",
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosAlertOk": "Got it",
+  "@gastosAlertOk": {
+    "description": "Button that closes Flyra's alert"
+  },
+  "ticketTpv": "POS",
+  "@ticketTpv": {
+    "description": "Label on the card terminal drawing (point of sale), uppercase"
+  },
+  "ticketDiners": "Diners {n}",
+  "@ticketDiners": {
+    "description": "Receipt line: number of diners",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketQty": "QTY",
+  "@ticketQty": {
+    "description": "Receipt column header: units, uppercase"
+  },
+  "ticketItem": "ITEM",
+  "@ticketItem": {
+    "description": "Receipt column header: item, uppercase"
+  },
+  "ticketPrice": "AMOUNT",
+  "@ticketPrice": {
+    "description": "Receipt column header: amount, uppercase"
+  },
+  "ticketCover": "BREAD & COVER",
+  "@ticketCover": {
+    "description": "Receipt line: bread and cover charge, uppercase"
+  },
+  "ticketDiscountLine": "DISCOUNT",
+  "@ticketDiscountLine": {
+    "description": "Receipt line: discount, uppercase"
+  },
+  "ticketLinesFound": "{n} LINES DETECTED",
+  "@ticketLinesFound": {
+    "description": "Label stuck on the receipt: n lines detected, uppercase",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "tableSheetText": "Show the QR or send the code to the group. Everyone joins with the app and marks theirs on their phone.",
+  "@tableSheetText": {
+    "description": "Sheet text: show the QR or send the code so everyone marks theirs"
+  },
+  "tableCopyCode": "Copy code",
+  "@tableCopyCode": {
+    "description": "Button: copy the group code"
+  },
+  "tableLive": "LIVE · WHO MARKED WHAT",
+  "@tableLive": {
+    "description": "Label above the live list of who marked what, uppercase"
+  },
+  "tableMine": "You marked {n} dishes ✓",
+  "@tableMine": {
+    "description": "Live list: you have marked n dishes",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "tableNothingMine": "You haven't marked anything yet",
+  "@tableNothingMine": {
+    "description": "Live list: you haven't marked anything"
+  },
+  "tableDone": "Done",
+  "@tableDone": {
+    "description": "Button that closes the share-with-the-table sheet"
+  },
+  "qrNone": "I couldn't find the tax QR code in the photo.",
+  "@qrNone": {
+    "description": "Message when no tax QR code was found in the photo"
+  },
+  "qrSheetNote": "The QR only has these 4 details and a link to the tax office to check the invoice. I read the place's name and the dishes from the receipt photo.",
+  "@qrSheetNote": {
+    "description": "Note in the QR sheet: what the tax QR contains"
+  },
+  "qrUse": "Use this data",
+  "@qrUse": {
+    "description": "Button: use the QR data"
+  },
+  "settleWith": "Settle up with {name}",
+  "@settleWith": {
+    "description": "Sheet title: settle up with a person",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleToBy": "to {name} by Bizum",
+  "@settleToBy": {
+    "description": "Under the amount: to this person by Bizum",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleConcept": "Reference",
+  "@settleConcept": {
+    "description": "Row label: payment concept"
+  },
+  "settleFlyraBizum": "Bizum doesn't let other apps fill it in. Easiest: I copy the amount and reference and you paste them into Bizum in your bank app.",
+  "@settleFlyraBizum": {
+    "description": "Flyra explains how to pay by Bizum"
+  },
+  "settleCopyBizum": "Copy for Bizum",
+  "@settleCopyBizum": {
+    "description": "Main button: copy amount and reference for Bizum"
+  },
+  "settleAsk": "Ask {name} to request it by Bizum (pay with 1 tap)",
+  "@settleAsk": {
+    "description": "Button: ask the person to send you a Bizum request",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleAskText": "Hi {name}! Can you send me a Bizum request for {amount} for \"{concept}\"? Then I can pay you with one tap.",
+  "@settleAskText": {
+    "description": "Message sent to the person asking for a Bizum request",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "concept": {
+        "type": "String"
+      }
+    }
+  },
+  "settleAskedTitle": "Message ready for {name}",
+  "@settleAskedTitle": {
+    "description": "After sharing the request message",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleAskedText": "You ask them to send you a Bizum request for {amount} from their bank. It will reach your bank app and you just accept it with your PIN.",
+  "@settleAskedText": {
+    "description": "Explains what happens after asking for a Bizum request",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "settleOk": "OK",
+  "@settleOk": {
+    "description": "Button OK"
+  },
+  "settleCash": "I already paid in cash",
+  "@settleCash": {
+    "description": "Button: I already paid in cash"
+  },
+  "settleCopiedLine": "Copied: {amount} · {concept}",
+  "@settleCopiedLine": {
+    "description": "Confirmation of what was copied",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "concept": {
+        "type": "String"
+      }
+    }
+  },
+  "settleOpenBank": "Open your bank app: Bizum → Send → paste → confirm",
+  "@settleOpenBank": {
+    "description": "Steps to pay in the bank app"
+  },
+  "settleSentQuestion": "Have you paid {name} yet?",
+  "@settleSentQuestion": {
+    "description": "Question after copying or opening PayPal",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleYesPaid": "Yes, mark as settled",
+  "@settleYesPaid": {
+    "description": "Button: yes, mark as settled"
+  },
+  "settleNotYet": "Not yet",
+  "@settleNotYet": {
+    "description": "Button: not yet"
+  },
+  "settlePaypalOnly": "Only if {name} has PayPal.me",
+  "@settlePaypalOnly": {
+    "description": "Label: only if the person has PayPal.me",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settlePaypalFees": "The link opens PayPal with the amount filled in. Fees depend on PayPal.",
+  "@settlePaypalFees": {
+    "description": "Note on PayPal link"
+  },
+  "settleBack": "Back",
+  "@settleBack": {
+    "description": "Button: go back"
+  },
+  "settleReady": "Done",
+  "@settleReady": {
+    "description": "Button that closes the settled screen"
+  },
+  "settleDoneTitle": "Settled with {name}",
+  "@settleDoneTitle": {
+    "description": "Big title after settling",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleDoneText": "You record it: ECLIPTA can't see your bank. {name} will see it in the kitty.",
+  "@settleDoneText": {
+    "description": "Note after settling",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "vfTitle": "READ FROM THE RECEIPT'S VERIFACTU QR",
   "@vfTitle": {
     "description": "Card title: data read from the VeriFactu QR code on a Spanish receipt, uppercase"
@@ -2522,6 +3005,152 @@
   "settleHonest": "You mark it yourself: ECLIPTA can't see your bank.",
   "@settleHonest": {
     "description": "Note that the app doesn't see your bank"
+  },
+  "settleBankLabel": "Your bank",
+  "@settleBankLabel": {
+    "description": "Row label: the user's bank"
+  },
+  "settleBankChange": "change",
+  "@settleBankChange": {
+    "description": "Small link to change the bank"
+  },
+  "settleBankAsk": "Which bank do you use for Bizum? (only the first time)",
+  "@settleBankAsk": {
+    "description": "Question shown once: which bank the user pays Bizum from"
+  },
+  "settleBankOther": "Other bank",
+  "@settleBankOther": {
+    "description": "Bank picker option: another bank"
+  },
+  "settleBankNote": "Saved on this phone. Bank names without logos: the app opens the official app you have installed.",
+  "@settleBankNote": {
+    "description": "Note under the bank picker"
+  },
+  "settleYourBank": "your bank",
+  "@settleYourBank": {
+    "description": "Bank name when none chosen yet"
+  },
+  "settleFlyraOpen": "Bizum doesn't let other apps fill it in. Easiest: I open {bank} straight away, with the amount and reference copied and in a notification from me so you can paste them with one tap.",
+  "@settleFlyraOpen": {
+    "description": "Flyra explains how paying by Bizum works",
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "settleOpenIn": "Open Bizum in {bank}",
+  "@settleOpenIn": {
+    "description": "Main button: open Bizum in the user's bank app",
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "settleTapWith": "Tap phones with {name}",
+  "@settleTapWith": {
+    "description": "Button: bring both phones together",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleNotifLine": "Flyra notification with the details: tap it to copy each one",
+  "@settleNotifLine": {
+    "description": "Done line: a notification has the data"
+  },
+  "settleOpeningLine": "Opening {bank}…: Bizum → Send → paste → confirm",
+  "@settleOpeningLine": {
+    "description": "Done line: opening the bank app and the steps",
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "settleSentBizum": "Have you sent the Bizum to {name}?",
+  "@settleSentBizum": {
+    "description": "Question after opening the bank",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleReqTitle": "Message sent to {name} in the group",
+  "@settleReqTitle": {
+    "description": "Info title after asking the other person",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleDoneGroup": "You record it: ECLIPTA can't see your bank. We let {name} know in the group.",
+  "@settleDoneGroup": {
+    "description": "Text under Settled: the user records it, the group sees it",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tapTitle": "Settling the debt",
+  "@tapTitle": {
+    "description": "Phones-together sheet title while settling"
+  },
+  "tapReady": "All set!",
+  "@tapReady": {
+    "description": "Phones-together sheet title when finished"
+  },
+  "tapConnected": "Connected",
+  "@tapConnected": {
+    "description": "Chip when both phones connect"
+  },
+  "tapYou": "You",
+  "@tapYou": {
+    "description": "Label on your phone: you"
+  },
+  "tapDebtWith": "Debt with {name}",
+  "@tapDebtWith": {
+    "description": "Label of the debt bar",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tapOpening": "Opening {bank}…",
+  "@tapOpening": {
+    "description": "Spinner text: opening the bank app",
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPayTitle": "Flyra · Bizum details",
+  "@notifPayTitle": {
+    "description": "Notification title with the Bizum data"
+  },
+  "notifCopyAmount": "Copy amount",
+  "@notifCopyAmount": {
+    "description": "Notification button: copy the amount"
+  },
+  "notifCopyConcept": "Copy reference",
+  "@notifCopyConcept": {
+    "description": "Notification button: copy the reference"
+  },
+  "settleNoApp": "I can't find the {bank} app on this phone: open it yourself and paste the details.",
+  "@settleNoApp": {
+    "description": "When the bank app is not installed",
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
   },
   "moneyBalances": "Who owes what",
   "@moneyBalances": {

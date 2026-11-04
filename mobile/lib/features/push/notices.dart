@@ -10,8 +10,10 @@
 //   - fares:  alertas de precio de vuelos que vigilas (importancia alta: un
 //             chollo puede durar minutos).
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:intl/date_symbol_data_local.dart' show initializeDateFormatting;
@@ -31,6 +33,15 @@ abstract interface class NoticeCenter {
 
   /// Si la app se abrió tocando una notificación, su ruta.
   Future<String?> launchRoute();
+
+  /// Una notificación de Flyra con datos para pegar en otra app (el importe
+  /// y el concepto de un Bizum). Cada botón [copies] (texto del botón, lo que
+  /// copia) los copia uno a uno.
+  Future<void> showCopyData({
+    required String title,
+    required String body,
+    required List<(String, String)> copies,
+  });
 }
 
 /// Elige los textos para el idioma [language]; si no lo tenemos, el del
@@ -82,6 +93,12 @@ class DeviceNotices implements NoticeCenter {
         ),
       ),
       onDidReceiveNotificationResponse: (NotificationResponse r) {
+        // Botón "Copiar importe" / "Copiar concepto" de los datos de Bizum.
+        final String? copy = copyFromResponse(r.payload, r.actionId);
+        if (copy != null) {
+          unawaited(Clipboard.setData(ClipboardData(text: copy)));
+          return;
+        }
         final String? route = _safeRoute(r.payload);
         if (route != null) _taps.add(route);
       },
@@ -156,11 +173,71 @@ class DeviceNotices implements NoticeCenter {
     );
   }
 
+  static const String payChannel = 'pay';
+  static const int _payId = 7301;
+
+  @override
+  Future<void> showCopyData({
+    required String title,
+    required String body,
+    required List<(String, String)> copies,
+  }) async {
+    await init();
+    await _plugin.show(
+      id: _payId,
+      title: title,
+      body: body,
+      // Lo que copia cada botón va en el "payload" (nunca sale del móvil).
+      payload:
+          '$copyPrefix${jsonEncode(<String>[for (final (_, String v) in copies) v])}',
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          payChannel,
+          title,
+          importance: Importance.high,
+          priority: Priority.high,
+          visibility: NotificationVisibility.private,
+          actions: <AndroidNotificationAction>[
+            for (int i = 0; i < copies.length; i++)
+              AndroidNotificationAction(
+                'copy_$i',
+                copies[i].$1,
+                // Hay que abrir la app un momento para poder copiar.
+                showsUserInterface: true,
+                cancelNotification: false,
+              ),
+          ],
+        ),
+        iOS: const DarwinNotificationDetails(),
+      ),
+    );
+  }
+
   /// Solo rutas internas de la app ("/..."): nada de direcciones externas.
   static String? _safeRoute(String? payload) =>
       payload != null && payload.startsWith('/') && !payload.startsWith('//')
       ? payload
       : null;
+}
+
+/// Así empieza el "payload" de la notificación con datos para copiar.
+const String copyPrefix = 'copy:';
+
+/// Qué copiar al tocar la notificación de datos: el botón `copy_N` copia el
+/// dato N; tocar la notificación entera, el primero. null = no es de datos.
+String? copyFromResponse(String? payload, String? actionId) {
+  if (payload == null || !payload.startsWith(copyPrefix)) return null;
+  try {
+    final Object? decoded = jsonDecode(payload.substring(copyPrefix.length));
+    if (decoded is! List<dynamic>) return null;
+    final List<dynamic> values = decoded;
+    final int i = actionId != null && actionId.startsWith('copy_')
+        ? int.tryParse(actionId.substring(5)) ?? 0
+        : 0;
+    return i >= 0 && i < values.length ? '${values[i]}' : null;
+  } on FormatException {
+    return null;
+  }
 }
 
 /// Título y texto de un aviso en el idioma [t].
@@ -222,4 +299,11 @@ class SilentNotices implements NoticeCenter {
 
   @override
   Future<String?> launchRoute() async => null;
+
+  @override
+  Future<void> showCopyData({
+    required String title,
+    required String body,
+    required List<(String, String)> copies,
+  }) async {}
 }

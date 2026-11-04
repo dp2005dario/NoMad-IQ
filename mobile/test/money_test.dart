@@ -5,6 +5,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:eclipta/auth/session.dart';
@@ -15,10 +16,12 @@ import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/flights/booking.dart';
 import 'package:eclipta/features/money/expenses_api.dart';
 import 'package:eclipta/features/money/fx_api.dart';
+import 'package:eclipta/features/money/gastos_widgets.dart';
 import 'package:eclipta/features/money/money_screen.dart';
 import 'package:eclipta/features/money/receipt_parser.dart';
 import 'package:eclipta/features/money/receipt_scanner.dart';
 import 'package:eclipta/features/money/rooms_view.dart';
+import 'package:eclipta/features/push/notices.dart';
 import 'package:eclipta/features/vault/vault.dart';
 
 import 'helpers.dart';
@@ -152,6 +155,20 @@ class MoneyBackend {
       weights.add(jsonDecode(r.body) as Map<String, Object?>);
       return http.Response('', 204);
     };
+    g.services['$base/$groupId/expenses/$expenseId/split'] = (http.Request r) {
+      final Map<String, Object?> body =
+          jsonDecode(r.body) as Map<String, Object?>;
+      reworks.add(body);
+      final List<Object?>? owners = body['owners'] as List<Object?>?;
+      return FakeGateway.json(
+        expenseJson(
+          split: body['split']! as String,
+          claimed: owners == null
+              ? const <int>[]
+              : (owners.first! as List<Object?>).cast<int>(),
+        ),
+      );
+    };
     g.services['$base/$groupId/expenses/$expenseId/items/0/claim'] =
         (http.Request r) {
           claims.add(jsonDecode(r.body) as Map<String, Object?>);
@@ -165,6 +182,7 @@ class MoneyBackend {
   final List<Map<String, Object?>> expenses = <Map<String, Object?>>[];
   final List<Map<String, Object?>> payments = <Map<String, Object?>>[];
   final List<Map<String, Object?>> claims = <Map<String, Object?>>[];
+  final List<Map<String, Object?>> reworks = <Map<String, Object?>>[];
   final List<Map<String, Object?>> kittyAsks = <Map<String, Object?>>[];
   final List<Map<String, Object?>> weights = <Map<String, Object?>>[];
 }
@@ -229,6 +247,7 @@ Future<MoneyBackend> pumpMoney(
   Vault? vault,
   Future<bool> Function(Uri)? openLink,
   ShareFiles? share,
+  FakeNotices? notices,
 }) async {
   tester.view.physicalSize = const Size(1200, 9000);
   tester.view.devicePixelRatio = 3;
@@ -252,6 +271,7 @@ Future<MoneyBackend> pumpMoney(
       vault: vault,
       openLink: openLink,
       share: share,
+      notices: notices,
     ),
   );
   return b;
@@ -423,26 +443,107 @@ void main() {
   });
 
   testWidgets('saldar con Álex apunta el pago', (WidgetTester tester) async {
+    final MemorySettingsStore prefs = MemorySettingsStore();
     final MoneyBackend b = MoneyBackend()..current = groupJson();
     await pumpMoney(
       tester,
       backend: b,
+      prefs: prefs,
       initialLocation: Routes.expenseGroup(groupId),
     );
     expect(find.textContaining('Le debes a Álex'), findsOneWidget);
     await tester.tap(find.text('Saldar'));
     await tester.pumpAndSettle();
-    expect(find.text('Pagar a Álex'), findsOneWidget);
-    expect(find.text('43.00'), findsOneWidget);
-    await tester.tap(find.text('Ya le he pagado'));
+    expect(find.text('Saldar con Álex'), findsOneWidget);
+    // La primera vez pregunta el banco y lo guarda.
+    expect(
+      find.text('¿Desde qué banco haces Bizum? (solo la primera vez)'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Openbank'));
+    await tester.pumpAndSettle();
+    expect(prefs.readData(LocalData.bizumBank), 'Openbank');
+    expect(find.text('Abrir Bizum en Openbank'), findsOneWidget);
+    await tester.tap(find.text('Ya le pagué en efectivo'));
     await tester.pumpAndSettle();
     expect(b.payments.single, <String, Object?>{
       'to_seat': 2,
       'amount_minor': 4300,
     });
+    expect(find.text('Saldado con Álex'), findsOneWidget);
   });
 
-  testWidgets('tocar una línea del ticket: "esto me lo pedí yo"', (
+  testWidgets('juntar móviles: la escena y luego abrir el banco', (
+    WidgetTester tester,
+  ) async {
+    final FakeNotices notices = FakeNotices();
+    final MemorySettingsStore prefs = MemorySettingsStore();
+    await prefs.writeData(LocalData.bizumBank, 'BBVA');
+    // El portapapeles del sistema (en los tests hay que contestar a mano).
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (MethodCall call) async => null,
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    // Este móvil no tiene la app del banco instalada.
+    const MethodChannel apps = MethodChannel('nomadiq/apps');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      apps,
+      (MethodCall call) async => false,
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        apps,
+        null,
+      ),
+    );
+    final MoneyBackend b = MoneyBackend()..current = groupJson();
+    await pumpMoney(
+      tester,
+      backend: b,
+      prefs: prefs,
+      notices: notices,
+      initialLocation: Routes.expenseGroup(groupId),
+    );
+    await tester.tap(find.text('Saldar'));
+    await tester.pumpAndSettle();
+    // Ya sabe el banco: directo a pagar.
+    expect(find.text('Abrir Bizum en BBVA'), findsOneWidget);
+    await tester.tap(find.text('Juntar móviles con Álex'));
+    await tester.pump();
+    expect(find.text('Deuda en proceso de saldar'), findsOneWidget);
+    expect(find.text('Deuda con Álex'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('Conectados'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+    // Al acabar: datos copiados, notificación de Flyra y el banco.
+    expect(notices.copyData.single.$1, 'Flyra · Datos para Bizum');
+    expect(notices.copyData.single.$3.first.$2, '43,00');
+    expect(find.text('¿Ya le has enviado el Bizum a Álex?'), findsOneWidget);
+    // Sin la app del banco: se explica qué hacer.
+    expect(find.textContaining('No encuentro la app de BBVA'), findsOneWidget);
+    await tester.tap(find.text('Sí, marcar saldado'));
+    await tester.pumpAndSettle();
+    expect(b.payments.single['amount_minor'], 4300);
+  });
+
+  test('notificación de Bizum: cada botón copia su dato', () {
+    const String payload = '$copyPrefix["43,00","Madrid"]';
+    expect(copyFromResponse(payload, 'copy_0'), '43,00');
+    expect(copyFromResponse(payload, 'copy_1'), 'Madrid');
+    expect(copyFromResponse(payload, null), '43,00'); // tocar la notificación
+    expect(copyFromResponse(payload, 'copy_7'), isNull);
+    expect(copyFromResponse('/money', null), isNull); // una ruta normal
+    expect(copyFromResponse('copy:no-json', null), isNull);
+  });
+
+  testWidgets('tocar quién tomó un plato guarda el reparto', (
     WidgetTester tester,
   ) async {
     final MoneyBackend b = MoneyBackend()..current = groupJson();
@@ -453,11 +554,15 @@ void main() {
     );
     await tester.tap(find.text('Cena en La Latina'));
     await tester.pumpAndSettle();
-    expect(find.text('Todos'), findsOneWidget); // las croquetas, de todos
-    await tester.tap(find.text('Croquetas'));
+    // Las croquetas son de todos; Álex se quita: solo para mí.
+    final Finder alex = find.byWidgetPredicate(
+      (Widget w) => w is PersonToggle && w.name == 'Álex' && w.on,
+    );
+    await tester.ensureVisible(alex.first);
+    await tester.tap(alex.first);
     await tester.pumpAndSettle();
-    expect(b.claims.single, <String, Object?>{'claimed': true});
-    expect(find.text('Todos'), findsNothing); // ahora son mías
+    expect(b.reworks.single['split'], 'items');
+    expect((b.reworks.single['owners']! as List<Object?>).first, <int>[1]);
   });
 
   group('divisas', () {

@@ -154,11 +154,13 @@ void main() {
     await tester.ensureVisible(find.text('Guardar gasto'));
     await tester.tap(find.text('Guardar gasto'));
     await tester.pumpAndSettle();
-    expect(b.expenses.single['amount_minor'], 9460);
+    // Se manda lo pagado sin propina y el % aparte (el servidor la suma).
+    expect(b.expenses.single['amount_minor'], 8600);
+    expect(b.expenses.single['tip_pct'], 10);
     expect(b.expenses.single['spent_on'], '2026-10-22'); // la del QR
   });
 
-  testWidgets('quién ha marcado qué y repartir con la mesa', (
+  testWidgets('repartir con la mesa: QR, código y quién ha marcado qué', (
     WidgetTester tester,
   ) async {
     final List<String> shared = <String>[];
@@ -171,22 +173,26 @@ void main() {
     );
     await tester.tap(find.text('Cena en La Latina'));
     await tester.pumpAndSettle();
-    expect(find.text('Quién ha marcado qué'), findsOneWidget);
-    expect(find.text('Aún no ha marcado nada'), findsOneWidget); // yo
-    expect(find.text('Pulpo a feira'), findsNWidgets(2)); // ticket y Álex
-    // El total (86) es más que las líneas (30,50): propina y ajustes.
-    expect(find.text('Propina y ajustes'), findsOneWidget);
+    final Finder table = find.text(
+      'Que cada uno marque lo suyo desde su móvil',
+    );
+    await tester.ensureVisible(table);
+    await tester.tap(table);
+    await tester.pumpAndSettle();
+    expect(find.text('EN VIVO · QUIÉN HA MARCADO QUÉ'), findsOneWidget);
+    expect(find.text('Aún no has marcado nada'), findsOneWidget); // yo
+    expect(find.text('7K2M-9QXD'), findsOneWidget);
     await tester.tap(find.text('Mandar al grupo'));
     await tester.pumpAndSettle();
     expect(shared.single, contains('7K2M-9QXD'));
     expect(shared.single, contains('Cena en La Latina'));
-    // Actualizar vuelve a pedir el bote.
-    await tester.tap(find.byTooltip('Actualizar'));
+    await tester.tap(find.text('Hecho'));
     await tester.pumpAndSettle();
-    expect(find.text('Quién ha marcado qué'), findsOneWidget);
   });
 
-  testWidgets('saldar: copiar datos y PayPal.me', (WidgetTester tester) async {
+  testWidgets('saldar: Abrir Bizum en tu banco y PayPal.me', (
+    WidgetTester tester,
+  ) async {
     final List<Uri> opened = <Uri>[];
     String? copied;
     tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
@@ -204,6 +210,21 @@ void main() {
         null,
       ),
     );
+    // La app del banco "se abre" (canal de Android falso).
+    final List<Object?> apps = <Object?>[];
+    const MethodChannel channel = MethodChannel('nomadiq/apps');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
+      MethodCall call,
+    ) async {
+      apps.add(call.arguments);
+      return true;
+    });
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        channel,
+        null,
+      ),
+    );
     final m.MoneyBackend b = m.MoneyBackend()..current = m.groupJson();
     await m.pumpMoney(
       tester,
@@ -216,22 +237,38 @@ void main() {
     );
     await tester.tap(find.text('Saldar'));
     await tester.pumpAndSettle();
-    expect(find.text('Pagar a Álex'), findsOneWidget);
-    await tester.tap(find.text('Copiar importe y concepto'));
+    await tester.tap(find.text('CaixaBank'));
     await tester.pumpAndSettle();
-    expect(copied, '43,00\u00a0€ · Madrid');
-    expect(find.text('Copiado'), findsOneWidget);
+    expect(find.text('CaixaBank'), findsOneWidget); // "Tu banco · cambiar"
+    await tester.tap(find.text('Abrir Bizum en CaixaBank'));
+    await tester.pumpAndSettle();
+    expect(copied, '43,00');
+    expect(apps.single, <String>['es.lacaixa.mobile.android.newwapicon']);
+    expect(find.text('Copiado: 43,00\u00a0€ · Madrid'), findsOneWidget);
+    expect(
+      find.text('Abriendo CaixaBank…: Bizum → Enviar → pegar → confirmar'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Todavía no'));
+    await tester.pumpAndSettle();
+
+    // Otra vez: ya no pregunta el banco. Ahora por PayPal.me.
+    await tester.tap(find.text('Saldar'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Enlace de PayPal.me'));
+    await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'alex99');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Abrir'));
     await tester.pumpAndSettle();
     expect(opened.single.toString(), 'https://www.paypal.me/alex99/43.00EUR');
-    await tester.ensureVisible(find.text('Ya le he pagado'));
-    await tester.tap(find.text('Ya le he pagado'));
+    await tester.ensureVisible(find.text('Sí, marcar saldado'));
+    await tester.tap(find.text('Sí, marcar saldado'));
     await tester.pumpAndSettle();
     expect(b.payments.single, <String, Object?>{
       'to_seat': 2,
       'amount_minor': 4300,
     });
+    expect(find.text('Saldado con Álex'), findsOneWidget);
   });
 }

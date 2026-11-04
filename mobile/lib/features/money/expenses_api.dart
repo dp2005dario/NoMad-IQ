@@ -134,6 +134,10 @@ class Expense {
     this.originalMinor,
     this.originalCurrency,
     this.weights = const <int>[],
+    this.coverMinor = 0,
+    this.discountMinor = 0,
+    this.tipPct = 0,
+    this.tipMinor = 0,
   });
 
   final String id;
@@ -156,8 +160,43 @@ class Expense {
   /// Con [SplitMode.weights]: un peso por participante, en el mismo orden.
   final List<int> weights;
 
+  /// Pan y cubierto que se añadió aparte (0 = nada).
+  final int coverMinor;
+
+  /// Descuento del ticket (0 = ninguno).
+  final int discountMinor;
+
+  /// Propina elegida: 0, 5 o 10 (%), y lo que suma.
+  final int tipPct;
+  final int tipMinor;
+
+  /// El total del ticket, sin cubierto, descuento ni propina.
+  int get ticketMinor => amountMinor - tipMinor - coverMinor + discountMinor;
+
   /// ¿Se pagó con el bote común?
   bool get fromKitty => payerSeat == kittySeat;
+
+  /// El mismo gasto con otras líneas (para enseñar lo que estás marcando
+  /// antes de que el servidor responda).
+  Expense copyWithItems(List<TicketItem> newItems) => Expense(
+    id: id,
+    title: title,
+    amountMinor: amountMinor,
+    payerSeat: payerSeat,
+    split: split,
+    participants: participants,
+    items: newItems,
+    shares: shares,
+    spentOn: spentOn,
+    createdBy: createdBy,
+    originalMinor: originalMinor,
+    originalCurrency: originalCurrency,
+    weights: weights,
+    coverMinor: coverMinor,
+    discountMinor: discountMinor,
+    tipPct: tipPct,
+    tipMinor: tipMinor,
+  );
 
   static Expense parse(Object? json) {
     final Map<String, Object?> m = _map(json);
@@ -193,6 +232,10 @@ class Expense {
       originalMinor: original as int?,
       originalCurrency: originalCurrency as String?,
       weights: m['weights'] == null ? const <int>[] : _ints(m['weights']),
+      coverMinor: _intOr0(m['cover_minor']),
+      discountMinor: _intOr0(m['discount_minor']),
+      tipPct: _intOr0(m['tip_pct']),
+      tipMinor: _intOr0(m['tip_minor']),
     );
   }
 }
@@ -400,9 +443,14 @@ class NewExpense {
     this.split = SplitMode.equal,
     this.items = const <TicketItem>[],
     this.weights = const <int>[],
+    this.discountMinor = 0,
+    this.tipPct = 0,
   });
 
   final String title;
+
+  /// Lo pagado sin la propina, con el descuento ya restado (la propina la
+  /// suma el servidor).
   final int amountMinor;
   final int payerSeat;
   final List<int> participants;
@@ -410,6 +458,12 @@ class NewExpense {
   final SplitMode split;
   final List<TicketItem> items;
   final List<int> weights;
+
+  /// Descuento que trae el ticket (ya restado en [amountMinor]).
+  final int discountMinor;
+
+  /// Propina: 0, 5 o 10 (%).
+  final int tipPct;
 
   Map<String, Object?> toJson() => <String, Object?>{
     'title': title,
@@ -420,6 +474,8 @@ class NewExpense {
     'items': items.map((TicketItem i) => i.toJson()).toList(),
     'spent_on': _day(spentOn),
     if (split == SplitMode.weights) 'weights': weights,
+    if (discountMinor != 0) 'discount_minor': discountMinor,
+    if (tipPct != 0) 'tip_pct': tipPct,
   };
 }
 
@@ -484,6 +540,31 @@ class ExpensesApi {
     ),
   );
 
+  /// Cambia cómo se reparte un gasto ya guardado: a partes iguales o por
+  /// platos, quién tomó cada plato ([owners], una lista por plato; vacía =
+  /// todos), el pan y cubierto, el descuento y la propina (0, 5 o 10 %).
+  /// Puede hacerlo cualquiera que esté en el gasto.
+  Future<Expense> rework(
+    String groupId,
+    String expenseId, {
+    required SplitMode split,
+    List<List<int>>? owners,
+    int coverMinor = 0,
+    int discountMinor = 0,
+    int tipPct = 0,
+  }) async => Expense.parse(
+    await _api.putJson(
+      '$_base/${_id(groupId)}/expenses/${_id(expenseId)}/split',
+      <String, Object?>{
+        'split': split == SplitMode.items ? 'items' : 'equal',
+        'owners': ?owners,
+        'cover_minor': coverMinor,
+        'discount_minor': discountMinor,
+        'tip_pct': tipPct,
+      },
+    ),
+  );
+
   Future<void> delete(String groupId, String expenseId) =>
       _api.delete('$_base/${_id(groupId)}/expenses/${_id(expenseId)}');
 
@@ -529,6 +610,9 @@ String _str(Object? value) =>
     value is String && value.isNotEmpty && value.length <= 200 ? value : _bad();
 
 int _int(Object? value) => value is int ? value : _bad();
+
+/// Para los datos nuevos: si el servidor es antiguo y no los manda, 0.
+int _intOr0(Object? value) => value == null ? 0 : _int(value);
 
 int _seat(Object? value) =>
     value is int && value >= 1 && value <= maxGroupMembers ? value : _bad();

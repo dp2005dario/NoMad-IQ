@@ -193,9 +193,9 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
   Future<void> _save() async {
     final AppLocalizations t = AppLocalizations.of(context);
     final String title = _title.text.trim();
-    final int? ticket = parseAmount(_amount.text, digits: _digits);
-    // Lo que se reparte = el ticket + la propina.
-    final int? amount = ticket == null ? null : ticket + tipFor(ticket, _tip);
+    // Lo que se paga sin propina. La propina la suma el servidor (así luego
+    // se puede cambiar desde el gasto).
+    final int? amount = parseAmount(_amount.text, digits: _digits);
     final List<TicketItem> items = <TicketItem>[];
     for (final _Line l in _lines) {
       final String name = l.name.text.trim();
@@ -235,11 +235,15 @@ class _ExpenseFormScreenState extends State<ExpenseFormScreen> {
         NewExpense(
           title: title,
           amountMinor: amount!,
+          discountMinor: widget.receipt?.discountMinor ?? 0,
+          tipPct: _tip,
           payerSeat: _payer,
           participants: _participants.toList()..sort(),
           spentOn: _day,
           split: _split,
-          items: _split == SplitMode.items ? items : const <TicketItem>[],
+          // Las líneas se guardan siempre: así el ticket se ve en el gasto y
+          // luego se puede pasar a "por lo que tomó cada uno".
+          items: items,
           weights: <int>[
             for (final int s in _participants.toList()..sort())
               _weights[s] ?? 50,

@@ -1,0 +1,5 @@
+Cousine (Cousine-Regular.ttf, Cousine-Bold.ttf)
+Digitized data copyright (c) 2010-2012 Google Corporation.
+Licensed under the Apache License, Version 2.0:
+https://www.apache.org/licenses/LICENSE-2.0
+Descargada de Google Fonts (fonts.google.com/specimen/Cousine).
