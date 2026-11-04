@@ -884,6 +884,7 @@
   "cpNote": "Racontez-le en quelques lignes (facultatif)",
   "cpOwnRate": "Vous ne pouvez pas noter votre propre voyage",
   "cpLoading": "Recherche de voyages…",
+  "helpSoon": "Pas encore disponible : nous l’activons très bientôt.",
   "moneyBalances": "Qui doit quoi",
   "moneyExpenses": "Dépenses · {total}",
   "moneyNoExpenses": "Pas encore de dépenses. Ajoute la première avec le bouton en bas.",

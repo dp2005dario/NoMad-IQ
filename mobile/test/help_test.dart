@@ -38,7 +38,7 @@ void main() {
     return opened;
   }
 
-  testWidgets('sin socios configurados solo salen aerolínea y seguro', (
+  testWidgets('sin socios configurados salen las cinco y avisan', (
     WidgetTester tester,
   ) async {
     await open(tester);
@@ -46,9 +46,16 @@ void main() {
     expect(find.text('Pregunta a Flyra'), findsOneWidget);
     expect(find.text('La aerolínea o agencia donde compraste'), findsOneWidget);
     expect(find.text('Asistencia de tu seguro de viaje'), findsOneWidget);
-    expect(find.text('Expertos en reclamaciones'), findsNothing);
-    expect(find.text('Gestor de visados'), findsNothing);
-    expect(find.text('Soporte de ECLIPTA'), findsNothing);
+    // Las cinco salen como en la maqueta; sin socio, avisan de que llega
+    // pronto en vez de abrir nada.
+    expect(find.text('Expertos en reclamaciones'), findsOneWidget);
+    expect(find.text('Gestor de visados'), findsOneWidget);
+    expect(find.text('Soporte de ECLIPTA'), findsOneWidget);
+    await tester.tap(find.text('Que lo reclamen por mí'));
+    await tester.pump();
+    expect(find.textContaining('Aún no está disponible'), findsOneWidget);
+    await tester.tap(find.text('La aerolínea o agencia donde compraste'));
+    await tester.pumpAndSettle();
 
     // La primera está abierta: lleva a la Bóveda (billetes y reservas).
     await tester.tap(find.text('Abrir la Bóveda'));

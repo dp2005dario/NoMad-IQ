@@ -884,6 +884,7 @@
   "cpNote": "Ceritakan dalam beberapa baris (opsional)",
   "cpOwnRate": "Kamu tidak bisa menilai perjalananmu sendiri",
   "cpLoading": "Mencari perjalanan…",
+  "helpSoon": "Belum tersedia: segera kami aktifkan.",
   "moneyBalances": "Siapa berutang apa",
   "moneyExpenses": "Pengeluaran · {total}",
   "moneyNoExpenses": "Belum ada pengeluaran. Tambahkan yang pertama dengan tombol di bawah.",

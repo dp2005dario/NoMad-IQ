@@ -884,6 +884,7 @@
   "cpNote": "Povestește în câteva rânduri (opțional)",
   "cpOwnRate": "Nu îți poți nota propria călătorie",
   "cpLoading": "Caut călătorii…",
+  "helpSoon": "Încă nu e disponibil: îl activăm foarte curând.",
   "moneyBalances": "Cine cui datorează",
   "moneyExpenses": "Cheltuieli · {total}",
   "moneyNoExpenses": "Încă nicio cheltuială. Adaug-o pe prima cu butonul de jos.",

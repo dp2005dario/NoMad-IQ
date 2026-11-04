@@ -884,6 +884,7 @@
   "cpNote": "몇 줄로 소개해 주세요 (선택)",
   "cpOwnRate": "내 여행은 평가할 수 없어요",
   "cpLoading": "여행을 찾는 중…",
+  "helpSoon": "아직 이용할 수 없어요. 곧 열어요.",
   "moneyBalances": "누가 얼마를 내야 하나요",
   "moneyExpenses": "지출 · {total}",
   "moneyNoExpenses": "아직 지출이 없어요. 아래 버튼으로 첫 지출을 추가하세요.",

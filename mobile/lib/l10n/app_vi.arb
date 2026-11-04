@@ -884,6 +884,7 @@
   "cpNote": "Kể trong vài dòng (tùy chọn)",
   "cpOwnRate": "Bạn không thể chấm chuyến đi của mình",
   "cpLoading": "Đang tìm chuyến đi…",
+  "helpSoon": "Chưa có: chúng tôi sẽ bật sớm thôi.",
   "moneyBalances": "Ai nợ ai bao nhiêu",
   "moneyExpenses": "Chi tiêu · {total}",
   "moneyNoExpenses": "Chưa có chi tiêu nào. Thêm khoản đầu tiên bằng nút bên dưới.",

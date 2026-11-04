@@ -4004,6 +4004,10 @@
   "@cpLoading": {
     "description": "Loading the trips wall"
   },
+  "helpSoon": "Not available yet: we’re switching it on very soon.",
+  "@helpSoon": {
+    "description": "Help option whose partner is not set up yet"
+  },
   "moneyBalances": "Who owes what",
   "@moneyBalances": {
     "description": "Header: who owes what."

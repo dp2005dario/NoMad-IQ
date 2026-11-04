@@ -884,6 +884,7 @@
   "cpNote": "Birkaç satırda anlat (isteğe bağlı)",
   "cpOwnRate": "Kendi gezini puanlayamazsın",
   "cpLoading": "Geziler aranıyor…",
+  "helpSoon": "Henüz kullanılamıyor: çok yakında açıyoruz.",
   "moneyBalances": "Kim kime ne borçlu",
   "moneyExpenses": "Harcamalar · {total}",
   "moneyNoExpenses": "Henüz harcama yok. İlkini aşağıdaki düğmeyle ekle.",

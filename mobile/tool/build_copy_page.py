@@ -8,6 +8,8 @@
 # (lib/features/copy_trip/copy_page.dart) en la marca /*ECLIPTA*/:
 #   - los viajes que la gente PUBLICA en el muro (con su nombre, su texto,
 #     lo que pagó por cada cosa, sus votos de verdad);
+#   - abrir un viaje con su código sigue funcionando con su enlace
+#     (/copy-trip?code=...);
 #   - la cara de cada autor es un dibujo hecho a partir de su nombre (no hay
 #     fotos de perfil), y el mapa es un dibujo sin nombres de calles.
 import sys
@@ -36,13 +38,10 @@ def cut(start, end, new):
 
 
 rep('html,body{height:100%}', 'html,body{height:100%;margin:0}')
-# --- Cabecera: sin "Datos de ejemplo". En su sitio, dos botones redondos:
-# abrir un viaje con su código y compartir el tuyo.
+# --- Cabecera: sin "Datos de ejemplo" (nada más cambia).
 rep('<h1>Copia este viaje</h1><p>Rutas de otros viajeros, listas para hacerlas tuyas</p></div><span class="ex">Datos de ejemplo</span>',
-    '<h1 id="t_title"></h1><p id="t_sub"></p></div>'
-    '<button class="hb" id="hcode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 4 7 20M17 4l-2 16M4 9h16M3 15h16"/></svg></button>'
-    '<button class="hb" id="hshare"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>')
-rep('.ex{', '.hb{width:38px;height:38px;flex:none;border-radius:50%;display:grid;place-items:center;color:var(--mint);background:rgba(61,220,151,.1);border:1px solid rgba(61,220,151,.4)}\n.hb svg{width:18px;height:18px}\n'
+    '<h1 id="t_title"></h1><p id="t_sub"></p></div>')
+rep('.ex{', ''
     '.msg{padding:26px 18px;border-radius:24px;background:linear-gradient(160deg,var(--panel2),var(--panel));border:1px solid var(--line);text-align:center;color:#c6d3d0;font-weight:600;display:flex;flex-direction:column;gap:12px;align-items:center}\n'
     '.msg:empty{display:none}.msg button{padding:10px 18px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);font-weight:700}\n'
     '.tb p:empty{display:none}\n'
@@ -121,8 +120,6 @@ rep("var sc2=$('#svc');if(sc2)sc2.onclick=function(){t.copied=true;toast('Viaje 
 # --- Arranque: textos, botones de la cabecera y el aviso si no hay viajes.
 rep('loadMore(3);requestAnimationFrame(frame);',
     "$('#t_title').textContent=tx('title');$('#t_sub').textContent=tx('sub');\n"
-    "$('#hcode').setAttribute('aria-label',tx('code'));$('#hshare').setAttribute('aria-label',tx('share'));\n"
-    "$('#hcode').onclick=function(){toApp('code')};$('#hshare').onclick=function(){toApp('share')};\n"
     "var MSG=ECL.msg||(TRIPS.length?'':tx('empty'));if(MSG){$('#msg').innerHTML='<span>'+esc(MSG)+'</span>'+(ECL.retry?'<button id=\"rt\">'+esc(tx('retry'))+'</button>':'');var rb=$('#rt');if(rb)rb.onclick=function(){toApp('retry')}}\n"
     "if(ECL.toast)setTimeout(function(){toast(ECL.toast)},300);\n"
     "if(TRIPS.length)loadMore(Math.min(3,TRIPS.length));requestAnimationFrame(frame);")

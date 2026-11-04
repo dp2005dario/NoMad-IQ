@@ -884,6 +884,7 @@
   "cpNote": "数行で紹介（任意）",
   "cpOwnRate": "自分の旅は評価できません",
   "cpLoading": "旅を探しています…",
+  "helpSoon": "まだ利用できません。まもなく開始します。",
   "moneyBalances": "誰がいくら",
   "moneyExpenses": "支出 · {total}",
   "moneyNoExpenses": "まだ支出はありません。下のボタンで最初の支出を追加しよう。",

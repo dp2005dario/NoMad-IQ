@@ -9,16 +9,13 @@
 //   - Las estrellas son votos de verdad: uno por persona (votar otra vez
 //     cambia tu voto) y nadie puede votar su propio viaje.
 //   - "Copiar este viaje" lo guarda en tus viajes copiados de este móvil.
-//   - El botón "#" abre un viaje con su código (y la adaptación de Flyra a
-//     tu presupuesto); el "+" comparte uno tuyo.
+//   - Un viaje con código se abre con su enlace (/copy-trip?code=...).
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../core/api_client.dart';
-import '../../core/router.dart';
 import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -133,19 +130,6 @@ class _CopyFeedScreenState extends State<CopyFeedScreen> {
     }
   }
 
-  Future<void> _openCode() async {
-    await context.push<void>(Routes.copyCode);
-    if (mounted) _show(); // por si copiaste o quitaste alguno
-  }
-
-  Future<void> _share() async {
-    final SharedTrip? shared = await context.push<SharedTrip>(Routes.shareTrip);
-    if (shared == null || !mounted) return;
-    // Si lo has publicado, sale ya en el muro.
-    _show(message: AppLocalizations.of(context).cpLoading);
-    await _load();
-  }
-
   /// Lo que pide la página.
   void _onMessage(String message) {
     final List<String> part = message.split(':');
@@ -161,10 +145,6 @@ class _CopyFeedScreenState extends State<CopyFeedScreen> {
         if (trip != null && !trip.mine && stars != null) {
           if (stars >= 1 && stars <= 5) unawaited(_rate(trip, stars));
         }
-      case 'code':
-        unawaited(_openCode());
-      case 'share':
-        unawaited(_share());
       case 'retry':
         _show(message: AppLocalizations.of(context).cpLoading);
         unawaited(_load());

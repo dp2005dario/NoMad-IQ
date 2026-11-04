@@ -1,7 +1,7 @@
 // Ayuda (maqueta "Ayuda"): primero Flyra, y si hace falta una persona. Cada
 // opción se abre como una tarjeta con lo que hace y un botón. Las de pago o
-// con comisión lo dicen claramente, y las que no tienen contacto configurado
-// no salen.
+// con comisión lo dicen claramente. Salen las cinco como en la maqueta; si
+// una aún no tiene socio configurado, su botón avisa de que llega pronto.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -85,6 +85,12 @@ class _HelpScreenState extends State<HelpScreen> {
     );
   }
 
+  /// Una opción cuyo socio aún no está configurado: sale igual (como en la
+  /// maqueta) y avisa de que llega pronto, sin llevar a un sitio vacío.
+  void _soon() => ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(AppLocalizations.of(context).helpSoon)),
+  );
+
   List<_Option> _options(AppLocalizations t) {
     final HelpContacts c = _services.help;
     final String? email = c.supportEmail;
@@ -112,40 +118,41 @@ class _HelpScreenState extends State<HelpScreen> {
         icon: _shield,
         onTap: () => unawaited(context.push(Routes.vault)),
       ),
-      if (claims != null)
-        _Option(
-          title: t.helpClaims,
-          sub: t.helpClaimsSub,
-          tag: t.helpTagIfWin,
-          more: t.helpClaimsMore,
-          cta: t.helpClaimsCta,
-          color: NomadColors.money,
-          icon: _bank,
-          claims: true,
-          onTap: () => unawaited(_services.openLink(claims)),
-        ),
-      if (visa != null)
-        _Option(
-          title: t.helpVisa,
-          sub: t.helpVisaSub,
-          tag: t.helpTagPaid,
-          more: t.helpVisaMore,
-          cta: t.helpVisaCta,
-          color: NomadColors.safety,
-          icon: _doc,
-          onTap: () => unawaited(_services.openLink(visa)),
-        ),
-      if (email != null)
-        _Option(
-          title: t.helpSupport,
-          sub: t.helpSupportSub,
-          tag: t.helpTagFree,
-          more: t.helpSupportMore,
-          cta: t.helpSupportCta,
-          color: NomadColors.group,
-          icon: _chat,
-          onTap: () => unawaited(_services.openLink(_supportMail(t, email))),
-        ),
+      _Option(
+        title: t.helpClaims,
+        sub: t.helpClaimsSub,
+        tag: t.helpTagIfWin,
+        more: t.helpClaimsMore,
+        cta: t.helpClaimsCta,
+        color: NomadColors.money,
+        icon: _bank,
+        claims: true,
+        onTap: claims == null
+            ? _soon
+            : () => unawaited(_services.openLink(claims)),
+      ),
+      _Option(
+        title: t.helpVisa,
+        sub: t.helpVisaSub,
+        tag: t.helpTagPaid,
+        more: t.helpVisaMore,
+        cta: t.helpVisaCta,
+        color: NomadColors.safety,
+        icon: _doc,
+        onTap: visa == null ? _soon : () => unawaited(_services.openLink(visa)),
+      ),
+      _Option(
+        title: t.helpSupport,
+        sub: t.helpSupportSub,
+        tag: t.helpTagFree,
+        more: t.helpSupportMore,
+        cta: t.helpSupportCta,
+        color: NomadColors.group,
+        icon: _chat,
+        onTap: email == null
+            ? _soon
+            : () => unawaited(_services.openLink(_supportMail(t, email))),
+      ),
     ];
   }
 

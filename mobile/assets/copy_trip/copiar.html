@@ -15,8 +15,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 button:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
 header{display:flex;align-items:center;gap:12px}
 .ht{flex:1}.ht h1{margin:0;font:800 26px/1.05 var(--display)}.ht p{margin:1px 0 0;color:var(--mut);font-size:12px;font-weight:600}
-.hb{width:38px;height:38px;flex:none;border-radius:50%;display:grid;place-items:center;color:var(--mint);background:rgba(61,220,151,.1);border:1px solid rgba(61,220,151,.4)}
-.hb svg{width:18px;height:18px}
 .msg{padding:26px 18px;border-radius:24px;background:linear-gradient(160deg,var(--panel2),var(--panel));border:1px solid var(--line);text-align:center;color:#c6d3d0;font-weight:600;display:flex;flex-direction:column;gap:12px;align-items:center}
 .msg:empty{display:none}.msg button{padding:10px 18px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);font-weight:700}
 .tb p:empty{display:none}
@@ -93,7 +91,7 @@ header{display:flex;align-items:center;gap:12px}
 </style>
 <canvas id="stars"></canvas>
 <div class="app" id="app">
- <header><div class="ht"><h1 id="t_title"></h1><p id="t_sub"></p></div><button class="hb" id="hcode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 4 7 20M17 4l-2 16M4 9h16M3 15h16"/></svg></button><button class="hb" id="hshare"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></header>
+ <header><div class="ht"><h1 id="t_title"></h1><p id="t_sub"></p></div></header>
  <div class="stories" id="stories"></div>
  <div class="msg" id="msg"></div>
  <div class="feed" id="feed"></div>
@@ -464,8 +462,6 @@ function prevSlide(){if(SV.i>0){SV.i--;showSlide()}else if(SV.u>0){SV.u--;SV.i=0
 var last=0;setInterval(function(){if(!SV.on)return;var now=performance.now();if(SV.paused){SV.t0+=now-last;last=now;return}last=now;var f=(now-SV.t0)/SV.dur,bs=document.querySelectorAll('.bars i b');if(bs[SV.i])bs[SV.i].style.width=Math.min(100,f*100)+'%';if(f>=1)nextSlide()},50);
 document.addEventListener('keydown',function(e){if(!SV.on)return;if(e.key==='Escape')closeStory();if(e.key==='ArrowRight')nextSlide();if(e.key==='ArrowLeft')prevSlide()});
 $('#t_title').textContent=tx('title');$('#t_sub').textContent=tx('sub');
-$('#hcode').setAttribute('aria-label',tx('code'));$('#hshare').setAttribute('aria-label',tx('share'));
-$('#hcode').onclick=function(){toApp('code')};$('#hshare').onclick=function(){toApp('share')};
 var MSG=ECL.msg||(TRIPS.length?'':tx('empty'));if(MSG){$('#msg').innerHTML='<span>'+esc(MSG)+'</span>'+(ECL.retry?'<button id="rt">'+esc(tx('retry'))+'</button>':'');var rb=$('#rt');if(rb)rb.onclick=function(){toApp('retry')}}
 if(ECL.toast)setTimeout(function(){toast(ECL.toast)},300);
 if(TRIPS.length)loadMore(Math.min(3,TRIPS.length));requestAnimationFrame(frame);

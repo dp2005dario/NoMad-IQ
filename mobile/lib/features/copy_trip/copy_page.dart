@@ -18,8 +18,6 @@ const String copyMarker =
 Map<String, String> copyTexts(AppLocalizations t) => <String, String>{
   'title': t.copyTitle,
   'sub': t.cpSub,
-  'code': t.cpCodeBtn,
-  'share': t.copyShareMine,
   'map1': t.cpMap1,
   'mapN': t.cpMapN('{n}'),
   'duration': t.cpDuration,
