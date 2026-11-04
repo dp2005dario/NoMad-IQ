@@ -67,8 +67,7 @@ void main() {
         visaUrl: Uri.parse('https://visados.example'),
       ),
     );
-    await tester.tap(find.text('Expertos en reclamaciones'));
-    await tester.pumpAndSettle();
+    // Como en la maqueta, la de reclamaciones sale ya abierta.
     expect(find.textContaining('comisión'), findsOneWidget);
     await tester.tap(find.text('Que lo reclamen por mí'));
     await tester.pumpAndSettle();
