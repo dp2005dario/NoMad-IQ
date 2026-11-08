@@ -7,10 +7,13 @@ import 'package:http/http.dart' as http;
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/features/camera/speaker.dart';
 import 'package:eclipta/features/drive/drive_api.dart';
+import 'package:eclipta/features/drive/drive_page.dart';
+import 'package:eclipta/features/drive/drive_screen.dart';
 import 'package:eclipta/features/map/geo.dart';
 import 'package:eclipta/features/map/location.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 
 const GeoPoint positano = GeoPoint(40.6281, 14.4850);
 
@@ -118,6 +121,7 @@ void main() {
     final List<Uri> opened = <Uri>[];
     final FakeSpeaker speaker = FakeSpeaker();
     final DrivingLocation gps = DrivingLocation();
+    final m.PageSpy spy = m.PageSpy();
     final session = newSession()..continueAsGuest();
     tester.view.physicalSize = const Size(1200, 4000);
     tester.view.devicePixelRatio = 3;
@@ -132,49 +136,83 @@ void main() {
         gateway: g,
         location: gps,
         speaker: speaker,
+        webScene: spy.build,
         openBooking: (Uri u) async {
           opened.add(u);
           return true;
         },
       ),
     );
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
     await tester.pumpAndSettle();
     // Dos posiciones en la misma casilla: una sola pregunta.
-
     expect(sent.single.queryParameters, <String, String>{
       'lat': '40.65',
       'lon': '14.50',
     });
-    expect(
-      find.textContaining(RegExp(r'^Gasolinera a \d,\d km$')),
-      findsOneWidget,
-    );
-    expect(find.text('Esso · Abierto 24 h'), findsOneWidget);
-    await tester.tap(find.widgetWithText(FilledButton, 'Ir'));
+    Map<String, Object?> card(String mode) =>
+        (spy.data(DriveScreen.lastBridge!)['cards']!
+                as Map<String, Object?>)[mode]!
+            as Map<String, Object?>;
+    Map<String, Object?> turn(String mode) =>
+        (spy.data(DriveScreen.lastBridge!)['turns']!
+                as Map<String, Object?>)[mode]!
+            as Map<String, Object?>;
+
+    // Empieza en "Audioguía", como la maqueta.
+    expect(card('guide')['title'], 'Audioguías mientras conduces');
+    expect(card('guide')['btn'], 'Encender');
+
+    // Gasolina: la más cercana, con su marca y hacia dónde queda (vas hacia
+    // el noreste y la gasolinera queda al este: a tu derecha).
+    spy.send!('mode:fuel');
+    await tester.pumpAndSettle();
+    expect(card('fuel')['title'], matches(RegExp(r'^Gasolinera a \d,\d km$')));
+    expect(card('fuel')['meta'], startsWith('Esso · Abierto 24 h · '));
+    expect(turn('fuel')['icon'], 'right');
+    expect(turn('fuel')['name'], 'Esso');
+    expect(speaker.said.last, startsWith('Gasolinera a'));
+    spy.send!('go:fuel');
     expect(opened.single.queryParameters['travelmode'], 'driving');
     expect(opened.single.queryParameters['destination'], '40.62810,14.50630');
 
-    await tester.tap(find.text('Eléctrico'));
+    // Tocar "Gasolina" otra vez: cargadores eléctricos.
+    spy.send!('mode:fuel');
     await tester.pumpAndSettle();
-    expect(find.textContaining('Cargador a'), findsOneWidget);
+    expect(card('fuel')['title'], startsWith('Cargador a'));
+    expect(
+      (spy.data(DriveScreen.lastBridge!)['labels']!
+          as Map<String, Object?>)['fuel'],
+      'Eléctrico',
+    );
 
-    await tester.tap(find.text('Aparcar'));
+    spy.send!('mode:park');
     await tester.pumpAndSettle();
-    expect(find.textContaining('Parking Mandara a'), findsOneWidget);
-    expect(find.text('de pago · 120 plazas'), findsOneWidget);
+    expect(card('park')['title'], startsWith('Parking Mandara a'));
+    expect(card('park')['meta'], startsWith('de pago · 120 plazas'));
     // Se lee en voz alta al cambiar de modo.
     expect(speaker.said.last, contains('Parking Mandara'));
 
-    await tester.tap(find.text('Zona ZTL'));
+    // La barra de voz la apaga.
+    spy.send!('voice');
     await tester.pumpAndSettle();
-    expect(find.textContaining('ZTL Positano a'), findsOneWidget);
-    await tester.tap(find.text('Web oficial'));
-    expect(opened.last.host, 'comune.positano.sa.it');
-    await tester.tap(find.text('Ver las zonas de Europa'));
-    expect(opened.last.host, 'urbanaccessregulations.eu');
+    expect(card('park')['voice'], startsWith('Voz apagada'));
 
-    await tester.tap(find.text('Audioguía'));
+    spy.send!('mode:ztl');
     await tester.pumpAndSettle();
-    expect(find.text('Audioguías mientras conduces'), findsWidgets);
+    expect(card('ztl')['title'], startsWith('ZTL Positano a'));
+    spy.send!('go:ztl');
+    expect(opened.last.host, 'comune.positano.sa.it');
+  });
+
+  test('hacia dónde queda un sitio', () {
+    const GeoPoint me = GeoPoint(40, 14);
+    const GeoPoint east = GeoPoint(40, 14.1);
+    expect(directionTo(me, east, null).$2, 'hacia el este');
+    expect(directionTo(me, east, 0), ('right', 'a tu derecha'));
+    expect(directionTo(me, east, 180), ('left', 'a tu izquierda'));
+    expect(directionTo(me, east, 90), ('ahead', 'todo recto'));
+    expect(directionTo(me, east, 270), ('back', 'detrás de ti'));
+    expect(headingOf(me, const GeoPoint(40.00001, 14)), isNull);
   });
 }
