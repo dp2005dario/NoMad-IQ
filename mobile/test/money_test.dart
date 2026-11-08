@@ -16,6 +16,8 @@ import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/flights/booking.dart';
 import 'package:eclipta/features/money/expenses_api.dart';
 import 'package:eclipta/features/money/fx_api.dart';
+import 'package:eclipta/features/money/fx_page.dart';
+import 'package:eclipta/features/money/fx_view.dart';
 import 'package:eclipta/features/money/gastos_widgets.dart';
 import 'package:eclipta/features/money/money_screen.dart';
 import 'package:eclipta/features/money/receipt_parser.dart';
@@ -623,56 +625,69 @@ void main() {
       );
     });
 
-    testWidgets('lanzar la moneda: 50 € en yenes', (WidgetTester tester) async {
+    test('las fotos de cada divisa, con su valor como en la página', () {
+      expect(valueKey(50, 2), '0.5');
+      expect(valueKey(5, 2), '0.05');
+      expect(valueKey(200, 2), '2');
+      expect(valueKey(500, 0), '500');
+      final Map<String, Object?> eur = photoAssets('EUR')!;
+      expect(eur['s'], 'assets/divisas/eur/m-200.webp');
+      expect(
+        (eur['n']! as Map<String, String>)['5'],
+        'assets/divisas/eur/b-5.webp',
+      );
+      expect(
+        (eur['m']! as Map<String, String>)['0.5'],
+        'assets/divisas/eur/m-50.webp',
+      );
+      expect(photoAssets('MAD'), isNull);
+    });
+
+    testWidgets('la página: tipos del BCE, fotos y cambiar de moneda', (
+      WidgetTester tester,
+    ) async {
       final MemorySettingsStore prefs = MemorySettingsStore();
+      final PageSpy spy = PageSpy();
       await pumpMoney(
         tester,
         initialLocation: Routes.money(tab: MoneyTab.fx),
         guest: true, // los tipos son públicos
         prefs: prefs,
+        webScene: spy.build,
       );
-      // Flyra avisa siempre de que es solo informativa.
-      expect(find.textContaining('Solo informativa'), findsOneWidget);
-      // Botón rápido: escribe 20 en la caja.
-      await tester.tap(find.widgetWithText(ChoiceChip, '20'));
-      await tester.pump();
+      await spy.wait(
+        tester,
+        () =>
+            spy.pages.isNotEmpty &&
+            spy.data(FxView.lastBridge!)['day'] == '23-10-2026',
+      );
+      Map<String, Object?> d = spy.data(FxView.lastBridge!);
+      expect(d['from'], 'EUR');
+      expect(d['to'], 'GBP');
+      expect(d['rates'], <String, Object?>{
+        'EUR': 1.0,
+        'USD': 1.0812,
+        'JPY': 163.21,
+      });
+      expect(d['offline'], isFalse);
+      // Van las fotos del euro y la libra (como "data:"), no las demás.
+      final Map<String, Object?> ph = d['ph']! as Map<String, Object?>;
+      expect(ph.keys.toSet(), <String>{'EUR', 'GBP'});
       expect(
-        tester.widget<TextField>(find.byType(TextField).first).controller!.text,
-        '20',
+        (ph['EUR']! as Map<String, Object?>)['s'],
+        startsWith('data:image/webp;base64,'),
       );
-      await tester.tap(find.widgetWithText(ChoiceChip, '50'));
-      await tester.pump();
-      // Cada moneda con su bandera y su país.
-      expect(find.text('🇺🇸 USD · Estados Unidos'), findsOneWidget);
-      await tester.tap(find.textContaining('USD').first);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('🇯🇵 JPY · Japón').last);
-      await tester.pumpAndSettle();
-      expect(find.text('LISTA PARA LANZAR'), findsOneWidget);
-      await tester.tap(find.text('Lanzar la moneda'));
-      await tester.pump(const Duration(milliseconds: 800));
-      expect(find.text('¡AL AIRE!'), findsOneWidget);
-      await tester.pumpAndSettle();
-      expect(find.text('CAMBIADO A JPY'), findsOneWidget);
-      expect(find.textContaining('8.161'), findsOneWidget);
-      // En billetes: 5000 + 2000 + 1000 y el resto en monedas.
-      await tester.scrollUntilVisible(
-        find.text('Billetes según el banco central'),
-        300,
-        scrollable: find.byType(Scrollable).last,
+      // Al elegir el yen, la app manda sus fotos.
+      spy.send!(
+        'pair:0:${base64Url.encode(utf8.encode(jsonEncode(<String, Object?>{'f': 'EUR', 't': 'JPY'}))).replaceAll('=', '')}',
       );
-      expect(find.text('Cómo llevarlo en efectivo'), findsOneWidget);
-      expect(find.text('Menos piezas'), findsOneWidget);
-      expect(find.text('Equilibrado'), findsOneWidget);
-      expect(find.text('Sueltos y propinas'), findsOneWidget);
-      // El billete de 5000 ¥ sale con su foto (el lector dice su valor).
-      expect(find.bySemanticsLabel(RegExp('5.000')), findsOneWidget);
-      expect(find.byType(Image), findsWidgets);
-      // Los 161 ¥ que sobran salen como monedas dibujadas (el yen las
-      // tiene en la lista), no como texto.
-      expect(find.textContaining('en monedas'), findsNothing);
-      expect(find.text('¥500'), findsNothing);
-      expect(find.bySemanticsLabel(RegExp('100')), findsWidgets);
+      await spy.wait(
+        tester,
+        () => (spy.data(FxView.lastBridge!)['ph']! as Map<String, Object?>)
+            .containsKey('JPY'),
+      );
+      d = spy.data(FxView.lastBridge!);
+      expect(d['to'], 'JPY');
       // Se guardó una copia para usarla sin red.
       expect(prefs.data[LocalData.fxRates], contains('163.21'));
     });
@@ -683,14 +698,25 @@ void main() {
       final MemorySettingsStore prefs = MemorySettingsStore()
         ..data[LocalData.fxRates] = jsonEncode(ratesJson);
       final MoneyBackend b = MoneyBackend()..g.failWith = 503;
+      final PageSpy spy = PageSpy();
       await pumpMoney(
         tester,
         backend: b,
         initialLocation: Routes.money(tab: MoneyTab.fx),
         guest: true,
         prefs: prefs,
+        webScene: spy.build,
       );
-      expect(find.textContaining('Sin conexión'), findsOneWidget);
+      await spy.wait(
+        tester,
+        () =>
+            spy.pages.isNotEmpty &&
+            spy.data(FxView.lastBridge!)['offline'] == true,
+      );
+      expect(spy.data(FxView.lastBridge!)['day'], '23-10-2026');
+      // "Reintentar" vuelve a pedir los tipos.
+      spy.send!('retry');
+      await tester.pump();
     });
   });
 

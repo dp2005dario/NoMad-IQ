@@ -57,6 +57,8 @@ class _MoneyScreenState extends State<MoneyScreen> {
     if (widget.tab == MoneyTab.kitty) return const KittyView();
     // "Tu dinero fuera" también (la maqueta "Dinero").
     if (widget.tab == MoneyTab.abroad) return const AbroadView();
+    // Y Divisas (la maqueta "Cambio de moneda").
+    if (widget.tab == MoneyTab.fx) return const FxView();
     return Scaffold(
       appBar: AppBar(title: Text(t.moneyTitle)),
       body: Column(
@@ -83,7 +85,9 @@ class _MoneyScreenState extends State<MoneyScreen> {
                       ),
                       showCheckmark: false,
                       onSelected: (_) =>
-                          tab == MoneyTab.kitty || tab == MoneyTab.abroad
+                          tab == MoneyTab.kitty ||
+                              tab == MoneyTab.abroad ||
+                              tab == MoneyTab.fx
                           ? context.push(Routes.money(tab: tab))
                           : setState(() => _tab = tab),
                     ),
@@ -94,7 +98,7 @@ class _MoneyScreenState extends State<MoneyScreen> {
           Expanded(
             child: switch (_tab) {
               MoneyTab.expenses => const ExpenseGroupsView(),
-              MoneyTab.fx => const FxView(),
+              MoneyTab.fx => const SizedBox.shrink(),
               MoneyTab.rooms => const RoomsView(),
               MoneyTab.kitty => const SizedBox.shrink(),
               MoneyTab.abroad => const SizedBox.shrink(),

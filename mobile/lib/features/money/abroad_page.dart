@@ -350,7 +350,7 @@ Map<String, Object?> abroadPageData({
 
 /// La página lista para enseñar.
 String abroadPageWith(String page, Map<String, Object?> data) =>
-    // "<" como <: ningún dato puede cerrar el script.
+    // "<" como \u003c: ningún dato puede cerrar el script.
     page.replaceFirst(
       abroadMarker,
       jsonEncode(data).replaceAll('<', r'\u003c'),
