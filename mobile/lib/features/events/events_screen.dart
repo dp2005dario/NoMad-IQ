@@ -398,7 +398,9 @@ class _EventsScreenState extends State<EventsScreen> {
   Future<void> _openVote() async {
     final GroupTrip? group = await _pickGroup();
     if (group == null || !mounted) return;
-    await context.push(Routes.groupPlans(group.id, city: _found?.city));
+    await context.push(
+      Routes.groupPlans(group.id, city: _found?.city, iata: _iata),
+    );
   }
 
   /// El consejo de Flyra: solo si dos eventos (no festivos) coinciden el

@@ -210,9 +210,10 @@ abstract final class Routes {
       '/group/trip/${Uri.encodeComponent(id)}/chat';
 
   /// Elegid planes del viaje [id]; [city] es el destino elegido ("Lisboa").
-  static String groupPlans(String id, {String? city}) => Uri(
+  /// [iata] es su aeropuerto (para las ideas de la ciudad).
+  static String groupPlans(String id, {String? city, String? iata}) => Uri(
     path: '/group/trip/${Uri.encodeComponent(id)}/plans',
-    queryParameters: <String, String>{'city': ?city},
+    queryParameters: <String, String>{'city': ?city, 'iata': ?iata},
   ).toString();
 
   /// El chat con Flyra. Con `question`, la escribe ya en la caja.
@@ -378,6 +379,7 @@ GoRouter buildRouter({
       builder: (BuildContext context, GoRouterState state) => PlansScreen(
         tripId: state.pathParameters['id'] ?? '',
         city: state.uri.queryParameters['city'],
+        iata: state.uri.queryParameters['iata'],
       ),
     ),
     GoRoute(

@@ -503,7 +503,7 @@ class _TripHubState extends State<TripHub> {
         final String? route = switch (n) {
           0 => Routes.groupChat(widget.trip.id),
           1 => Routes.money(tab: MoneyTab.kitty),
-          2 => Routes.groupPlans(widget.trip.id, city: _cityName),
+          2 => Routes.groupPlans(widget.trip.id, city: _cityName, iata: _iata),
           3 => Routes.cards,
           _ => null,
         };

@@ -2,13 +2,15 @@
 // (servidor de mentira que guarda los planes en memoria).
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/features/plans/plans_api.dart';
+import 'package:eclipta/features/plans/plans_screen.dart';
+import 'package:eclipta/features/route/web_scene.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 
 const String trip = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
@@ -82,6 +84,10 @@ class FakePlans {
   }
 }
 
+/// Como lo empaqueta la página (base64url sin "=").
+String pack(Map<String, Object?> v) =>
+    base64Url.encode(utf8.encode(jsonEncode(v))).replaceAll('=', '');
+
 void main() {
   test('el tablero: lo que me falta por votar y los match', () {
     final PlanBoard b = PlanBoard.parse(<String, Object?>{
@@ -118,15 +124,19 @@ void main() {
     });
   });
 
-  testWidgets('añadir ideas de la ciudad, deslizar y ver el match', (
-    WidgetTester tester,
-  ) async {
-    final FakeGateway g = FakeGateway();
-    final FakePlans server = FakePlans()
-      ..add(<String, Object?>{
+  /// Abre "Elegid planes" con la página de mentira.
+  Future<(m.PageSpy, FakePlans)> open(
+    WidgetTester tester, {
+    bool empty = false,
+  }) async {
+    final FakeGateway g = FakeGateway()..publicPrefixes.add('/v1/places/');
+    final FakePlans server = FakePlans();
+    if (!empty) {
+      server.add(<String, Object?>{
         'title': 'Fado en Alfama',
         'note': 'Esta noche · 21:30',
       }, mine: false);
+    }
     server.install(g);
     g.services['/v1/places/LIS'] = (http.Request r) =>
         FakeGateway.json(<String, Object?>{
@@ -144,57 +154,80 @@ void main() {
           'attribution': 'Wikidata',
         });
     final session = await signedInSession(g);
-    tester.view.physicalSize = const Size(1200, 4000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
+    final m.PageSpy spy = m.PageSpy();
     await pumpApp(
       tester,
       locale: 'es',
       session: session,
-      initialLocation: Routes.groupPlans(trip, city: 'Lisboa'),
-      services: fakeServices(session, gateway: g),
+      initialLocation: Routes.groupPlans(trip, city: 'Lisboa', iata: 'LIS'),
+      services: fakeServices(session, gateway: g, webScene: spy.build),
     );
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Lisboa · derecha: me apetece'), findsOneWidget);
-    // Las caras del grupo: tú y Noelia, que ya votó.
-    expect(find.text('ya votó'), findsOneWidget);
-    expect(find.text('Plan 1 de 1'), findsOneWidget);
-    expect(find.text('Fado en Alfama'), findsWidgets);
+    return (spy, server);
+  }
 
-    // Ideas de la ciudad: LIS → la Torre de Belém entra al mazo.
-    await tester.tap(find.text('Ideas de la ciudad'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'lis');
-    await tester.pump();
-    await tester.tap(find.widgetWithText(FilledButton, 'Añadir'));
-    await tester.pumpAndSettle();
-    expect(server.plans.last['wikidata_id'], 'Q193208');
-    expect(find.text('Plan 1 de 2'), findsOneWidget);
+  List<Object?> list(Map<String, Object?> d, String k) =>
+      d[k]! as List<Object?>;
 
-    // Deslizar a la derecha = me apetece. Noelia también: ¡match viajero!
-    await tester.drag(find.text('Esta noche · 21:30'), const Offset(300, 0));
-    await tester.pumpAndSettle();
+  testWidgets('sin planes: entran solas las ideas de la ciudad', (
+    WidgetTester tester,
+  ) async {
+    final (m.PageSpy spy, FakePlans server) = await open(tester, empty: true);
+    await spy.wait(
+      tester,
+      () =>
+          spy.pages.isNotEmpty &&
+          list(spy.data(PlansScreen.lastBridge!), 'cards').isNotEmpty,
+    );
+    expect(server.plans.single['wikidata_id'], 'Q193208');
+    final Map<String, Object?> d = spy.data(PlansScreen.lastBridge!);
+    final Map<String, Object?> card =
+        list(d, 'cards').single! as Map<String, Object?>;
+    expect(card['title'], 'Torre de Belém');
+    expect(card['why'], 'Idea de la ficha de Lisboa');
+    expect(d['sub'], 'Lisboa · derecha: me apetece · izquierda: paso');
+  });
+
+  testWidgets('deslizar, el match y añadirlo al plan', (
+    WidgetTester tester,
+  ) async {
+    final (m.PageSpy spy, FakePlans server) = await open(tester);
+    WebSceneBridge bridge() => PlansScreen.lastBridge!;
+    await spy.wait(
+      tester,
+      () =>
+          spy.pages.isNotEmpty && list(spy.data(bridge()), 'cards').isNotEmpty,
+    );
+    Map<String, Object?> d = spy.data(bridge());
+    expect(list(d, 'people'), hasLength(2));
+    expect((list(d, 'people')[1]! as Map<String, Object?>)['on'], isTrue);
+    expect(d['total'], 1);
+
+    // Me apetece. Noelia también dijo que sí: ¡match viajero!
+    spy.send!('vote:1:${pack(<String, Object?>{'id': 'p1'})}');
+    await spy.wait(tester, () => spy.data(bridge())['match'] != null);
     expect(server.plans.first['my_vote'], true);
-    expect(
-      find.text('Tú y Noelia queréis ir a Fado en Alfama'),
-      findsOneWidget,
-    );
+    d = spy.data(bridge());
+    final Map<String, Object?> match = d['match']! as Map<String, Object?>;
+    expect(match['title'], 'Fado en Alfama');
+    expect(match['who'], <String>['Noelia']);
+    expect(list(d, 'cards'), isEmpty);
+    expect(list(d, 'matched'), hasLength(1));
+
     // "Añadir al plan": se apunta y se avisa al grupo por el chat.
-    await tester.tap(find.widgetWithText(FilledButton, 'Añadir al plan'));
-    await tester.pumpAndSettle();
+    spy.send!('addplan:0:${pack(<String, Object?>{'id': 'p1'})}');
+    await spy.wait(tester, () => server.chat.isNotEmpty);
     expect(server.plans.first['planned'], true);
     expect(server.chat.single, contains('Fado en Alfama'));
-    expect(find.textContaining('Está en el plan del grupo'), findsOneWidget);
-    expect(find.text('Plan 2 de 2'), findsOneWidget);
+    d = spy.data(bridge());
+    expect(
+      (list(d, 'matched').single! as Map<String, Object?>)['planned'],
+      isTrue,
+    );
 
-    // El botón ✕ = paso.
-    await tester.tap(find.byTooltip('PASO'));
-    await tester.pumpAndSettle();
-    expect(server.plans.last['my_vote'], false);
-
-    // Vuestros match viajeros: con quién y que ya está en el plan.
-    expect(find.text('Vuestros match viajeros'), findsOneWidget);
-    expect(find.text('Tú y Noelia'), findsOneWidget);
-    expect(find.text('En el plan'), findsOneWidget);
+    // Volver a empezar y decir que paso.
+    spy.send!('again');
+    await spy.wait(tester, () => list(spy.data(bridge()), 'cards').isNotEmpty);
+    spy.send!('vote:0:${pack(<String, Object?>{'id': 'p1'})}');
+    await spy.wait(tester, () => server.plans.first['my_vote'] == false);
   });
 }
