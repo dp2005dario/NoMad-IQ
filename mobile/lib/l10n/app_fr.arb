@@ -1224,6 +1224,7 @@
   "noticesSafety": "Sécurité",
   "noticesEmpty": "Aucune alerte pour l'instant.",
   "noticesFooter": "Au plus une alerte de lieu toutes les 45 minutes, jamais le même lieu deux fois par jour. Les alertes de sécurité arrivent toujours. Cet historique n'existe que sur ton téléphone.",
+  "noticesYesterday": "Hier",
   "noticesClear": "Effacer l'historique",
   "exploreTitle": "Explorer",
   "exploreSubtitle": "Où voler pas cher avec du beau temps ?",

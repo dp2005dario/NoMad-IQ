@@ -1224,6 +1224,7 @@
   "noticesSafety": "안전",
   "noticesEmpty": "아직 알림이 없어요.",
   "noticesFooter": "장소 알림은 45분에 최대 1번, 같은 장소는 하루에 두 번 알리지 않아요. 안전 알림은 항상 와요. 이 기록은 휴대폰에만 있어요.",
+  "noticesYesterday": "어제",
   "noticesClear": "기록 지우기",
   "exploreTitle": "둘러보기",
   "exploreSubtitle": "날씨 좋고 저렴하게 어디로 갈 수 있을까요?",

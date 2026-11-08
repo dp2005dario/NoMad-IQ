@@ -1224,6 +1224,7 @@
   "noticesSafety": "Sicurezza",
   "noticesEmpty": "Ancora nessun avviso.",
   "noticesFooter": "Al massimo un avviso di zona ogni 45 minuti e mai la stessa zona due volte al giorno. Quelli di sicurezza arrivano sempre. Questa cronologia esiste solo sul tuo telefono.",
+  "noticesYesterday": "Ieri",
   "noticesClear": "Cancella cronologia",
   "exploreTitle": "Esplora",
   "exploreSubtitle": "Dove volare spendendo poco e con bel tempo?",

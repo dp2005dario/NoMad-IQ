@@ -5688,6 +5688,10 @@
   "@noticesFooter": {
     "description": "Explains limits and privacy."
   },
+  "noticesYesterday": "Yesterday",
+  "@noticesYesterday": {
+    "description": "Notices history: time label for a notice from yesterday."
+  },
   "noticesClear": "Clear history",
   "@noticesClear": {
     "description": "Clear history button."

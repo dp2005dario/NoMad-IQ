@@ -1224,6 +1224,7 @@
   "noticesSafety": "Seguridad",
   "noticesEmpty": "Aún no te ha llegado ningún aviso.",
   "noticesFooter": "Como mucho un aviso de zona cada 45 minutos y nunca la misma zona dos veces en un día. Los de seguridad llegan siempre. Este historial solo existe en tu teléfono.",
+  "noticesYesterday": "Ayer",
   "noticesClear": "Borrar historial",
   "exploreTitle": "Explorar",
   "exploreSubtitle": "¿A dónde vuelo barato y con buen tiempo?",

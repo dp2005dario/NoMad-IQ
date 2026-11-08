@@ -1224,6 +1224,7 @@
   "noticesSafety": "Segurança",
   "noticesEmpty": "Ainda não recebeste avisos.",
   "noticesFooter": "No máximo um aviso de zona a cada 45 minutos e nunca a mesma zona duas vezes no mesmo dia. Os de segurança chegam sempre. Este histórico só existe no teu telemóvel.",
+  "noticesYesterday": "Ontem",
   "noticesClear": "Apagar histórico",
   "exploreTitle": "Explorar",
   "exploreSubtitle": "Para onde voar barato e com bom tempo?",

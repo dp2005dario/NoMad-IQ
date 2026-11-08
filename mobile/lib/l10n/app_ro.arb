@@ -1224,6 +1224,7 @@
   "noticesSafety": "Siguranță",
   "noticesEmpty": "Încă nicio notificare.",
   "noticesFooter": "Cel mult o notificare de loc la fiecare 45 de minute și niciodată același loc de două ori pe zi. Notificările de siguranță ajung mereu. Acest istoric există doar pe telefonul tău.",
+  "noticesYesterday": "Ieri",
   "noticesClear": "Șterge istoricul",
   "exploreTitle": "Explorează",
   "exploreSubtitle": "Unde pot zbura ieftin cu vreme bună?",

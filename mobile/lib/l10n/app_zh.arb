@@ -1224,6 +1224,7 @@
   "noticesSafety": "安全",
   "noticesEmpty": "还没有通知。",
   "noticesFooter": "地点通知最多每 45 分钟一条，同一地点一天不会重复。安全通知总会送达。此记录只保存在你的手机上。",
+  "noticesYesterday": "昨天",
   "noticesClear": "清除记录",
   "exploreTitle": "探索",
   "exploreSubtitle": "去哪里机票便宜又天气好？",

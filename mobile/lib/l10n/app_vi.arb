@@ -1224,6 +1224,7 @@
   "noticesSafety": "An toàn",
   "noticesEmpty": "Chưa có thông báo nào.",
   "noticesFooter": "Tối đa một thông báo địa điểm mỗi 45 phút, và không bao giờ báo cùng một nơi hai lần trong ngày. Thông báo an toàn luôn đến. Lịch sử này chỉ có trên điện thoại của bạn.",
+  "noticesYesterday": "Hôm qua",
   "noticesClear": "Xóa lịch sử",
   "exploreTitle": "Khám phá",
   "exploreSubtitle": "Bay đi đâu rẻ mà thời tiết đẹp?",

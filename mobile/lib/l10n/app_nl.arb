@@ -1224,6 +1224,7 @@
   "noticesSafety": "Veiligheid",
   "noticesEmpty": "Nog geen meldingen.",
   "noticesFooter": "Hoogstens één plekmelding per 45 minuten, en nooit twee keer dezelfde plek op een dag. Veiligheidsmeldingen komen altijd door. Deze geschiedenis bestaat alleen op je telefoon.",
+  "noticesYesterday": "Gisteren",
   "noticesClear": "Geschiedenis wissen",
   "exploreTitle": "Ontdekken",
   "exploreSubtitle": "Waar kan ik goedkoop naartoe met mooi weer?",

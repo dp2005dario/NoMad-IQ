@@ -1224,6 +1224,7 @@
   "noticesSafety": "Güvenlik",
   "noticesEmpty": "Henüz bildirim yok.",
   "noticesFooter": "45 dakikada en fazla bir yer bildirimi ve aynı yer için günde asla iki kez. Güvenlik bildirimleri her zaman gelir. Bu geçmiş sadece telefonunda bulunur.",
+  "noticesYesterday": "Dün",
   "noticesClear": "Geçmişi temizle",
   "exploreTitle": "Keşfet",
   "exploreSubtitle": "İyi havada nereye ucuza uçabilirim?",

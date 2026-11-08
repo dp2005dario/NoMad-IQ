@@ -1224,6 +1224,7 @@
   "noticesSafety": "Kaligtasan",
   "noticesEmpty": "Wala pang notification.",
   "noticesFooter": "Hanggang isang abiso sa lugar bawat 45 minuto, at hindi kailanman ang parehong lugar nang dalawang beses sa isang araw. Laging dumarating ang mga abiso sa kaligtasan. Sa phone mo lang umiiral ang kasaysayang ito.",
+  "noticesYesterday": "Kahapon",
   "noticesClear": "I-clear ang kasaysayan",
   "exploreTitle": "Mag-explore",
   "exploreSubtitle": "Saan ako makakalipad nang mura na maganda ang panahon?",

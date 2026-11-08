@@ -7,6 +7,8 @@ import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/push/notice_log.dart';
+import 'package:eclipta/features/push/notices_page.dart';
+import 'package:eclipta/features/push/notices_screen.dart';
 import 'package:eclipta/features/push/push_notice.dart';
 
 import 'helpers.dart';
@@ -63,7 +65,7 @@ void main() {
     expect(all.single.route, isNull);
   });
 
-  testWidgets('pestañas por tipo; tocar un aviso abre su pantalla', (
+  testWidgets('tu historial en la maqueta; tocar un aviso abre su pantalla', (
     WidgetTester tester,
   ) async {
     final FakeGateway g = FakeGateway();
@@ -101,14 +103,43 @@ void main() {
     await spy.wait(tester, () => spy.pages.isNotEmpty);
     spy.to('ECLIPTA · Ajustes')('notices');
     await tester.pumpAndSettle();
-    expect(find.text('Chollo'), findsOneWidget);
-    expect(find.text('Estás en Sol'), findsOneWidget);
-
-    await tester.tap(find.text('Seguridad'));
+    await spy.wait(
+      tester,
+      () => spy.pages.any((String h) => h.contains('ECLIPTA · Avisos')),
+    );
     await tester.pumpAndSettle();
-    expect(find.text('Chollo'), findsNothing);
-    await tester.tap(find.text('Cuidado'));
+    // La maqueta con el historial de verdad (el más nuevo primero).
+    final Map<String, Object?> d = spy.data(
+      NoticesScreen.lastBridge!,
+      title: 'ECLIPTA · Avisos',
+    );
+    final List<Object?> items = d['items']! as List<Object?>;
+    expect(
+      <Object?>[
+        for (final Object? i in items) (i! as Map<String, Object?>)['title'],
+      ],
+      <String>['Chollo', 'Cuidado', 'Estás en Sol'],
+    );
+    expect(
+      <Object?>[
+        for (final Object? i in items) (i! as Map<String, Object?>)['kind'],
+      ],
+      <String>['flight', 'safety', 'zone'],
+    );
+    expect(d['tabs'], <String>['Todos', 'Zonas', 'Vuelos', 'Grupo']);
+
+    // Tocar "Cuidado" abre su pantalla.
+    spy.to('ECLIPTA · Avisos')('open:1');
     await tester.pumpAndSettle();
     expect(find.text('Mi pasaporte'), findsOneWidget);
+  });
+
+  test('la hora: de hoy, de ayer o la fecha', () {
+    final DateTime now = DateTime(2026, 11, 8, 18);
+    expect(noticeTime(DateTime(2026, 11, 8, 9, 5), now, 'Ayer'), '09:05');
+    expect(noticeTime(DateTime(2026, 11, 7, 23), now, 'Ayer'), 'Ayer');
+    expect(noticeTime(DateTime(2026, 10, 24, 10), now, 'Ayer'), '24/10');
+    expect(noticeDrawing(PushKind.groupChat), 'group');
+    expect(noticeDrawing(PushKind.airportArrival), 'flight');
   });
 }

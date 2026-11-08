@@ -1224,6 +1224,7 @@
   "noticesSafety": "Sicherheit",
   "noticesEmpty": "Noch keine Hinweise.",
   "noticesFooter": "Höchstens ein Orts-Hinweis alle 45 Minuten und nie derselbe Ort zweimal am Tag. Sicherheitshinweise kommen immer. Dieser Verlauf existiert nur auf deinem Handy.",
+  "noticesYesterday": "Gestern",
   "noticesClear": "Verlauf löschen",
   "exploreTitle": "Entdecken",
   "exploreSubtitle": "Wohin günstig fliegen und gutes Wetter?",

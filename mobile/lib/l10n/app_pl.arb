@@ -1224,6 +1224,7 @@
   "noticesSafety": "Bezpieczeństwo",
   "noticesEmpty": "Brak powiadomień.",
   "noticesFooter": "Najwyżej jedno powiadomienie o miejscu na 45 minut i nigdy to samo miejsce dwa razy dziennie. Powiadomienia bezpieczeństwa przychodzą zawsze. Ta historia istnieje tylko w twoim telefonie.",
+  "noticesYesterday": "Wczoraj",
   "noticesClear": "Wyczyść historię",
   "exploreTitle": "Odkrywaj",
   "exploreSubtitle": "Dokąd polecę tanio przy dobrej pogodzie?",
