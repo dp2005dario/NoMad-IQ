@@ -52,7 +52,7 @@ func (f *fakeSearcher) Search(ctx context.Context, spec domain.SearchSpec, limit
 
 var searchNow = time.Date(2026, 10, 23, 12, 0, 0, 0, time.UTC)
 
-func newSearchClient(t *testing.T, f *fakeSearcher, ttl time.Duration) (flightsv1.FareSearchServiceClient, *SearchService) {
+func newSearchClient(t *testing.T, f provider.Searcher, ttl time.Duration) (flightsv1.FareSearchServiceClient, *SearchService) {
 	t.Helper()
 	store, err := watchlist.New(10)
 	if err != nil {
@@ -225,6 +225,72 @@ func TestMonthlyFaresUnimplementedWithoutSupport(t *testing.T) {
 	client, _ := newSearchClient(t, &fakeSearcher{}, time.Minute)
 	_, err := client.MonthlyFares(context.Background(), &flightsv1.MonthlyFaresRequest{
 		Route: &flightsv1.Route{OriginIata: "MAD", DestinationIata: "NRT"},
+	})
+	if status.Code(err) != codes.Unimplemented {
+		t.Errorf("sin soporte → %v", err)
+	}
+}
+
+type dailyFake struct {
+	fakeSearcher
+	calls atomic.Int64
+}
+
+func (f *dailyFake) Daily(_ context.Context, _ domain.Route, month time.Time, oneWay bool) ([]domain.DayFare, error) {
+	f.calls.Add(1)
+	ret := "2026-11-26"
+	if oneWay {
+		ret = ""
+	}
+	return []domain.DayFare{{
+		Date:          time.Date(month.Year(), month.Month(), 12, 0, 0, 0, 0, time.UTC),
+		PricePerAdult: domain.Money{Currency: "EUR", AmountMinor: 38900},
+		DepartureAt:   "2026-11-12", ReturnAt: ret,
+		DeepLink: "https://www.aviasales.com/search/MAD1211HND1?marker=1",
+	}}, nil
+}
+
+func TestDailyFaresCachesAndValidates(t *testing.T) {
+	f := &dailyFake{}
+	client, _ := newSearchClient(t, f, time.Minute)
+	req := &flightsv1.DailyFaresRequest{
+		Route: &flightsv1.Route{OriginIata: "MAD", DestinationIata: "HND"},
+		Year:  2026, Month: 11, OneWay: true,
+	}
+	for range 2 {
+		resp, err := client.DailyFares(context.Background(), req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		d := resp.GetDays()[0]
+		if d.GetDate().GetDay() != 12 || d.GetPricePerAdult().GetAmountMinor() != 38900 || d.GetReturnAt() != "" {
+			t.Errorf("respuesta: %v", resp)
+		}
+	}
+	if f.calls.Load() != 1 {
+		t.Errorf("llamadas = %d, se esperaba 1 (caché)", f.calls.Load())
+	}
+	// Ida y vuelta es otra entrada de la caché.
+	req.OneWay = false
+	if _, err := client.DailyFares(context.Background(), req); err != nil || f.calls.Load() != 2 {
+		t.Errorf("ida y vuelta: %v, llamadas %d", err, f.calls.Load())
+	}
+	for _, bad := range []*flightsv1.DailyFaresRequest{
+		{Route: req.Route, Year: 2026, Month: 9},  // ya pasó
+		{Route: req.Route, Year: 2027, Month: 11}, // a más de un año
+		{Route: req.Route, Year: 2026, Month: 13},
+		{Route: &flightsv1.Route{OriginIata: "MAD", DestinationIata: "MAD"}, Year: 2026, Month: 11},
+	} {
+		if _, err := client.DailyFares(context.Background(), bad); status.Code(err) != codes.InvalidArgument {
+			t.Errorf("%v → %v", bad, err)
+		}
+	}
+}
+
+func TestDailyFaresUnimplementedWithoutSupport(t *testing.T) {
+	client, _ := newSearchClient(t, &fakeSearcher{}, time.Minute)
+	_, err := client.DailyFares(context.Background(), &flightsv1.DailyFaresRequest{
+		Route: &flightsv1.Route{OriginIata: "MAD", DestinationIata: "NRT"}, Year: 2026, Month: 11,
 	})
 	if status.Code(err) != codes.Unimplemented {
 		t.Errorf("sin soporte → %v", err)

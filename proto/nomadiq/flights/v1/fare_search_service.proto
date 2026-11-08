@@ -21,6 +21,37 @@ service FareSearchService {
   // El precio más barato de ida y vuelta de cada mes de los próximos ~12
   // (pantalla Explorar: "¿cuándo sale más barato ir a Tokio?").
   rpc MonthlyFares(MonthlyFaresRequest) returns (MonthlyFaresResponse);
+
+  // El precio más barato de cada DÍA de un mes (el calendario de precios del
+  // buscador: "el 12 de marzo desde 389 €").
+  rpc DailyFares(DailyFaresRequest) returns (DailyFaresResponse);
+}
+
+message DailyFaresRequest {
+  Route route = 1;
+  // El mes del calendario.
+  int32 year = 2;
+  int32 month = 3;
+  // true = solo ida; false = ida y vuelta (cualquier vuelta).
+  bool one_way = 4;
+}
+
+// DayFare es el billete más barato que se ha visto para salir ese día.
+message DayFare {
+  nomadiq.common.v1.Date date = 1;
+  nomadiq.common.v1.Money price_per_adult = 2;
+  string carrier_iata = 3;
+  string departure_at = 4;
+  string return_at = 5;
+  int32 transfers = 6;
+  string booking_url = 7;
+}
+
+message DailyFaresResponse {
+  // Ordenados por día. Un día sin dato no sale (no se inventa).
+  repeated DayFare days = 1;
+  google.protobuf.Timestamp observed_at = 2;
+  string provider = 3;
 }
 
 message MonthlyFaresRequest {

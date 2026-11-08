@@ -100,6 +100,26 @@ type monthsJSON struct {
 	Months      []monthJSON `json:"months"`
 }
 
+type dayJSON struct {
+	Date          string    `json:"date"` // "2027-03-12"
+	PricePerAdult moneyJSON `json:"price_per_adult"`
+	Carrier       string    `json:"carrier,omitempty"`
+	DepartureAt   string    `json:"departure_at"`
+	ReturnAt      string    `json:"return_at,omitempty"`
+	Transfers     int       `json:"transfers"`
+	BookingURL    string    `json:"booking_url"`
+}
+
+type daysJSON struct {
+	Origin      string    `json:"origin"`
+	Destination string    `json:"destination"`
+	Month       string    `json:"month"`
+	OneWay      bool      `json:"one_way"`
+	Provider    string    `json:"provider"`
+	ObservedAt  time.Time `json:"observed_at"`
+	Days        []dayJSON `json:"days"`
+}
+
 func toRoute(s domain.RouteSpec) routeJSON {
 	r := routeJSON{
 		RouteKey:      s.Key(),

@@ -228,6 +228,40 @@ func (g *GRPCIngestor) Monthly(ctx context.Context, origin, destination string) 
 	return out, nil
 }
 
+// Daily pide al flight-ingestor el precio más barato de cada día de un mes
+// (DailyFares), por la misma conexión mTLS.
+func (g *GRPCIngestor) Daily(ctx context.Context, origin, destination string, year int, month time.Month, oneWay bool) (domain.DailyResult, error) {
+	resp, err := flightsv1.NewFareSearchServiceClient(g.conn).DailyFares(ctx, &flightsv1.DailyFaresRequest{
+		Route:  &flightsv1.Route{OriginIata: origin, DestinationIata: destination},
+		Year:   int32(year),
+		Month:  int32(month),
+		OneWay: oneWay,
+	})
+	switch status.Code(err) {
+	case codes.OK:
+	case codes.ResourceExhausted, codes.DeadlineExceeded:
+		return domain.DailyResult{}, domain.ErrSearchBusy
+	case codes.InvalidArgument:
+		return domain.DailyResult{}, domain.Invalid("days", "%s", status.Convert(err).Message())
+	default:
+		return domain.DailyResult{}, fmt.Errorf("DailyFares %s-%s: %w", origin, destination, err)
+	}
+	out := domain.DailyResult{Provider: resp.GetProvider(), ObservedAt: resp.GetObservedAt().AsTime()}
+	for _, d := range resp.GetDays() {
+		dt := d.GetDate()
+		out.Days = append(out.Days, domain.DayFare{
+			Date:          time.Date(int(dt.GetYear()), time.Month(dt.GetMonth()), int(dt.GetDay()), 0, 0, 0, 0, time.UTC),
+			PricePerAdult: moneyFromProto(d.GetPricePerAdult()),
+			CarrierIATA:   d.GetCarrierIata(),
+			DepartureAt:   d.GetDepartureAt(),
+			ReturnAt:      d.GetReturnAt(),
+			Transfers:     int(d.GetTransfers()),
+			DeepLink:      d.GetBookingUrl(),
+		})
+	}
+	return out, nil
+}
+
 func moneyFromProto(m *commonv1.Money) domain.Money {
 	return domain.Money{Currency: m.GetCurrencyCode(), AmountMinor: m.GetAmountMinor()}
 }

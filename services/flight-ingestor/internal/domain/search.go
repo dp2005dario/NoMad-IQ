@@ -83,3 +83,15 @@ type MonthFare struct {
 
 // MaxMonths: como mucho un año de meses (lo que venden las aerolíneas).
 const MaxMonths = 12
+
+// DayFare es el billete más barato visto para salir un día concreto (el
+// calendario de precios del buscador: "el 12 de marzo desde 389 €").
+type DayFare struct {
+	Date          time.Time // el día (a las 00:00 UTC)
+	PricePerAdult Money
+	CarrierIATA   string // "" si no se sabe
+	DepartureAt   string // "AAAA-MM-DD" o RFC 3339
+	ReturnAt      string // "" si es solo ida
+	Transfers     int
+	DeepLink      string // enlace https de reserva, con el código de afiliado
+}

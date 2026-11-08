@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	FareSearchService_SearchFares_FullMethodName  = "/nomadiq.flights.v1.FareSearchService/SearchFares"
 	FareSearchService_MonthlyFares_FullMethodName = "/nomadiq.flights.v1.FareSearchService/MonthlyFares"
+	FareSearchService_DailyFares_FullMethodName   = "/nomadiq.flights.v1.FareSearchService/DailyFares"
 )
 
 // FareSearchServiceClient is the client API for FareSearchService service.
@@ -41,6 +42,9 @@ type FareSearchServiceClient interface {
 	// El precio más barato de ida y vuelta de cada mes de los próximos ~12
 	// (pantalla Explorar: "¿cuándo sale más barato ir a Tokio?").
 	MonthlyFares(ctx context.Context, in *MonthlyFaresRequest, opts ...grpc.CallOption) (*MonthlyFaresResponse, error)
+	// El precio más barato de cada DÍA de un mes (el calendario de precios del
+	// buscador: "el 12 de marzo desde 389 €").
+	DailyFares(ctx context.Context, in *DailyFaresRequest, opts ...grpc.CallOption) (*DailyFaresResponse, error)
 }
 
 type fareSearchServiceClient struct {
@@ -71,6 +75,16 @@ func (c *fareSearchServiceClient) MonthlyFares(ctx context.Context, in *MonthlyF
 	return out, nil
 }
 
+func (c *fareSearchServiceClient) DailyFares(ctx context.Context, in *DailyFaresRequest, opts ...grpc.CallOption) (*DailyFaresResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DailyFaresResponse)
+	err := c.cc.Invoke(ctx, FareSearchService_DailyFares_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FareSearchServiceServer is the server API for FareSearchService service.
 // All implementations must embed UnimplementedFareSearchServiceServer
 // for forward compatibility.
@@ -89,6 +103,9 @@ type FareSearchServiceServer interface {
 	// El precio más barato de ida y vuelta de cada mes de los próximos ~12
 	// (pantalla Explorar: "¿cuándo sale más barato ir a Tokio?").
 	MonthlyFares(context.Context, *MonthlyFaresRequest) (*MonthlyFaresResponse, error)
+	// El precio más barato de cada DÍA de un mes (el calendario de precios del
+	// buscador: "el 12 de marzo desde 389 €").
+	DailyFares(context.Context, *DailyFaresRequest) (*DailyFaresResponse, error)
 	mustEmbedUnimplementedFareSearchServiceServer()
 }
 
@@ -104,6 +121,9 @@ func (UnimplementedFareSearchServiceServer) SearchFares(context.Context, *Search
 }
 func (UnimplementedFareSearchServiceServer) MonthlyFares(context.Context, *MonthlyFaresRequest) (*MonthlyFaresResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MonthlyFares not implemented")
+}
+func (UnimplementedFareSearchServiceServer) DailyFares(context.Context, *DailyFaresRequest) (*DailyFaresResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DailyFares not implemented")
 }
 func (UnimplementedFareSearchServiceServer) mustEmbedUnimplementedFareSearchServiceServer() {}
 func (UnimplementedFareSearchServiceServer) testEmbeddedByValue()                           {}
@@ -162,6 +182,24 @@ func _FareSearchService_MonthlyFares_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FareSearchService_DailyFares_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DailyFaresRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FareSearchServiceServer).DailyFares(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FareSearchService_DailyFares_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FareSearchServiceServer).DailyFares(ctx, req.(*DailyFaresRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FareSearchService_ServiceDesc is the grpc.ServiceDesc for FareSearchService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -176,6 +214,10 @@ var FareSearchService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MonthlyFares",
 			Handler:    _FareSearchService_MonthlyFares_Handler,
+		},
+		{
+			MethodName: "DailyFares",
+			Handler:    _FareSearchService_DailyFares_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

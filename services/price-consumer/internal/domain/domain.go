@@ -462,6 +462,25 @@ type MonthFare struct {
 	DeepLink      string
 }
 
+// DayFare es el billete más barato visto para salir un día (el calendario
+// de precios del buscador).
+type DayFare struct {
+	Date          time.Time // el día, a las 00:00 UTC
+	PricePerAdult Money
+	CarrierIATA   string
+	DepartureAt   string
+	ReturnAt      string // "" si es solo ida
+	Transfers     int
+	DeepLink      string
+}
+
+// DailyResult es la respuesta de "precio por días".
+type DailyResult struct {
+	Days       []DayFare
+	ObservedAt time.Time
+	Provider   string
+}
+
 // MonthlyResult es la respuesta de "precio por meses".
 type MonthlyResult struct {
 	Months     []MonthFare

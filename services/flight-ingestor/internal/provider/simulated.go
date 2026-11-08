@@ -170,3 +170,47 @@ func (s *Simulated) Monthly(ctx context.Context, route domain.Route) ([]domain.M
 	}
 	return out, nil
 }
+
+// Daily implementa DailySearcher con precios inventados pero estables: los
+// viernes y domingos algo más caros, como en la vida real. Solo para la demo
+// local (en la app de verdad salen los de Travelpayouts).
+func (s *Simulated) Daily(ctx context.Context, route domain.Route, month time.Time, oneWay bool) ([]domain.DayFare, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, fmt.Errorf("simulated: %w", err)
+	}
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(string(route.Origin) + "-" + string(route.Destination)))
+	seed := h.Sum64()
+	base := int64(4_000 + seed%40_000)
+	if !oneWay {
+		base *= 2
+	}
+	y, m, d := s.now().UTC().Date()
+	today := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
+	first := time.Date(month.Year(), month.Month(), 1, 0, 0, 0, 0, time.UTC)
+	var out []domain.DayFare
+	for day := first; day.Month() == first.Month(); day = day.AddDate(0, 0, 1) {
+		if day.Before(today) {
+			continue
+		}
+		k := int64((uint64(day.YearDay())*37 + seed) % 60)
+		price := base + base*k/100
+		if wd := day.Weekday(); wd == time.Friday || wd == time.Sunday {
+			price += base / 8
+		}
+		ret := ""
+		if !oneWay {
+			ret = day.AddDate(0, 0, 7).Format(time.DateOnly)
+		}
+		out = append(out, domain.DayFare{
+			Date:          day,
+			PricePerAdult: domain.Money{Currency: "EUR", AmountMinor: price},
+			CarrierIATA:   simulatedCarriers[int((seed+uint64(day.Day()))%uint64(len(simulatedCarriers)))],
+			DepartureAt:   day.Format(time.DateOnly),
+			ReturnAt:      ret,
+			Transfers:     int(seed % 2),
+			DeepLink:      fmt.Sprintf("https://example.invalid/book?route=%s-%s&day=%s", route.Origin, route.Destination, day.Format(time.DateOnly)),
+		})
+	}
+	return out, nil
+}
