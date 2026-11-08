@@ -31,6 +31,9 @@ Stream<bool> deviceOnlineChanges() => Connectivity().onConnectivityChanged
 /// Sin datos de conexión (pruebas): nunca avisa.
 Stream<bool> noOnlineChanges() => const Stream<bool>.empty();
 
+/// Pantallas con su propia Flyra: ahí no sale la bolita de la esquina.
+const Set<String> _ownFlyra = <String>{'/flyra', '/map', '/camera', '/airport'};
+
 /// De qué tipo es el aviso (cambia el color del puntito y del borde).
 enum FlyraNoteKind { ok, warn, tip, error }
 
@@ -194,8 +197,9 @@ class _FlyraMiniState extends State<FlyraMini> with TickerProviderStateMixin {
     final FlyraNote? note = _notes.last;
     final MediaQueryData media = MediaQuery.of(context);
     // Se esconde en el chat con Flyra y con el teclado abierto (no tapa lo
-    // que escribes ni el botón de enviar).
-    final bool hidden = path == '/flyra' || media.viewInsets.bottom > 0;
+    // que escribes ni el botón de enviar). Y en las pantallas que, como en
+    // sus maquetas, ya traen su propia Flyra (Mapa, Cámara y Aeropuerto).
+    final bool hidden = _ownFlyra.contains(path) || media.viewInsets.bottom > 0;
     final double bottom = media.padding.bottom;
     return Stack(
       children: <Widget>[
