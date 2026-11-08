@@ -260,11 +260,13 @@ void main() {
       return (g, session, spy, prefs);
     }
 
+    // Inicio (otra página web) también está abierta, debajo.
+    const String title = 'ECLIPTA · Ajustes';
     Map<String, Object?> data(m.PageSpy spy) =>
-        spy.data(SettingsScreen.lastBridge!);
+        spy.data(SettingsScreen.lastBridge!, title: title);
 
     Future<void> send(WidgetTester tester, m.PageSpy spy, String msg) async {
-      spy.send!(msg);
+      spy.to(title)(msg);
       for (int i = 0; i < 5; i++) {
         await tester.runAsync(
           () => Future<void>.delayed(const Duration(milliseconds: 20)),

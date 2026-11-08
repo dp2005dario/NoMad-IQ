@@ -128,6 +128,7 @@ flutter:
     - assets/group_chat/chat.html
     - assets/events/eventos.html
     - assets/settings/ajustes.html
+    - assets/inicio/inicio.html
     # La Bienvenida: vídeo de fondo (720x1280, ~1 MB), logo y la G de Google.
     - assets/video/bienvenida.mp4
     - assets/brand/eclipta_spark.png

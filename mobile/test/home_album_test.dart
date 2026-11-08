@@ -1,17 +1,19 @@
 // "Mi álbum de cromos" de Inicio: el reparto en páginas de 4 huecos y el
-// libro que se abre, pasa página y se cierra.
+// libro que recibe la página (con tus cromos y tus amigos).
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/camera/stamps.dart';
 import 'package:eclipta/features/home/home_album.dart';
+import 'package:eclipta/features/home/home_page.dart';
+import 'package:eclipta/features/home/home_screen.dart';
 import 'package:eclipta/features/passport/passport.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 
 Stamp stamp(int i) => Stamp(
   qid: 'Q$i',
@@ -44,59 +46,53 @@ void main() {
     );
   });
 
-  testWidgets('abrir el libro, pasar página y cerrarlo', (
+  test('la página recibe cada hueco con su color', () {
+    final List<AlbumPage> pages = albumPagesOf(<PassportPage>[
+      PassportPage(
+        country: 'PT',
+        cities: const <String>['Lisboa'],
+        stamps: <Stamp>[stamp(1)],
+      ),
+    ], titleOf: (PassportPage p) => p.country ?? '');
+    final List<Map<String, Object?>> json = albumJson(pages);
+    expect(json.first['t'], 'PT');
+    final List<Object?> cards = json.first['c']! as List<Object?>;
+    expect(cards.first, <String, Object?>{'n': 'Monumento 1', 'cl': 'm'});
+    expect(cards.skip(1), everyElement(isNull));
+  });
+
+  testWidgets('tus cromos llegan al libro de la página', (
     WidgetTester tester,
   ) async {
     final MemorySettingsStore prefs = MemorySettingsStore();
     await prefs.writeStamps(
       jsonEncode(<Object?>[for (int i = 0; i < 9; i++) stamp(i).toJson()]),
     );
+    final m.PageSpy spy = m.PageSpy();
     final session = newSession()..continueAsGuest();
-    tester.view.physicalSize = const Size(1200, 3000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
     await pumpApp(
       tester,
       locale: 'es',
       session: session,
       initialLocation: Routes.home,
-      services: fakeServices(session, prefs: prefs),
+      services: fakeServices(session, prefs: prefs, webScene: spy.build),
     );
-    await tester.pumpAndSettle();
-    final Finder hint = find.text('Toca el libro para abrirlo · 9 cromos');
-    await tester.scrollUntilVisible(
-      hint,
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
     // Los aeropuertos se cargan de verdad (assets) para saber el país.
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(seconds: 2)),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.ensureVisible(find.text('CROMOS'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('CROMOS'));
-    await tester.pumpAndSettle();
+    await spy.wait(tester, () {
+      final Object? a = spy.data(HomeScreen.lastBridge!)['album'];
+      return a is Map && (a['pages']! as List<Object?>).isNotEmpty;
+    });
+    final Map<String, Object?> album =
+        spy.data(HomeScreen.lastBridge!)['album']! as Map<String, Object?>;
     // 9 sellos sin sitio → "Otros lugares": 3 páginas (+1 vacía) = 4.
-    expect(find.text('Páginas 1–2 de 4'), findsOneWidget);
-    expect(find.text('Desliza para pasar página'), findsOneWidget);
-    expect(find.text('Monumento 8'), findsOneWidget); // el más nuevo, primero
-
-    await tester.ensureVisible(find.byTooltip('Página siguiente'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Página siguiente'));
-    await tester.pumpAndSettle();
-    expect(find.text('Páginas 3–4 de 4'), findsOneWidget);
-    expect(find.text('Desliza para pasar página'), findsNothing);
-    expect(find.text('Monumento 0'), findsOneWidget);
-
-    await tester.ensureVisible(find.text('Cerrar libro'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Cerrar libro'));
-    await tester.pumpAndSettle();
-    expect(hint, findsOneWidget);
+    expect(album['pages'], hasLength(4));
+    expect(album['tap'], 'Toca el libro para abrirlo · 9 cromos');
+    final List<Object?> first =
+        ((album['pages']! as List<Object?>).first!
+                as Map<String, Object?>)['c']!
+            as List<Object?>;
+    expect((first.first! as Map<String, Object?>)['n'], 'Monumento 8');
   });
 
   testWidgets('con cuenta: las caras de los amigos con cromos que te faltan', (
@@ -108,27 +104,24 @@ void main() {
           'items': <Object?>[],
           'friends_with_missing': <String>['Noelia', 'Óscar'],
         });
+    final m.PageSpy spy = m.PageSpy();
     final session = await signedInSession(g);
-    tester.view.physicalSize = const Size(1200, 3000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
     await pumpApp(
       tester,
       locale: 'es',
       session: session,
       initialLocation: Routes.home,
-      services: fakeServices(session, gateway: g),
+      services: fakeServices(session, gateway: g, webScene: spy.build),
     );
-    await tester.pumpAndSettle();
-    final Finder line = find.text('2 amigos tienen cromos que te faltan');
-    await tester.scrollUntilVisible(
-      line,
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(line, findsOneWidget);
+    await spy.wait(tester, () => HomeScreen.lastBridge!.sent.isNotEmpty);
+    final Map<String, Object?> album =
+        spy.data(HomeScreen.lastBridge!)['album']! as Map<String, Object?>;
+    expect(album['friends'], '2 amigos tienen cromos que te faltan');
     // Sin fotos en el servidor: la inicial de cada uno.
-    expect(find.text('N'), findsOneWidget);
-    expect(find.text('Ó'), findsOneWidget);
+    expect(album['faces'], <String>['N', 'Ó']);
+    // El botón de los amigos abre los cromos.
+    spy.send!('cards');
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsNothing);
   });
 }

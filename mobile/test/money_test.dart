@@ -290,11 +290,24 @@ class PageSpy {
   final List<String> pages = <String>[];
   void Function(String message)? send;
 
+  /// Lo que manda cada página (por su HTML): con varias pantallas web
+  /// abiertas a la vez (Inicio debajo de Ajustes), [send] es la última que
+  /// se dibujó, y [to] elige una.
+  final Map<String, void Function(String message)> _by =
+      <String, void Function(String message)>{};
+
   Widget build(String html, void Function(String message) onMessage) {
     pages.add(html);
     send = onMessage;
+    _by[html] = onMessage;
     return const SizedBox.expand();
   }
+
+  /// Para mandar a la página cuyo HTML lleva [part] (su título, por ejemplo).
+  void Function(String message) to(String part) =>
+      _by.entries.lastWhere((MapEntry<String, void Function(String)> e) {
+        return e.key.contains(part);
+      }).value;
 
   /// Espera (dejando correr las llamadas de verdad) hasta que [done].
   Future<void> wait(WidgetTester tester, bool Function() done) async {
@@ -308,9 +321,12 @@ class PageSpy {
   }
 
   /// Lo último que sabe la página: lo de la carga más lo que llegó después.
-  Map<String, Object?> data(WebSceneBridge bridge) {
-    expect(pages.toSet(), hasLength(1));
-    final String html = pages.first;
+  /// Con varias pantallas web, [title] dice cuál (si no, la última).
+  Map<String, Object?> data(WebSceneBridge bridge, {String? title}) {
+    final List<String> distinct = pages.toSet().toList();
+    final String html = title == null
+        ? distinct.last
+        : distinct.lastWhere((String h) => h.contains(title));
     final int at = html.indexOf('window.ECL=') + 'window.ECL='.length;
     final Map<String, Object?> d = jsonDecode(
       html.substring(at, html.indexOf(';</script>', at)),
@@ -408,24 +424,11 @@ void main() {
   testWidgets('el atajo Gastos de Inicio abre Dinero', (
     WidgetTester tester,
   ) async {
-    await pumpMoney(tester, initialLocation: Routes.home);
-    // Gastos está en el carrusel de Inicio: deslizar, centrar y abrir.
-    await tester.scrollUntilVisible(
-      find.byType(PageView),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.dragUntilVisible(
-      find.text('Gastos'),
-      find.byType(PageView),
-      const Offset(-250, 0),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Gastos'));
-    await tester.pumpAndSettle();
-    if (find.text('Gastos').evaluate().isNotEmpty) {
-      await tester.tap(find.text('Gastos'));
-    }
+    final PageSpy spy = PageSpy();
+    await pumpMoney(tester, initialLocation: Routes.home, webScene: spy.build);
+    // Gastos es el cuadrado 9 del carrusel de Inicio (una página web).
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    spy.send!('tile:8');
     await tester.pumpAndSettle();
     expect(find.text('Dinero'), findsOneWidget);
     expect(find.text('Tu dinero'), findsOneWidget);

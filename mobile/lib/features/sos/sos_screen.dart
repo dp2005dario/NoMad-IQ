@@ -104,7 +104,7 @@ class _SosScreenState extends State<SosScreen>
     if (_contacts.length >= maxSosContacts) return;
     final SosContact? c = await showDialog<SosContact>(
       context: context,
-      builder: (BuildContext context) => const _ContactDialog(),
+      builder: (BuildContext context) => const SosContactDialog(),
     );
     if (c == null || !mounted) return;
     setState(() => _contacts = <SosContact>[..._contacts, c]);
@@ -410,16 +410,24 @@ class _Section extends StatelessWidget {
   );
 }
 
-class _ContactDialog extends StatefulWidget {
-  const _ContactDialog();
+/// Pide el nombre y el teléfono de un contacto de emergencia ([initial] =
+/// el que se va a cambiar). También lo usa Inicio.
+class SosContactDialog extends StatefulWidget {
+  const SosContactDialog({super.key, this.initial});
+
+  final SosContact? initial;
 
   @override
-  State<_ContactDialog> createState() => _ContactDialogState();
+  State<SosContactDialog> createState() => _SosContactDialogState();
 }
 
-class _ContactDialogState extends State<_ContactDialog> {
-  final TextEditingController _name = TextEditingController();
-  final TextEditingController _phone = TextEditingController();
+class _SosContactDialogState extends State<SosContactDialog> {
+  late final TextEditingController _name = TextEditingController(
+    text: widget.initial?.name,
+  );
+  late final TextEditingController _phone = TextEditingController(
+    text: widget.initial?.phone,
+  );
   bool _tried = false;
 
   @override

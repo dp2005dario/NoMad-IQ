@@ -1,6 +1,7 @@
 // Tests de pantallas: comprueban lo que VE el usuario, como si tocara el móvil.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:eclipta/features/home/home_screen.dart';
 import 'package:eclipta/features/vault/vault_screen.dart';
 import 'package:eclipta/features/flights/flights_screen.dart';
 import 'package:eclipta/core/router.dart';
@@ -8,6 +9,7 @@ import 'package:eclipta/auth/google_id_token.dart';
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/settings.dart';
 
+import 'money_test.dart' as m;
 import 'helpers.dart';
 
 /// La Bienvenida solo se ve sin sesión.
@@ -97,7 +99,7 @@ void main() {
     await tester.ensureVisible(find.text('Entrar como invitado'));
     await tester.tap(find.text('Entrar como invitado'));
     await tester.pumpAndSettle();
-    expect(find.text('ECLIPTA'), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
 
     await tester.tap(find.text('Vuelos'));
     await tester.pumpAndSettle();
@@ -115,46 +117,40 @@ void main() {
 
     await tester.tap(find.text('Inicio'));
     await tester.pumpAndSettle();
-    expect(find.text('ECLIPTA'), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
   });
 
   testWidgets('los atajos abren su pantalla con flecha atrás', (
     WidgetTester tester,
   ) async {
-    await pumpApp(tester, locale: 'es', initialLocation: Routes.home);
-    // La Bóveda está en el carrusel: se desliza hasta ella, se centra con
-    // un toque y otro toque la abre.
-    await tester.scrollUntilVisible(
-      find.byType(PageView),
-      300,
-      scrollable: find.byType(Scrollable).first,
+    final SessionController guest = newSession()..continueAsGuest();
+    final m.PageSpy spy = m.PageSpy();
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: guest,
+      initialLocation: Routes.home,
+      services: fakeServices(guest, webScene: spy.build),
     );
-    await tester.dragUntilVisible(
-      find.text('Bóveda'),
-      find.byType(PageView),
-      const Offset(-250, 0),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Bóveda'));
-    await tester.pumpAndSettle();
-    if (find.text('Bóveda').evaluate().isNotEmpty) {
-      await tester.tap(find.text('Bóveda'));
-    }
+    // La Bóveda es el cuadrado 8 del carrusel de Inicio (una página web).
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    spy.send!('tile:7');
     await tester.pumpAndSettle();
     // La Bóveda es la maqueta (sin barra de arriba): se vuelve con el
     // botón "atrás" del móvil.
     expect(find.byType(VaultScreen), findsOneWidget);
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
-    // De vuelta en Inicio (por donde estaba: el carrusel).
-    expect(find.byType(PageView), findsOneWidget);
+    // De vuelta en Inicio.
+    expect(find.byType(VaultScreen), findsNothing);
+    expect(find.byType(HomeScreen), findsOneWidget);
   });
 
   testWidgets('una dirección inventada no rompe la app', (
     WidgetTester tester,
   ) async {
     await pumpApp(tester, locale: 'es', initialLocation: '/soon/nada');
-    expect(find.text('ECLIPTA'), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
   });
 
   testWidgets('cambiar de idioma cambia toda la app y se recuerda', (

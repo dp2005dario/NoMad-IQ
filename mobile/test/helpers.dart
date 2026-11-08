@@ -249,7 +249,12 @@ AppServices fakeServices(
     tilesUrl: Uri.parse('https://tiles.test/planet'),
     glyphsUrl: 'https://tiles.test/fonts/{fontstack}/{range}.pbf',
     notices: notices ?? FakeNotices(),
-    webScene: webScene,
+    // Las pantallas que son una página web, en blanco (en los tests no hay
+    // WebView); quien quiera mirarlas pasa su espía.
+    webScene:
+        webScene ??
+        (String html, void Function(String) onMessage) =>
+            const SizedBox.expand(),
     prefs: prefs,
     openBooking: openBooking ?? (Uri _) async => true,
     openLink: openLink ?? (Uri _) async => true,

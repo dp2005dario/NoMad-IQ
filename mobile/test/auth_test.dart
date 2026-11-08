@@ -263,15 +263,21 @@ void main() {
       await tester.enterText(find.byType(TextFormField).at(1), password);
       await tester.tap(find.widgetWithText(FilledButton, 'Crear cuenta'));
       await tester.pumpAndSettle();
-      expect(find.text('ECLIPTA'), findsOneWidget);
+      expect(find.byType(HomeScreen), findsOneWidget);
 
       // Ajustes está en la barra de abajo.
       await tester.tap(find.text('Ajustes'));
       await tester.pumpAndSettle();
       await spy.wait(tester, () => spy.pages.isNotEmpty);
-      expect(spy.data(SettingsScreen.lastBridge!)['email'], email);
+      expect(
+        spy.data(
+          SettingsScreen.lastBridge!,
+          title: 'ECLIPTA · Ajustes',
+        )['email'],
+        email,
+      );
       // "Cerrar sesión" (en la página de Ajustes).
-      spy.send!('signout');
+      spy.to('ECLIPTA · Ajustes')('signout');
       await tester.pumpAndSettle();
       expect(
         find.text('Continuar con correo'),
@@ -321,14 +327,20 @@ void main() {
         initialLocation: Routes.home,
         services: fakeServices(guest, webScene: spy.build),
       );
-      expect(find.text('ECLIPTA'), findsOneWidget);
+      expect(find.byType(HomeScreen), findsOneWidget);
       // Ajustes está en la barra de abajo.
       await tester.tap(find.text('Ajustes'));
       await tester.pumpAndSettle();
       await spy.wait(tester, () => spy.pages.isNotEmpty);
-      expect(spy.data(SettingsScreen.lastBridge!)['signedIn'], isFalse);
+      expect(
+        spy.data(
+          SettingsScreen.lastBridge!,
+          title: 'ECLIPTA · Ajustes',
+        )['signedIn'],
+        isFalse,
+      );
       // Sin cuenta, "Cerrar sesión" es "Entrar con tu cuenta".
-      spy.send!('signin');
+      spy.to('ECLIPTA · Ajustes')('signin');
       await tester.pumpAndSettle();
       expect(find.widgetWithText(FilledButton, 'Entrar'), findsOneWidget);
     });

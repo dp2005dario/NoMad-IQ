@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:eclipta/features/flyra/flyra_chat_screen.dart';
 import 'package:http/http.dart' as http;
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
@@ -12,6 +13,7 @@ import 'package:eclipta/features/assistant/interpreter.dart';
 import 'package:eclipta/features/camera/speaker.dart';
 import 'package:eclipta/features/flyra/flyra_api.dart';
 
+import 'money_test.dart' as m;
 import 'helpers.dart';
 
 const String chatPath = '/v1/flyra/chat';
@@ -264,6 +266,7 @@ void main() {
   });
 
   testWidgets('Inicio abre el chat', (WidgetTester tester) async {
+    final m.PageSpy spy = m.PageSpy();
     final FlyraBackend b = FlyraBackend();
     final SessionController s = await signedInSession(b.g);
     await pumpApp(
@@ -271,10 +274,14 @@ void main() {
       locale: 'es',
       session: s,
       initialLocation: Routes.home,
-      services: fakeServices(s, gateway: b.g),
+      services: fakeServices(s, gateway: b.g, webScene: spy.build),
     );
-    await tester.tap(find.bySemanticsLabel('Hablar con Flyra'));
+    // La caja "O escríbele a Flyra…" de la página de Inicio.
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    spy.send!(
+      'ask:0:${base64Url.encode(utf8.encode(jsonEncode(<String, Object?>{'q': 'Hola'}))).replaceAll('=', '')}',
+    );
     await tester.pumpAndSettle();
-    expect(find.textContaining('Soy Flyra'), findsOneWidget);
+    expect(find.byType(FlyraChatScreen), findsOneWidget);
   });
 }

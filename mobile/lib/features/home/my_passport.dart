@@ -1,6 +1,7 @@
 // "Mi pasaporte" de Inicio (maqueta "ECLIPTA Inicio").
 //
-// Una tarjeta con forma de pasaporte. Al principio todo pone "Sin añadir";
+// La tarjeta con forma de pasaporte (la dibuja la página de Inicio, ver
+// home_page.dart). Al principio todo pone "Sin añadir";
 // al tocarla se abre el escáner en dos pasos:
 //   Foto 1 de 2 · Pasaporte  → la página de datos (las 2 líneas <<< de abajo)
 //   Foto 2 de 2 · DNI        → la cara de ATRÁS (las 3 líneas <<<)
@@ -14,21 +15,13 @@
 // es tu foto de perfil (cámara o galería), no la del documento.
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
-import '../../auth/session.dart';
-
-import '../../core/motion.dart';
 import '../../core/services.dart';
 import '../../core/settings.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../widgets/user_avatar.dart' show isTrustedPhotoUrl;
-import '../settings/profile_photo.dart';
-import '../sos/sos_store.dart';
 import '../vault/doc_source.dart';
 import '../visa/mrz.dart';
 import '../visa/visa_data.dart' show CountryNames;
@@ -122,7 +115,7 @@ class MyDocs {
 }
 
 /// "02 SEP 2031", como en el pasaporte.
-String _day(DateTime d, String locale) {
+String passportDay(DateTime d, String locale) {
   try {
     return DateFormat('dd MMM yyyy', locale).format(d).toUpperCase();
   } on Object {
@@ -136,406 +129,6 @@ String countryOf(CountryNames? names, String iso3, String lang) {
   final String? two = names?.fromIso3(iso3);
   if (names == null || two == null) return iso3;
   return names.name(two, lang);
-}
-
-/// La tarjeta de Inicio.
-class HomePassport extends StatefulWidget {
-  const HomePassport({super.key});
-
-  @override
-  State<HomePassport> createState() => _HomePassportState();
-}
-
-class _HomePassportState extends State<HomePassport>
-    with SingleTickerProviderStateMixin {
-  // La tarjeta "flota" un poco, sin fin (como en la maqueta).
-  late final AnimationController _float = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2250),
-  );
-  CountryNames? _names;
-  MyDocs? _docs;
-
-  bool _loadingNames = false;
-
-  /// La lista de países solo se carga cuando hay algo que enseñar.
-  void _needNames() {
-    if (_loadingNames) return;
-    _loadingNames = true;
-    unawaited(
-      CountryNames.load().then((CountryNames n) {
-        if (mounted) setState(() => _names = n);
-      }, onError: (Object _) {}),
-    );
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!MediaQuery.disableAnimationsOf(context) && !_float.isAnimating) {
-      Motion.loop(_float, reverse: true);
-    }
-  }
-
-  @override
-  void dispose() {
-    _float.dispose();
-    super.dispose();
-  }
-
-  Future<void> _scan() async {
-    final AppServices services = ServicesScope.of(context);
-    final MyDocs before = _docs ?? MyDocs.load(services.prefs);
-    // En el Navigator de arriba del todo: así tapa también la barra de
-    // abajo (si no, el botón de la cámara quedaría encima del escáner).
-    final MyDocs? after = await Navigator.of(context, rootNavigator: true)
-        .push<MyDocs>(
-          MaterialPageRoute<MyDocs>(
-            fullscreenDialog: true,
-            builder: (_) => PassportScanScreen(start: before),
-          ),
-        );
-    if (after == null || !mounted) return;
-    await after.save(services.prefs);
-    if (mounted) setState(() => _docs = after);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final AppServices services = ServicesScope.of(context);
-    final String lang = Localizations.localeOf(context).languageCode;
-    final MyDocs docs = _docs ??= MyDocs.load(services.prefs);
-    final ReadDoc? p = docs.passport;
-    final ReadDoc? d = docs.id;
-    final ReadDoc? any = p ?? d;
-    if (any != null) _needNames();
-    final String? blood = MedicalCard.load(services.prefs).blood;
-
-    final String cta = p != null && d != null
-        ? t.homePassBoth
-        : p != null
-        ? t.homePassOnlyPass
-        : d != null
-        ? t.homePassOnlyId
-        : t.homePassCta;
-    final List<(String, String?)> fields = <(String, String?)>[
-      (t.homePassSurname, any?.surname),
-      (t.homePassName, any?.given),
-      (
-        t.homePassNationality,
-        any == null ? null : countryOf(_names, any.nationality, lang),
-      ),
-      (t.sosBlood, blood),
-      (t.homePassNumber, p?.numberTail),
-      (t.homePassExpires, p == null ? null : _day(p.expiry, lang)),
-      (t.homePassId, d?.numberTail),
-      (t.homePassBirth, any == null ? null : _day(any.birth, lang)),
-      (t.homePassIdValid, d == null ? null : _day(d.expiry, lang)),
-    ];
-
-    final Widget card = Semantics(
-      button: true,
-      label: t.homePassSemantics,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: _scan,
-          child: Ink(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: <Color>[
-                  Color(0xFF14313A),
-                  Color(0xFF1B2447),
-                  Color(0xFF2B2468),
-                ],
-                stops: <double>[0, 0.7, 1],
-              ),
-              border: Border.all(color: const Color(0xFF34476A)),
-              boxShadow: const <BoxShadow>[
-                BoxShadow(
-                  color: Color(0xAA000000),
-                  blurRadius: 30,
-                  offset: Offset(0, 22),
-                  spreadRadius: -14,
-                ),
-                BoxShadow(
-                  color: Color(0x553DDC97),
-                  blurRadius: 40,
-                  spreadRadius: -10,
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                Text(
-                  t.homePassHead.toUpperCase(),
-                  style: const TextStyle(
-                    color: Color(0xFF9FB2D6),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.6,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    // Tu foto (la misma que la de perfil). Tocar = cambiarla.
-                    const _Photo(),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _Fields(fields: fields, empty: t.homePassEmpty),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  p == null
-                      ? t.homePassMrzEmpty
-                      : 'P<${p.nationality.padRight(3, '<')}'
-                            '${p.surname.replaceAll(' ', '<')}<<'
-                            '${p.given.replaceAll(' ', '<')}'
-                            '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<',
-                  maxLines: 1,
-                  overflow: TextOverflow.clip,
-                  softWrap: false,
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 1.4,
-                    color: const Color(0xFF8FA3C8)
-                        .withValues(alpha: p == null ? 0.6 : 1),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                _Cta(text: cta, done: p != null || d != null),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
-    return AnimatedBuilder(
-      animation: _float,
-      child: card,
-      builder: (BuildContext context, Widget? child) {
-        final double v = Curves.easeInOut.transform(_float.value);
-        return Transform.translate(offset: Offset(0, -6 * v), child: child);
-      },
-    );
-  }
-}
-
-class _Fields extends StatelessWidget {
-  const _Fields({required this.fields, required this.empty});
-
-  final List<(String, String?)> fields;
-  final String empty;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints box) {
-        final double w = (box.maxWidth - 10) / 2;
-        return Wrap(
-          spacing: 10,
-          runSpacing: 8,
-          children: <Widget>[
-            for (final (String label, String? value) in fields)
-              SizedBox(
-                width: w,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        color: Color(0xFF9FB2D6),
-                        fontSize: 10.5,
-                      ),
-                    ),
-                    Text(
-                      (value == null || value.isEmpty) ? empty : value,
-                      style: (value == null || value.isEmpty)
-                          ? const TextStyle(
-                              color: Color(0xCC7D8FB3),
-                              fontStyle: FontStyle.italic,
-                              fontSize: 13,
-                            )
-                          : const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13,
-                            ),
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-/// La foto del pasaporte: TU foto de perfil (la que haces o eliges de la
-/// galería, guardada solo en el móvil) o, si no hay, la de tu cuenta de
-/// Google. Sin ninguna, un hueco "Añadir foto". Al tocarla se elige: hacer
-/// una foto o sacarla de la galería (cambia también la de Ajustes).
-class _Photo extends StatelessWidget {
-  const _Photo();
-
-  Future<void> _choose(BuildContext context) async {
-    final ProfilePhotoController photo = ProfilePhotoController.instance;
-    await showModalBottomSheet<void>(
-      context: context,
-      useRootNavigator: true,
-      showDragHandle: true,
-      builder: (BuildContext sheet) {
-        final AppLocalizations t = AppLocalizations.of(sheet);
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                leading: const Icon(Icons.photo_camera_rounded),
-                title: Text(t.profilePhotoTake),
-                onTap: () {
-                  Navigator.pop(sheet);
-                  unawaited(photo.pick(ImageSource.camera));
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library_rounded),
-                title: Text(t.profilePhotoGallery),
-                onTap: () {
-                  Navigator.pop(sheet);
-                  unawaited(photo.pick(ImageSource.gallery));
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final String? google = SessionScope.read(context).user?.photoUrl;
-    return Semantics(
-      button: true,
-      label: t.homePassPhoto,
-      excludeSemantics: true,
-      child: GestureDetector(
-        onTap: () => _choose(context),
-        child: ListenableBuilder(
-          listenable: ProfilePhotoController.instance,
-          builder: (BuildContext context, Widget? _) {
-            final String? file =
-                ProfilePhotoController.instance.choice.filePath;
-            Widget? image;
-            if (file != null) {
-              image = Image.file(
-                File(file),
-                fit: BoxFit.cover,
-                errorBuilder: (_, Object e, StackTrace? s) => _empty(t),
-              );
-            } else if (isTrustedPhotoUrl(google)) {
-              image = Image.network(
-                google!,
-                fit: BoxFit.cover,
-                errorBuilder: (_, Object e, StackTrace? s) => _empty(t),
-              );
-            }
-            return Container(
-              width: 84,
-              height: 108,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                color: const Color(0xFF26324F),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0x30FFFFFF), width: 2),
-              ),
-              child: image ?? _empty(t),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  /// Sin foto: un hueco que invita a ponerla.
-  Widget _empty(AppLocalizations t) => Column(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: <Widget>[
-      const Icon(Icons.add_a_photo_rounded, size: 26, color: Color(0xFF8FF0C3)),
-      const SizedBox(height: 6),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        child: Text(
-          t.homePassAddPhoto,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Color(0xFF8FF0C3),
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-    ],
-  );
-}
-
-/// La franja verde de abajo ("Toca para escanear pasaporte y DNI").
-class _Cta extends StatelessWidget {
-  const _Cta({required this.text, required this.done});
-
-  final String text;
-  final bool done;
-
-  @override
-  Widget build(BuildContext context) {
-    const Color mint = Color(0xFF3DDC97);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color: mint.withValues(alpha: done ? 0.2 : 0.13),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: mint),
-      ),
-      child: Row(
-        children: <Widget>[
-          Icon(
-            done ? Icons.check_circle_rounded : Icons.document_scanner_rounded,
-            size: 18,
-            color: const Color(0xFF8FF0C3),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(
-                color: Color(0xFF8FF0C3),
-                fontWeight: FontWeight.w700,
-                fontSize: 12.5,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// El escáner a pantalla completa: dos fotos y el resumen. Devuelve lo que
@@ -591,15 +184,15 @@ class _PassportScanScreenState extends State<PassportScanScreen> {
             (t.homePassNumber, r.numberTail),
             (t.homePassName, r.given),
             (t.homePassNationality, countryOf(_names, r.nationality, lang)),
-            (t.homePassBirth, _day(r.birth, lang)),
-            (t.homePassExpires, _day(r.expiry, lang)),
+            (t.homePassBirth, passportDay(r.birth, lang)),
+            (t.homePassExpires, passportDay(r.expiry, lang)),
           ]
         : <(String, String)>[
             (t.homePassSurname, r.surname),
             (t.homePassName, r.given),
             (t.homePassId, r.numberTail),
-            (t.homePassBirth, _day(r.birth, lang)),
-            (t.homePassIdValid, _day(r.expiry, lang)),
+            (t.homePassBirth, passportDay(r.birth, lang)),
+            (t.homePassIdValid, passportDay(r.expiry, lang)),
           ];
   }
 

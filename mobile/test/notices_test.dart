@@ -96,7 +96,7 @@ void main() {
     await tester.tap(find.text('Ajustes'));
     await tester.pumpAndSettle();
     await spy.wait(tester, () => spy.pages.isNotEmpty);
-    spy.send!('notices');
+    spy.to('ECLIPTA · Ajustes')('notices');
     await tester.pumpAndSettle();
     expect(find.text('Chollo'), findsOneWidget);
     expect(find.text('Estás en Sol'), findsOneWidget);
