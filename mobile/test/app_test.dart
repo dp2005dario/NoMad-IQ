@@ -115,6 +115,10 @@ void main() {
       findsOneWidget,
     );
 
+    // La cámara va a pantalla completa: la X vuelve a donde estabas.
+    await tester.tap(find.byTooltip('Cerrar la cámara'));
+    await tester.pumpAndSettle();
+    expect(find.byType(FlightsScreen), findsOneWidget);
     await tester.tap(find.text('Inicio'));
     await tester.pumpAndSettle();
     expect(find.byType(HomeScreen), findsOneWidget);

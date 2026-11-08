@@ -91,9 +91,12 @@ void main() {
         webScene: spy.build,
       ),
     );
-    // Los Avisos están dentro de Ajustes (pestaña de la barra de abajo):
+    // Los Avisos están dentro de Ajustes (se abre con tu foto en el Mapa):
     // "Historial de avisos" en su página.
-    await tester.tap(find.text('Ajustes'));
+    // Ajustes se abre con tu foto, arriba en el Mapa (como en la maqueta).
+    await tester.tap(find.text('Mapa'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Tu foto de perfil y ajustes'));
     await tester.pumpAndSettle();
     await spy.wait(tester, () => spy.pages.isNotEmpty);
     spy.to('ECLIPTA · Ajustes')('notices');

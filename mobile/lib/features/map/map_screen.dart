@@ -662,8 +662,8 @@ class _MapScreenState extends State<MapScreen> {
           PositionedDirectional(
             start: 0,
             end: 0,
-            // Deja sitio al botón grande de la cámara, que "muerde" el mapa.
-            bottom: 36,
+            // 12 px por encima de la barra, como en la maqueta.
+            bottom: 12,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,

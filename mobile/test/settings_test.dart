@@ -253,8 +253,10 @@ void main() {
           ),
         ),
       );
-      // Ajustes está en la barra de abajo.
-      await tester.tap(find.text('Ajustes'));
+      // Ajustes se abre con tu foto, arriba en el Mapa (como en la maqueta).
+      await tester.tap(find.text('Mapa'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.bySemanticsLabel('Tu foto de perfil y ajustes'));
       await tester.pumpAndSettle();
       await spy.wait(tester, () => spy.pages.isNotEmpty);
       return (g, session, spy, prefs);
