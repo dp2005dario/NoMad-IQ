@@ -98,6 +98,9 @@ enum LocalData {
   /// no repetir la celebración cada vez que entras).
   plansSeen,
 
+  /// Chat del viaje: los mensajes de Flyra que te gustaron ("viaje:número").
+  chatLikes,
+
   /// Desde qué banco haces Bizum ("BBVA"), para "Abrir Bizum en tu banco".
   bizumBank,
 }
