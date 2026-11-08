@@ -26,6 +26,8 @@ class FlightSearchScreen extends StatefulWidget {
     this.destination,
     this.departure,
     this.returnDate,
+    this.adults,
+    this.autoSearch = false,
   });
 
   /// Con lo que empieza el formulario (p. ej. el aeropuerto de salida
@@ -34,6 +36,12 @@ class FlightSearchScreen extends StatefulWidget {
   final String? destination;
   final DateTime? departure;
   final DateTime? returnDate;
+
+  /// Cuántos viajeros (los niños de Vuelos cuentan como uno más).
+  final int? adults;
+
+  /// Buscar nada más abrir (cuando ya llega todo desde el buscador de Vuelos).
+  final bool autoSearch;
 
   /// Máximo de viajeros (como en las aerolíneas; el servidor también lo exige).
   static const int maxAdults = 9;
@@ -50,10 +58,15 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
   late final TextEditingController _to = TextEditingController(
     text: widget.destination ?? '',
   );
-  bool _roundTrip = true;
+  // Solo ida si llega la ida sin vuelta.
+  late bool _roundTrip = widget.departure == null || widget.returnDate != null;
   late DateTime? _departure = widget.departure;
   late DateTime? _return = widget.returnDate;
-  int _adults = 1;
+  late int _adults = (widget.adults ?? 1).clamp(
+    1,
+    FlightSearchScreen.maxAdults,
+  );
+  bool _autoDone = false;
 
   bool _searching = false;
   SearchResult? _result;
@@ -63,6 +76,17 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
   String? _formError;
 
   static final RegExp _iata = RegExp(r'^[A-Z]{3}$');
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.autoSearch && !_autoDone) {
+      _autoDone = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_search());
+      });
+    }
+  }
 
   @override
   void dispose() {

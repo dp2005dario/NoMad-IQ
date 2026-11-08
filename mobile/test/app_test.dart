@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/features/vault/vault_screen.dart';
+import 'package:eclipta/features/flights/flights_screen.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/auth/google_id_token.dart';
 import 'package:eclipta/auth/session.dart';
@@ -102,7 +103,7 @@ void main() {
     await tester.pumpAndSettle();
     // Vuelos ya existe y un invitado también entra (ve los precios reales;
     // ver flights_test.dart).
-    expect(find.text('Cazador de vuelos'), findsOneWidget);
+    expect(find.byType(FlightsScreen), findsOneWidget);
 
     await tester.tap(find.byTooltip('Cámara'));
     await tester.pumpAndSettle();

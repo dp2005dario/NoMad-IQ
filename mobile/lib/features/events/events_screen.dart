@@ -35,7 +35,7 @@ import '../easy/easy_mode.dart';
 import '../map/geo.dart';
 import '../map/pin_map.dart';
 import '../stays/pick_point_screen.dart';
-import '../flights/flights_screen.dart' show showOriginSheet;
+import '../flights/origin_sheet.dart';
 import '../group/group_api.dart';
 import '../plans/plans_api.dart';
 import '../route/world_data.dart';

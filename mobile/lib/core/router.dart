@@ -159,12 +159,16 @@ abstract final class Routes {
     String? destination,
     String? departure,
     String? returnDate,
+    int? adults,
+    bool search = false,
   }) {
     final Map<String, String> q = <String, String>{
       'from': ?origin,
       'to': ?destination,
       'dep': ?departure,
       'ret': ?returnDate,
+      if (adults != null) 'ad': '$adults',
+      if (search) 'go': '1',
     };
     return Uri(
       path: '/fares/search',
@@ -324,6 +328,8 @@ GoRouter buildRouter({
             destination: state.uri.queryParameters['to'],
             departure: _day(state.uri.queryParameters['dep']),
             returnDate: _day(state.uri.queryParameters['ret']),
+            adults: int.tryParse(state.uri.queryParameters['ad'] ?? ''),
+            autoSearch: state.uri.queryParameters['go'] == '1',
           ),
     ),
     GoRoute(

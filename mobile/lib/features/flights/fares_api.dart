@@ -7,6 +7,8 @@
 //   GET    /v1/fares/alerts                → tus últimos avisos de precio
 //   GET    /v1/fares/search?origin=…       → BUSCADOR: origen, destino, fechas
 //                                            y viajeros (también invitados)
+//   GET    /v1/fares/days?origin=…&month=… → el más barato de cada día de un
+//                                            mes (el calendario del buscador)
 //
 // Una "ruta" es una clave como "MAD-NRT:2026-12-15:ECONOMY" (origen, destino,
 // fecha de ida, fecha de vuelta opcional y cabina). Aquí se valida TODO lo que
@@ -453,6 +455,37 @@ class MonthFare {
 /// Resultado de pedir vigilar una ruta.
 enum WatchResult { added, updated }
 
+/// El más barato de un día (calendario de precios).
+class DayFare {
+  const DayFare({
+    required this.day,
+    required this.pricePerAdult,
+    this.bookingUrl,
+  });
+
+  final DateTime day;
+  final Money pricePerAdult;
+
+  /// Dónde se reserva ese día (null si el enlace no es https).
+  final Uri? bookingUrl;
+
+  /// Un día raro se salta (mejor un hueco en el calendario que nada).
+  static DayFare? parse(Object? json) {
+    if (json is! Map<String, Object?>) return null;
+    final DateTime? day = FareRoute._day(json['date']);
+    if (day == null) return null;
+    try {
+      return DayFare(
+        day: day,
+        pricePerAdult: Money.parse(json['price_per_adult']),
+        bookingUrl: safeBookingUrl(json['booking_url']),
+      );
+    } on ApiException {
+      return null;
+    }
+  }
+}
+
 class FaresApi {
   FaresApi(this._api);
 
@@ -569,6 +602,30 @@ class FaresApi {
     );
     final List<MonthFare?> months = _list(json, 'months', MonthFare.parse);
     return <MonthFare>[for (final MonthFare? m in months) ?m];
+  }
+
+  /// El calendario: el billete más barato de cada día de un mes
+  /// ([month] de 1 a 12). Público, como los chollos. Los días sin precio no
+  /// salen.
+  Future<List<DayFare>> days({
+    required String origin,
+    required String destination,
+    required int year,
+    required int month,
+    bool oneWay = false,
+  }) async {
+    final Object? json = await _api.getJson(
+      '/v1/fares/days',
+      query: <String, String>{
+        'origin': origin,
+        'destination': destination,
+        'month': '$year-${month.toString().padLeft(2, '0')}',
+        if (oneWay) 'one_way': 'true',
+      },
+      public: true,
+    );
+    final List<DayFare?> days = _list(json, 'days', DayFare.parse);
+    return <DayFare>[for (final DayFare? d in days) ?d];
   }
 
   static List<T> _list<T>(Object? json, String key, T Function(Object?) parse) {
