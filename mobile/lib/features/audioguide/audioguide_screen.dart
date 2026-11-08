@@ -1,8 +1,9 @@
-// La pantalla de la audioguía de una zona (maqueta 4): el guion por partes,
-// el reproductor con el círculo verde que se desliza para avanzar o
-// retroceder, y el texto de lo que suena (útil con ruido o sin cascos).
+// La pantalla de la audioguía de una zona (maqueta "Audioguía"): la maqueta
+// tal cual dentro de un WebView (assets/audioguide/audioguia.html) con tu
+// audioguía. El audio lo toca la app (guide_player.dart): la página le dice
+// qué hacer (pausa, rebobinar, otra parte) y la app le manda por dónde va.
 //
-// Como en la maqueta, además:
+// Como en la maqueta:
 //   - FOTO REAL del lugar más conocido de la zona (Wikimedia Commons, con
 //     enlace a su autor y licencia). Si no hay foto, no se pone nada.
 //   - "¿SABÍAS QUE…?": el resumen de su artículo de Wikipedia (texto real,
@@ -10,13 +11,16 @@
 //   - SUBTÍTULOS EN DIRECTO: las palabras se iluminan según avanza el audio.
 //     Ojo: el servidor no dice cuándo suena cada palabra, así que se reparte
 //     el tiempo de la parte entre sus letras (va bastante a la par, no exacto).
-//   - TU RECORRIDO: las partes de la guía, cuáles has oído y cuánto queda.
-//     Límite: las partes no traen un punto del mapa, así que no se dibuja
-//     el recorrido sobre el mapa como en la maqueta.
-//   - "Audioguía descargada" si la tienes guardada para usarla sin conexión.
+//   - TU RECORRIDO: las partes de la guía, cuáles has oído y cuánto queda,
+//     con Flyra andando de una a otra. Las partes no traen un punto del
+//     mapa: se reparten a lo largo del camino dibujado.
+//   - Los avisos de Flyra abajo ("Audioguía descargada", "aún no está en tu
+//     idioma"...). El botón de descargar lleva a "Sin conexión" si aún no la
+//     tienes.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 
@@ -25,19 +29,23 @@ import '../../core/languages.dart';
 import '../../core/router.dart';
 import '../../core/services.dart';
 import '../offline/saved_guides.dart';
-import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../camera/landmarks_api.dart';
 import '../map/geo.dart';
 import '../route/places_api.dart' show PlacePhoto;
+import '../route/web_scene.dart';
 import '../../widgets/flyra_avatar.dart';
 import 'audioguide_api.dart';
+import 'audioguide_page.dart';
 import 'guide_player.dart';
 
 /// En qué punto está la carga.
 enum _Stage { loading, preparing, ready, failed }
 
 class AudioguideScreen extends StatefulWidget {
+  /// La última conexión con la página (para las pruebas).
+  static WebSceneBridge? lastBridge;
+
   const AudioguideScreen({
     super.key,
     required this.zoneId,
@@ -61,6 +69,15 @@ class AudioguideScreen extends StatefulWidget {
 
 class _AudioguideScreenState extends State<AudioguideScreen> {
   late AppServices _services;
+  final WebSceneBridge _bridge = AudioguideScreen.lastBridge = WebSceneBridge();
+
+  // La página se lee una vez y se guarda (como String, no como Future).
+  static String? _pageCache;
+  String? _html;
+  String? _sent;
+
+  /// El aviso de Flyra que pidió el botón de descargar (se enseña una vez).
+  int _tapped = 0;
   late String _language;
   bool _started = false;
 
@@ -87,9 +104,6 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
   /// true si la tienes descargada en el móvil (funciona sin conexión).
   bool _saved = false;
 
-  /// Mientras arrastras el círculo verde: cuántos segundos vas a saltar.
-  double? _seekDelta;
-
   /// En el PRIMER intento se espera hasta 1 minuto a que Flyra prepare
   /// el guion (6 reintentos de 5 s). Después, botón "Reintentar".
   static const int _maxAttempts = 6;
@@ -101,8 +115,18 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
     _started = true;
     _services = ServicesScope.of(context);
     _language = Localizations.localeOf(context).languageCode;
+    unawaited(_loadPage());
     unawaited(_load());
     unawaited(_loadExtras());
+  }
+
+  Future<void> _loadPage() async {
+    try {
+      _pageCache ??= await rootBundle.loadString(audioguidePage, cache: false);
+    } on Object {
+      return;
+    }
+    if (mounted) setState(() {});
   }
 
   /// La foto, el "¿Sabías que…?" y si está descargada. Si algo falla, esa
@@ -269,26 +293,10 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
 
   // --- Acciones del reproductor --------------------------------------------
 
-  Duration _partLength(int part) {
-    final List<AudioPart> parts = _audio?.parts ?? const <AudioPart>[];
-    return part < parts.length ? parts[part].duration : Duration.zero;
-  }
-
   void _toggle() {
     final GuidePlayer? player = _player;
     if (player == null) return;
     unawaited(player.playback.value.playing ? player.pause() : player.play());
-  }
-
-  void _seekBy(Duration delta) {
-    final GuidePlayer? player = _player;
-    if (player == null) return;
-    final Playback p = player.playback.value;
-    final Duration length = _partLength(p.part);
-    Duration target = p.position + delta;
-    if (target < Duration.zero) target = Duration.zero;
-    if (target > length) target = length;
-    unawaited(player.seek(target, part: p.part));
   }
 
   void _goPart(int part) {
@@ -304,36 +312,171 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
 
   // --- Dibujo ----------------------------------------------------------------
 
+  /// Lo que pide la página.
+  void _onMessage(String m) {
+    final List<String> p = m.split(':');
+    final int? a = p.length > 1 ? int.tryParse(p[1]) : null;
+    final int? b = p.length > 2 ? int.tryParse(p[2]) : null;
+    switch (p.first) {
+      case 'back':
+        if (context.canPop()) context.pop();
+      case 'toggle':
+        _toggle();
+      case 'seek' when a != null:
+        final GuidePlayer? player = _player;
+        final int part = b ?? player?.playback.value.part ?? 0;
+        if (player != null) {
+          unawaited(player.seek(Duration(milliseconds: a), part: part));
+        }
+      case 'part' when a != null:
+        _goPart(a);
+      case 'speed':
+        _cycleSpeed();
+      case 'dl':
+        if (_saved) {
+          setState(() => _tapped++);
+        } else {
+          unawaited(context.push(Routes.offline));
+        }
+      case 'photo':
+        final PlacePhoto? photo = _place?.photo;
+        if (photo != null) unawaited(_services.openBooking(photo.pageUrl));
+      case 'text':
+        unawaited(_showText());
+    }
+  }
+
+  /// "Ver el texto": el guion entero, para leerlo.
+  Future<void> _showText() async {
+    final GuideScript? script = _script;
+    if (script == null) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF16212A),
+      builder: (BuildContext context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.7,
+        builder: (BuildContext context, ScrollController scroll) => ListView(
+          controller: scroll,
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+          children: <Widget>[
+            Text(script.title, style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            for (final GuideSegment s in script.segments)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: Text(
+                  s.text,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// El aviso de Flyra de abajo: (título, texto), el más importante.
+  (String, String)? _alert(AppLocalizations t, GuideScript script) {
+    final Playback? p = _player?.playback.value;
+    if (_tapped > 0 && _saved) {
+      return (t.offlineSaved, t.guideDownloaded);
+    }
+    if (p?.failed ?? false) return (t.shortcutAudioguides, t.guideAudioFailed);
+    if (_audio == null) return (t.shortcutAudioguides, t.guideRecording);
+    if (script.contentLanguage != _language) {
+      return (
+        t.shortcutAudioguides,
+        t.guideOtherLanguage(endonymFor(script.contentLanguage)),
+      );
+    }
+    if (_audio?.stale ?? false) {
+      return (t.shortcutAudioguides, t.guideOldVersion);
+    }
+    if (_fromPhone) return (t.offlineSaved, t.guideDownloaded);
+    return null;
+  }
+
+  Map<String, Object?> _data(AppLocalizations t, GuideScript script) {
+    final AudioManifest? audio = _audio;
+    final Playback? p = _player?.playback.value;
+    final List<Map<String, Object?>> parts = audio != null
+        ? <Map<String, Object?>>[
+            for (final AudioPart a in audio.parts)
+              guidePartJson(a.text, a.duration),
+          ]
+        : <Map<String, Object?>>[
+            for (final GuideSegment s in script.segments)
+              guidePartJson(s.text, readingTime(s.text)),
+          ];
+    final int part = (p?.part ?? 0).clamp(
+      0,
+      parts.isEmpty ? 0 : parts.length - 1,
+    );
+    final PlacePhoto? photo = _place?.photo;
+    final (String, String)? alert = _alert(t, script);
+    return <String, Object?>{
+      'zone': script.zoneName.isEmpty ? widget.zoneName : script.zoneName,
+      'title': script.title,
+      'langLbl': script.contentLanguage.toUpperCase(),
+      'parts': parts,
+      'hasAudio': audio != null && p != null,
+      'part': part,
+      'pos': (p?.position.inMilliseconds ?? 0) / 1000,
+      'playing': p?.playing ?? false,
+      'speed': _speeds[_speed],
+      'speedLbl': t.guideSpeed(_speedLabel(context, _speeds[_speed])),
+      'summary': _place?.summary ?? '',
+      'photo': photo?.url.toString() ?? '',
+      'caption': _place?.name ?? '',
+      'credit': _place == null ? '' : t.guidePhotoCredit(_place!.name),
+      'alertT': alert?.$1 ?? '',
+      'alertS': alert?.$2 ?? '',
+      'alertKey': alert == null ? '' : '${alert.$2}#$_tapped',
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
     final GuideScript? script = _script;
-    final String title = script?.zoneName ?? widget.zoneName;
+    final String? page = _pageCache;
+    if (_stage != _Stage.ready || script == null || page == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0B1217),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          title: Text(t.shortcutAudioguides),
+        ),
+        body: SafeArea(
+          child: switch (_stage) {
+            _Stage.preparing => _Message(text: t.guidePreparing, busy: true),
+            _Stage.failed => _failure(t),
+            _Stage.loading => const Center(child: CircularProgressIndicator()),
+            // Lista, pero la página aún se está leyendo (un instante).
+            _Stage.ready => const SizedBox.expand(),
+          },
+        ),
+      );
+    }
+    final Map<String, Object?> data = _data(t, script);
+    final String push = audioguidePushScript(data);
+    if (_html == null) {
+      _html = audioguidePageWith(page, data);
+      _sent = push;
+    } else if (push != _sent) {
+      _sent = push;
+      unawaited(_bridge.run(push));
+    }
+    final String html = _html!;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(t.shortcutAudioguides),
-        actions: <Widget>[
-          if (_audio != null)
-            TextButton(
-              onPressed: _cycleSpeed,
-              child: Text(
-                t.guideSpeed(_speedLabel(context, _speeds[_speed])),
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          const SizedBox(width: 8),
-        ],
-      ),
+      backgroundColor: const Color(0xFF0B1217),
       body: SafeArea(
-        child: switch (_stage) {
-          _Stage.loading => const Center(child: CircularProgressIndicator()),
-          _Stage.preparing => _Message(text: t.guidePreparing, busy: true),
-          _Stage.failed => _failure(t),
-          _Stage.ready => _ready(t, title, script!),
-        },
+        bottom: false,
+        child:
+            _services.webScene?.call(html, _onMessage) ??
+            WebScene(html: html, onMessage: _onMessage, bridge: _bridge),
       ),
     );
   }
@@ -361,124 +504,6 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
     );
   }
 
-  Widget _ready(AppLocalizations t, String title, GuideScript script) {
-    final AudioManifest? audio = _audio;
-    final Playback? p = _player?.playback.value;
-    final TextTheme text = Theme.of(context).textTheme;
-    final String? otherLanguage = script.contentLanguage != _language
-        ? endonymFor(script.contentLanguage)
-        : null;
-    final int partCount = audio?.parts.length ?? script.segments.length;
-    final int part = (p?.part ?? 0).clamp(0, partCount - 1);
-    final String partText = audio != null
-        ? audio.parts[part].text
-        : script.segments[part.clamp(0, script.segments.length - 1)].text;
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-      children: <Widget>[
-        Text(
-          // "SONANDO" solo mientras suena (como en la maqueta).
-          (p?.playing ?? false) ? t.guideNowPlaying : '',
-          style: const TextStyle(
-            color: NomadColors.mint,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.2,
-            fontSize: 12,
-          ),
-        ),
-        const SizedBox(height: 6),
-        if (_place?.photo case final PlacePhoto photo) ...<Widget>[
-          _Photo(photo: photo, name: _place!.name, open: _services.openBooking),
-          const SizedBox(height: 14),
-        ],
-        Text(title, style: text.displaySmall),
-        const SizedBox(height: 6),
-        Text(
-          script.title,
-          style: text.bodyLarge?.copyWith(color: NomadColors.textMuted),
-        ),
-        if (otherLanguage != null) ...<Widget>[
-          const SizedBox(height: 12),
-          _Note(
-            icon: Icons.translate_rounded,
-            text: t.guideOtherLanguage(otherLanguage),
-          ),
-        ],
-        if (_fromPhone) ...<Widget>[
-          const SizedBox(height: 12),
-          _Note(icon: Icons.download_done_rounded, text: t.offlineSaved),
-        ],
-        if (audio?.stale ?? false) ...<Widget>[
-          const SizedBox(height: 12),
-          _Note(icon: Icons.update_rounded, text: t.guideOldVersion),
-        ],
-        const SizedBox(height: 24),
-        if (audio != null && p != null)
-          _Player(
-            playback: p,
-            partCount: partCount,
-            partLength: _partLength(part),
-            seekDelta: _seekDelta,
-            onToggle: _toggle,
-            onSeekBy: _seekBy,
-            onDrag: (double? d) => setState(() => _seekDelta = d),
-            onPart: _goPart,
-          )
-        else
-          _Note(icon: Icons.mic_rounded, text: t.guideRecording),
-        if (p?.failed ?? false) ...<Widget>[
-          const SizedBox(height: 12),
-          _Note(icon: Icons.wifi_off_rounded, text: t.guideAudioFailed),
-        ],
-        const SizedBox(height: 24),
-        if (audio != null)
-          // Solo el texto de la parte que suena, iluminándose al sonar.
-          _LiveSubtitles(text: partText, progress: _progress(p, part))
-        else
-          // Sin audio: el guion completo, para leerlo.
-          for (final GuideSegment s in script.segments)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: Text(s.text, style: text.bodyLarge),
-            ),
-        if (audio != null) ...<Widget>[
-          const SizedBox(height: 16),
-          _PartChips(count: partCount, current: part, onPick: _goPart),
-        ],
-        if (_place?.summary case final String summary) ...<Widget>[
-          const SizedBox(height: 20),
-          _DidYouKnow(
-            text: summary,
-            article: _place!.articleUrl,
-            open: _services.openBooking,
-          ),
-        ],
-        if (audio != null) ...<Widget>[
-          const SizedBox(height: 20),
-          _Route(
-            parts: audio.parts,
-            current: part,
-            position: p?.position ?? Duration.zero,
-            onPick: _goPart,
-          ),
-        ],
-        if (_saved) ...<Widget>[
-          const SizedBox(height: 20),
-          _Note(icon: Icons.download_done_rounded, text: t.guideDownloaded),
-        ],
-      ],
-    );
-  }
-
-  /// Por dónde va la parte que suena (0 a 1).
-  double _progress(Playback? p, int part) {
-    if (p == null) return 0;
-    final int total = _partLength(part).inMilliseconds;
-    if (total <= 0) return 0;
-    return (p.position.inMilliseconds / total).clamp(0.0, 1.0);
-  }
-
   /// "1", "1,25", "1.5"... con la coma o el punto de cada idioma.
   static String _speedLabel(BuildContext context, double speed) =>
       NumberFormat.decimalPattern(Localizations.localeOf(context).toString())
@@ -487,290 +512,6 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
 
 // --- Piezas ------------------------------------------------------------------
 
-class _Player extends StatelessWidget {
-  const _Player({
-    required this.playback,
-    required this.partCount,
-    required this.partLength,
-    required this.seekDelta,
-    required this.onToggle,
-    required this.onSeekBy,
-    required this.onDrag,
-    required this.onPart,
-  });
-
-  final Playback playback;
-  final int partCount;
-  final Duration partLength;
-  final double? seekDelta;
-  final VoidCallback onToggle;
-  final ValueChanged<Duration> onSeekBy;
-  final ValueChanged<double?> onDrag;
-  final ValueChanged<int> onPart;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final int part = playback.part;
-    final double total = partLength.inMilliseconds.toDouble();
-    final double shownMs =
-        (playback.position.inMilliseconds + (seekDelta ?? 0) * 1000).clamp(
-          0,
-          total,
-        );
-    final double progress = total <= 0 ? 0 : shownMs / total;
-    final Duration shown = Duration(milliseconds: shownMs.round());
-
-    return Column(
-      children: <Widget>[
-        Text(
-          t.guidePartOf(part + 1, partCount),
-          style: const TextStyle(color: NomadColors.textMuted),
-        ),
-        const SizedBox(height: 12),
-        _Waveform(progress: progress),
-        const SizedBox(height: 6),
-        Row(
-          children: <Widget>[
-            Text(_clock(shown)),
-            const Spacer(),
-            Text(_clock(partLength)),
-          ],
-        ),
-        const SizedBox(height: 14),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            IconButton(
-              tooltip: t.guidePrev,
-              onPressed: part > 0 ? () => onPart(part - 1) : null,
-              icon: const Icon(Icons.skip_previous_rounded, size: 32),
-            ),
-            IconButton(
-              tooltip: t.guideBack10,
-              onPressed: () => onSeekBy(const Duration(seconds: -10)),
-              icon: const Icon(Icons.replay_10_rounded, size: 32),
-            ),
-            _Knob(
-              playing: playback.playing,
-              loading: playback.loading,
-              onToggle: onToggle,
-              onSeekBy: onSeekBy,
-              onDrag: onDrag,
-            ),
-            IconButton(
-              tooltip: t.guideForward10,
-              onPressed: () => onSeekBy(const Duration(seconds: 10)),
-              icon: const Icon(Icons.forward_10_rounded, size: 32),
-            ),
-            IconButton(
-              tooltip: t.guideNext,
-              onPressed: part < partCount - 1 ? () => onPart(part + 1) : null,
-              icon: const Icon(Icons.skip_next_rounded, size: 32),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          seekDelta == null || seekDelta!.abs() < 1
-              ? t.guideSeekHint
-              : t.guideSeekBy(
-                  '${seekDelta! > 0 ? '+' : '−'}${seekDelta!.abs().round()}',
-                ),
-          style: const TextStyle(color: NomadColors.textMuted, fontSize: 13),
-        ),
-      ],
-    );
-  }
-
-  static String _clock(Duration d) {
-    final int s = d.inSeconds;
-    return '${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
-  }
-}
-
-/// El círculo verde de la maqueta: tócalo para reproducir o pausar, o
-/// deslízalo a los lados para avanzar o retroceder (3 px = 1 segundo).
-class _Knob extends StatelessWidget {
-  const _Knob({
-    required this.playing,
-    required this.loading,
-    required this.onToggle,
-    required this.onSeekBy,
-    required this.onDrag,
-  });
-
-  final bool playing;
-  final bool loading;
-  final VoidCallback onToggle;
-  final ValueChanged<Duration> onSeekBy;
-  final ValueChanged<double?> onDrag;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    // En árabe o hebreo (de derecha a izquierda), "adelante" es a la izquierda.
-    final double dir = Directionality.of(context) == TextDirection.rtl ? -1 : 1;
-    double dragged = 0;
-    // Para lectores de pantalla: botón con acciones "subir/bajar" que
-    // avanzan o retroceden 10 s (deslizar el dedo no es accesible).
-    return Semantics(
-      button: true,
-      label: playing ? t.guidePause : t.guidePlay,
-      onIncrease: () => onSeekBy(const Duration(seconds: 10)),
-      onDecrease: () => onSeekBy(const Duration(seconds: -10)),
-      excludeSemantics: true,
-      child: GestureDetector(
-        onTap: onToggle,
-        onHorizontalDragStart: (_) => dragged = 0,
-        onHorizontalDragUpdate: (DragUpdateDetails d) {
-          dragged += d.delta.dx * dir;
-          onDrag(dragged / 3);
-        },
-        onHorizontalDragEnd: (_) {
-          onDrag(null);
-          onSeekBy(Duration(milliseconds: (dragged / 3 * 1000).round()));
-        },
-        onHorizontalDragCancel: () => onDrag(null),
-        child: Container(
-          width: 82,
-          height: 82,
-          decoration: const BoxDecoration(
-            color: NomadColors.mint,
-            shape: BoxShape.circle,
-          ),
-          alignment: Alignment.center,
-          child: loading
-              ? const SizedBox(
-                  width: 28,
-                  height: 28,
-                  child: CircularProgressIndicator(
-                    color: NomadColors.background,
-                    strokeWidth: 3,
-                  ),
-                )
-              : Icon(
-                  playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                  color: NomadColors.background,
-                  size: 44,
-                ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Las barritas de la maqueta: se pintan de menta según avanza el audio.
-class _Waveform extends StatelessWidget {
-  const _Waveform({required this.progress});
-
-  final double progress;
-
-  static const List<double> _heights = <double>[
-    10, 18, 26, 14, 32, 22, 38, 28, 16, 30, 40, 24, 12, 34, 20, 28, 36, 18, //
-    26, 14, 30, 22, 38, 16, 24, 32, 12, 28, 20, 34, 18, 26, 14, 30, 22, 16,
-    24, 12, 20, 10,
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final int lit = (progress * _heights.length).round();
-    return ExcludeSemantics(
-      child: SizedBox(
-        height: 44,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            for (int i = 0; i < _heights.length; i++)
-              Expanded(
-                child: Center(
-                  child: Container(
-                    height: _heights[i],
-                    margin: const EdgeInsets.symmetric(horizontal: 1.5),
-                    decoration: BoxDecoration(
-                      color: i < lit ? NomadColors.mint : NomadColors.outline,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PartChips extends StatelessWidget {
-  const _PartChips({
-    required this.count,
-    required this.current,
-    required this.onPick,
-  });
-
-  final int count;
-  final int current;
-  final ValueChanged<int> onPick;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: <Widget>[
-        for (int i = 0; i < count; i++)
-          Semantics(
-            label: t.guidePart(i + 1),
-            selected: i == current,
-            excludeSemantics: true,
-            child: ChoiceChip(
-              label: Text('${i + 1}'),
-              selected: i == current,
-              showCheckmark: false,
-              selectedColor: NomadColors.mint,
-              labelStyle: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: i == current ? NomadColors.background : NomadColors.text,
-              ),
-              onSelected: (_) => onPick(i),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _Note extends StatelessWidget {
-  const _Note({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: NomadColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: NomadColors.outline),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Icon(icon, color: NomadColors.mint, size: 20),
-            const SizedBox(width: 10),
-            Expanded(child: Text(text)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Mensaje a pantalla completa con Flyra (cargando, error...).
 class _Message extends StatelessWidget {
   const _Message({
     required this.text,
@@ -817,57 +558,6 @@ class _Message extends StatelessWidget {
   }
 }
 
-/// La foto real del lugar, con su crédito (autor y licencia en Commons).
-class _Photo extends StatelessWidget {
-  const _Photo({required this.photo, required this.name, required this.open});
-
-  final PlacePhoto photo;
-  final String name;
-  final Future<bool> Function(Uri) open;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Image.network(
-              photo.url.toString(),
-              fit: BoxFit.cover,
-              semanticLabel: name,
-              // Si no carga (sin internet), un hueco tranquilo en su lugar.
-              errorBuilder: (_, _, _) => const ColoredBox(
-                color: NomadColors.surfaceHigh,
-                child: Center(
-                  child: Icon(
-                    Icons.photo_outlined,
-                    color: NomadColors.textMuted,
-                    size: 40,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: TextButton(
-            onPressed: () => unawaited(open(photo.pageUrl)),
-            child: Text(
-              t.guidePhotoCredit(name),
-              style: const TextStyle(fontSize: 12),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 /// Cuántas letras de [text] se han dicho ya cuando la parte va por
 /// [progress] (0 a 1), cortado al final de una palabra.
 int guideSpokenUpTo(String text, double progress) {
@@ -875,196 +565,4 @@ int guideSpokenUpTo(String text, double progress) {
   if (cut == 0 || cut == text.length) return cut;
   final int space = text.indexOf(' ', cut);
   return space < 0 ? text.length : space;
-}
-
-/// "SUBTÍTULOS EN DIRECTO": lo dicho, en blanco; lo que falta, en gris.
-class _LiveSubtitles extends StatelessWidget {
-  const _LiveSubtitles({required this.text, required this.progress});
-
-  final String text;
-
-  /// Por dónde va la parte (0 a 1).
-  final double progress;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final TextStyle? base = Theme.of(context).textTheme.bodyLarge;
-    final int cut = guideSpokenUpTo(text, progress);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              t.guideLiveSubtitles,
-              style: const TextStyle(
-                color: NomadColors.mint,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.2,
-                fontSize: 11,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text.rich(
-              TextSpan(
-                children: <TextSpan>[
-                  TextSpan(
-                    text: text.substring(0, cut),
-                    style: const TextStyle(
-                      color: NomadColors.text,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  TextSpan(
-                    text: text.substring(cut),
-                    style: const TextStyle(color: NomadColors.textMuted),
-                  ),
-                ],
-              ),
-              style: base,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// "¿SABÍAS QUE…?" con el resumen de Wikipedia (y su enlace).
-class _DidYouKnow extends StatelessWidget {
-  const _DidYouKnow({
-    required this.text,
-    required this.article,
-    required this.open,
-  });
-
-  final String text;
-  final Uri? article;
-  final Future<bool> Function(Uri) open;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final Uri? link = article;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1B1A33),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: NomadColors.group.withValues(alpha: 0.6)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          const FlyraAvatar(size: 34),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  t.guideDidYouKnow,
-                  style: const TextStyle(
-                    color: NomadColors.group,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                    fontSize: 11,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(text, maxLines: 6, overflow: TextOverflow.ellipsis),
-                if (link != null)
-                  TextButton(
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(0, 36),
-                    ),
-                    onPressed: () => unawaited(open(link)),
-                    child: Text(t.guideWikipediaSource),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// "TU RECORRIDO": las partes, las que ya has oído y cuánto queda.
-class _Route extends StatelessWidget {
-  const _Route({
-    required this.parts,
-    required this.current,
-    required this.position,
-    required this.onPick,
-  });
-
-  final List<AudioPart> parts;
-  final int current;
-  final Duration position;
-  final ValueChanged<int> onPick;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    Duration left = Duration.zero;
-    for (int i = current; i < parts.length; i++) {
-      left += parts[i].duration;
-    }
-    left -= position;
-    if (left < Duration.zero) left = Duration.zero;
-    final int minutes = (left.inSeconds / 60).ceil();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Text(t.guideRoute, style: Theme.of(context).textTheme.titleLarge),
-        Text(
-          t.guideRouteLeft(parts.length, minutes),
-          style: const TextStyle(color: NomadColors.textMuted),
-        ),
-        const SizedBox(height: 8),
-        for (int i = 0; i < parts.length; i++)
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            onTap: () => onPick(i),
-            leading: CircleAvatar(
-              radius: 15,
-              backgroundColor: i < current
-                  ? NomadColors.mint
-                  : i == current
-                  ? NomadColors.group
-                  : NomadColors.surfaceHigh,
-              child: i < current
-                  ? const Icon(
-                      Icons.check_rounded,
-                      size: 18,
-                      color: NomadColors.background,
-                    )
-                  : Text(
-                      '${i + 1}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: NomadColors.text,
-                      ),
-                    ),
-            ),
-            title: Text(
-              t.guidePart(i + 1),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontWeight: i == current ? FontWeight.w800 : FontWeight.w500,
-              ),
-            ),
-            trailing: Text(
-              t.guideSeekBy(parts[i].duration.inSeconds.toString()),
-              style: const TextStyle(color: NomadColors.textMuted),
-            ),
-          ),
-      ],
-    );
-  }
 }

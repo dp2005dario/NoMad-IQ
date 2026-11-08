@@ -19,6 +19,7 @@ import 'package:eclipta/features/map/weather_overlay.dart';
 import 'package:eclipta/features/passport/passport_screen.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 import 'zones_fixture.dart';
 
 /// Un backend con zonas y la audioguía de la Puerta del Sol.
@@ -102,12 +103,19 @@ void main() {
     final SessionController s = await signedInSession(g);
     final FakeMap map = FakeMap();
     final List<FakePlayer> players = <FakePlayer>[];
+    final m.PageSpy spy = m.PageSpy();
     await pumpApp(
       tester,
       locale: 'es',
       initialLocation: Routes.map,
       session: s,
-      services: fakeServices(s, gateway: g, map: map, players: players),
+      services: fakeServices(
+        s,
+        gateway: g,
+        map: map,
+        players: players,
+        webScene: spy.build,
+      ),
     );
     await settleMap(tester);
 
@@ -125,8 +133,11 @@ void main() {
 
     await tester.tap(find.bySemanticsLabel('Escuchar la audioguía'));
     await tester.pumpAndSettle();
-    expect(find.text('El corazón de Madrid'), findsOneWidget);
-    expect(find.text('Parte 1 de 2'), findsOneWidget);
+    Map<String, Object?> d() => spy.data(AudioguideScreen.lastBridge!);
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    expect(d()['title'], 'El corazón de Madrid');
+    expect(d()['zone'], 'Puerta del Sol');
+    expect(d()['parts'], hasLength(2));
     // Las partes llegan desordenadas y la app las ordena; las rutas se
     // completan con la dirección de la puerta de entrada.
     expect(players.single.loaded.map((Uri u) => u.toString()), <String>[
@@ -140,23 +151,27 @@ void main() {
       'Parte 2 de 2 · El corazón de Madrid',
     ]);
 
-    await tester.tap(find.byIcon(Icons.play_arrow_rounded));
+    spy.send!('toggle');
     await tester.pumpAndSettle();
     expect(players.single.state.value.playing, isTrue);
-    expect(find.text('SONANDO'), findsOneWidget);
+    expect(d()['playing'], isTrue);
 
-    await tester.tap(find.widgetWithText(ChoiceChip, '2'));
+    spy.send!('part:1');
     await tester.pumpAndSettle();
-    expect(find.text('Parte 2 de 2'), findsOneWidget);
-    expect(find.text('El Kilómetro Cero.'), findsOneWidget);
+    expect(d()['part'], 1);
+    expect(
+      ((d()['parts']! as List<Object?>)[1]! as Map<String, Object?>)['text'],
+      'El Kilómetro Cero.',
+    );
 
-    await tester.tap(find.text('1×'));
+    expect(d()['speedLbl'], '1×');
+    spy.send!('speed');
     await tester.pumpAndSettle();
-    expect(find.text('1,25×'), findsOneWidget);
+    expect(d()['speedLbl'], '1,25×');
     expect(players.single.speed, 1.25);
 
     // Al salir, el reproductor se apaga.
-    await tester.tap(find.byType(BackButton));
+    spy.send!('back');
     await tester.pumpAndSettle();
     expect(players.single.disposed, isTrue);
   });
@@ -219,19 +234,30 @@ void main() {
     final SessionController s = await signedInSession(g);
     final FakeLocation loc = FakeLocation()..access = LocationAccess.granted;
     final FakeNotices notices = FakeNotices();
+    final m.PageSpy spy = m.PageSpy();
     await pumpApp(
       tester,
       locale: 'es',
       initialLocation: Routes.map,
       session: s,
-      services: fakeServices(s, gateway: g, location: loc, notices: notices),
+      services: fakeServices(
+        s,
+        gateway: g,
+        location: loc,
+        notices: notices,
+        webScene: spy.build,
+      ),
     );
     await settleMap(tester);
 
     // El usuario toca el aviso "Audioguía cerca" de la barra del móvil.
     notices.tapsController.add(Routes.audioguide(solId, ''));
     await tester.pumpAndSettle();
-    expect(find.text('El corazón de Madrid'), findsOneWidget);
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    expect(
+      spy.data(AudioguideScreen.lastBridge!)['title'],
+      'El corazón de Madrid',
+    );
   });
 
   testWidgets('un invitado ve el mapa pero se le invita a crear cuenta', (
@@ -366,12 +392,13 @@ void main() {
   ) async {
     final FakeGateway g = backend(scriptMissing: 1, audioReady: false);
     final SessionController s = await signedInSession(g);
+    final m.PageSpy spy = m.PageSpy();
     await pumpApp(
       tester,
       locale: 'es',
       initialLocation: Routes.audioguide(solId, 'Puerta del Sol'),
       session: s,
-      services: fakeServices(s, gateway: g),
+      services: fakeServices(s, gateway: g, webScene: spy.build),
     );
     // pumpApp espera a que todo se calme: por el camino pasaron los 5 s y
     // la app volvió a preguntar sola.
@@ -379,13 +406,17 @@ void main() {
       g.calls.where((String c) => c == 'GET /v1/audioguides/$solId'),
       hasLength(2),
     );
-    // Sin audio todavía: se lee el guion completo.
+    // Sin audio todavía: Flyra lo avisa y el guion se lee por partes.
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    final Map<String, Object?> d = spy.data(AudioguideScreen.lastBridge!);
+    expect(d['hasAudio'], isFalse);
+    expect(d['alertS'], contains('El audio aún se está grabando'));
     expect(
-      find.textContaining('El audio aún se está grabando'),
-      findsOneWidget,
+      (d['parts']! as List<Object?>).map(
+        (Object? p) => (p! as Map<String, Object?>)['text'],
+      ),
+      <String>['Bienvenida a la plaza.', 'El Kilómetro Cero.'],
     );
-    expect(find.text('Bienvenida a la plaza.'), findsOneWidget);
-    expect(find.text('El Kilómetro Cero.'), findsOneWidget);
   });
 
   testWidgets('audioguía para invitados: invita a entrar', (
@@ -445,6 +476,7 @@ void main() {
     };
     final SessionController s = await signedInSession(g);
     final List<FakePlayer> players = <FakePlayer>[];
+    final m.PageSpy spy = m.PageSpy();
     await pumpApp(
       tester,
       locale: 'es',
@@ -459,6 +491,7 @@ void main() {
         s,
         gateway: g,
         players: players,
+        webScene: spy.build,
         openBooking: (Uri u) async {
           opened.add(u);
           return true;
@@ -471,24 +504,15 @@ void main() {
       'lon': '-3.70380',
       'lang': 'es',
     });
-    expect(find.textContaining('Foto de Real Casa de Correos'), findsOneWidget);
-    await tester.tap(find.textContaining('Foto de Real Casa de Correos'));
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    Map<String, Object?> d() => spy.data(AudioguideScreen.lastBridge!);
+    expect(d()['photo'], 'https://upload.wikimedia.org/x/800px-Correos.jpg');
+    expect(d()['credit'], contains('Foto de Real Casa de Correos'));
+    spy.send!('photo');
     await tester.pumpAndSettle();
     expect(opened.single.host, 'commons.wikimedia.org');
-    final Finder subs = find.text('SUBTÍTULOS EN DIRECTO');
-    await tester.scrollUntilVisible(subs, 200);
-    expect(subs, findsOneWidget);
-
-    final Finder know = find.text('¿SABÍAS QUE…?');
-    await tester.scrollUntilVisible(know, 200);
-    expect(
-      find.text('Su reloj da las campanadas de Nochevieja.'),
-      findsOneWidget,
-    );
-    final Finder route = find.text('Tu recorrido');
-    await tester.scrollUntilVisible(route, 200);
-    expect(find.text('2 partes · quedan 1 min'), findsOneWidget);
-    await tester.tap(find.text('Parte 2'));
+    expect(d()['summary'], 'Su reloj da las campanadas de Nochevieja.');
+    spy.send!('part:1');
     await tester.pumpAndSettle();
     expect(players.single.state.value.part, 1);
   });

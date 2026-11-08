@@ -128,6 +128,7 @@ flutter:
     - assets/group_chat/chat.html
     - assets/events/eventos.html
     - assets/trip/antes.html
+    - assets/audioguide/audioguia.html
     - assets/settings/ajustes.html
     - assets/inicio/inicio.html
     - assets/map/flyra.webp
