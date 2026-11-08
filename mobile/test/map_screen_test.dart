@@ -319,7 +319,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Habla con Flyra'));
     await tester.pumpAndSettle();
     expect(find.byType(AssistantScreen), findsOneWidget);
-    await tester.tap(find.byType(BackButton));
+    await tester.tap(find.byTooltip('Cerrar'));
     await tester.pumpAndSettle();
 
     // Buscar una calle (OpenStreetMap) y volar hasta ella.
