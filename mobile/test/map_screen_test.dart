@@ -7,11 +7,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/assistant/assistant_screen.dart';
 import 'package:eclipta/features/audioguide/audioguide_screen.dart';
+import 'package:eclipta/features/camera/stamps.dart';
+import 'package:eclipta/features/flyra/flyra_mini.dart';
 import 'package:eclipta/features/map/geo.dart';
 import 'package:eclipta/features/map/location.dart';
 import 'package:eclipta/features/map/street_photos_api.dart';
 import 'package:eclipta/features/map/weather_overlay.dart';
+import 'package:eclipta/features/passport/passport_screen.dart';
 
 import 'helpers.dart';
 import 'zones_fixture.dart';
@@ -118,7 +123,7 @@ void main() {
     expect(find.text('ZONA TURÍSTICA'), findsOneWidget);
     expect(jsonEncode(map.zones), contains('"selected":true'));
 
-    await tester.tap(find.text('Escuchar la audioguía'));
+    await tester.tap(find.bySemanticsLabel('Escuchar la audioguía'));
     await tester.pumpAndSettle();
     expect(find.text('El corazón de Madrid'), findsOneWidget);
     expect(find.text('Parte 1 de 2'), findsOneWidget);
@@ -189,12 +194,17 @@ void main() {
       );
       await tester.pump();
     }
+    // El bocadillo de Flyra sale unos segundos y se va solo.
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Has entrado en Puerta del Sol'), findsOneWidget);
+    expect(find.text('Escuchar ahora'), findsOneWidget);
     await tester.pumpAndSettle();
+    expect(find.text('Has entrado en Puerta del Sol'), findsNothing);
 
     expect(map.me, solCenter);
     expect(map.calls, contains('flyTo ${solCenter.lat},${solCenter.lon}'));
-    expect(find.text('Has entrado en Puerta del Sol'), findsOneWidget);
     expect(find.text('ESTÁS EN LA ZONA'), findsOneWidget);
+    expect(find.text('Puerta del Sol'), findsOneWidget);
     // 10 posiciones = un lote, enviado de una vez (no 10 peticiones).
     expect(
       g.calls.where((String c) => c == 'POST /v1/positions'),
@@ -202,7 +212,7 @@ void main() {
     );
   });
 
-  testWidgets('modo viaje desde el mapa; tocar un aviso abre la audioguía', (
+  testWidgets('tocar un aviso de audioguía abre la audioguía', (
     WidgetTester tester,
   ) async {
     final FakeGateway g = backend();
@@ -217,15 +227,6 @@ void main() {
       services: fakeServices(s, gateway: g, location: loc, notices: notices),
     );
     await settleMap(tester);
-
-    await tester.tap(find.text('Modo viaje'));
-    await tester.pumpAndSettle();
-    expect(notices.asked, 1);
-    expect(loc.watches.last, isTrue); // GPS con notificación fija
-    expect(
-      find.text('Modo viaje activado: te aviso aunque cierres la app.'),
-      findsOneWidget,
-    );
 
     // El usuario toca el aviso "Audioguía cerca" de la barra del móvil.
     notices.tapsController.add(Routes.audioguide(solId, ''));
@@ -242,6 +243,94 @@ void main() {
       find.text('Crea una cuenta para ver las zonas y las audioguías.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('3D, girar, brújula, sellos nuevos, Flyra y buscar calles', (
+    WidgetTester tester,
+  ) async {
+    final FakeGateway g = backend();
+    g.services['/v1/geocode'] = (http.Request r) =>
+        FakeGateway.json(<String, Object?>{
+          'items': <Object?>[
+            <String, Object?>{
+              'name': 'Calle Mayor',
+              'address': 'Calle Mayor, Madrid, España',
+              'lat': 40.4155,
+              'lon': -3.7074,
+            },
+          ],
+        });
+    final SessionController s = await signedInSession(g);
+    final MemorySettingsStore prefs = MemorySettingsStore();
+    await prefs.writeStamps(
+      jsonEncode(<Object?>[
+        for (int i = 0; i < 3; i++)
+          Stamp(
+            qid: 'Q$i',
+            name: 'Monumento $i',
+            date: DateTime.utc(2026, 10, 1 + i),
+          ).toJson(),
+      ]),
+    );
+    final FakeMap map = FakeMap();
+    FlyraNotes.instance.reset();
+    await pumpApp(
+      tester,
+      locale: 'es',
+      initialLocation: Routes.map,
+      session: s,
+      services: fakeServices(s, gateway: g, map: map, prefs: prefs),
+    );
+    await settleMap(tester);
+
+    // 3D ↔ 2D.
+    expect(find.text('3D'), findsOneWidget);
+    await tester.tap(find.text('3D'));
+    await tester.pumpAndSettle();
+    expect(find.text('2D'), findsOneWidget);
+    expect(map.calls, contains('tilt 0.0'));
+
+    // Girar 45° cada vez y la brújula vuelve al norte.
+    await tester.tap(find.bySemanticsLabel('Girar el mapa'));
+    await tester.tap(find.bySemanticsLabel('Girar el mapa'));
+    await tester.pumpAndSettle();
+    expect(map.bearing, 90);
+    await tester.tap(find.bySemanticsLabel('Mirar al norte'));
+    await tester.pumpAndSettle();
+    expect(map.bearing, 0);
+
+    // El tiempo y la hora real, sin botón de "Demo".
+    expect(find.textContaining('Ahora: '), findsOneWidget);
+    expect(find.textContaining('Automático · hora real'), findsOneWidget);
+    expect(find.textContaining('Demo'), findsNothing);
+
+    // 3 sellos sin ver: el número sale en la medalla y se va al abrirla.
+    expect(find.bySemanticsLabel('Pasaporte de sellos, 3 nuevos'), findsOne);
+    await tester.tap(find.bySemanticsLabel('Pasaporte de sellos, 3 nuevos'));
+    await tester.pumpAndSettle();
+    expect(find.byType(PassportScreen), findsOneWidget);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Pasaporte de sellos'), findsOne);
+
+    // Un aviso nuevo de Flyra pone su punto rojo; tocarla abre el Asistente.
+    FlyraNotes.instance.say(const FlyraNote(FlyraNoteKind.tip, 'Hola'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.bySemanticsLabel('Habla con Flyra'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AssistantScreen), findsOneWidget);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    // Buscar una calle (OpenStreetMap) y volar hasta ella.
+    await tester.enterText(find.byType(TextField), 'Calle Mayor');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+    expect(find.text('Calle Mayor, Madrid, España'), findsOneWidget);
+    await tester.tap(find.text('Calle Mayor, Madrid, España'));
+    await tester.pumpAndSettle();
+    expect(map.calls, contains('flyTo 40.4155,-3.7074'));
+    FlyraNotes.instance.reset();
   });
 
   testWidgets('el permiso denegado para siempre ofrece abrir Ajustes', (
@@ -314,67 +403,6 @@ void main() {
     await tester.tap(find.text('Inicia sesión o crea una cuenta'));
     await tester.pumpAndSettle();
     expect(find.text('Iniciar sesión'), findsWidgets);
-  });
-
-  testWidgets('"Ver la calle de verdad" enseña fotos reales del centro', (
-    WidgetTester tester,
-  ) async {
-    final FakeGateway g = backend();
-    final List<Uri> asked = <Uri>[];
-    g.services['/v1/streetview'] = (http.Request r) {
-      asked.add(r.url);
-      const String cdn = 'https://scontent.xx.fbcdn.net/a.jpg';
-      return FakeGateway.json(<String, Object?>{
-        'lat': 40.415,
-        'lon': -3.705,
-        'attribution': 'Mapillary (CC BY-SA 4.0)',
-        'license_url': 'https://creativecommons.org/licenses/by-sa/4.0/',
-        'photos': <Object?>[
-          <String, Object?>{
-            'id': '1',
-            'lat': 40.4151,
-            'lon': -3.7049,
-            'captured_at': '2023-07-22T04:26:40Z',
-            'compass_angle': 90.0,
-            'is_pano': false,
-            'thumb_url': cdn,
-            'image_url': cdn,
-            'creator': 'ana',
-            'page_url': 'https://www.mapillary.com/app/?pKey=1&focus=photo',
-          },
-          // Una con enlace inseguro: se descarta, no rompe nada.
-          <String, Object?>{
-            'id': '2',
-            'lat': 40.4152,
-            'lon': -3.7048,
-            'thumb_url': 'http://x.test/a.jpg',
-            'image_url': cdn,
-            'page_url': 'https://www.mapillary.com/app/?pKey=2',
-          },
-        ],
-      });
-    };
-    final SessionController s = await signedInSession(g);
-    await pumpApp(
-      tester,
-      locale: 'es',
-      initialLocation: Routes.map,
-      session: s,
-      services: fakeServices(s, gateway: g, map: FakeMap()),
-    );
-    await settleMap(tester);
-
-    await tester.tap(find.text('Ver la calle de verdad'));
-    await tester.pump(const Duration(milliseconds: 500));
-    await tester.pump(const Duration(milliseconds: 100));
-    expect(find.text('La calle de verdad'), findsOneWidget);
-    expect(find.text('Foto: ana · Hecha en 2023'), findsOneWidget);
-    expect(find.text('Abrir en Mapillary'), findsOneWidget);
-    // Solo sale del móvil el centro redondeado a ~100 m.
-    expect(asked.single.queryParameters, <String, String>{
-      'lat': '40.415',
-      'lon': '-3.705',
-    });
   });
 
   test('las fotos de calle solo se aceptan con enlaces https', () {

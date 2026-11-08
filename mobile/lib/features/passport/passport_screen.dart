@@ -12,6 +12,7 @@ import 'package:intl/intl.dart';
 import '../../auth/session.dart';
 import '../../core/router.dart';
 import '../../core/services.dart';
+import '../../core/settings.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../camera/stamps.dart';
@@ -37,6 +38,13 @@ class _PassportScreenState extends State<PassportScreen> {
   void initState() {
     super.initState();
     unawaited(_load());
+    // Ya has visto tus sellos: el número de "nuevos" del Mapa vuelve a 0.
+    unawaited(
+      _services.prefs.writeData(
+        LocalData.passportSeen,
+        DateTime.now().toUtc().toIso8601String(),
+      ),
+    );
   }
 
   /// Los aeropuertos (para saber el país) vienen dentro de la app. Mientras

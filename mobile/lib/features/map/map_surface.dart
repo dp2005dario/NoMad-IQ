@@ -29,6 +29,9 @@ abstract interface class MapSurfaceController {
   /// Inclina la cámara: 0 = vista desde arriba (2D), 60 = en perspectiva (3D).
   Future<void> setTilt(double degrees);
 
+  /// Gira el mapa hasta [degrees] (0 = el norte arriba).
+  Future<void> setBearing(double degrees);
+
   /// El rectángulo que se ve ahora mismo.
   Future<GeoBox?> visibleBox();
 
@@ -46,6 +49,7 @@ class MapSurfaceSpec {
     required this.onReady,
     required this.onIdle,
     required this.onTap,
+    this.onBearing,
   });
 
   /// El estilo (ver map_style.dart). Si cambia, el mapa se redibuja entero
@@ -61,6 +65,10 @@ class MapSurfaceSpec {
   final VoidCallback onIdle;
 
   /// Toque en el mapa, en coordenadas.
+  /// Cada vez que el mapa gira (para la brújula): hacia dónde mira, en
+  /// grados (0 = norte).
+  final void Function(double bearing)? onBearing;
+
   final void Function(GeoPoint point) onTap;
 }
 
@@ -119,10 +127,13 @@ class _MapLibreSurfaceState extends State<MapLibreSurface> {
         if (mounted) spec.onReady(_MapLibreController(c));
       },
       onCameraIdle: spec.onIdle,
+      trackCameraPosition: spec.onBearing != null,
+      onCameraMove: (CameraPosition p) => spec.onBearing?.call(p.bearing),
       onMapClick: (_, LatLng at) =>
           spec.onTap(GeoPoint(at.latitude, at.longitude)),
       // La brújula aparece al girar el mapa; al tocarla vuelve al norte.
-      compassEnabled: true,
+      // En el Mapa la brújula es la de la maqueta (la dibuja la pantalla).
+      compassEnabled: spec.onBearing == null,
       // Los créditos de OpenStreetMap son obligatorios (licencia ODbL):
       // el botón (i) los muestra.
       attributionButtonPosition: AttributionButtonPosition.bottomLeft,
@@ -193,6 +204,14 @@ class _MapLibreController implements MapSurfaceController {
     await _c.animateCamera(
       CameraUpdate.tiltTo(degrees),
       duration: const Duration(milliseconds: 600),
+    );
+  }
+
+  @override
+  Future<void> setBearing(double degrees) async {
+    await _c.animateCamera(
+      CameraUpdate.bearingTo(degrees),
+      duration: const Duration(milliseconds: 900),
     );
   }
 

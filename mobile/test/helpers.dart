@@ -416,6 +416,15 @@ class FakeMap implements MapSurfaceController {
   @override
   Future<void> showMe(GeoPoint? point) async => me = point;
 
+  /// Hacia dónde mira el mapa (lo último que pidió la pantalla).
+  double bearing = 0;
+
+  @override
+  Future<void> setBearing(double degrees) async {
+    bearing = degrees;
+    calls.add('bearing:${degrees.round()}');
+  }
+
   Map<String, Object?>? pins;
 
   @override
