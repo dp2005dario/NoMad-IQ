@@ -120,6 +120,7 @@ flutter:
     - assets/vault/boveda.html
     - assets/flights/vuelos.html
     - assets/group/grupo.html
+    - assets/cards/cromos.html
     # La Bienvenida: vídeo de fondo (720x1280, ~1 MB), logo y la G de Google.
     - assets/video/bienvenida.mp4
     - assets/brand/eclipta_spark.png
