@@ -5,10 +5,9 @@
 //      Solo tu agente las ve; el servidor las borra al terminar.
 //   2. Negociando: los agentes de cada uno discuten (unos minutos). La
 //      pantalla pregunta cada pocos segundos cómo va.
-//   3. Resultado: la opción elegida, por qué, y lo que dijo cada agente.
-//
-// La explicación del resultado se escribe AQUÍ con los textos traducidos (no
-// se usa la frase del servidor), así se lee en el idioma de cada persona.
+//   3. Con destino: la maqueta "Viaje en grupo" tal cual, con vuestros
+//      datos (ver group_hub.dart y group_page.dart).
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -101,6 +100,17 @@ class _TripScreenState extends State<TripScreen> {
     final AppLocalizations t = AppLocalizations.of(context);
     final GroupTrip? trip = _trip;
     final ApiError? error = _error;
+    // Con destino: la maqueta "Viaje en grupo" tal cual, a pantalla entera
+    // (trae su propia cabecera con el destino y los atajos).
+    if (trip != null && trip.status == TripStatus.concluded) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0B1217),
+        body: SafeArea(
+          bottom: false,
+          child: TripHub(trip: trip, onTrip: _show),
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(trip?.title ?? t.groupTitle),
@@ -154,44 +164,33 @@ class _TripScreenState extends State<TripScreen> {
     );
   }
 
-  List<Widget> _body(
-    AppLocalizations t,
-    GroupTrip trip,
-  ) => switch (trip.status) {
-    TripStatus.collecting => <Widget>[
-      if (trip.inviteCode != null) ...<Widget>[
-        _InviteCard(code: trip.inviteCode!),
-        const SizedBox(height: 16),
-      ],
-      _Options(trip: trip),
-      const SizedBox(height: 20),
-      _PreferencesForm(trip: trip, onSaved: _show),
-      const SizedBox(height: 20),
-      _StartBox(trip: trip, onStarted: _show),
-    ],
-    TripStatus.queued || TripStatus.running => <Widget>[
-      const _Working(),
-      const SizedBox(height: 20),
-      _Options(trip: trip),
-    ],
-    TripStatus.concluded => <Widget>[
-      if (trip.result != null) _ResultCard(trip: trip, result: trip.result!),
-      const SizedBox(height: 16),
-      // Con el destino elegido: atajos, gustos, dónde dormir y qué os
-      // apetece (maqueta 7). Ver group_hub.dart.
-      TripHub(trip: trip, onTrip: _show),
-      const SizedBox(height: 20),
-      if (trip.result != null) _AgentsSaid(trip: trip, result: trip.result!),
-      const SizedBox(height: 20),
-      _Options(trip: trip),
-    ],
-    TripStatus.expired => <Widget>[
-      Text(
-        t.groupExpiredText,
-        style: const TextStyle(color: NomadColors.textMuted),
-      ),
-    ],
-  };
+  List<Widget> _body(AppLocalizations t, GroupTrip trip) =>
+      switch (trip.status) {
+        TripStatus.collecting => <Widget>[
+          if (trip.inviteCode != null) ...<Widget>[
+            _InviteCard(code: trip.inviteCode!),
+            const SizedBox(height: 16),
+          ],
+          _Options(trip: trip),
+          const SizedBox(height: 20),
+          _PreferencesForm(trip: trip, onSaved: _show),
+          const SizedBox(height: 20),
+          _StartBox(trip: trip, onStarted: _show),
+        ],
+        TripStatus.queued || TripStatus.running => <Widget>[
+          const _Working(),
+          const SizedBox(height: 20),
+          _Options(trip: trip),
+        ],
+        // Con destino se enseña la maqueta (arriba, en build).
+        TripStatus.concluded => const <Widget>[],
+        TripStatus.expired => <Widget>[
+          Text(
+            t.groupExpiredText,
+            style: const TextStyle(color: NomadColors.textMuted),
+          ),
+        ],
+      };
 }
 
 /// Quiénes son, quién está listo y hasta cuándo hay plazo.
@@ -668,147 +667,6 @@ class _Working extends StatelessWidget {
           color: NomadColors.group,
           backgroundColor: Color(0xFF3E3163),
         ),
-      ],
-    );
-  }
-}
-
-/// El resultado, como en la maqueta: "El agente ha encontrado un acuerdo".
-class _ResultCard extends StatelessWidget {
-  const _ResultCard({required this.trip, required this.result});
-
-  final GroupTrip trip;
-  final TripResult result;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final String locale = Localizations.localeOf(context).toLanguageTag();
-    final TripOption? chosen = trip.option(result.chosenOptionId);
-    final String title = switch (result.outcome) {
-      TripOutcome.consensus => t.groupResultConsensus,
-      TripOutcome.arbitration => t.groupResultArbitration,
-      TripOutcome.noFeasibleOption => t.groupResultNone,
-    };
-    // Por qué, escrito con reglas (igual que en el servidor, pero traducido).
-    final String why = switch (result.outcome) {
-      TripOutcome.noFeasibleOption => t.groupResultNoneTip,
-      TripOutcome.consensus when result.rounds == 0 => t.groupResultOnlyOne,
-      TripOutcome.consensus => t.groupResultRound(result.rounds),
-      TripOutcome.arbitration => t.groupResultArbiter(result.rounds),
-    };
-    return _FlyraCard(
-      title: title,
-      children: <Widget>[
-        if (chosen != null) ...<Widget>[
-          Text(chosen.label, style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 2),
-          Text(
-            t.groupPerPerson(
-              formatMoney(
-                chosen.priceMinor,
-                trip.currency,
-                locale,
-                compact: true,
-              ),
-            ),
-            style: const TextStyle(
-              color: NomadColors.money,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 10),
-        ],
-        Text(
-          why,
-          style: const TextStyle(color: Color(0xFFDCD3F7), height: 1.4),
-        ),
-        if (result.excludedOverBudget > 0) ...<Widget>[
-          const SizedBox(height: 6),
-          Text(
-            t.groupResultExcluded(result.excludedOverBudget),
-            style: const TextStyle(color: Color(0xFFB9AEDB), fontSize: 13),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-/// Lo que dijo cada agente y cómo de contenta queda cada persona.
-class _AgentsSaid extends StatelessWidget {
-  const _AgentsSaid({required this.trip, required this.result});
-
-  final GroupTrip trip;
-  final TripResult result;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    if (result.members.isEmpty) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Text(
-          t.groupResultAgents,
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 8),
-        for (final MemberOutcome m in result.members) ...<Widget>[
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: NomadColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: NomadColors.outline),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        m.alias == trip.myAlias
-                            ? t.groupYourAgent
-                            : t.groupAgentOf(trip.nameOf(m.alias)),
-                        style: const TextStyle(fontWeight: FontWeight.w800),
-                      ),
-                    ),
-                    if (m.chosenRank != null)
-                      Text(
-                        m.chosenRank == 1
-                            ? t.groupRankFavourite
-                            : t.groupRankN(m.chosenRank!),
-                        style: TextStyle(
-                          color: m.chosenRank == 1
-                              ? NomadColors.mint
-                              : NomadColors.textMuted,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
-                        ),
-                      ),
-                  ],
-                ),
-                if (m.argument.isNotEmpty) ...<Widget>[
-                  const SizedBox(height: 4),
-                  Text('“${m.argument}”'),
-                ],
-                if (!m.byAi) ...<Widget>[
-                  const SizedBox(height: 4),
-                  Text(
-                    t.groupByRules,
-                    style: const TextStyle(
-                      color: NomadColors.textMuted,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-        ],
       ],
     );
   }
