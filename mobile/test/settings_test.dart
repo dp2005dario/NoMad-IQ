@@ -376,7 +376,10 @@ void main() {
       // "Letra grande y modo fácil": Inicio pasa al Modo fácil.
       await send(tester, spy, 'easy');
       await tester.pumpAndSettle();
-      expect(find.text('Modo normal'), findsWidgets);
+      await spy.wait(
+        tester,
+        () => spy.pages.any((String h) => h.contains('ECLIPTA · Modo fácil')),
+      );
     });
 
     testWidgets(

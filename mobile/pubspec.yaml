@@ -130,6 +130,7 @@ flutter:
     - assets/trip/antes.html
     - assets/push/avisos.html
     - assets/drive/coche.html
+    - assets/easy/facil.html
     - assets/audioguide/audioguia.html
     - assets/settings/ajustes.html
     - assets/inicio/inicio.html

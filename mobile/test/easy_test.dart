@@ -1,5 +1,5 @@
 // Modo fácil: Inicio con letras grandes, el vuelo, a qué hora salir de casa
-// y los botones grandes (hotel, familia, papeles, Flyra y emergencia).
+// y los botones grandes (hotel, familia, ayuda, papeles y Flyra).
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -7,9 +7,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/easy/easy_home_screen.dart';
 import 'package:eclipta/features/easy/easy_mode.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
+import 'voice_test.dart' as v;
 
 void main() {
   group('cuentas', () {
@@ -56,7 +59,7 @@ void main() {
     });
   });
 
-  testWidgets('Inicio en Modo fácil: vuelo, hotel, familia y volver', (
+  testWidgets('Inicio en Modo fácil: vuelo, hotel, familia, Flyra y volver', (
     WidgetTester tester,
   ) async {
     final FakeGateway g = FakeGateway();
@@ -80,6 +83,10 @@ void main() {
       ]),
     );
     final List<Uri> opened = <Uri>[];
+    final List<String> shared = <String>[];
+    final m.PageSpy spy = m.PageSpy();
+    final v.FakeMic mic = v.FakeMic()..heard.add('llévame al hotel');
+    final v.FakeSpeaker speaker = v.FakeSpeaker();
     tester.view.physicalSize = const Size(1200, 4000);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -92,11 +99,19 @@ void main() {
         session,
         gateway: g,
         prefs: store,
+        webScene: spy.build,
+        speechInput: mic,
+        speaker: speaker,
+        share: (List<String> files, {String? text}) async => shared.add(text!),
         openLink: (Uri u) async {
           opened.add(u);
           return true;
         },
       ),
+    );
+    await spy.wait(
+      tester,
+      () => spy.pages.any((String h) => h.contains('ECLIPTA · Modo fácil')),
     );
     // Los aeropuertos de verdad (assets/geo) tardan un poco en cargarse.
     // (Son tres archivos seguidos: se deja avanzar varias veces.)
@@ -106,61 +121,59 @@ void main() {
       );
       await tester.pumpAndSettle();
     }
-    expect(find.text('Madrid → Lisbon'), findsOneWidget);
-    expect(find.textContaining('B12'), findsOneWidget);
-    expect(find.textContaining('sal de casa a las 7:30'), findsOneWidget);
+    Map<String, Object?> data() =>
+        spy.data(EasyHomeScreen.lastBridge!, title: 'ECLIPTA · Modo fácil');
+    final Map<String, Object?> flight =
+        data()['flight']! as Map<String, Object?>;
+    expect(flight['route'], 'Madrid → Lisbon');
+    expect(flight['time'], '10:30');
+    expect(flight['gate'], 'B12');
+    expect(flight['leave'], ' · sal de casa a las 7:30');
+    void send(String msg) => spy.to('ECLIPTA · Modo fácil')(msg);
 
-    // El hotel: ir andando abre la ruta a pie con la dirección.
-    await tester.tap(find.text('Llévame al hotel'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('🚶 Ir andando · te guío'));
-    await tester.pumpAndSettle();
+    // El hotel: ir andando abre la ruta a pie con la dirección; para el
+    // taxista, la frase en portugués (el idioma de Lisboa).
+    send('walk');
     expect(opened.last.queryParameters['destination'], contains('Augusta'));
     expect(opened.last.queryParameters['travelmode'], 'walking');
-    // Para el taxista: la frase en portugués (el idioma de Lisboa).
-    await tester.tap(find.text('🚕 Enseñar al taxista'));
-    await tester.pumpAndSettle();
-    expect(find.text('POR FAVOR, LLÉVEME A:'), findsOneWidget);
     expect(
-      find.text('Por favor, leve-me a este hotel. Obrigado.'),
-      findsOneWidget,
+      (data()['hotel']! as Map<String, Object?>)['phrase'],
+      'Por favor, leve-me a este hotel. Obrigado.',
     );
-    await tester.tap(find.text('Volver'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Cerrar'));
-    await tester.pumpAndSettle();
 
     // La familia: tocar la persona llama; el botón verde abre WhatsApp.
-    await tester.tap(find.text('Ver a la familia'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Noelia'));
-    await tester.pumpAndSettle();
+    expect(
+      ((data()['family']! as List<Object?>).single!
+          as Map<String, Object?>)['name'],
+      'Noelia',
+    );
+    send('call:0');
     expect(opened.last.scheme, 'tel');
-    await tester.tap(find.text('Ver a la familia'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('WhatsApp'));
-    await tester.pumpAndSettle();
+    send('video:0');
     expect(opened.last.toString(), 'https://wa.me/34600112233');
 
-    // La ayuda del aeropuerto: se pide, se guarda y cambia el cuadrado.
-    await tester.tap(find.text('Ayuda en el aeropuerto'));
+    // La ayuda del aeropuerto: se pide, se guarda y se manda el mensaje.
+    send('help:1');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Que me acompañen andando'));
-    await tester.tap(find.text('Pedirla ahora'));
-    await tester.pumpAndSettle();
-    expect(
-      find.textContaining('Hecho: que me acompañen andando'),
-      findsOneWidget,
-    );
     expect(loadEasyTrip(store).help, 1);
-    await tester.tap(find.byTooltip('Cerrar'));
+    expect(data()['help'], 1);
+    expect(data()['helpDone'], startsWith('Hecho: que me acompañen andando'));
+    send('send');
+    expect(shared.single, contains('que me acompañen andando'));
+
+    // Flyra escucha y contesta con tu viaje; su botón abre la ruta.
+    send('listen');
     await tester.pumpAndSettle();
-    expect(find.text('✓ Ayuda pedida'), findsOneWidget);
+    expect(data()['flyN'], 1);
+    expect(data()['flyQ'], 'llévame al hotel');
+    expect(data()['flyAct'], 'Llévame');
+    expect(speaker.said.single, contains('Rua Augusta'));
+    send('act');
+    expect(opened.last.queryParameters['travelmode'], 'transit');
 
     // "Modo normal" vuelve a la Inicio de siempre y se recuerda.
-    await tester.tap(find.text('Modo normal'));
+    send('normal');
     await tester.pumpAndSettle();
-    expect(find.text('Llévame al hotel'), findsNothing);
     expect(store.readData(LocalData.easyMode), isNull);
   });
 
@@ -171,6 +184,7 @@ void main() {
     final SessionController session = await signedInSession(g);
     final MemorySettingsStore store = MemorySettingsStore();
     await store.writeData(LocalData.easyMode, '1');
+    final m.PageSpy spy = m.PageSpy();
     tester.view.physicalSize = const Size(1200, 4000);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -179,14 +193,28 @@ void main() {
       locale: 'es',
       session: session,
       initialLocation: Routes.home,
-      services: fakeServices(session, gateway: g, prefs: store),
+      services: fakeServices(
+        session,
+        gateway: g,
+        prefs: store,
+        webScene: spy.build,
+      ),
     );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Llévame al hotel'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('dirección del hotel'), findsOneWidget);
+    await spy.wait(
+      tester,
+      () => spy.pages.any((String h) => h.contains('ECLIPTA · Modo fácil')),
+    );
+    final Map<String, Object?> d = spy.data(
+      EasyHomeScreen.lastBridge!,
+      title: 'ECLIPTA · Modo fácil',
+    );
+    expect(d['flight'], <String, Object?>{'k': 'TU VUELO'});
+    expect(
+      (d['t']! as Map<String, Object?>)['noHotel'],
+      contains('dirección del hotel'),
+    );
 
-    await tester.tap(find.text('Poner mi viaje'));
+    spy.to('ECLIPTA · Modo fácil')('edit');
     await tester.pumpAndSettle();
     await tester.enterText(
       find.widgetWithText(TextField, 'Dirección del hotel'),
