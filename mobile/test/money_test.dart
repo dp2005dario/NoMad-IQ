@@ -24,6 +24,10 @@ import 'package:eclipta/features/money/rooms_view.dart';
 import 'package:eclipta/features/push/notices.dart';
 import 'package:eclipta/features/vault/vault.dart';
 
+import 'package:eclipta/features/route/web_scene.dart';
+import 'package:eclipta/features/route/flight3d.dart' show WebSceneBuilder;
+import 'package:eclipta/features/money/kitty_view.dart';
+
 import 'helpers.dart';
 
 const String groupId = '0b6a7c1e-1111-4222-8333-444455556666';
@@ -248,6 +252,7 @@ Future<MoneyBackend> pumpMoney(
   Future<bool> Function(Uri)? openLink,
   ShareFiles? share,
   FakeNotices? notices,
+  WebSceneBuilder? webScene,
 }) async {
   tester.view.physicalSize = const Size(1200, 9000);
   tester.view.devicePixelRatio = 3;
@@ -272,9 +277,50 @@ Future<MoneyBackend> pumpMoney(
       openLink: openLink,
       share: share,
       notices: notices,
+      webScene: webScene,
     ),
   );
   return b;
+}
+
+/// La página de una maqueta que la app abre (sin WebView en los tests).
+class PageSpy {
+  final List<String> pages = <String>[];
+  void Function(String message)? send;
+
+  Widget build(String html, void Function(String message) onMessage) {
+    pages.add(html);
+    send = onMessage;
+    return const SizedBox.expand();
+  }
+
+  /// Espera (dejando correr las llamadas de verdad) hasta que [done].
+  Future<void> wait(WidgetTester tester, bool Function() done) async {
+    for (int i = 0; i < 100 && !done(); i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    expect(done(), isTrue);
+  }
+
+  /// Lo último que sabe la página: lo de la carga más lo que llegó después.
+  Map<String, Object?> data(WebSceneBridge bridge) {
+    expect(pages.toSet(), hasLength(1));
+    final String html = pages.first;
+    final int at = html.indexOf('window.ECL=') + 'window.ECL='.length;
+    final Map<String, Object?> d = jsonDecode(
+      html.substring(at, html.indexOf(';</script>', at)),
+    ) as Map<String, Object?>;
+    for (final String js in bridge.sent) {
+      final int a = js.indexOf('ECLin(') + 'ECLin('.length;
+      d.addAll(
+        jsonDecode(js.substring(a, js.length - 1)) as Map<String, Object?>,
+      );
+    }
+    return d;
+  }
 }
 
 void main() {
@@ -706,55 +752,84 @@ void main() {
   });
 
   group('bote común y modo pareja', () {
-    testWidgets('poner dinero y pedir más a todos', (
+    testWidgets('poner dinero, gastar del bote y pedir más a todos', (
       WidgetTester tester,
     ) async {
       final MoneyBackend b = MoneyBackend()..current = kittyGroupJson();
+      final PageSpy page = PageSpy();
       await pumpMoney(
         tester,
         backend: b,
         initialLocation: Routes.money(tab: MoneyTab.kitty),
+        webScene: page.build,
       );
-      expect(find.text('Hecho'), findsNWidgets(2));
-      await tester.tap(find.text('Poner dinero'));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).last, '20');
-      await tester.tap(find.widgetWithText(FilledButton, 'ACEPTAR'));
-      await tester.pumpAndSettle();
+      await page.wait(tester, () => page.pages.isNotEmpty);
+      Map<String, Object?> pot() =>
+          page.data(KittyView.lastBridge!)['pot']! as Map<String, Object?>;
+      await page.wait(
+        tester,
+        () => page.data(KittyView.lastBridge!)['pot'] != null,
+      );
+      // La maqueta con el bote de verdad: 30 € cada uno, 50 € dentro.
+      expect(pot()['head'], 'BOTE MADRID · 2 PERSONAS');
+      expect(pot()['ask'], 30);
+      expect(pot()['goal'], 60);
+      expect(
+        (pot()['people']! as List<Object?>).map(
+          (Object? p) => (p! as Map<String, Object?>)['put'],
+        ),
+        <int>[30, 30],
+      );
+      // "Pedir 20 € más a cada uno".
+      page.send!('more');
+      await page.wait(tester, () => b.kittyAsks.isNotEmpty);
+      expect(b.kittyAsks.single, <String, Object?>{'ask_minor': 5000});
+      // "Poner mi parte": se apunta lo enviado a la hucha.
+      page.send!('put:20');
+      await page.wait(tester, () => b.payments.isNotEmpty);
       expect(b.payments.single, <String, Object?>{
         'to_seat': 0,
         'amount_minor': 2000,
       });
-      await tester.tap(find.textContaining('Cada uno:'));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).last, '40');
-      await tester.tap(find.widgetWithText(FilledButton, 'ACEPTAR'));
-      await tester.pumpAndSettle();
-      expect(b.kittyAsks.single, <String, Object?>{'ask_minor': 4000});
+      // "Gastar del bote" a mano.
+      page.send!(
+        'spend:0:${base64Url.encode(utf8.encode(jsonEncode(<String, Object?>{'n': 'Tuk-tuk', 'a': 12, 'c': 2}))).replaceAll('=', '')}',
+      );
+      await page.wait(tester, () => b.expenses.isNotEmpty);
+      expect(b.expenses.single['title'], 'Tuk-tuk');
+      expect(b.expenses.single['amount_minor'], 1200);
+      expect(b.expenses.single['payer_seat'], 0);
     });
 
-    testWidgets('pareja: repartir según ingresos guarda 60/40', (
+    testWidgets('pareja: repartir según sueldo guarda 60/40', (
       WidgetTester tester,
     ) async {
       final MoneyBackend b = MoneyBackend()..current = groupJson();
+      final PageSpy page = PageSpy();
       await pumpMoney(
         tester,
         backend: b,
         initialLocation: Routes.money(tab: MoneyTab.kitty),
+        webScene: page.build,
       );
-      expect(find.text('A medias'), findsOneWidget);
-      await tester.tap(find.text('Según ingresos'));
-      await tester.pumpAndSettle();
-      expect(find.text('Tú 60 % · 40 %'), findsOneWidget);
-      await tester.tap(find.widgetWithText(FilledButton, 'ACEPTAR'));
-      await tester.pumpAndSettle();
+      await page.wait(
+        tester,
+        () =>
+            page.pages.isNotEmpty &&
+            page.data(KittyView.lastBridge!)['couple'] != null,
+      );
+      final Map<String, Object?> couple =
+          page.data(KittyView.lastBridge!)['couple']! as Map<String, Object?>;
+      expect(couple['place'], 'Madrid');
+      expect((couple['ot']! as Map<String, Object?>)['name'], 'Álex');
+      page.send!('split:1');
+      await page.wait(tester, () => b.weights.isNotEmpty);
       expect(b.weights.single, <String, Object?>{
         'weights': <Object?>[
           <String, Object?>{'seat': 1, 'weight': 60},
           <String, Object?>{'seat': 2, 'weight': 40},
         ],
       });
-      expect(find.text('Reparto guardado'), findsOneWidget);
     });
 
     test('un gasto por porcentaje manda los pesos', () {
