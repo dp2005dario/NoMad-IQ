@@ -11046,5 +11046,17 @@
   "hubYouPin": "YOU",
   "@hubYouPin": {
     "description": "Map marker for the user's position, very short, uppercase"
+  },
+  "appLockTitle": "ECLIPTA is locked",
+  "@appLockTitle": {
+    "description": "Screen shown when the app asks for fingerprint/face to open (Settings > sign in with fingerprint)"
+  },
+  "appLockButton": "Unlock",
+  "@appLockButton": {
+    "description": "Button on the lock screen that asks for fingerprint/face again"
+  },
+  "appLockReason": "Open ECLIPTA",
+  "@appLockReason": {
+    "description": "Text inside the system fingerprint dialog when opening the app"
   }
 }

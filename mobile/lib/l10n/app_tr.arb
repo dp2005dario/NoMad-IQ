@@ -2294,5 +2294,8 @@
   "hubExample": "ÖRNEK",
   "hubChatSample": "bu akşam canım fado ve balık yemeği istiyor",
   "craveGo": "Git",
-  "hubYouPin": "SEN"
+  "hubYouPin": "SEN",
+  "appLockTitle": "ECLIPTA kilitli",
+  "appLockButton": "Kilidi aç",
+  "appLockReason": "ECLIPTA'yı aç"
 }

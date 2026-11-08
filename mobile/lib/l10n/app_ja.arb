@@ -2294,5 +2294,8 @@
   "hubExample": "例",
   "hubChatSample": "今夜はファドを聴いて魚を食べたい",
   "craveGo": "行く",
-  "hubYouPin": "あなた"
+  "hubYouPin": "あなた",
+  "appLockTitle": "ECLIPTAはロックされています",
+  "appLockButton": "ロック解除",
+  "appLockReason": "ECLIPTAを開く"
 }

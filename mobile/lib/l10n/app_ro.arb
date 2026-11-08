@@ -2294,5 +2294,8 @@
   "hubExample": "EXEMPLU",
   "hubChatSample": "diseară aș vrea niște fado și pește la cină",
   "craveGo": "Mergi",
-  "hubYouPin": "TU"
+  "hubYouPin": "TU",
+  "appLockTitle": "ECLIPTA este blocată",
+  "appLockButton": "Deblochează",
+  "appLockReason": "Deschide ECLIPTA"
 }

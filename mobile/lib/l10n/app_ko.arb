@@ -2294,5 +2294,8 @@
   "hubExample": "예시",
   "hubChatSample": "오늘 밤엔 파두 듣고 생선 먹고 싶어",
   "craveGo": "가기",
-  "hubYouPin": "나"
+  "hubYouPin": "나",
+  "appLockTitle": "ECLIPTA가 잠겨 있어요",
+  "appLockButton": "잠금 해제",
+  "appLockReason": "ECLIPTA 열기"
 }

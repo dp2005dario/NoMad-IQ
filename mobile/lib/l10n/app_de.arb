@@ -2294,5 +2294,8 @@
   "hubExample": "BEISPIEL",
   "hubChatSample": "heute Abend hätte ich Lust auf Fado und Fisch zum Essen",
   "craveGo": "Hin",
-  "hubYouPin": "DU"
+  "hubYouPin": "DU",
+  "appLockTitle": "ECLIPTA ist gesperrt",
+  "appLockButton": "Entsperren",
+  "appLockReason": "ECLIPTA öffnen"
 }

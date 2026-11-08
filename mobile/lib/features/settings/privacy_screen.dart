@@ -1,6 +1,9 @@
 // Privacidad (maqueta "Privacidad"): qué avisos quieres, la ubicación en
-// segundo plano, qué sabemos de ti y "Olvidar este teléfono".
+// segundo plano, qué sabemos de ti, cambiar la contraseña y "Olvidar este
+// teléfono".
 import 'package:flutter/material.dart';
+
+import '../../auth/session.dart';
 
 import '../../core/services.dart';
 import '../../core/settings.dart';
@@ -10,6 +13,7 @@ import '../map/location_tracker.dart';
 import '../push/notice_prefs.dart';
 import '../push/push_notice.dart';
 import '../push/push_registrar.dart';
+import 'password_change.dart';
 
 class PrivacyScreen extends StatefulWidget {
   const PrivacyScreen({super.key});
@@ -187,6 +191,19 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               ),
             ),
           ),
+          // Tu contraseña (solo con cuenta).
+          if (SessionScope.of(context).status ==
+              SessionStatus.signedIn) ...<Widget>[
+            const SizedBox(height: 16),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.password_rounded),
+                title: Text(t.passwordChangeTitle),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => changePasswordFlow(context),
+              ),
+            ),
+          ],
           if (push != null) ...<Widget>[
             const SizedBox(height: 16),
             Card(

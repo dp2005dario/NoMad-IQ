@@ -2294,5 +2294,8 @@
   "hubExample": "ПРИМЕР",
   "hubChatSample": "сегодня хочется фаду и рыбу на ужин",
   "craveGo": "Идти",
-  "hubYouPin": "ВЫ"
+  "hubYouPin": "ВЫ",
+  "appLockTitle": "ECLIPTA заблокирована",
+  "appLockButton": "Разблокировать",
+  "appLockReason": "Открыть ECLIPTA"
 }

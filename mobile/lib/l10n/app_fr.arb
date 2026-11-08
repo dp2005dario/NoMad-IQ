@@ -2294,5 +2294,8 @@
   "hubExample": "EXEMPLE",
   "hubChatSample": "ce soir j'ai envie de fado et d'un dîner de poisson",
   "craveGo": "Y aller",
-  "hubYouPin": "VOUS"
+  "hubYouPin": "VOUS",
+  "appLockTitle": "ECLIPTA est verrouillée",
+  "appLockButton": "Déverrouiller",
+  "appLockReason": "Ouvrir ECLIPTA"
 }

@@ -67,7 +67,11 @@ class UserAvatar extends StatelessWidget {
   }
 
   Widget _build(ProfilePhotoChoice? mine) {
-    final String? n = name;
+    if (mine != null && mine.initial) {
+      return ClipOval(
+        child: SizedBox.square(dimension: size, child: _initialCircle()),
+      );
+    }
     if (mine != null && !mine.isNone) {
       final int? preset = mine.preset;
       final String? path = mine.filePath;
@@ -77,7 +81,7 @@ class UserAvatar extends StatelessWidget {
               alignment: Alignment.center,
               child: Icon(
                 presetAvatars[preset].icon,
-                color: Colors.white,
+                color: NomadColors.background,
                 size: size * 0.55,
               ),
             )
@@ -94,22 +98,7 @@ class UserAvatar extends StatelessWidget {
       );
     }
     // La inicial (o un icono si no hay nombre) es lo que se ve sin foto.
-    final Widget fallback = Container(
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      color: color,
-      child: (n == null || n.isEmpty)
-          ? Icon(Icons.person_rounded, color: textColor, size: size * 0.55)
-          : Text(
-              n.characters.first.toUpperCase(),
-              style: TextStyle(
-                color: textColor,
-                fontWeight: FontWeight.w800,
-                fontSize: size * 0.4,
-              ),
-            ),
-    );
+    final Widget fallback = _initialCircle();
     final String? url = photoUrl;
     final bool useFake =
         debugImageFactory != null && url != null && url.isNotEmpty;
@@ -131,6 +120,27 @@ class UserAvatar extends StatelessWidget {
     }
     return ClipOval(
       child: SizedBox.square(dimension: size, child: content),
+    );
+  }
+
+  /// Tu inicial en el círculo de color (o un icono si no hay nombre).
+  Widget _initialCircle() {
+    final String? n = name;
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      color: color,
+      child: (n == null || n.isEmpty)
+          ? Icon(Icons.person_rounded, color: textColor, size: size * 0.55)
+          : Text(
+              n.characters.first.toUpperCase(),
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.w800,
+                fontSize: size * 0.4,
+              ),
+            ),
     );
   }
 }

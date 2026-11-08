@@ -2294,5 +2294,8 @@
   "hubExample": "VÍ DỤ",
   "hubChatSample": "tối nay thèm nghe fado và ăn cá",
   "craveGo": "Đi",
-  "hubYouPin": "BẠN"
+  "hubYouPin": "BẠN",
+  "appLockTitle": "ECLIPTA đang bị khóa",
+  "appLockButton": "Mở khóa",
+  "appLockReason": "Mở ECLIPTA"
 }

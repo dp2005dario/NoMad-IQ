@@ -2294,5 +2294,8 @@
   "hubExample": "उदाहरण",
   "hubChatSample": "आज रात फ़ादो सुनने और मछली खाने का मन है",
   "craveGo": "जाएँ",
-  "hubYouPin": "आप"
+  "hubYouPin": "आप",
+  "appLockTitle": "ECLIPTA लॉक है",
+  "appLockButton": "अनलॉक करें",
+  "appLockReason": "ECLIPTA खोलें"
 }

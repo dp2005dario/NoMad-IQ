@@ -2294,5 +2294,8 @@
   "hubExample": "CONTOH",
   "hubChatSample": "malam ini pengin dengar fado dan makan ikan",
   "craveGo": "Pergi",
-  "hubYouPin": "ANDA"
+  "hubYouPin": "ANDA",
+  "appLockTitle": "ECLIPTA terkunci",
+  "appLockButton": "Buka kunci",
+  "appLockReason": "Buka ECLIPTA"
 }

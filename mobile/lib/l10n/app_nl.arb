@@ -2294,5 +2294,8 @@
   "hubExample": "VOORBEELD",
   "hubChatSample": "vanavond heb ik zin in fado en vis eten",
   "craveGo": "Ga",
-  "hubYouPin": "JIJ"
+  "hubYouPin": "JIJ",
+  "appLockTitle": "ECLIPTA is vergrendeld",
+  "appLockButton": "Ontgrendelen",
+  "appLockReason": "ECLIPTA openen"
 }

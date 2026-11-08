@@ -226,6 +226,10 @@ class Vault extends ChangeNotifier {
   /// Cuándo se cerrará sola (null = cerrada).
   DateTime? get closesAt => _closesAt;
 
+  /// Solo pide la huella (o la cara, o el PIN del móvil), sin abrir nada.
+  /// La usa "Entrar con huella o cara" de Ajustes para abrir la app.
+  Future<UnlockResult> verify(String reason) => _unlocker.unlock(reason);
+
   /// Pide la huella y abre. [reason] es el texto de la ventana del sistema.
   Future<UnlockResult> open(String reason) async {
     if (isOpen) {

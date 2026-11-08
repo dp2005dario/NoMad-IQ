@@ -10,6 +10,7 @@ import 'package:eclipta/features/push/notice_log.dart';
 import 'package:eclipta/features/push/push_notice.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 
 NoticeEntry entry(PushKind kind, String title, int minute, {String? route}) =>
     NoticeEntry(
@@ -68,6 +69,7 @@ void main() {
     final FakeGateway g = FakeGateway();
     final SessionController session = await signedInSession(g);
     final MemorySettingsStore prefs = MemorySettingsStore();
+    final m.PageSpy spy = m.PageSpy();
     final NoticeLog log = NoticeLog(prefs);
     await log.add(entry(PushKind.zoneAudioguide, 'Estás en Sol', 1));
     await log.add(
@@ -82,17 +84,19 @@ void main() {
       locale: 'es',
       session: session,
       initialLocation: Routes.home,
-      services: fakeServices(session, gateway: g, prefs: prefs),
+      services: fakeServices(
+        session,
+        gateway: g,
+        prefs: prefs,
+        webScene: spy.build,
+      ),
     );
-    // Los Avisos están dentro de Ajustes (pestaña de la barra de abajo).
+    // Los Avisos están dentro de Ajustes (pestaña de la barra de abajo):
+    // "Historial de avisos" en su página.
     await tester.tap(find.text('Ajustes'));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('Avisos'),
-      300,
-      scrollable: find.byType(Scrollable).last,
-    );
-    await tester.tap(find.text('Avisos'));
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    spy.send!('notices');
     await tester.pumpAndSettle();
     expect(find.text('Chollo'), findsOneWidget);
     expect(find.text('Estás en Sol'), findsOneWidget);

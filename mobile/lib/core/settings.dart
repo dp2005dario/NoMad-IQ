@@ -103,6 +103,13 @@ enum LocalData {
 
   /// Desde qué banco haces Bizum ("BBVA"), para "Abrir Bizum en tu banco".
   bizumBank,
+
+  /// "1" = Ajustes > "Entrar con huella o cara": la app pide tu huella al
+  /// abrirse (y al volver tras un rato fuera).
+  appLock,
+
+  /// "0" = Ajustes > "Tema oscuro" apagado (por defecto, encendido).
+  darkTheme,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real

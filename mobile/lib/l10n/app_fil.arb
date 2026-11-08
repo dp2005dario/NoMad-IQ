@@ -2294,5 +2294,8 @@
   "hubExample": "HALIMBAWA",
   "hubChatSample": "gusto ko ng fado ngayong gabi at isda sa hapunan",
   "craveGo": "Puntahan",
-  "hubYouPin": "IKAW"
+  "hubYouPin": "IKAW",
+  "appLockTitle": "Naka-lock ang ECLIPTA",
+  "appLockButton": "I-unlock",
+  "appLockReason": "Buksan ang ECLIPTA"
 }

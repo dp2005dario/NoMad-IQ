@@ -2294,5 +2294,8 @@
   "hubExample": "مثال",
   "hubChatSample": "الليلة أرغب في سماع الفادو وعشاء سمك",
   "craveGo": "اذهب",
-  "hubYouPin": "أنت"
+  "hubYouPin": "أنت",
+  "appLockTitle": "ECLIPTA مقفل",
+  "appLockButton": "فتح القفل",
+  "appLockReason": "افتح ECLIPTA"
 }

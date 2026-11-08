@@ -2294,5 +2294,8 @@
   "hubExample": "مثال",
   "hubChatSample": "آج رات فادو سننے اور مچھلی کھانے کا دل ہے",
   "craveGo": "جائیں",
-  "hubYouPin": "آپ"
+  "hubYouPin": "آپ",
+  "appLockTitle": "ECLIPTA مقفل ہے",
+  "appLockButton": "ان لاک کریں",
+  "appLockReason": "ECLIPTA کھولیں"
 }
