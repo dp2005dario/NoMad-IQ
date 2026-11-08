@@ -318,8 +318,8 @@ Map<String, Object?> groupPageData({
 /// La página lista para enseñar.
 String groupPageWith(String page, Map<String, Object?> data) =>
     // "<" como <: ningún dato puede cerrar el script.
-    page.replaceFirst(groupMarker, jsonEncode(data).replaceAll('<', r'<'));
+    page.replaceFirst(groupMarker, jsonEncode(data).replaceAll('<', r'\u003c'));
 
 /// Lo que se le manda a la página sin recargarla.
 String groupPushScript(Map<String, Object?> data) =>
-    'window.ECLin&&window.ECLin(${jsonEncode(data).replaceAll('<', r'<')})';
+    'window.ECLin&&window.ECLin(${jsonEncode(data).replaceAll('<', r'\u003c')})';

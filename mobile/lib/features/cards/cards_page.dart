@@ -368,9 +368,9 @@ Map<String, Object?> cardsPageData({
 
 /// La página lista para enseñar.
 String cardsPageWith(String page, Map<String, Object?> data) =>
-    page.replaceFirst(cardsMarker, jsonEncode(data).replaceAll('<', r'<'));
+    page.replaceFirst(cardsMarker, jsonEncode(data).replaceAll('<', r'\u003c'));
 
 /// Lo que se le manda a la página sin recargarla. [keep] = no cambiar el
 /// cambio que se está viendo.
 String cardsPushScript(Map<String, Object?> data, {bool keep = true}) =>
-    'window.ECLin&&window.ECLin(${jsonEncode(<String, Object?>{...data, 'keep': keep}).replaceAll('<', r'<')})';
+    'window.ECLin&&window.ECLin(${jsonEncode(<String, Object?>{...data, 'keep': keep}).replaceAll('<', r'\u003c')})';

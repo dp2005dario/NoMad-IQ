@@ -1,12 +1,13 @@
 // Tests de la Bóveda: el cifrado, abrir y cerrar con "huella" falsa,
 // guardar documentos, la pantalla y preguntar a la póliza del seguro.
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/core/router.dart';
-import 'package:eclipta/features/money/money_screen.dart';
+import 'package:eclipta/features/money/insurance_panel.dart';
 import 'package:eclipta/features/vault/doc_source.dart';
 import 'package:eclipta/features/vault/policy_search.dart';
 import 'package:eclipta/features/route/web_scene.dart';
@@ -472,12 +473,15 @@ void main() {
         pages: 3,
       );
       v.close();
-      await pumpMoney(
-        tester,
-        vault: v,
-        initialLocation: Routes.money(tab: MoneyTab.abroad),
+      await pumpMoney(tester, vault: v);
+      // El panel del seguro (ya no es una pestaña de "Tu dinero fuera").
+      unawaited(
+        Navigator.of(tester.element(find.byType(Scaffold).first)).push(
+          MaterialPageRoute<void>(
+            builder: (_) => const Scaffold(body: InsurancePanel()),
+          ),
+        ),
       );
-      await tester.tap(find.text('Seguro'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Abrir la Bóveda'));
       await tester.pumpAndSettle();

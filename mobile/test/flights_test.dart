@@ -520,7 +520,7 @@ void main() {
     expect(a['price'], '54 €');
     expect(
       flightsPageWith('x /*ECLIPTA*/{} y', <String, Object?>{'a': '</script>'}),
-      contains(r'</script>'),
+      allOf(contains(r'\u003c/script>'), isNot(contains('</script>'))),
     );
   });
 

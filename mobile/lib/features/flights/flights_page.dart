@@ -297,7 +297,7 @@ int _digits(String currency) => switch (currency) {
 /// La página lista para enseñar.
 String flightsPageWith(String page, Map<String, Object?> data) {
   // "<" como <: ningún dato puede cerrar el script.
-  final String json = jsonEncode(data).replaceAll('<', r'<');
+  final String json = jsonEncode(data).replaceAll('<', r'\u003c');
   return page.replaceFirst(flightsMarker, json);
 }
 
@@ -315,4 +315,4 @@ Map<String, Object?>? unpackJson(String packed) {
 
 /// Lo que se le manda a la página sin recargarla: window.ECLin({...}).
 String pushScript(Map<String, Object?> data) =>
-    'window.ECLin&&window.ECLin(${jsonEncode(data).replaceAll('<', r'<')})';
+    'window.ECLin&&window.ECLin(${jsonEncode(data).replaceAll('<', r'\u003c')})';

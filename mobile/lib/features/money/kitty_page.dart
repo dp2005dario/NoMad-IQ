@@ -249,8 +249,8 @@ Map<String, Object?> kittyPageData({
 
 /// La página lista para enseñar.
 String kittyPageWith(String page, Map<String, Object?> data) =>
-    page.replaceFirst(kittyMarker, jsonEncode(data).replaceAll('<', r'<'));
+    page.replaceFirst(kittyMarker, jsonEncode(data).replaceAll('<', r'\u003c'));
 
 /// Lo que se le manda a la página sin recargarla.
 String kittyPushScript(Map<String, Object?> data) =>
-    'window.ECLin&&window.ECLin(${jsonEncode(data).replaceAll('<', r'<')})';
+    'window.ECLin&&window.ECLin(${jsonEncode(data).replaceAll('<', r'\u003c')})';
