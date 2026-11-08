@@ -114,6 +114,10 @@ enum LocalData {
   /// Cuándo abriste el Pasaporte por última vez (fecha ISO): los sellos de
   /// después cuentan como "nuevos" en el botón del Mapa.
   passportSeen,
+
+  /// Los reels de "Antes de salir" que guardaste para tu viaje (sus
+  /// búsquedas, en JSON).
+  beforeReels,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real
