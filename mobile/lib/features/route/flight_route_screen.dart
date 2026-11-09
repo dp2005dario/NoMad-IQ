@@ -1,31 +1,35 @@
-// La RUTA DEL VUELO (maqueta "Ruta"): un mapamundi con el camino real del
-// avión. Cuatro momentos:
+// La RUTA DEL VUELO (maqueta "Ruta"): la maqueta tal cual
+// (assets/route/ruta.html) con tu ruta de verdad. Cuatro momentos:
 //   1. Mundo: se ve la ruta entera. "Empezar en Madrid".
-//   2. Origen: la cámara se acerca a tu ciudad, con su hora local.
-//   3. Vuelo: el avión despega y la cámara lo sigue, con los km recorridos y
-//      lo que queda (simulado: dura unos segundos, no 13 horas).
-//   4. Destino: aterriza y ves la hora allí y cuánto adelanta o atrasa.
+//   2. Origen: la cámara se acerca a tu ciudad y sale su ficha (Wikipedia y
+//      Wikidata): bandera, capital, idioma, moneda, hora, por qué es famosa
+//      y lo más visitado con fotos de licencia libre.
+//   3. Vuelo: el avión sigue el camino más corto de verdad y la cámara lo
+//      sigue, con por dónde pasa, los km recorridos y lo que queda
+//      (simulado: dura unos segundos, no 13 horas). También en 3D.
+//   4. Destino: aterriza y sale la ficha de allí, con cuánto adelanta o
+//      atrasa la hora.
 //
-// Todo funciona sin Internet: el mapa y los aeropuertos van dentro de la app.
+// El mapa y los aeropuertos van dentro de la app; las fichas, del servidor.
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:timezone/data/latest_10y.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
-import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../flights/booking.dart';
 import '../flights/flight_format.dart';
-import 'city_sheet.dart';
+import '../money/currency_info.dart' show flagOf;
+import '../visa/visa_data.dart' show CountryNames;
 import 'flight3d.dart';
 import 'geo.dart';
 import 'places_api.dart';
-import 'route_painter.dart';
+import 'route_page.dart';
+import 'web_scene.dart';
 import 'world_data.dart';
-
-enum RouteStage { world, origin, flight, arrived }
 
 class FlightRouteScreen extends StatefulWidget {
   const FlightRouteScreen({
@@ -45,26 +49,33 @@ class FlightRouteScreen extends StatefulWidget {
   /// En los tests se puede dar el mapa ya cargado.
   final Future<WorldData> Function()? loadWorld;
 
-  /// De dónde salen las fichas de ciudad. Sin él no se ofrece el botón
-  /// "Sobre Madrid" (por ejemplo, en algunos tests).
+  /// De dónde salen las fichas de ciudad. Sin él, las fichas dicen que no
+  /// hay información (por ejemplo, en algunos tests).
   final PlaceLoader? places;
 
   /// Abre un enlace fuera de la app (Wikipedia, la página de una foto).
   final OpenBooking openLink;
 
-  /// Dónde se ve el Vuelo 3D. Con él, "Despegar" abre el vuelo en 3D; sin
-  /// él, el avión cruza este mapa plano.
+  /// Dónde se ven las páginas web (esta y el Vuelo 3D). Con él, "Ver el
+  /// vuelo en 3D" abre el vuelo en 3D.
   final WebSceneBuilder? scene3d;
 
-  /// Cuánto dura la simulación del vuelo.
-  static const Duration flightAnimation = Duration(seconds: 14);
+  /// La última conexión con la página (para las pruebas).
+  static WebSceneBridge? lastBridge;
 
   @override
   State<FlightRouteScreen> createState() => _FlightRouteScreenState();
 }
 
-class _FlightRouteScreenState extends State<FlightRouteScreen>
-    with TickerProviderStateMixin {
+class _FlightRouteScreenState extends State<FlightRouteScreen> {
+  final WebSceneBridge _bridge = FlightRouteScreen.lastBridge =
+      WebSceneBridge();
+
+  // La página se lee una vez y se guarda (como String, no como Future).
+  static String? _pageCache;
+  String? _html;
+  String? _sent;
+
   WorldData? _world;
   bool _failed = false;
   late String? _to = widget.to;
@@ -74,84 +85,48 @@ class _FlightRouteScreenState extends State<FlightRouteScreen>
   List<LatLon> _route = const <LatLon>[];
   double _km = 0;
 
-  RouteStage _stage = RouteStage.world;
-  MapCamera _camera = const MapCamera(LatLon(20, 0), 1);
+  CountryCodes? _codes;
+  CountryNames? _names;
+  List<(double, String)> _regions = const <(double, String)>[];
 
-  // Movimiento de cámara entre dos puntos de vista.
-  late final AnimationController _camMove = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1200),
-  );
-  MapCamera _camFrom = const MapCamera(LatLon(20, 0), 1);
-  MapCamera _camTo = const MapCamera(LatLon(20, 0), 1);
+  /// Las fichas de ciudad ("" mientras llegan; null si no hay).
+  final Map<String, PlaceCard?> _cards = <String, PlaceCard?>{};
+  final Set<String> _asked = <String>{};
 
-  // El vuelo simulado (0 = despegue, 1 = aterrizaje).
-  late final AnimationController _flight = AnimationController(
-    vsync: this,
-    duration: FlightRouteScreen.flightAnimation,
-  );
-
-  // El "latido" de los puntos de origen y destino.
-  late final AnimationController _pulse = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1600),
-  )..repeat();
-
-  static const double _followZoom = 3;
-  static const double _cityZoom = 9;
+  /// Sube cada vez que se aterriza en 3D (la página salta al destino).
+  int _arrive = 0;
 
   @override
   void initState() {
     super.initState();
-    _camMove.addListener(() {
-      setState(() {
-        _camera = MapCamera.lerp(
-          _camFrom,
-          _camTo,
-          Curves.easeInOutCubic.transform(_camMove.value),
-        );
-      });
-    });
-    _flight.addListener(() {
-      if (_stage != RouteStage.flight) return;
-      setState(() {
-        _camera = MapCamera(
-          RoutePainter.pointAt(_route, _flight.value),
-          _followZoom,
-        );
-      });
-    });
-    _flight.addStatusListener((AnimationStatus s) {
-      if (s == AnimationStatus.completed && _stage == RouteStage.flight) {
-        _arrive();
-      }
-    });
     unawaited(_load());
-  }
-
-  @override
-  void dispose() {
-    _camMove.dispose();
-    _flight.dispose();
-    _pulse.dispose();
-    super.dispose();
   }
 
   Future<void> _load() async {
     try {
+      _pageCache ??= await rootBundle.loadString(routePage, cache: false);
       final WorldData world = await (widget.loadWorld ?? WorldData.load)();
       if (!mounted) return;
-      setState(() => _world = world);
+      _world = world;
       _setRoute();
       if (_to == null && mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) => _askDestination());
       }
     } catch (_) {
       if (mounted) setState(() => _failed = true);
+      return;
     }
+    // Banderas y nombres de país en tu idioma (si no, en inglés).
+    try {
+      _codes = await CountryCodes.load();
+      _names = await CountryNames.load();
+    } on Object {
+      // Sin ellos sale el nombre en inglés y sin bandera.
+    }
+    if (mounted) setState(_setRegions);
   }
 
-  /// Prepara la ruta con los aeropuertos elegidos y enseña el mundo.
+  /// Prepara la ruta con los aeropuertos elegidos.
   void _setRoute() {
     final WorldData? world = _world;
     if (world == null) return;
@@ -160,81 +135,77 @@ class _FlightRouteScreenState extends State<FlightRouteScreen>
     setState(() {
       _origin = origin;
       _dest = dest;
-      _flight.value = 0;
       if (origin != null && dest != null) {
         _route = greatCircle(origin.position, dest.position);
         _km = distanceKm(origin.position, dest.position);
       } else {
         _route = const <LatLon>[];
+        _km = 0;
       }
-      _stage = RouteStage.world;
+      _setRegions();
     });
-    _moveTo(_worldCamera());
-  }
-
-  /// La vista "Mundo": la ruta entera centrada.
-  MapCamera _worldCamera() {
-    if (_route.isEmpty) {
-      final Airport? o = _origin;
-      return MapCamera(o?.position ?? const LatLon(20, 0), 1.2);
+    for (final Airport? a in <Airport?>[origin, dest]) {
+      if (a != null) unawaited(_card(a.iata));
     }
-    double minLon = 999, maxLon = -999, minLat = 99, maxLat = -99;
-    for (final LatLon p in _route) {
-      if (p.lon < minLon) minLon = p.lon;
-      if (p.lon > maxLon) maxLon = p.lon;
-      if (p.lat < minLat) minLat = p.lat;
-      if (p.lat > maxLat) maxLat = p.lat;
-    }
-    // Que quepa la ruta con margen (y nunca alejarse más del mundo entero).
-    final double span = (maxLon - minLon).abs() + 30;
-    final double spanLat = ((maxLat - minLat).abs() + 20) * 2;
-    final double zoom = (360 / (span > spanLat ? span : spanLat)).clamp(
-      1.0,
-      6.0,
-    );
-    return MapCamera(
-      LatLon((minLat + maxLat) / 2, (minLon + maxLon) / 2),
-      zoom,
-    );
   }
 
-  void _moveTo(MapCamera target, {VoidCallback? then}) {
-    _camFrom = _camera;
-    _camTo = target;
-    _camMove.forward(from: 0).whenComplete(() {
-      if (mounted && then != null) then();
-    });
+  /// El nombre del país de un aeropuerto, en tu idioma si se sabe.
+  String _country(Airport a) {
+    final String? code = _codes?[a.country];
+    final CountryNames? names = _names;
+    if (code == null || names == null) return a.country;
+    return names.name(code, Localizations.localeOf(context).languageCode);
   }
 
-  void _goOrigin() {
-    final Airport? o = _origin;
-    if (o == null) return;
-    _flight.stop();
-    setState(() {
-      _stage = RouteStage.origin;
-      _flight.value = 0;
-    });
-    _moveTo(MapCamera(_route.isEmpty ? o.position : _route.first, _cityZoom));
-  }
-
-  void _takeOff() {
-    if (_route.isEmpty) return;
-    final WebSceneBuilder? scene = widget.scene3d;
-    final Airport? from = _origin, to = _dest;
-    if (scene != null && from != null && to != null) {
-      unawaited(_fly3d(scene, from, to));
+  /// Por dónde pasa el avión: el país del aeropuerto más cercano si es
+  /// tierra, o el mar.
+  void _setRegions() {
+    final WorldData? world = _world;
+    final Airport? o = _origin, d = _dest;
+    if (world == null || o == null || d == null || _route.isEmpty) {
+      _regions = const <(double, String)>[];
       return;
     }
-    setState(() => _stage = RouteStage.flight);
-    _moveTo(
-      MapCamera(_route.first, _followZoom),
-      then: () => _flight.forward(from: 0),
+    _regions = regionsAlong(
+      _route,
+      (LatLon p) {
+        if (!onLand(world.shapes, p)) return 'Sobrevolando el mar';
+        Airport? best;
+        double bestKm = double.infinity;
+        for (final Airport a in world.airports.all) {
+          final double km = distanceKm(p, a.position);
+          if (km < bestKm) {
+            bestKm = km;
+            best = a;
+          }
+        }
+        return best == null || bestKm > 1500
+            ? 'Sobrevolando tierra firme'
+            : 'Sobrevolando ${_country(best)}';
+      },
+      leaving: 'Despegando de ${o.city}',
+      arriving: 'Llegando a ${d.city}',
     );
   }
 
-  /// El vuelo en 3D a pantalla completa. Al volver tras aterrizar, este
-  /// mapa ya enseña el destino (con su hora local).
-  Future<void> _fly3d(WebSceneBuilder scene, Airport from, Airport to) async {
+  Future<void> _card(String iata) async {
+    final PlaceLoader? places = widget.places;
+    if (places == null || !_asked.add(iata)) return;
+    PlaceCard? card;
+    try {
+      card = await places(iata, Localizations.localeOf(context).languageCode);
+    } on Object {
+      card = null;
+    }
+    if (mounted) setState(() => _cards[iata] = card);
+  }
+
+  /// El vuelo en 3D a pantalla completa. Al volver tras aterrizar, la
+  /// página ya enseña el destino.
+  Future<void> _fly3d() async {
+    final WebSceneBuilder? scene = widget.scene3d;
+    final Airport? from = _origin, to = _dest;
+    if (scene == null || from == null || to == null) return;
     final bool? landed = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         fullscreenDialog: true,
@@ -243,263 +214,219 @@ class _FlightRouteScreenState extends State<FlightRouteScreen>
       ),
     );
     if (!mounted || landed != true) return;
-    _arrive();
+    setState(() => _arrive++);
   }
-
-  void _land() {
-    _flight.stop();
-    _arrive();
-  }
-
-  void _arrive() {
-    setState(() {
-      _stage = RouteStage.arrived;
-      _flight.value = 1;
-    });
-    _moveTo(MapCamera(_route.last, _cityZoom));
-  }
-
-  /// Abre la ficha de la ciudad (por qué es famosa, lo más visitado…).
-  void _openCity(Airport airport) {
-    final PlaceLoader? places = widget.places;
-    if (places == null) return;
-    showModalBottomSheet<void>(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (BuildContext sheet) => CitySheet(
-        iata: airport.iata,
-        load: places,
-        openLink: widget.openLink,
-      ),
-    );
-  }
-
-  Widget _aboutButton(AppLocalizations t, Airport airport) => Align(
-    alignment: AlignmentDirectional.centerStart,
-    child: TextButton.icon(
-      onPressed: () => _openCity(airport),
-      icon: const Icon(Icons.travel_explore_rounded),
-      label: Text(t.placeAbout(airport.city)),
-    ),
-  );
 
   Future<void> _askDestination() async {
+    final WorldData? world = _world;
+    if (world == null) return;
     final String? code = await showModalBottomSheet<String>(
       context: context,
       useRootNavigator: true,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (BuildContext sheet) =>
-          _DestinationSheet(airports: _world!.airports, exclude: widget.from),
+          _DestinationSheet(airports: world.airports, exclude: widget.from),
     );
     if (code == null || !mounted) return;
     _to = code;
     _setRoute();
   }
 
+  /// Lo que pide la página.
+  void _onMessage(String m) {
+    final List<String> p = m.split(':');
+    switch (p.first) {
+      case 'back':
+        unawaited(Navigator.of(context).maybePop());
+      case 'pick':
+        unawaited(_askDestination());
+      case 'fly3d':
+        unawaited(_fly3d());
+      case 'more' when p.length > 1:
+        final Uri? url = _cardOf(p[1])?.articleUrl;
+        if (url != null) unawaited(widget.openLink(url));
+      case 'sight' when p.length > 2:
+        final List<Attraction> all = _cardOf(p[1])?.attractions ?? const [];
+        final int i = int.tryParse(p[2]) ?? -1;
+        if (i < 0 || i >= all.length) return;
+        // El artículo; si no hay, la página de la foto (autor y licencia).
+        final Uri? url = all[i].articleUrl ?? all[i].photo?.pageUrl;
+        if (url != null) unawaited(widget.openLink(url));
+    }
+  }
+
+  PlaceCard? _cardOf(String which) {
+    final Airport? a = which == 'd' ? _dest : _origin;
+    return a == null ? null : _cards[a.iata];
+  }
+
+  /// La ficha de una ciudad para la página.
+  Map<String, Object?> _place(
+    AppLocalizations t,
+    Airport a,
+    Airport? compareTo,
+    bool origin,
+    String locale,
+  ) {
+    final PlaceCard? card = _cards[a.iata];
+    final bool waiting = widget.places != null && !_cards.containsKey(a.iata);
+    final CountryFacts? c = card?.country;
+    const String none = 'Sin datos';
+    final String? code = _codes?[a.country];
+    final String country = c?.name ?? _country(a);
+    final String time = _localTime(t, a, compareTo, locale);
+    return <String, Object?>{
+      'flag': code == null ? '🌐' : flagOf(code),
+      'country': country,
+      'city': a.city,
+      'sub': '$country · ${origin ? 'punto de salida' : 'has llegado'}',
+      'tag': origin ? t.routeOriginTag : t.routeDestinationTag,
+      'tagSt':
+          'height: 26px; flex-shrink: 0; border-radius: 13px; background: ${origin ? '#6CA8FF' : '#FF8A65'}; color: #0B1217; font-size: 11px; font-weight: 800; display: flex; align-items: center; padding: 0 10px',
+      'facts': <Object?>[
+        <String, String>{'k': t.placeCapital, 'v': c?.capital ?? none},
+        <String, String>{
+          'k': 'Idioma',
+          'v': c == null || c.languages.isEmpty
+              ? none
+              : c.languages.take(2).join(', '),
+        },
+        <String, String>{'k': t.placeCurrency, 'v': c?.currency ?? none},
+        <String, String>{
+          'k': 'Hora',
+          'v': time.isEmpty ? none : time.replaceFirst(RegExp(r'^[^:]*: '), ''),
+        },
+      ],
+      'why': waiting ? '…' : card?.summary ?? t.placeUnavailable,
+      'more': card?.articleUrl != null,
+      'sights': <Object?>[
+        for (final Attraction s in card?.attractions.take(8) ?? <Attraction>[])
+          <String, Object?>{
+            'name': s.name,
+            'img': s.photo?.url.toString() ?? '',
+          },
+      ],
+    };
+  }
+
+  Map<String, Object?> _data(AppLocalizations t) {
+    final String locale = localeOf(context);
+    final Airport? o = _origin, d = _dest;
+    final NumberFormat km = NumberFormat.decimalPattern(locale);
+    final Duration total = estimatedFlightTime(_km);
+    final String dur = _durationText(t, total);
+    final bool anyCard = _cards.values.any((PlaceCard? c) => c != null);
+    return <String, Object?>{
+      'loc': locale,
+      'backTxt': MaterialLocalizations.of(context).backButtonTooltip,
+      'title': o == null
+          ? t.routeUnknownAirport
+          : d == null
+          ? t.routeTitle
+          : '${o.city} → ${d.city}',
+      'sub': d == null
+          ? (o == null ? '' : '${o.iata} · ${o.city}')
+          : '${t.routeDistance(km.format(_km.round()))} · ${t.routeFlightTime(dur)}',
+      'worldLbl': t.routeWorld,
+      'followLbl': t.routeFollowing,
+      'path': mapPath(_route),
+      'o': o == null
+          ? null
+          : <String, Object?>{
+              ...<String, Object?>{
+                'x': mapPoint(o.position)[0],
+                'y': mapPoint(o.position)[1],
+              },
+              'lbl': '${o.iata} · origen',
+              'aria': t.placeAbout(o.city),
+              'city': o.city,
+            },
+      'd': d == null
+          ? null
+          : <String, Object?>{
+              'x':
+                  mapPoint(d.position)[0] +
+                  // Si la ruta cruza el meridiano 180, el destino sigue la línea.
+                  (_route.isEmpty
+                      ? 0
+                      : mapPoint(_route.last)[0] - mapPoint(d.position)[0]),
+              'y': mapPoint(d.position)[1],
+              'lbl': '${d.iata} · destino',
+              'aria': t.placeAbout(d.city),
+              'city': d.city,
+            },
+      'worldH': d == null
+          ? t.routePickDestination
+          : 'Toca el origen para empezar',
+      'worldP': d == null || o == null ? '' : t.routeStartHint(o.city),
+      'startTxt': o == null ? '' : t.routeStartAt(o.city),
+      'pickTxt': t.routePickDestination,
+      'regions': <Object?>[
+        for (final (double at, String label) in _regions)
+          <String, Object?>{'at': at, 'label': label},
+      ],
+      'km': _km.round(),
+      'mins': total.inMinutes,
+      'simTxt': 'SIMULACIÓN DEL RECORRIDO',
+      'doneTxt': 'Recorrido',
+      'leftTxt': 'Quedan',
+      'landTxt': t.routeLand,
+      'op': o == null ? null : _place(t, o, null, true, locale),
+      'dp': d == null || o == null ? null : _place(t, d, o, false, locale),
+      'whyH': t.placeWhyFamous,
+      'moreTxt': t.placeReadMore,
+      'sightsH': t.placeMostVisited,
+      'flyTxt': 'Ir al destino',
+      'has3d': widget.scene3d != null && d != null,
+      'fly3dTxt': 'Ver el vuelo en 3D',
+      'replayTxt': t.routeReplay,
+      'backOriginTxt': t.routeBackToOrigin,
+      'credits': <String>[
+        t.routeCredits,
+        if (anyCard) t.placeCredits,
+      ].join(' · '),
+      'arrive': _arrive,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
+    final String? page = _pageCache;
     final AppLocalizations t = AppLocalizations.of(context);
-    final WorldData? world = _world;
-    final Airport? origin = _origin;
-    final Airport? dest = _dest;
-    return Scaffold(
-      backgroundColor: NomadColors.background,
-      appBar: AppBar(
-        title: Text(
-          origin != null && dest != null
-              ? '${origin.iata} → ${dest.iata}'
-              : t.routeTitle,
-        ),
-        actions: <Widget>[
-          if (world != null)
-            IconButton(
-              tooltip: t.routePickDestination,
-              onPressed: _askDestination,
-              icon: const Icon(Icons.edit_location_alt_rounded),
-            ),
-        ],
-      ),
-      body: _failed
-          ? Center(child: Text(t.routeLoadFailed))
-          : world == null
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              children: <Widget>[
-                Positioned.fill(
-                  child: AnimatedBuilder(
-                    animation: _pulse,
-                    builder: (BuildContext context, Widget? _) => CustomPaint(
-                      painter: RoutePainter(
-                        shapes: world.shapes,
-                        camera: _camera,
-                        route: _route.isEmpty && origin != null
-                            ? <LatLon>[origin.position, origin.position]
-                            : _route,
-                        progress: _flight.value,
-                        pulse: _pulse.value,
-                        showPlane:
-                            _route.isNotEmpty &&
-                            (_stage == RouteStage.flight ||
-                                _stage == RouteStage.origin ||
-                                _stage == RouteStage.arrived),
-                      ),
-                    ),
-                  ),
-                ),
-                PositionedDirectional(
-                  top: 12,
-                  start: 16,
-                  child: _ViewChip(
-                    label: switch (_stage) {
-                      RouteStage.world => t.routeWorld,
-                      RouteStage.origin => origin?.city ?? '',
-                      RouteStage.flight => t.routeFollowing,
-                      RouteStage.arrived => dest?.city ?? '',
-                    },
-                  ),
-                ),
-                if (origin == null)
-                  Center(child: Text(t.routeUnknownAirport))
-                else
-                  Positioned(
-                    left: 12,
-                    right: 12,
-                    bottom: 12,
-                    child: SafeArea(top: false, child: _panel(context, t)),
-                  ),
-              ],
-            ),
-    );
-  }
-
-  Widget _panel(BuildContext context, AppLocalizations t) {
-    final Airport origin = _origin!;
-    final Airport? dest = _dest;
-    final String locale = localeOf(context);
-    final NumberFormat km = NumberFormat.decimalPattern(locale);
-    final String duration = _durationText(t, estimatedFlightTime(_km));
-    if (dest == null) {
-      return _Panel(
-        children: <Widget>[
-          Text(t.routePickDestination, style: _title(context)),
-          const SizedBox(height: 12),
-          FilledButton(
-            onPressed: _askDestination,
-            child: Text(t.routePickDestination),
-          ),
-        ],
+    if (_failed) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0B1217),
+        appBar: AppBar(),
+        body: Center(child: Text(t.routeLoadFailed)),
       );
     }
-    switch (_stage) {
-      case RouteStage.world:
-        return _Panel(
-          children: <Widget>[
-            Text('${origin.city} → ${dest.city}', style: _title(context)),
-            Text(
-              '${t.routeDistance(km.format(_km.round()))} · '
-              '${t.routeFlightTime(duration)}',
-              style: _muted,
-            ),
-            const SizedBox(height: 8),
-            Text(t.routeStartHint(origin.city), style: _muted),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: _goOrigin,
-              icon: const Icon(Icons.my_location_rounded),
-              label: Text(t.routeStartAt(origin.city)),
-            ),
-            const SizedBox(height: 8),
-            Text(t.routeCredits, style: _muted.copyWith(fontSize: 11)),
-          ],
-        );
-      case RouteStage.origin:
-        return _Panel(
-          children: <Widget>[
-            _Tag(text: t.routeOriginTag, color: NomadColors.mint),
-            const SizedBox(height: 6),
-            Text('${origin.city} · ${origin.country}', style: _title(context)),
-            Text(_localTime(t, origin, null, locale), style: _muted),
-            if (widget.places != null) _aboutButton(t, origin),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: _takeOff,
-              icon: const Icon(Icons.flight_takeoff_rounded),
-              label: Text(t.routeTakeOff(dest.city)),
-            ),
-          ],
-        );
-      case RouteStage.flight:
-        final double done = _flight.value;
-        final Duration total = estimatedFlightTime(_km);
-        return _Panel(
-          children: <Widget>[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: done,
-                minHeight: 10,
-                color: NomadColors.flights,
-                backgroundColor: NomadColors.outline,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${t.routeTraveled(km.format((_km * done).round()))} · '
-              '${t.routeRemaining(_durationText(t, total * (1 - done)))}',
-              style: _muted,
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: _land,
-              icon: const Icon(Icons.flight_land_rounded),
-              label: Text(t.routeLand),
-            ),
-          ],
-        );
-      case RouteStage.arrived:
-        return _Panel(
-          children: <Widget>[
-            _Tag(text: t.routeDestinationTag, color: NomadColors.flights),
-            const SizedBox(height: 6),
-            Text(t.routeArrived(dest.city), style: _title(context)),
-            Text(
-              '${dest.country} · ${_localTime(t, dest, origin, locale)}',
-              style: _muted,
-            ),
-            if (widget.places != null) _aboutButton(t, dest),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: <Widget>[
-                FilledButton.icon(
-                  onPressed: _takeOffAgain,
-                  icon: const Icon(Icons.replay_rounded),
-                  label: Text(t.routeReplay),
-                ),
-                OutlinedButton(
-                  onPressed: _goOrigin,
-                  child: Text(t.routeBackToOrigin),
-                ),
-              ],
-            ),
-          ],
-        );
+    if (page == null || _world == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0B1217),
+        body: SizedBox.expand(),
+      );
     }
+    final Map<String, Object?> data = _data(t);
+    final String push = routePushScript(data);
+    if (_html == null) {
+      _html = routePageWith(page, data);
+      _sent = push;
+    } else if (push != _sent) {
+      _sent = push;
+      unawaited(_bridge.run(push));
+    }
+    final String html = _html!;
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B1217),
+      body: SafeArea(
+        bottom: false,
+        child:
+            widget.scene3d?.call(html, _onMessage) ??
+            WebScene(html: html, onMessage: _onMessage, bridge: _bridge),
+      ),
+    );
   }
-
-  void _takeOffAgain() {
-    setState(() => _flight.value = 0);
-    _takeOff();
-  }
-
-  static TextStyle? _title(BuildContext context) =>
-      Theme.of(context).textTheme.titleLarge;
-
-  static const TextStyle _muted = TextStyle(color: NomadColors.textMuted);
 
   static String _durationText(AppLocalizations t, Duration d) {
     final int minutes = d.inMinutes;
@@ -546,69 +473,6 @@ class _FlightRouteScreenState extends State<FlightRouteScreen>
       return null;
     }
   }
-}
-
-class _Panel extends StatelessWidget {
-  const _Panel({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: NomadColors.surface.withValues(alpha: 0.94),
-      borderRadius: BorderRadius.circular(22),
-      border: Border.all(color: NomadColors.outline),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: children,
-      ),
-    ),
-  );
-}
-
-class _Tag extends StatelessWidget {
-  const _Tag({required this.text, required this.color});
-
-  final String text;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Align(
-    alignment: AlignmentDirectional.centerStart,
-    child: Text(
-      text,
-      style: TextStyle(
-        color: color,
-        fontWeight: FontWeight.w800,
-        fontSize: 11,
-        letterSpacing: 0.6,
-      ),
-    ),
-  );
-}
-
-class _ViewChip extends StatelessWidget {
-  const _ViewChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: NomadColors.surface.withValues(alpha: 0.9),
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: NomadColors.outline),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
-    ),
-  );
 }
 
 /// Hoja para escribir el aeropuerto de destino.
