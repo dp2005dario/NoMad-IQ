@@ -138,6 +138,7 @@ flutter:
     - assets/radar/radar.html
     - assets/memories/recuerdos.html
     - assets/route/ruta.html
+    - assets/offline/sinconexion.html
     - assets/passport/pasaporte.html
     - assets/inicio/inicio.html
     - assets/map/flyra.webp
