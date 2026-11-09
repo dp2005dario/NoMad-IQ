@@ -296,7 +296,7 @@ int _digits(String currency) => switch (currency) {
 
 /// La página lista para enseñar.
 String flightsPageWith(String page, Map<String, Object?> data) {
-  // "<" como <: ningún dato puede cerrar el script.
+  // "<" como \u003c: ningún dato puede cerrar el script.
   final String json = jsonEncode(data).replaceAll('<', r'\u003c');
   return page.replaceFirst(flightsMarker, json);
 }

@@ -70,7 +70,7 @@ List<Map<String, Object?>> contactsJson(List<SosContact> contacts) =>
 
 /// La página lista para enseñar.
 String homePageWith(String page, Map<String, Object?> data) =>
-    // "<" como <: ningún dato puede cerrar el script.
+    // "<" como \u003c: ningún dato puede cerrar el script.
     page.replaceFirst(homeMarker, jsonEncode(data).replaceAll('<', r'\u003c'));
 
 /// Lo que se le manda a la página sin recargarla.

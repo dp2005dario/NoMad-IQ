@@ -93,7 +93,7 @@ Map<String, Object?> settingsPageData({
 
 /// La página lista para enseñar.
 String settingsPageWith(String page, Map<String, Object?> data) =>
-    // "<" como <: ningún dato puede cerrar el script.
+    // "<" como \u003c: ningún dato puede cerrar el script.
     page.replaceFirst(
       settingsMarker,
       jsonEncode(data).replaceAll('<', r'\u003c'),

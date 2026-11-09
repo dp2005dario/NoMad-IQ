@@ -77,9 +77,9 @@ Map<String, Object?> easyFlightJson(
 
 /// La página lista para enseñar.
 String easyPageWith(String page, Map<String, Object?> data) =>
-    // "<" como <: ningún dato puede cerrar el script.
-    page.replaceFirst(easyMarker, jsonEncode(data).replaceAll('<', r'<'));
+    // "<" como \u003c: ningún dato puede cerrar el script.
+    page.replaceFirst(easyMarker, jsonEncode(data).replaceAll('<', r'\u003c'));
 
 /// Lo que se le manda a la página sin recargarla.
 String easyPushScript(Map<String, Object?> data) =>
-    'window.ECLin&&window.ECLin(${jsonEncode(data).replaceAll('<', r'<')})';
+    'window.ECLin&&window.ECLin(${jsonEncode(data).replaceAll('<', r'\u003c')})';

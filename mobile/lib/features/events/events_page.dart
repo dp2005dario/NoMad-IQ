@@ -258,7 +258,7 @@ Map<String, Object?> eventsPageData({
 
 /// La página lista para enseñar.
 String eventsPageWith(String page, Map<String, Object?> data) =>
-    // "<" como <: ningún dato puede cerrar el script.
+    // "<" como \u003c: ningún dato puede cerrar el script.
     page.replaceFirst(
       eventsMarker,
       jsonEncode(data).replaceAll('<', r'\u003c'),

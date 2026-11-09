@@ -135,6 +135,7 @@ flutter:
     - assets/settings/ajustes.html
     - assets/settings/idioma.html
     - assets/settings/privacidad.html
+    - assets/radar/radar.html
     - assets/passport/pasaporte.html
     - assets/inicio/inicio.html
     - assets/map/flyra.webp

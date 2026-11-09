@@ -117,12 +117,15 @@ String rarityKey(Rarity r) => r.name;
 
 /// La página lista para enseñar.
 String passportPageWith(String page, Map<String, Object?> data) =>
-    // "<" como <: ningún dato puede cerrar el script.
-    page.replaceFirst(passportMarker, jsonEncode(data).replaceAll('<', r'<'));
+    // "<" como \u003c: ningún dato puede cerrar el script.
+    page.replaceFirst(
+      passportMarker,
+      jsonEncode(data).replaceAll('<', r'\u003c'),
+    );
 
 /// Lo que se le manda a la página sin recargarla.
 String passportPushScript(Map<String, Object?> data) =>
-    'window.ECLin&&window.ECLin(${jsonEncode(data).replaceAll('<', r'<')})';
+    'window.ECLin&&window.ECLin(${jsonEncode(data).replaceAll('<', r'\u003c')})';
 
 /// "22/10/26", como en la maqueta.
 String stampDay(DateTime d) => DateFormat('dd/MM/yy').format(d.toLocal());

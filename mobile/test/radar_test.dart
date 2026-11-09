@@ -2,15 +2,18 @@
 // "¿me cobran de más?" comparando con lo que pagaron otros.
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/features/map/geo.dart';
 import 'package:eclipta/features/map/location.dart';
 import 'package:eclipta/features/radar/radar_api.dart';
+import 'package:eclipta/features/radar/radar_page.dart';
+import 'package:eclipta/features/radar/radar_screen.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 
 class LisbonLocation extends FakeLocation {
   LisbonLocation() {
@@ -97,6 +100,24 @@ void main() {
     expect(r.myScams, <ScamCategory>{ScamCategory.taxi});
   });
 
+  test('rótulo de la lluvia: ahora, en minutos o a qué hora', () async {
+    await initializeDateFormatting('es');
+    final DateTime now = DateTime(2026, 11, 9, 14, 20);
+    String at(int h, int m) =>
+        rainLabel(RainHour(DateTime(2026, 11, 9, h, m), 1, null), now, 'es');
+    expect(at(14, 0), 'LLUEVE AHORA');
+    expect(at(15, 0), 'LLUEVE EN 40 MIN');
+    expect(at(17, 0), 'LLUEVE A LAS 17:00');
+  });
+
+  test('ningún dato puede cerrar el script de la página', () {
+    final String html = radarPageWith('<script>window.ECL=$radarMarker;', {
+      'x': '</script><b>',
+    });
+    expect(html, isNot(contains('</script><b>')));
+    expect(radarPushScript({'x': '<b>'}), isNot(contains('<b>')));
+  });
+
   testWidgets('lluvia, timo avisado, precio de más y avisar', (
     WidgetTester tester,
   ) async {
@@ -116,50 +137,75 @@ void main() {
       posts.add(jsonDecode(r.body) as Map<String, Object?>);
       return http.Response('', 204);
     };
+    final List<Uri> opened = <Uri>[];
+    final m.PageSpy spy = m.PageSpy();
     final session = await signedInSession(g);
-    tester.view.physicalSize = const Size(1200, 5000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
     await pumpApp(
       tester,
       locale: 'es',
       session: session,
       initialLocation: Routes.radar(iata: 'LIS'),
-      services: fakeServices(session, gateway: g, location: LisbonLocation()),
+      services: fakeServices(
+        session,
+        gateway: g,
+        location: LisbonLocation(),
+        webScene: spy.build,
+        openBooking: (Uri u) async {
+          opened.add(u);
+          return true;
+        },
+      ),
     );
-    await tester.pumpAndSettle();
+    Map<String, Object?> data() => spy.data(RadarScreen.lastBridge!);
+    await spy.wait(
+      tester,
+      () =>
+          spy.pages.isNotEmpty &&
+          data()['rainy'] == true &&
+          data()['showPrice'] == true,
+    );
+    expect(spy.pages.first, contains('ECLIPTA · Radar local'));
 
     // Al servidor solo va una celda gruesa, no el punto exacto.
     expect(rainAsked.single.queryParameters['lat'], isNot('38.7106'));
-    expect(find.textContaining('Lluvia desde las'), findsOneWidget);
-    expect(find.textContaining('MET Norway'), findsOneWidget);
+    expect(data()['rainTxt'], contains('Lluvia desde las'));
+    expect(data()['attr'], contains('MET Norway'));
+    expect(data()['flyOn'], isFalse);
+    spy.send!('go');
+    await tester.pump();
+    expect(opened.single.path, startsWith('/maps/search/cafe/'));
 
-    expect(find.text('Pulsera o firma falsa'), findsWidgets);
-    expect(find.textContaining('Avisado por 4 viajeros'), findsOneWidget);
+    final List<Object?> scams = data()['scams']! as List<Object?>;
+    expect(
+      (scams.single! as Map<String, Object?>)['title'],
+      'Pulsera o firma falsa',
+    );
+    expect(
+      (scams.single! as Map<String, Object?>)['by'],
+      contains('Avisado por 4 viajeros'),
+    );
 
-    await tester.enterText(find.byType(TextField), '4');
-    await tester.pumpAndSettle();
-    expect(find.textContaining('de 0,90'), findsOneWidget);
-    expect(find.text('Mucho más de lo que pagaron otros'), findsOneWidget);
+    // El café: lo que pagaron otros (de 0,90 a 1,40) y la moneda.
+    expect(data()['curTxt'], 'EUR');
+    expect(data()['rangeTxt'], contains('0,90'));
+    expect(data()['range'], <String, Object?>{'low': 0.9, 'high': 1.4});
 
-    await tester.ensureVisible(find.text('Apuntar lo que pagué'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Apuntar lo que pagué'));
-    await tester.pumpAndSettle();
+    spy.send!('paid:4.00');
+    await spy.wait(tester, () => posts.isNotEmpty);
     expect(posts.last, <String, Object?>{
       'item': 'coffee',
       'currency': 'EUR',
       'amount': '4.00',
     });
+    await spy.wait(tester, () => data()['sentKey'] == 'coffee:EUR:4.00');
 
-    final Finder taxi = find.widgetWithText(
-      FilterChip,
-      'Taxi que cobra de más',
-    );
-    await tester.ensureVisible(taxi);
-    await tester.pumpAndSettle();
-    await tester.tap(taxi);
-    await tester.pumpAndSettle();
+    // La cerveza aún no tiene precios: lo dice tal cual.
+    spy.send!('item:beer');
+    await tester.pump();
+    expect(data()['range'], isNull);
+
+    spy.send!('scam:taxi');
+    await spy.wait(tester, () => posts.length == 2);
     expect(posts.last, <String, Object?>{'category': 'taxi'});
   });
 
@@ -169,21 +215,65 @@ void main() {
     final FakeGateway g = FakeGateway()..publicPrefixes.add('/v1/rain');
     g.services['/v1/rain'] = (_) => FakeGateway.json(rainJson());
     g.services['/v1/radar/LIS'] = (_) => FakeGateway.json(radarJson);
+    final m.PageSpy spy = m.PageSpy();
     final session = newSession(g)..continueAsGuest();
     await pumpApp(
       tester,
       locale: 'es',
       session: session,
       initialLocation: Routes.radar(iata: 'LIS'),
-      services: fakeServices(session, gateway: g, location: LisbonLocation()),
-    );
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Lluvia desde las'), findsOneWidget);
-    expect(
-      find.text(
-        'Inicia sesión para ver y compartir lo que avisan otros viajeros.',
+      services: fakeServices(
+        session,
+        gateway: g,
+        location: LisbonLocation(),
+        webScene: spy.build,
       ),
-      findsWidgets,
     );
+    Map<String, Object?> data() => spy.data(RadarScreen.lastBridge!);
+    String why() =>
+        ((data()['scams']! as List<Object?>).single!
+                as Map<String, Object?>)['why']!
+            as String;
+    await spy.wait(
+      tester,
+      () =>
+          spy.pages.isNotEmpty &&
+          data()['rainy'] == true &&
+          why().startsWith('Inicia sesión'),
+    );
+    expect(
+      why(),
+      'Inicia sesión para ver y compartir lo que avisan otros viajeros.',
+    );
+    expect(data()['showPrice'], isFalse);
+  });
+
+  testWidgets('sin previsión de lluvia: Flyra lo dice en su bocadillo', (
+    WidgetTester tester,
+  ) async {
+    final FakeGateway g = FakeGateway()..publicPrefixes.add('/v1/rain');
+    g.services['/v1/rain'] = (_) => http.Response('', 503);
+    g.services['/v1/radar/LIS'] = (_) => FakeGateway.json(radarJson);
+    final m.PageSpy spy = m.PageSpy();
+    final session = newSession(g)..continueAsGuest();
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.radar(iata: 'LIS'),
+      services: fakeServices(
+        session,
+        gateway: g,
+        location: LisbonLocation(),
+        webScene: spy.build,
+      ),
+    );
+    Map<String, Object?> data() => spy.data(RadarScreen.lastBridge!);
+    await spy.wait(
+      tester,
+      () => spy.pages.isNotEmpty && data()['flyOn'] == true,
+    );
+    expect(data()['flyText'], data()['rainTxt']);
+    expect(data()['rainy'], isFalse);
   });
 }

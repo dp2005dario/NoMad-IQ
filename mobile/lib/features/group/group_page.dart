@@ -317,7 +317,7 @@ Map<String, Object?> groupPageData({
 
 /// La página lista para enseñar.
 String groupPageWith(String page, Map<String, Object?> data) =>
-    // "<" como <: ningún dato puede cerrar el script.
+    // "<" como \u003c: ningún dato puede cerrar el script.
     page.replaceFirst(groupMarker, jsonEncode(data).replaceAll('<', r'\u003c'));
 
 /// Lo que se le manda a la página sin recargarla.
