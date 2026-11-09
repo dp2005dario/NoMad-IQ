@@ -1,0 +1,19 @@
+# ECLIPTA en TU ordenador, para usarlo desde tu móvil (con Tailscale).
+#
+# Se pone ENCIMA de docker-compose.yml (lo hace solo infrastructure/pc/eclipta.ps1):
+#   docker compose -f docker-compose.yml -f docker-compose.pc.yml --profile apps up -d
+#
+# Lo único que cambia respecto al entorno de desarrollo:
+#   - La llave que firma las sesiones se guarda en un fichero (pc/llaves/) en
+#     vez de inventarse en cada arranque. Así, al reiniciar el PC, no tienes
+#     que volver a entrar en la app.
+# Todo sigue escuchando SOLO en 127.0.0.1: desde fuera solo se llega por
+# Tailscale (tu red privada), nunca desde internet ni desde tu wifi.
+
+services:
+  auth-gateway:
+    environment:
+      JWT_DEV_EPHEMERAL_KEY: "false"
+      JWT_ACTIVE_KEY_FILE: /llaves/jwt-active.pem
+    volumes:
+      - ./pc/llaves:/llaves:ro

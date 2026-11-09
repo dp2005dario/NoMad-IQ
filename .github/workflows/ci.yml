@@ -157,6 +157,36 @@ jobs:
       - name: Tests unitarios
         run: uv run pytest -q
 
+  # El script para arrancar ECLIPTA en un PC con Windows (infrastructure/pc):
+  # se comprueba que PowerShell lo entiende, en Windows de verdad y con las
+  # dos versiones (la 5.1 que trae Windows y la 7).
+  windows-pc:
+    name: Script de Windows (PC + Tailscale)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sintaxis con Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $errores = $null
+          [System.Management.Automation.Language.Parser]::ParseFile("$PWD\infrastructure\pc\eclipta.ps1", [ref]$null, [ref]$errores) | Out-Null
+          if ($errores) { $errores | ForEach-Object { Write-Error $_.ToString() }; exit 1 }
+          Write-Host "Sin errores de sintaxis"
+      - name: Sintaxis con PowerShell 7
+        shell: pwsh
+        run: |
+          $errores = $null
+          [System.Management.Automation.Language.Parser]::ParseFile("$PWD/infrastructure/pc/eclipta.ps1", [ref]$null, [ref]$errores) | Out-Null
+          if ($errores) { $errores | ForEach-Object { Write-Error $_.ToString() }; exit 1 }
+          Write-Host "Sin errores de sintaxis"
+      - name: Las acciones que no necesitan Docker responden bien
+        shell: powershell
+        run: |
+          # Una acción desconocida tiene que fallar con un mensaje, no romperse.
+          powershell -NoProfile -ExecutionPolicy Bypass -File infrastructure\pc\eclipta.ps1 nada
+          if ($LASTEXITCODE -ne 1) { Write-Error "esperaba código 1, salió $LASTEXITCODE"; exit 1 }
+          exit 0
+
   geo-engine:
     name: geo-engine (Rust)
     runs-on: ubuntu-latest
