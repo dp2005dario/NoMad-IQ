@@ -20,6 +20,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../auth/session.dart';
 import '../../core/api_client.dart';
+import '../../core/content_language.dart';
 import '../../core/router.dart';
 import '../../core/services.dart';
 import '../../core/theme.dart';
@@ -106,7 +107,7 @@ class _FlyraChatScreenState extends State<FlyraChatScreen> {
       _input.clear();
     });
     _toBottom();
-    final String language = Localizations.localeOf(context).languageCode;
+    final String language = contentLanguage(context);
     try {
       final FlyraReply reply = await _services.flyra.ask(
         _history,
@@ -154,7 +155,7 @@ class _FlyraChatScreenState extends State<FlyraChatScreen> {
       await _services.speechInput.stop();
       return;
     }
-    final String language = Localizations.localeOf(context).languageCode;
+    final String language = contentLanguage(context);
     setState(() => _listening = true);
     final String? heard = await _services.speechInput.listen(language);
     if (!mounted) return;
@@ -169,7 +170,7 @@ class _FlyraChatScreenState extends State<FlyraChatScreen> {
 
   /// Flyra lee en alto uno de sus mensajes, en el idioma de la app.
   void _listen(String text) {
-    final String language = Localizations.localeOf(context).languageCode;
+    final String language = contentLanguage(context);
     unawaited(_services.speaker.speak(text, language));
   }
 

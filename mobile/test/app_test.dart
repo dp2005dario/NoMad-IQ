@@ -8,6 +8,8 @@ import 'package:eclipta/core/router.dart';
 import 'package:eclipta/auth/google_id_token.dart';
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/settings/language_screen.dart';
+import 'package:eclipta/l10n/generated/app_localizations.dart';
 
 import 'money_test.dart' as m;
 import 'helpers.dart';
@@ -161,21 +163,50 @@ void main() {
     WidgetTester tester,
   ) async {
     setDeviceLocale(tester, 'es');
+    final m.PageSpy spy = m.PageSpy();
+    final SessionController session = newSession()..continueAsGuest();
+    final MemorySettingsStore prefs = MemorySettingsStore();
     final SettingsController settings = await pumpApp(
       tester,
       initialLocation: Routes.language,
+      session: session,
+      services: fakeServices(session, prefs: prefs, webScene: spy.build),
     );
-    await tester.enterText(find.byType(TextField), 'deut');
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Deutsch'));
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    Map<String, Object?> data() =>
+        spy.data(LanguageScreen.lastBridge!, title: 'ECLIPTA · Idioma');
+    final List<Object?> langs = data()['langs']! as List<Object?>;
+    // "El del móvil" primero y luego los 25 idiomas de la app.
+    expect(langs, hasLength(AppLocalizations.supportedLocales.length + 1));
+    final Map<String, Object?> de =
+        langs.firstWhere(
+              (Object? l) => (l! as Map<String, Object?>)['code'] == 'de',
+            )!
+            as Map<String, Object?>;
+    expect(de['native'], 'Deutsch');
+    expect(de['sub'], 'Alemán');
+    expect((de['pv']! as Map<String, Object?>)['btn'], 'Flüge');
+    expect(data()['sel'], 'system');
+
+    spy.send!('lang:de');
     await tester.pumpAndSettle();
     expect(settings.locale, const Locale('de'));
-    expect(find.text('Sprache'), findsOneWidget); // el título ya está en alemán
+    expect(data()['title'], 'Sprache'); // el título ya está en alemán
+    expect(data()['sel'], 'de');
 
-    await tester.enterText(find.byType(TextField), 'zzz');
+    // Apagar "Flyra y las audioguías también en este idioma": se quedan en
+    // alemán aunque la app cambie.
+    spy.send!('ai:0');
     await tester.pumpAndSettle();
-    expect(find.textContaining('zzz'), findsWidgets);
-    expect(find.byType(RadioListTile<String?>), findsNothing);
+    expect(prefs.readData(LocalData.contentLang), 'de');
+    expect(data()['ai'], isFalse);
+    spy.send!('ai:1');
+    await tester.pumpAndSettle();
+    expect(prefs.readData(LocalData.contentLang), isNull);
+
+    spy.send!('lang:system');
+    await tester.pumpAndSettle();
+    expect(settings.locale, isNull);
   });
 
   test('un idioma guardado se recupera al abrir la app', () async {

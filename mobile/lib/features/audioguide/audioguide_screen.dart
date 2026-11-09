@@ -25,6 +25,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' show NumberFormat;
 
 import '../../core/api_client.dart';
+import '../../core/content_language.dart';
 import '../../core/languages.dart';
 import '../../core/router.dart';
 import '../../core/services.dart';
@@ -114,7 +115,7 @@ class _AudioguideScreenState extends State<AudioguideScreen> {
     if (_started) return;
     _started = true;
     _services = ServicesScope.of(context);
-    _language = Localizations.localeOf(context).languageCode;
+    _language = contentLanguage(context);
     unawaited(_loadPage());
     unawaited(_load());
     unawaited(_loadExtras());

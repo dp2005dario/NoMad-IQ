@@ -75,6 +75,7 @@ const Map<String, String> spanishLanguageNames = <String, String>{
   'no': 'Noruego',
   'he': 'Hebreo',
   'tl': 'Tagalo',
+  'fil': 'Filipino',
   'sw': 'Suajili',
   'bn': 'Bengalí',
   'ur': 'Urdu',

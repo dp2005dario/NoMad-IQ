@@ -118,6 +118,10 @@ enum LocalData {
   /// Los reels de "Antes de salir" que guardaste para tu viaje (sus
   /// búsquedas, en JSON).
   beforeReels,
+
+  /// El idioma fijo de Flyra y las audioguías ("es"). Sin guardar = el
+  /// mismo que la app (el interruptor de la pantalla Idioma).
+  contentLang,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real

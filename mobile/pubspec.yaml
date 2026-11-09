@@ -133,6 +133,7 @@ flutter:
     - assets/easy/facil.html
     - assets/audioguide/audioguia.html
     - assets/settings/ajustes.html
+    - assets/settings/idioma.html
     - assets/inicio/inicio.html
     - assets/map/flyra.webp
     # La Bienvenida: vídeo de fondo (720x1280, ~1 MB), logo y la G de Google.
