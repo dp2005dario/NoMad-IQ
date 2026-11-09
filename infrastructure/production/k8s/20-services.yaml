@@ -324,7 +324,7 @@ spec:
             - {name: OLLAMA_TLS_CERT_FILE, value: "/certs/tls.crt"}
             - {name: OLLAMA_TLS_KEY_FILE, value: "/certs/tls.key"}
             - {name: OLLAMA_MODEL, valueFrom: {configMapKeyRef: {name: nomadiq-config, key: OLLAMA_MODEL}}}
-            - {name: LLM_ENABLED, value: "true"}
+            - {name: LLM_ENABLED, valueFrom: {configMapKeyRef: {name: nomadiq-config, key: LLM_ENABLED, optional: true}}}
             - {name: OLLAMA_TIMEOUT_SECONDS, value: "120"}
             - {name: FLYRA_TIMEOUT_SECONDS, value: "120"}
             - {name: MENU_TIMEOUT_SECONDS, value: "120"}
@@ -424,7 +424,7 @@ spec:
             - {name: OLLAMA_TLS_CERT_FILE, value: "/certs/tls.crt"}
             - {name: OLLAMA_TLS_KEY_FILE, value: "/certs/tls.key"}
             - {name: OLLAMA_MODEL, valueFrom: {configMapKeyRef: {name: nomadiq-config, key: OLLAMA_MODEL}}}
-            - {name: LLM_ENABLED, value: "true"}
+            - {name: LLM_ENABLED, valueFrom: {configMapKeyRef: {name: nomadiq-config, key: LLM_ENABLED, optional: true}}}
             - {name: AUDIOGUIDE_DEFAULT_LANGUAGE, value: "en"}
             - {name: AUDIO_POLL_SECONDS, value: "30"}
             - {name: LOG_LEVEL, value: "info"}

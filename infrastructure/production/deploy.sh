@@ -60,10 +60,35 @@ fill BACKUP_PASSPHRASE "$(openssl rand -base64 33 | tr -d '/+=')"
 # Kafka quiere un UUID en base64 "url" de 22 caracteres.
 fill KAFKA_CLUSTER_ID "$(openssl rand -base64 16 | tr '+/' '-_' | tr -d '=')"
 
+# Lee un valor de config.env (sin enseñarlo; config.env no tiene secretos).
+conf() { grep -E "^$1=" "$PROD/config.env" | tail -n1 | cut -d= -f2- || true; }
+
+# Dónde van las copias: Oracle ("oci", por defecto) o Azure ("azure").
+BACKUP_PROVIDER="$(conf BACKUP_PROVIDER)"
+BACKUP_PROVIDER="${BACKUP_PROVIDER:-oci}"
+case "$BACKUP_PROVIDER" in
+  oci) backup_keys=(BACKUP_S3_ENDPOINT BACKUP_S3_REGION BACKUP_S3_ACCESS_KEY BACKUP_S3_SECRET_KEY) ;;
+  azure) backup_keys=(BACKUP_AZURE_ACCOUNT BACKUP_AZURE_KEY) ;;
+  *)
+    echo "BACKUP_PROVIDER debe ser oci o azure (en config.env)." >&2
+    exit 1
+    ;;
+esac
+
+# ¿IA local (Ollama)? En un servidor de 8 GB no cabe: LLM_ENABLED=false.
+LLM_ENABLED="$(conf LLM_ENABLED)"
+LLM_ENABLED="${LLM_ENABLED:-true}"
+
+# ¿Avisos push? Solo si está el json de Firebase (si no, el notifier no se
+# arranca y la app funciona igual, sin avisos al móvil).
+PUSH=true
+[ -f "$KEYS/fcm.json" ] || PUSH=false
+
 # Comprobar que lo obligatorio está relleno (sin enseñar los valores).
 missing=()
-for key in TRAVELPAYOUTS_TOKEN TRAVELPAYOUTS_MARKER FCM_PROJECT_ID \
-  BACKUP_S3_ENDPOINT BACKUP_S3_REGION BACKUP_S3_ACCESS_KEY BACKUP_S3_SECRET_KEY NTFY_URL; do
+required=(TRAVELPAYOUTS_TOKEN TRAVELPAYOUTS_MARKER NTFY_URL "${backup_keys[@]}")
+[ "$PUSH" = true ] && required+=(FCM_PROJECT_ID)
+for key in "${required[@]}"; do
   grep -Eq "^${key}=.+" "$PROD/secrets.env" || missing+=("$key")
 done
 for key in DOMAIN ACME_EMAIL OLLAMA_MODEL; do
@@ -82,10 +107,10 @@ if [ ! -f "$KEYS/jwt-active.pem" ]; then
   chmod 600 "$KEYS/jwt-active.pem"
   echo "  creada la llave de sesiones (JWT)"
 fi
-if [ ! -f "$KEYS/fcm.json" ]; then
-  echo "Falta $KEYS/fcm.json (la cuenta de servicio de Firebase). Súbela con scp" >&2
-  echo "y muévela allí: sudo mv fcm.json $KEYS/ && sudo chmod 600 $KEYS/fcm.json" >&2
-  exit 1
+if [ "$PUSH" = false ]; then
+  echo "  AVISO: falta $KEYS/fcm.json (Firebase): se despliega SIN avisos push."
+  echo "  Cuando lo tengas: sudo mv fcm.json $KEYS/ && sudo chmod 600 $KEYS/fcm.json"
+  echo "  y vuelve a ejecutar este script."
 fi
 
 echo "== 3/6 Voces de Piper =="
@@ -93,6 +118,15 @@ bash "$REPO/infrastructure/tts/download-voices.sh"
 
 echo "== 4/6 Imágenes (puede tardar la primera vez) =="
 export DOCKER_BUILDKIT=1
+# En un servidor de 8 GB, compilar Java y Rust a la vez puede quedarse sin
+# memoria. Durante la construcción se usa un "swap" (memoria de reserva en el
+# disco) de 8 GB, y se quita al acabar (Kubernetes no quiere swap).
+MEM_GB=$(( $(awk '/MemTotal/ {print $2}' /proc/meminfo) / 1024 / 1024 ))
+SWAP=false
+if [ "$MEM_GB" -lt 12 ]; then
+  [ -f /swapfile.build ] || { fallocate -l 8G /swapfile.build && chmod 600 /swapfile.build && mkswap /swapfile.build >/dev/null; }
+  swapon /swapfile.build 2>/dev/null && SWAP=true
+fi
 build() {
   # build <nombre> <Dockerfile> [target]
   local name="$1" file="$2" target="${3:-}"
@@ -113,6 +147,7 @@ for img in postgres flight-ingestor price-consumer auth-gateway ai-orchestrator 
   geo-engine notifier audio-worker; do
   docker save "nomadiq/${img}:prod" | k3s ctr -n k8s.io images import -
 done
+[ "$SWAP" = true ] && swapoff /swapfile.build
 # Borrar capas viejas para no llenar el disco (200 GB gratis, pero mejor así).
 docker image prune -f >/dev/null
 
@@ -125,8 +160,10 @@ upsert() { "${KUBECTL[@]}" apply -f - >/dev/null; }
   --from-env-file="$PROD/secrets.env" --dry-run=client -o yaml | upsert
 "${KUBECTL[@]}" -n "$NS" create secret generic nomadiq-jwt \
   --from-file=jwt-active.pem="$KEYS/jwt-active.pem" --dry-run=client -o yaml | upsert
-"${KUBECTL[@]}" -n "$NS" create secret generic nomadiq-fcm \
-  --from-file=fcm.json="$KEYS/fcm.json" --dry-run=client -o yaml | upsert
+if [ "$PUSH" = true ]; then
+  "${KUBECTL[@]}" -n "$NS" create secret generic nomadiq-fcm \
+    --from-file=fcm.json="$KEYS/fcm.json" --dry-run=client -o yaml | upsert
+fi
 NTFY_URL="$(grep -E '^NTFY_URL=' "$PROD/secrets.env" | cut -d= -f2-)"
 "${KUBECTL[@]}" -n nomadiq-monitoring create secret generic alertmanager-ntfy \
   --from-literal=ntfy-url="$NTFY_URL" --dry-run=client -o yaml | upsert
@@ -160,7 +197,19 @@ echo "== 6/6 Manifiestos =="
 # Un Job no se puede modificar: se borra el anterior (ya terminó) y se crea
 # de nuevo, que vuelve a comprobar los topics de Kafka (es idempotente).
 "${KUBECTL[@]}" -n "$NS" delete job kafka-topics --ignore-not-found >/dev/null
-"${KUBECTL[@]}" apply -k "$PROD/k8s"
+# Lo que se apaga en un servidor pequeño o sin Firebase: se quita del
+# paquete ANTES de aplicarlo (así ni siquiera arranca) y, si ya estaba de
+# un despliegue anterior, se borra.
+skip=()
+[ "$LLM_ENABLED" = false ] && skip+=(StatefulSet/ollama)
+[ "$PUSH" = false ] && skip+=(Deployment/notifier)
+"${KUBECTL[@]}" kustomize "$PROD/k8s" > "$TMP/all.yaml"
+python3 "$PROD/skip_kinds.py" "${skip[@]}" < "$TMP/all.yaml" > "$TMP/apply.yaml"
+"${KUBECTL[@]}" apply -f "$TMP/apply.yaml"
+for item in "${skip[@]}"; do
+  "${KUBECTL[@]}" -n "$NS" delete "${item,,}" --ignore-not-found >/dev/null
+  echo "  apagado: $item"
+done
 # Las imágenes se llaman siempre ":prod": hay que reiniciar para que los
 # servicios usen la recién construida.
 "${KUBECTL[@]}" -n "$NS" rollout restart deployment
