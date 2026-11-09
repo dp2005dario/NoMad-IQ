@@ -29,6 +29,13 @@
 #   SIZE       tamaño de la máquina (por defecto Standard_B2as_v2: 2 núcleos
 #              y 8 GB, sin la IA local). Con Standard_B4as_v2 (16 GB) se
 #              enciende también la IA de Flyra, pero cuesta el doble.
+#   APAGAR     hora (UTC, HHMM) a la que la máquina se apaga sola cada día
+#              para ahorrar crédito (por defecto 2200 = 23:00 en España en
+#              invierno). APAGAR=no la deja encendida siempre. Encenderla:
+#              portal → máquina "eclipta" → Iniciar, o "az vm start -g
+#              eclipta-rg -n eclipta" (o la app de Azure en el móvil).
+#   AVISO_EUR  presupuesto mensual en euros (por defecto 15): te llega un
+#              correo al gastar el 50 %, el 90 % y el 100 %.
 #
 # Se puede volver a ejecutar: lo que ya existe no se crea otra vez.
 # Nunca enseña ninguna clave por pantalla.
@@ -43,6 +50,8 @@ USER_NAME=azureuser
 REPO_URL=https://github.com/dp2005dario/NoMad-IQ.git
 BRANCH="${BRANCH:-main}"
 STATE="$HOME/.eclipta-azure.env"   # solo nombres (nada secreto)
+APAGAR="${APAGAR:-2200}"
+AVISO_EUR="${AVISO_EUR:-15}"
 
 paso() { printf '\n== %s ==\n' "$1"; }
 
@@ -60,6 +69,22 @@ SUB_NAME="$(az account show --query name -o tsv)"
 EMAIL="$(az account show --query user.name -o tsv)"
 echo "Suscripción: $SUB_NAME"
 echo "Región: $REGION · Máquina: $SIZE"
+
+# Lo que cuesta la máquina, con el precio oficial de Azure de hoy (su lista
+# pública de precios). Más disco (~5 €/mes) e IP fija (~3 €/mes).
+HOUR="$(curl -fsS --max-time 20 "https://prices.azure.com/api/retail/prices?currencyCode=EUR&\$filter=serviceName%20eq%20'Virtual%20Machines'%20and%20armRegionName%20eq%20'$REGION'%20and%20armSkuName%20eq%20'$SIZE'%20and%20priceType%20eq%20'Consumption'" 2>/dev/null \
+  | python3 -c "import json,sys; it=[i for i in json.load(sys.stdin)['Items'] if 'Windows' not in i['productName'] and 'Spot' not in i['skuName'] and 'Low Priority' not in i['skuName']]; print(min(i['retailPrice'] for i in it) if it else '')" 2>/dev/null || true)"
+if [ -n "$HOUR" ]; then
+  python3 - "$HOUR" <<'PY'
+import sys
+h = float(sys.argv[1])
+print(f"Precio de la máquina: {h:.3f} € por hora encendida.")
+print(f"  Encendida siempre: ~{h * 730 + 8:.0f} €/mes (con disco e IP).")
+print(f"  Encendida 8 h al día: ~{h * 8 * 30.4 + 8:.0f} €/mes (con disco e IP).")
+PY
+else
+  echo "(No he podido leer el precio de hoy: mira https://azure.microsoft.com/pricing/calculator/)"
+fi
 
 # Los nombres con letras al azar se guardan para que, si se vuelve a
 # ejecutar, use los mismos (no crea un segundo servidor).
@@ -114,7 +139,8 @@ EOF
     --image Ubuntu2404 --size "$SIZE" \
     --admin-username "$USER_NAME" --generate-ssh-keys \
     --public-ip-sku Standard --public-ip-address-dns-name "$DNS_LABEL" \
-    --os-disk-size-gb 64 --custom-data "$INIT" -o none; then
+    --os-disk-size-gb 64 --storage-sku StandardSSD_LRS \
+    --custom-data "$INIT" -o none; then
     echo >&2
     echo "Azure no ha dejado crear la máquina. Suele ser porque en esa región" >&2
     echo "no hay ese tamaño para tu cuenta. Prueba otra región, por ejemplo:" >&2
@@ -130,6 +156,32 @@ EOF
   az vm open-port -g "$RG" -n "$VM" --port 80 --priority 1010 -o none
   az vm open-port -g "$RG" -n "$VM" --port 443 --priority 1020 -o none
 fi
+# Apagado automático cada día (gratis; Azure avisa por correo 30 min antes).
+if [ "$APAGAR" != no ]; then
+  az vm auto-shutdown -g "$RG" -n "$VM" --time "$APAGAR" --email "$EMAIL" -o none \
+    && echo "Se apagará sola cada día a las $APAGAR (UTC)." \
+    || echo "AVISO: no se pudo poner el apagado automático (ponlo en el portal: máquina → Apagado automático)."
+fi
+
+# Alerta de gasto: correo al 50 %, 90 % y 100 % del presupuesto del mes.
+SUB_ID="$(az account show --query id -o tsv)"
+BUDGET_BODY="$(python3 - "$AVISO_EUR" "$EMAIL" <<'PY'
+import datetime, json, sys
+amount, email = float(sys.argv[1]), sys.argv[2]
+start = datetime.date.today().replace(day=1).isoformat() + "T00:00:00Z"
+note = lambda pct: {"enabled": True, "operator": "GreaterThanOrEqualTo", "threshold": pct,
+                    "thresholdType": "Actual", "contactEmails": [email]}
+print(json.dumps({"properties": {"category": "Cost", "amount": amount, "timeGrain": "Monthly",
+      "timePeriod": {"startDate": start},
+      "notifications": {"al50": note(50), "al90": note(90), "al100": note(100)}}}))
+PY
+)"
+az rest --method put -o none \
+  --url "https://management.azure.com/subscriptions/$SUB_ID/providers/Microsoft.Consumption/budgets/eclipta-aviso?api-version=2023-05-01" \
+  --body "$BUDGET_BODY" \
+  && echo "Alerta de gasto puesta: correo al llegar a 50 %, 90 % y 100 % de $AVISO_EUR €/mes." \
+  || echo "AVISO: tu cuenta no deja crear alertas de gasto por aquí. Mira el crédito que te queda en https://www.microsoftazuresponsorships.com/balance"
+
 FQDN="$(az network public-ip list -g "$RG" --query "[0].dnsSettings.fqdn" -o tsv)"
 echo "Tu servidor: $FQDN"
 

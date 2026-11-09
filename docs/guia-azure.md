@@ -21,29 +21,50 @@ dos scripts que hacen casi todo solos.
 
 ## Cuánto cuesta (léelo antes)
 
-| Cuenta | Qué te da | Riesgo de cobro |
+Usamos **Azure for Students**: 100 $ de crédito, sin tarjeta, y **nunca te
+cobran**: si se acaba el crédito, la máquina se para y ya está.
+
+ECLIPTA es solo para ti por ahora, así que el servidor está pensado para
+gastar poco:
+
+- **Máquina Standard_B2as_v2** (2 núcleos, 8 GB): es la más pequeña en la
+  que cabe todo el servidor. Unos **0,07-0,08 € por hora encendida** (el
+  script te dice el precio exacto de hoy antes de crearla).
+- **Se apaga sola cada noche** (a las 23:00 en invierno). Apagada no gasta la
+  máquina, solo el disco y la IP: unos **8 € al mes**.
+- **Alerta de gasto**: te llega un correo al gastar el 50 %, 90 % y 100 % de
+  15 al mes.
+
+| Cómo la uses | Coste aproximado al mes | Los 100 $ duran |
 |---|---|---|
-| **Azure for Students** | 100 $ de crédito, sin tarjeta, 12 meses | Ninguno: si se acaba el crédito, se para |
-| **Azure free trial** | 200 $ de crédito durante 30 días, con tarjeta | Ninguno mientras NO pases a "pago por uso" |
+| Encendida solo cuando la usas (~2 h al día) | ~13 € | unos 7 meses |
+| Encendida de día (~8 h al día) | ~26 € | unos 3-4 meses |
+| Siempre encendida (APAGAR=no) | ~63 € | algo más de 1 mes |
 
-La máquina por defecto (**Standard_B2as_v2**: 2 núcleos y 8 GB) cuesta
-aproximadamente **60-70 $ al mes** encendida todo el día (precio orientativo:
-compruébalo en <https://azure.microsoft.com/pricing/calculator/>). Con 100 $
-llega para algo más de un mes; con 200 $, para los 30 días de la prueba.
+(Cifras orientativas con el precio de Europa Occidental; las de verdad las
+da el script.)
 
-Para que dure más: cuando no la uses, en el portal → máquina **eclipta** →
-**Detener**. Detenida (“Desasignada”) no gasta la máquina, solo unos
-céntimos de disco. Al **Iniciar**, todo vuelve solo (tarda unos minutos).
+**Encenderla** cuando quieras usar la app: portal → máquina **eclipta** →
+**Iniciar** (o la app **Azure** del móvil, o en la Cloud Shell
+`az vm start -g eclipta-rg -n eclipta`). Tarda unos 5 minutos en estar
+lista. **Apagarla** a mano: **Detener** (sale "Desasignada": ya no gasta).
+
+Mientras está apagada, la app no conecta y no se vigilan los precios de
+vuelos: es lo que se ahorra.
 
 En 8 GB **no cabe la IA local** (Ollama): Flyra contesta con respuestas
-sencillas y todo lo demás funciona igual. Con `SIZE=Standard_B4as_v2`
-(16 GB) se enciende la IA, pero cuesta el doble.
+sencillas y todo lo demás funciona igual.
+
+Puedes cambiar las opciones al crear el servidor, poniéndolas delante de
+`bash` (por ejemplo `APAGAR=0000 AVISO_EUR=10 bash ...`):
+`APAGAR` (hora UTC, o `no`), `AVISO_EUR` (presupuesto del mes),
+`REGION` y `SIZE`.
 
 ## Paso 1: la suscripción
 
 1. Entra en <https://portal.azure.com>.
-2. En "Welcome to Azure" elige **Azure for Students → Start** (si tienes
-   correo de estudiante) o **Azure free trial → Start**.
+2. En "Welcome to Azure" elige **Azure for Students → Start** y confirma tu
+   correo de estudiante.
 3. Sigue los pasos hasta que en el portal, arriba, al buscar
    **Subscriptions** te salga una con estado **Active**.
 
