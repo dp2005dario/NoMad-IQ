@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/passport/passport_screen.dart';
 import 'package:eclipta/features/push/notice_log.dart';
 import 'package:eclipta/features/push/notices_page.dart';
 import 'package:eclipta/features/push/notices_screen.dart';
@@ -131,7 +132,7 @@ void main() {
     // Tocar "Cuidado" abre su pantalla.
     spy.to('ECLIPTA · Avisos')('open:1');
     await tester.pumpAndSettle();
-    expect(find.text('Mi pasaporte'), findsOneWidget);
+    expect(find.byType(PassportScreen), findsOneWidget);
   });
 
   test('la hora: de hoy, de ayer o la fecha', () {

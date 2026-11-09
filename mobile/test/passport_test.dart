@@ -1,19 +1,21 @@
 // Mi pasaporte: páginas por país, rareza de los cromos y la ficha.
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/camera/stamps.dart';
 import 'package:eclipta/features/passport/passport.dart';
+import 'package:eclipta/features/passport/passport_page.dart';
+import 'package:eclipta/features/passport/passport_screen.dart';
 import 'package:eclipta/features/route/flight3d.dart' show CountryCodes;
 import 'package:eclipta/features/route/geo.dart';
 import 'package:eclipta/features/route/world_data.dart';
 
 import 'camera_test.dart' show FakeSpeaker;
 import 'helpers.dart';
+import 'money_test.dart' as m;
 
 const List<Airport> airports = <Airport>[
   Airport(
@@ -116,14 +118,20 @@ void main() {
     ) async {
       final FakeGateway g = FakeGateway();
       final SessionController session = await signedInSession(g);
+      final m.PageSpy spy = m.PageSpy();
       await pumpApp(
         tester,
         locale: 'es',
         session: session,
         initialLocation: Routes.passport,
-        services: fakeServices(session, gateway: g),
+        services: fakeServices(session, gateway: g, webScene: spy.build),
       );
-      expect(find.text('Abrir la cámara'), findsOneWidget);
+      await spy.wait(tester, () => spy.pages.isNotEmpty);
+      final Map<String, Object?> d = spy.data(PassportScreen.lastBridge!);
+      final Map<String, Object?> page =
+          (d['pages']! as List<Object?>).single! as Map<String, Object?>;
+      expect(page['empty'], isTrue);
+      expect(d['cameraTxt'], 'Abrir la cámara');
     });
 
     testWidgets('la tapa se abre; un cromo se escucha y se abre en el mapa', (
@@ -136,9 +144,7 @@ void main() {
           .add(stamp('Q9', 2, lat: 41.9, lon: 12.49, year: 80));
       final FakeSpeaker voice = FakeSpeaker();
       final List<Uri> opened = <Uri>[];
-      tester.view.physicalSize = const Size(1200, 2600);
-      tester.view.devicePixelRatio = 3;
-      addTearDown(tester.view.reset);
+      final m.PageSpy spy = m.PageSpy();
       await pumpApp(
         tester,
         locale: 'es',
@@ -149,29 +155,53 @@ void main() {
           gateway: g,
           prefs: prefs,
           speaker: voice,
+          webScene: spy.build,
           openLink: (Uri u) async {
             opened.add(u);
             return true;
           },
         ),
       );
-      expect(find.text('PASAPORTE DE VIAJE'), findsOneWidget);
-      expect(find.text('ANA'), findsOneWidget);
-      await tester.tap(find.text('Toca para abrir'));
-      await tester.pumpAndSettle();
+      await spy.wait(tester, () => spy.pages.isNotEmpty);
       // El país llega cuando cargan los aeropuertos (puede tardar en tests).
-      expect(find.textContaining('1 sello · '), findsOneWidget);
-      expect(find.text('LEGENDARIA'), findsOneWidget);
+      String country() =>
+          ((spy.data(PassportScreen.lastBridge!)['pages']! as List<Object?>)
+                      .first!
+                  as Map<String, Object?>)['country']!
+              as String;
+      for (int i = 0; i < 20 && country() != 'Italia'; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 300)),
+        );
+        await tester.pumpAndSettle();
+      }
+      final Map<String, Object?> d = spy.data(PassportScreen.lastBridge!);
+      expect(d['cov1'], 'PASAPORTE');
+      expect(d['cov2'], 'DE VIAJE · ANA');
+      final Map<String, Object?> page =
+          (d['pages']! as List<Object?>).single! as Map<String, Object?>;
+      expect(page['country'], 'Italia');
+      expect(page['flag'], '🇮🇹');
+      final Map<String, Object?> card =
+          (page['cards']! as List<Object?>).single! as Map<String, Object?>;
+      expect(card['name'], 'Monumento Q9');
+      expect(card['rarLbl'], 'LEGENDARIA');
+      expect(card['text'], 'Una historia de Q9');
 
-      await tester.tap(find.text('Monumento Q9'));
-      await tester.pumpAndSettle();
-      expect(find.text('Una historia de Q9'), findsOneWidget);
-      await tester.tap(find.text('Escuchar'));
+      spy.send!('listen:Q9');
       await tester.pumpAndSettle();
       expect(voice.said.single, 'Monumento Q9. Una historia de Q9');
-      await tester.tap(find.text('Ver en el mapa'));
+      spy.send!('map:Q9');
       await tester.pumpAndSettle();
       expect(opened.single.host, 'www.openstreetmap.org');
+    });
+
+    test('el dibujo del cromo según lo que es', () {
+      Stamp named(String n) => Stamp(qid: 'Q1', name: n, date: DateTime(2026));
+      expect(stampDrawing(named('Torre de Belém')), 'tower');
+      expect(stampDrawing(named('Colosseum')), 'colos');
+      expect(stampDrawing(named('Fontana di Trevi')), 'fountain');
+      expect(stampDrawing(named('Algo')), 'palace');
     });
   });
 }

@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
@@ -335,7 +336,8 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Pasaporte de sellos, 3 nuevos'));
     await tester.pumpAndSettle();
     expect(find.byType(PassportScreen), findsOneWidget);
-    await tester.tap(find.byType(BackButton));
+    // "Volver" está dentro de la página: se vuelve como lo haría ella.
+    GoRouter.of(tester.element(find.byType(PassportScreen))).pop();
     await tester.pumpAndSettle();
     expect(find.bySemanticsLabel('Pasaporte de sellos'), findsOne);
 
