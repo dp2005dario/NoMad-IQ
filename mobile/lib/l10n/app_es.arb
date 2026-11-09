@@ -1183,6 +1183,7 @@
   "sosFire": "Bomberos",
   "sosContactsTitle": "TUS CONTACTOS",
   "sosAddContact": "Añadir contacto",
+  "sosFromPhone": "Elegir de la agenda",
   "sosContactName": "Nombre",
   "sosContactPhone": "Teléfono (con prefijo del país)",
   "sosContactInvalid": "Escribe un teléfono válido",

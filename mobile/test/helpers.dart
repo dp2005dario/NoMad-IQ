@@ -28,6 +28,7 @@ import 'package:eclipta/features/family/family.dart';
 import 'package:eclipta/features/memories/memories.dart';
 import 'package:eclipta/features/memories/travel_camera.dart';
 import 'package:eclipta/features/help/help_contacts.dart';
+import 'package:eclipta/features/sos/phone_contacts.dart';
 import 'package:eclipta/features/offline/city_downloader.dart';
 import 'package:eclipta/features/offline/saved_guides.dart';
 import 'package:eclipta/features/audioguide/guide_player.dart';
@@ -228,6 +229,7 @@ AppServices fakeServices(
   DocSource? docSource,
   DocTextReader? docReader,
   WebSceneBuilder? webScene,
+  PickPhoneContact? pickContact,
 }) {
   final FakeGateway g = gateway ?? FakeGateway();
   final FakeMap m = map ?? FakeMap();
@@ -272,6 +274,7 @@ AppServices fakeServices(
     power: power,
     saved: saved ?? const NoSavedGuides(),
     help: help,
+    pickContact: pickContact,
     family: family,
     newTravelCamera: newTravelCamera,
     share: share ?? (List<String> _, {String? text}) async {},

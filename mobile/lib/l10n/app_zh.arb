@@ -1183,6 +1183,7 @@
   "sosFire": "消防",
   "sosContactsTitle": "你的联系人",
   "sosAddContact": "添加联系人",
+  "sosFromPhone": "从通讯录选择",
   "sosContactName": "姓名",
   "sosContactPhone": "电话（含国家区号）",
   "sosContactInvalid": "请输入有效的电话号码",

@@ -1183,6 +1183,7 @@
   "sosFire": "Vigili del fuoco",
   "sosContactsTitle": "I TUOI CONTATTI",
   "sosAddContact": "Aggiungi contatto",
+  "sosFromPhone": "Scegli dalla rubrica",
   "sosContactName": "Nome",
   "sosContactPhone": "Telefono (con prefisso)",
   "sosContactInvalid": "Scrivi un numero valido",

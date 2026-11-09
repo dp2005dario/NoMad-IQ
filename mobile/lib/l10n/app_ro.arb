@@ -1183,6 +1183,7 @@
   "sosFire": "Pompieri",
   "sosContactsTitle": "CONTACTELE TALE",
   "sosAddContact": "Adaugă contact",
+  "sosFromPhone": "Alege din contacte",
   "sosContactName": "Nume",
   "sosContactPhone": "Telefon (cu prefixul țării)",
   "sosContactInvalid": "Scrie un număr de telefon valid",

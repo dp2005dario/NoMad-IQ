@@ -1183,6 +1183,7 @@
   "sosFire": "Pemadam kebakaran",
   "sosContactsTitle": "KONTAKMU",
   "sosAddContact": "Tambah kontak",
+  "sosFromPhone": "Pilih dari kontak",
   "sosContactName": "Nama",
   "sosContactPhone": "Telepon (dengan kode negara)",
   "sosContactInvalid": "Tulis nomor telepon yang valid",

@@ -1183,6 +1183,7 @@
   "sosFire": "消防",
   "sosContactsTitle": "あなたの連絡先",
   "sosAddContact": "連絡先を追加",
+  "sosFromPhone": "連絡先から選ぶ",
   "sosContactName": "名前",
   "sosContactPhone": "電話（国番号つき）",
   "sosContactInvalid": "正しい電話番号を入力してください",

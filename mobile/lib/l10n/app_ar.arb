@@ -1183,6 +1183,7 @@
   "sosFire": "الإطفاء",
   "sosContactsTitle": "جهات اتصالك",
   "sosAddContact": "إضافة جهة اتصال",
+  "sosFromPhone": "اختر من جهات الاتصال",
   "sosContactName": "الاسم",
   "sosContactPhone": "الهاتف (مع رمز الدولة)",
   "sosContactInvalid": "اكتب رقم هاتف صحيحًا",

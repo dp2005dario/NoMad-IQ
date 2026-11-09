@@ -1183,6 +1183,7 @@
   "sosFire": "Пожарные",
   "sosContactsTitle": "ВАШИ КОНТАКТЫ",
   "sosAddContact": "Добавить контакт",
+  "sosFromPhone": "Выбрать из контактов",
   "sosContactName": "Имя",
   "sosContactPhone": "Телефон (с кодом страны)",
   "sosContactInvalid": "Введите правильный номер телефона",

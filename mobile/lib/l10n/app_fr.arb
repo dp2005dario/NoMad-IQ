@@ -1183,6 +1183,7 @@
   "sosFire": "Pompiers",
   "sosContactsTitle": "TES CONTACTS",
   "sosAddContact": "Ajouter un contact",
+  "sosFromPhone": "Choisir dans les contacts",
   "sosContactName": "Nom",
   "sosContactPhone": "Téléphone (avec l'indicatif)",
   "sosContactInvalid": "Écris un numéro valide",

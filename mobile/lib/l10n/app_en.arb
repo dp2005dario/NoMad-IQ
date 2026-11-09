@@ -5506,6 +5506,10 @@
     "description": "Section (uppercase)."
   },
   "sosAddContact": "Add contact",
+  "sosFromPhone": "Choose from contacts",
+  "@sosFromPhone": {
+    "description": "Button: open the phone address book to pick an emergency contact."
+  },
   "@sosAddContact": {
     "description": "Button."
   },

@@ -16,6 +16,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../map/geo.dart';
 import '../map/location.dart';
 import 'emergency_data.dart';
+import 'phone_contacts.dart';
 import 'sos_store.dart';
 import 'where_am_i.dart';
 
@@ -447,15 +448,39 @@ class _SosContactDialogState extends State<SosContactDialog> {
     Navigator.pop(context, SosContact(name: name, phone: phone));
   }
 
+  /// "Elegir de la agenda": se abre la agenda del móvil y el contacto que
+  /// toques rellena el nombre y el teléfono (puedes cambiarlos antes de
+  /// guardar).
+  Future<void> _fromPhone(PickPhoneContact pick) async {
+    final SosContact? c = await pick();
+    if (c == null || !mounted) return;
+    setState(() {
+      _name.text = c.name;
+      _phone.text = c.phone;
+      _tried = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
     final bool badPhone = _tried && !SosContact.isPhone(_phone.text);
+    final PickPhoneContact? pick = ServicesScope.of(context).pickContact;
     return AlertDialog(
       title: Text(t.sosAddContact),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
+          if (pick != null)
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton.icon(
+                key: const Key('sos-from-phone'),
+                onPressed: () => _fromPhone(pick),
+                icon: const Icon(Icons.contacts_outlined),
+                label: Text(t.sosFromPhone),
+              ),
+            ),
           TextField(
             controller: _name,
             maxLength: 40,

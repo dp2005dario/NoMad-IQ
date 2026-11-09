@@ -1183,6 +1183,7 @@
   "sosFire": "ดับเพลิง",
   "sosContactsTitle": "ผู้ติดต่อของคุณ",
   "sosAddContact": "เพิ่มผู้ติดต่อ",
+  "sosFromPhone": "เลือกจากรายชื่อติดต่อ",
   "sosContactName": "ชื่อ",
   "sosContactPhone": "โทรศัพท์ (พร้อมรหัสประเทศ)",
   "sosContactInvalid": "ใส่เบอร์โทรศัพท์ที่ถูกต้อง",

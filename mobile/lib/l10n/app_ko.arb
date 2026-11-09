@@ -1183,6 +1183,7 @@
   "sosFire": "소방",
   "sosContactsTitle": "내 연락처",
   "sosAddContact": "연락처 추가",
+  "sosFromPhone": "연락처에서 선택",
   "sosContactName": "이름",
   "sosContactPhone": "전화번호(국가 번호 포함)",
   "sosContactInvalid": "올바른 전화번호를 입력하세요",

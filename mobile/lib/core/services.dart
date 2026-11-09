@@ -36,6 +36,7 @@ import '../features/events/events_api.dart';
 import '../features/radar/radar_api.dart';
 import '../features/stays/stays_api.dart';
 import '../features/help/help_contacts.dart';
+import '../features/sos/phone_contacts.dart';
 import '../features/map/geo_api.dart';
 import '../features/map/geocode_api.dart';
 import '../features/group/cravings_api.dart';
@@ -92,6 +93,7 @@ class AppServices {
     this.docReader = const NoDocTextReader(),
     this.saved = const NoSavedGuides(),
     this.help = const HelpContacts(),
+    this.pickContact,
     this.newTravelCamera,
     this.share = shareFiles,
     this.sticker = stickerPhoto,
@@ -335,6 +337,10 @@ class AppServices {
 
   /// Con quién te pone en contacto la pantalla "Ayuda".
   final HelpContacts help;
+
+  /// SOS: elegir un contacto de la agenda del móvil (null = este aparato
+  /// no tiene agenda: solo se escribe a mano).
+  final PickPhoneContact? pickContact;
 
   /// Las audioguías que ya están guardadas en este móvil ("Sin conexión").
   final SavedGuides saved;
