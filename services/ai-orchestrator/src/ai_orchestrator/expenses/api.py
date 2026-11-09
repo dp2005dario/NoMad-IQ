@@ -2,6 +2,8 @@
 
     POST /v1/expense-groups                          crear un bote (te da el código)
     POST /v1/expense-groups/join                     entrar con el código de un amigo
+    POST /v1/expense-groups/trip                     el bote de tu viaje en grupo (se crea o
+                                                     entras solo: sin código)
     GET  /v1/expense-groups                          mis botes, con mi saldo
     GET  /v1/expense-groups/{id}                     todo: gastos, pagos, saldos y quién paga a quién
     POST /v1/expense-groups/{id}/expenses            apuntar un gasto (a partes iguales o por platos)
@@ -82,6 +84,12 @@ class CreateGroup(BaseModel):
     title: Annotated[str, Field(min_length=1, max_length=60), AfterValidator(_clean)]
     currency: CurrencyCode
     my_name: Name
+
+
+class TripGroup(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    trip_id: uuid.UUID
 
 
 class JoinGroup(BaseModel):
@@ -386,6 +394,18 @@ def expense_router(store: ExpenseStore) -> APIRouter:
             record = await store.join(code, principal.user_id, body.my_name)
         except GroupNotFoundError as exc:
             raise HTTPException(status_code=404, detail="código no encontrado") from exc
+        except GroupFullError as exc:
+            raise HTTPException(status_code=409, detail="el bote está lleno (20 personas)") from exc
+        return GroupView.of(record, principal.user_id)
+
+    @router.post("/trip", response_model=GroupView)
+    async def trip_group(
+        principal: Annotated[Principal, Depends(current_principal)], body: TripGroup
+    ) -> GroupView:
+        try:
+            record = await store.for_trip(str(body.trip_id), principal.user_id)
+        except GroupNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="viaje no encontrado") from exc
         except GroupFullError as exc:
             raise HTTPException(status_code=409, detail="el bote está lleno (20 personas)") from exc
         return GroupView.of(record, principal.user_id)

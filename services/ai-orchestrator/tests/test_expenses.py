@@ -135,6 +135,9 @@ def test_check_expense() -> None:
 class MemoryExpenses:
     def __init__(self) -> None:
         self.groups: dict[str, GroupRecord] = {}
+        # Viajes en grupo: quién va en cada uno y su bote.
+        self.trips: dict[str, tuple[str, ...]] = {}
+        self.trip_groups: dict[str, str] = {}
 
     def _find(self, group_id: str, user_id: str) -> GroupRecord:
         g = self.groups.get(group_id)
@@ -157,6 +160,16 @@ class MemoryExpenses:
             g = replace(g, members=(*g.members, Member(len(g.members) + 1, user_id, name)))
             self.groups[g.group_id] = g
         return g
+
+    async def for_trip(self, negotiation_id: str, user_id: str) -> GroupRecord:
+        if user_id not in self.trips.get(negotiation_id, ()):
+            raise GroupNotFoundError(negotiation_id)
+        gid = self.trip_groups.get(negotiation_id)
+        if gid is None:
+            g = await self.create(user_id, user_id.title(), "Viaje", "EUR")
+            self.trip_groups[negotiation_id] = g.group_id
+            return g
+        return await self.join(self.groups[gid].invite_code, user_id, user_id.title())
 
     async def list_for_member(self, user_id: str, *, limit: int) -> list[GroupRecord]:
         return [g for g in self.groups.values() if g.seat_of(user_id) is not None][:limit]
@@ -492,3 +505,21 @@ async def test_kitty_and_couple_api() -> None:
         assert view["default_weights"] == [{"seat": 1, "weight": 60}, {"seat": 2, "weight": 40}]
         bad = {**couple, "weights": [60]}
         assert (await c.post(f"{BASE}/{gid}/expenses", json=bad, headers=h(ANA))).status_code == 400
+
+
+async def test_trip_group_api() -> None:
+    """Grupo: POST /trip da el bote del viaje (el mismo para todos los del viaje)."""
+    store = MemoryExpenses()
+    trip = str(uuid.uuid4())
+    store.trips[trip] = ("ana", "beto")
+    async with client(store) as c:
+        ana = await c.post("/v1/expense-groups/trip", json={"trip_id": trip}, headers=h("ana"))
+        assert ana.status_code == 200
+        beto = await c.post("/v1/expense-groups/trip", json={"trip_id": trip}, headers=h("beto"))
+        assert beto.json()["group_id"] == ana.json()["group_id"]
+        assert len(beto.json()["members"]) == 2
+        # Quien no va en el viaje: 404. Un id que no es uuid: 400.
+        out = await c.post("/v1/expense-groups/trip", json={"trip_id": trip}, headers=h("eve"))
+        assert out.status_code == 404
+        bad = await c.post("/v1/expense-groups/trip", json={"trip_id": "x"}, headers=h("ana"))
+        assert bad.status_code == 400

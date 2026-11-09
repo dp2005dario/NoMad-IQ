@@ -6,11 +6,14 @@
 // La página va en español (como la maqueta). Todo sale de datos de verdad;
 // si algo no se encuentra, se dice con una frase en vez de inventarlo.
 // Dart puro: se prueba sin WebView.
+
 import 'dart:convert';
 import 'dart:math' as math;
 
+import '../../core/money.dart';
 import '../events/events_api.dart';
 import '../map/geo.dart';
+import '../money/expenses_api.dart';
 import '../plans/plans_api.dart';
 import '../stays/stays_api.dart';
 import 'cravings_api.dart';
@@ -130,6 +133,7 @@ Map<String, Object?> groupPageData({
   String? iata,
   List<CityEvent>? events,
   bool eventsFailed = false,
+  String debt = '',
 }) {
   final List<TripMember> people = trip.members;
   final int n = people.length;
@@ -310,9 +314,23 @@ Map<String, Object?> groupPageData({
               '${_two(golden.toLocal().minute)} (estimada por la posición del '
               'sol): buen momento para un mirador.',
     'days': <String>[for (final GroupPlan p in days.take(3)) p.title],
-    // Los gastos aún no van unidos al viaje: la fila abre Gastos.
-    'debt': '',
+    // Los gastos van unidos al viaje: lo que debes (o te deben) en su bote.
+    'debt': debt,
   };
+}
+
+/// La fila "Gastos del grupo": "Debes 12,50 €", "Te deben 8 €" o nada si
+/// estáis en paz.
+String potDebt(ExpenseGroup pot, String locale) {
+  final int mine = pot.balances[pot.mySeat] ?? 0;
+  if (mine == 0) return '';
+  final String amount = formatMoney(
+    mine.abs(),
+    pot.currency,
+    locale,
+    compact: true,
+  );
+  return mine < 0 ? 'Debes $amount' : 'Te deben $amount';
 }
 
 /// La página lista para enseñar.

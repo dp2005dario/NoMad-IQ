@@ -2,6 +2,7 @@
 //   GET    /v1/expense-groups                    → mis botes, con lo que me deben
 //   POST   /v1/expense-groups                    → crear uno (con código)
 //   POST   /v1/expense-groups/join               → entrar con el código de un amigo
+//   POST   /v1/expense-groups/trip               → el bote de tu viaje en grupo (sin código)
 //   GET    /v1/expense-groups/{id}               → gastos, saldos y quién paga a quién
 //   POST   /v1/expense-groups/{id}/expenses      → apuntar un gasto
 //   PUT    /v1/expense-groups/{id}/expenses/{e}/items/{i}/claim → "esto me lo pedí yo"
@@ -518,6 +519,12 @@ class ExpensesApi {
           'my_name': myName,
         }),
       );
+
+  /// El bote del viaje en grupo ([tripId] = el viaje de Grupo): el primero
+  /// que lo abre lo crea y los demás del viaje entran solos, sin código.
+  Future<ExpenseGroup> forTrip(String tripId) async => ExpenseGroup.parse(
+    await _api.postJson('$_base/trip', <String, Object?>{'trip_id': tripId}),
+  );
 
   Future<Expense> add(String groupId, NewExpense expense) async =>
       Expense.parse(

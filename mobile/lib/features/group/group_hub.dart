@@ -33,6 +33,7 @@ import '../events/events_api.dart';
 import '../map/geo.dart';
 import '../map/geocode_api.dart';
 import '../map/location.dart';
+import '../money/expenses_api.dart';
 import '../money/money_screen.dart' show MoneyTab;
 import '../plans/plans_api.dart';
 import '../route/geo.dart' show LatLon, distanceKm;
@@ -183,6 +184,9 @@ class _TripHubState extends State<TripHub> {
   List<StayZone>? _zones;
   bool _zonesFailed = false;
   PlanBoard? _board;
+
+  /// El bote de gastos de este viaje (lo que debes sale en la fila).
+  ExpenseGroup? _pot;
   late Craving _crave = firstCraving(widget.trip.members);
   List<CravingSpot>? _spots;
   bool _spotsFailed = false;
@@ -216,6 +220,7 @@ class _TripHubState extends State<TripHub> {
     if (!mounted) return;
     setState(() {});
     unawaited(_loadBoard());
+    unawaited(_loadPot());
     try {
       final List<GeoPlace> found = await _services.geocode.search(_cityName);
       if (!mounted) return;
@@ -321,6 +326,28 @@ class _TripHubState extends State<TripHub> {
     } on ApiException {
       // Sin tablero se ven los sitios igual; los votos, al reintentar.
     }
+  }
+
+  /// Los gastos van unidos al viaje: el bote del viaje (si no hay, se crea).
+  Future<void> _loadPot() async {
+    try {
+      final ExpenseGroup pot = await _services.expenses.forTrip(widget.trip.id);
+      if (mounted) setState(() => _pot = pot);
+    } on ApiException {
+      // Sin bote la fila sigue ahí; al tocarla se vuelve a intentar.
+    }
+  }
+
+  /// "Gastos del grupo": el bote del viaje (o Gastos, si aún no llega).
+  Future<void> _openPot() async {
+    if (_pot == null) await _loadPot();
+    if (!mounted) return;
+    final ExpenseGroup? pot = _pot;
+    await context.push<void>(
+      pot == null ? Routes.money() : Routes.expenseGroup(pot.id),
+    );
+    // Al volver puede haber gastos nuevos: lo que debes, al día.
+    if (mounted && pot != null) unawaited(_loadPot());
   }
 
   void _error(ApiException e) {
@@ -475,6 +502,9 @@ class _TripHubState extends State<TripHub> {
     iata: _iata,
     events: _events,
     eventsFailed: _eventsFailed,
+    debt: _pot == null
+        ? ''
+        : potDebt(_pot!, Localizations.localeOf(context).toString()),
   );
 
   /// Lo que pide la página.
@@ -513,7 +543,7 @@ class _TripHubState extends State<TripHub> {
       case 'events':
         unawaited(context.push(Routes.events(iata: _iata)));
       case 'money':
-        unawaited(context.push(Routes.money()));
+        unawaited(_openPot());
     }
   }
 

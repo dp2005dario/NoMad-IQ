@@ -17,6 +17,7 @@ import 'package:eclipta/features/plans/plans_api.dart';
 import 'package:eclipta/l10n/generated/app_localizations_es.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 
 const String tripId = '6f1c2d3e-4a5b-4c6d-8e9f-0a1b2c3d4e5f';
 const String base = '/v1/group-negotiations/$tripId';
@@ -88,6 +89,12 @@ class HubBackend {
       ];
       sentTastes.add(myTastes);
       return FakeGateway.json(tripJson(myTastes));
+    };
+    g.services['/v1/expense-groups/trip'] = (http.Request r) {
+      pots.add(
+        (jsonDecode(r.body) as Map<String, Object?>)['trip_id']! as String,
+      );
+      return FakeGateway.json(m.groupJson());
     };
     g.services['/v1/geocode'] = (_) => FakeGateway.json(<String, Object?>{
       'items': <Object?>[
@@ -190,6 +197,8 @@ class HubBackend {
   }
 
   final FakeGateway g = FakeGateway();
+  // El bote del viaje: debes 43 € (como en Gastos).
+  final List<String> pots = <String>[];
   List<String> myTastes = <String>['tapas', 'late'];
   final List<List<String>> sentTastes = <List<String>>[];
   final List<String> cravings = <String>[];
@@ -413,6 +422,11 @@ void main() {
     await wait(() => (data()['options']! as List<Object?>).length == 2);
     Map<String, Object?> d = data();
     expect(d['title'], 'Lisboa');
+    // Los gastos van unidos al viaje: lo que debes en su bote.
+    await wait(() => data()['debt'] != '');
+    d = data();
+    expect(b.pots.first, tripId);
+    expect(d['debt'], startsWith('Debes 43'));
     expect(d['sub'], '2 viajeros');
     expect(d['flyraTitle'], '¡Tengo un acuerdo para los 2!');
     expect(d['wants'], <String>['Tú: Tapas', 'Noelia: Tapas']);

@@ -168,6 +168,8 @@ class ExpenseStore(Protocol):
 
     async def join(self, code: str, user_id: str, name: str) -> GroupRecord: ...
 
+    async def for_trip(self, negotiation_id: str, user_id: str) -> GroupRecord: ...
+
     async def list_for_member(self, user_id: str, *, limit: int) -> list[GroupRecord]: ...
 
     async def get_for_member(self, group_id: str, user_id: str) -> GroupRecord | None: ...
@@ -255,6 +257,78 @@ class PostgresExpenses:
             raise StoreError(f"entrar en el bote: {exc}") from exc
         assert record is not None  # noqa: S101
         return record
+
+    async def for_trip(self, negotiation_id: str, user_id: str) -> GroupRecord:
+        """El bote del viaje en grupo: si aún no hay, se crea; si no estás, entras.
+
+        Solo para los del viaje (a los demás: GroupNotFoundError = 404). Tu
+        nombre es el del viaje (el que pusiste en el chat, o "Viajero 2").
+        """
+        for attempt in range(1, _INVITE_ATTEMPTS + 1):
+            try:
+                async with self._pool.acquire() as conn, conn.transaction():
+                    # Candado sobre el viaje: si dos lo abren a la vez, solo
+                    # uno crea el bote y el otro entra en él.
+                    trip = await conn.fetchrow(
+                        "SELECT title, currency FROM ai.group_negotiations"
+                        " WHERE negotiation_id = $1::uuid FOR UPDATE",
+                        negotiation_id,
+                    )
+                    name = await conn.fetchval(
+                        "SELECT coalesce(display_name, alias) FROM ai.group_negotiation_members"
+                        " WHERE negotiation_id = $1::uuid AND user_id = $2",
+                        negotiation_id,
+                        user_id,
+                    )
+                    if trip is None or name is None:
+                        raise GroupNotFoundError(negotiation_id)
+                    group_id = await conn.fetchval(
+                        "SELECT group_id FROM ai.trip_expense_groups WHERE negotiation_id = $1::uuid",
+                        negotiation_id,
+                    )
+                    if group_id is None:
+                        group_id = str(uuid.uuid4())
+                        await conn.execute(
+                            "INSERT INTO ai.expense_groups (group_id, title, currency, invite_code) "
+                            "VALUES ($1::uuid, $2, $3, $4)",
+                            group_id,
+                            str(trip["title"])[:60],
+                            trip["currency"],
+                            new_invite_code(),
+                        )
+                        await conn.execute(
+                            "INSERT INTO ai.trip_expense_groups (negotiation_id, group_id)"
+                            " VALUES ($1::uuid, $2::uuid)",
+                            negotiation_id,
+                            group_id,
+                        )
+                    group_id = str(group_id)
+                    seats = await conn.fetch(
+                        "SELECT seat, user_id FROM ai.expense_members WHERE group_id = $1::uuid FOR UPDATE",
+                        group_id,
+                    )
+                    if all(s["user_id"] != user_id for s in seats):
+                        if len(seats) >= MAX_MEMBERS:
+                            raise GroupFullError(group_id)
+                        await conn.execute(
+                            "INSERT INTO ai.expense_members (group_id, seat, user_id, display_name) "
+                            "VALUES ($1::uuid, $2, $3, $4)",
+                            group_id,
+                            max((s["seat"] for s in seats), default=0) + 1,
+                            user_id,
+                            str(name)[:40],
+                        )
+                    record = await self._load(conn, group_id)
+            except asyncpg.UniqueViolationError as exc:
+                # Solo puede chocar el código de invitación: se prueba otro.
+                if attempt == _INVITE_ATTEMPTS:
+                    raise StoreError(f"bote del viaje: código repetido: {exc}") from exc
+                continue
+            except _DB_ERRORS as exc:
+                raise StoreError(f"bote del viaje: {exc}") from exc
+            assert record is not None  # noqa: S101
+            return record
+        raise AssertionError("inalcanzable")  # pragma: no cover
 
     async def list_for_member(self, user_id: str, *, limit: int) -> list[GroupRecord]:
         try:
