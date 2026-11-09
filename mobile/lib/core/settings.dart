@@ -61,6 +61,9 @@ enum LocalData {
   /// "Viajo con mi perro": su nombre y dónde está su foto (solo en el móvil).
   dogProfile,
 
+  /// La maleta de tu perro: lo que ya has metido (solo en el móvil).
+  dogBag,
+
   /// "1" = la app se abre en Modo fácil (letras grandes, solo lo importante).
   easyMode,
 
