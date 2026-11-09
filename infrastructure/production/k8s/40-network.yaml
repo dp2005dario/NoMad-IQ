@@ -43,8 +43,9 @@ spec:
       ports: [{port: 9092}]
 ---
 # Las comprobaciones de salud las hace la propia máquina (kubelet), que en
-# Oracle está en la red privada 10.0.0.0/16 (la red por defecto de la VCN).
-# Si creaste la VCN con otro rango, cámbialo aquí. Prometheus (en su propio
+# Oracle y en Azure está en la red privada 10.0.0.0/16 (la red por defecto
+# de la VCN de Oracle y de la VNet que crea "az vm create"). Si creaste la
+# red con otro rango, cámbialo aquí. Prometheus (en su propio
 # namespace) también puede leer las sondas.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

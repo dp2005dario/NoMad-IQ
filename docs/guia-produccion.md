@@ -1,5 +1,9 @@
 # Guía para principiantes: poner ECLIPTA en Internet (gratis)
 
+> ¿Vas a usar **Azure** en vez de Oracle? Sigue `docs/guia-azure.md`: dos
+> scripts lo hacen casi todo solos. Esta guía sigue valiendo para entender
+> cada pieza.
+
 Hasta ahora todo corría en tu ordenador con `docker compose`. Esta guía
 explica cómo ponerlo en un **servidor de verdad**, encendido 24 horas, para
 que la app del móvil hable con él desde cualquier parte del mundo. Y todo

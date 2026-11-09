@@ -2,10 +2,11 @@
 #
 #   1. pg_dump saca una copia de toda la base de datos (formato comprimido).
 #   2. rclone la cifra con TU contraseña (BACKUP_PASSPHRASE) ANTES de subirla
-#      y la guarda en Oracle Object Storage (20 GB gratis para siempre).
+#      y la guarda fuera del servidor: en Oracle Object Storage
+#      (BACKUP_PROVIDER=oci) o en Azure Blob Storage (BACKUP_PROVIDER=azure).
 #   3. Borra las copias de más de 14 días (para no pasar de lo gratis).
 #
-# Oracle solo ve un fichero cifrado: sin tu contraseña no se puede leer.
+# La nube solo ve un fichero cifrado: sin tu contraseña no se puede leer.
 # Cómo restaurar: docs/guia-produccion.md, sección "Restaurar una copia".
 apiVersion: batch/v1
 kind: CronJob
@@ -64,22 +65,29 @@ spec:
                 - sh
                 - -c
                 - >-
+                  export RCLONE_CONFIG_SAFE_REMOTE="${BACKUP_PROVIDER:-oci}:${BACKUP_BUCKET}/postgres" &&
                   export RCLONE_CONFIG_SAFE_PASSWORD="$(rclone obscure "$BACKUP_PASSPHRASE")" &&
                   rclone copy /backup safe: &&
                   rclone delete --min-age 14d safe:
               env:
+                # Dónde se guarda: "oci" (Oracle) o "azure" (config.env, BACKUP_PROVIDER).
+                - {name: BACKUP_PROVIDER, valueFrom: {configMapKeyRef: {name: nomadiq-config, key: BACKUP_PROVIDER, optional: true}}}
+                # "azure": Azure Blob Storage (la cuenta de almacenamiento y su clave).
+                - {name: RCLONE_CONFIG_AZURE_TYPE, value: azureblob}
+                - {name: RCLONE_CONFIG_AZURE_ACCOUNT, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: BACKUP_AZURE_ACCOUNT, optional: true}}}
+                - {name: RCLONE_CONFIG_AZURE_KEY, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: BACKUP_AZURE_KEY, optional: true}}}
                 # "oci": Oracle Object Storage por su API compatible con S3.
                 - {name: RCLONE_CONFIG_OCI_TYPE, value: s3}
                 - {name: RCLONE_CONFIG_OCI_PROVIDER, value: Other}
-                - {name: RCLONE_CONFIG_OCI_ENDPOINT, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: BACKUP_S3_ENDPOINT}}}
-                - {name: RCLONE_CONFIG_OCI_REGION, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: BACKUP_S3_REGION}}}
-                - {name: RCLONE_CONFIG_OCI_ACCESS_KEY_ID, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: BACKUP_S3_ACCESS_KEY}}}
-                - {name: RCLONE_CONFIG_OCI_SECRET_ACCESS_KEY, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: BACKUP_S3_SECRET_KEY}}}
+                - {name: RCLONE_CONFIG_OCI_ENDPOINT, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: BACKUP_S3_ENDPOINT, optional: true}}}
+                - {name: RCLONE_CONFIG_OCI_REGION, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: BACKUP_S3_REGION, optional: true}}}
+                - {name: RCLONE_CONFIG_OCI_ACCESS_KEY_ID, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: BACKUP_S3_ACCESS_KEY, optional: true}}}
+                - {name: RCLONE_CONFIG_OCI_SECRET_ACCESS_KEY, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: BACKUP_S3_SECRET_KEY, optional: true}}}
                 - {name: RCLONE_CONFIG_OCI_FORCE_PATH_STYLE, value: "true"}
                 - {name: BACKUP_BUCKET, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: BACKUP_BUCKET}}}
                 # "safe": cifra (nombres y contenido) encima de "oci".
                 - {name: RCLONE_CONFIG_SAFE_TYPE, value: crypt}
-                - {name: RCLONE_CONFIG_SAFE_REMOTE, value: "oci:$(BACKUP_BUCKET)/postgres"}
+                # (el "remote" se elige abajo, en el comando, según BACKUP_PROVIDER)
                 - {name: BACKUP_PASSPHRASE, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: BACKUP_PASSPHRASE}}}
                 - {name: HOME, value: /tmp}
               resources:

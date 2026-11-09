@@ -48,6 +48,9 @@ OLLAMA = {
     "OLLAMA_TLS_CERT_FILE": "/certs/tls.crt",
     "OLLAMA_TLS_KEY_FILE": "/certs/tls.key",
     "OLLAMA_MODEL": config("OLLAMA_MODEL"),
+    # LLM_ENABLED=false en config.env (servidor pequeño): no se arranca la IA
+    # (Ollama) y Flyra contesta con reglas. Si no está, se usa la IA.
+    "LLM_ENABLED": {"configMapKeyRef": {"name": "nomadiq-config", "key": "LLM_ENABLED", "optional": True}},
 }
 COMMON = {"LOG_LEVEL": "info"}
 
@@ -128,7 +131,6 @@ SERVICES = [
             **REDIS,
             **SERVER_MTLS,
             **OLLAMA,
-            "LLM_ENABLED": "true",
             # El servidor gratis no tiene tarjeta gráfica: la IA piensa más
             # despacio que en un PC. Más margen de espera (la puerta "edge"
             # aguanta hasta 150 s) para que las respuestas no se corten.
@@ -161,7 +163,6 @@ SERVICES = [
             **REDIS,
             **SERVER_MTLS,
             **OLLAMA,
-            "LLM_ENABLED": "true",
             "AUDIOGUIDE_DEFAULT_LANGUAGE": "en",
             "AUDIO_POLL_SECONDS": "30",
         },
