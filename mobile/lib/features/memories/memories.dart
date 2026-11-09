@@ -78,6 +78,9 @@ abstract interface class MemoryFiles {
 
   Future<String> pathOf(String name);
 
+  /// Lee un archivo (null si ya no está).
+  Future<Uint8List?> read(String name);
+
   Future<void> delete(String name);
 
   Future<void> deleteAll();
@@ -116,6 +119,12 @@ class AppMemoryFiles implements MemoryFiles {
   Future<String> pathOf(String name) async => '${(await _dir()).path}/$name';
 
   @override
+  Future<Uint8List?> read(String name) async {
+    final File f = File('${(await _dir()).path}/$name');
+    return await f.exists() ? f.readAsBytes() : null;
+  }
+
+  @override
   Future<void> delete(String name) async {
     final File f = File('${(await _dir()).path}/$name');
     if (await f.exists()) await f.delete();
@@ -145,6 +154,9 @@ class MemoryMemoryFiles implements MemoryFiles {
 
   @override
   Future<String> pathOf(String name) async => '/memories/$name';
+
+  @override
+  Future<Uint8List?> read(String name) async => files[name];
 
   @override
   Future<void> delete(String name) async => files.remove(name);
