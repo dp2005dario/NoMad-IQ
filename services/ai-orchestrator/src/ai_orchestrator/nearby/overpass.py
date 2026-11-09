@@ -22,6 +22,21 @@ _PHONE = re.compile(r"^\+?[0-9 ()./-]{6,24}$")
 _RESERVATION = ("yes", "required", "recommended")
 # Tipos de alojamiento que buscamos para "Viajo con mi perro".
 _STAYS = ("hotel", "apartment", "guest_house", "hostel", "motel")
+# Qué tipo de sitio que ver es (para el icono de la app).
+_SIGHT_SUBS = (
+    "museum",
+    "gallery",
+    "viewpoint",
+    "attraction",
+    "artwork",
+    "monument",
+    "castle",
+    "memorial",
+    "ruins",
+    "archaeological_site",
+)
+# Las zonas de OSM tienen el número de su relación + 3 600 000 000.
+_AREA_BASE = 3_600_000_000
 
 
 def build_query(south: float, west: float, north: float, east: float) -> str:
@@ -36,6 +51,9 @@ def build_query(south: float, west: float, north: float, east: float) -> str:
         # Sitios que ver: solo los que tienen Wikidata (los conocidos).
         f'nwr["tourism"~"^(attraction|viewpoint|museum|gallery|artwork)$"]["wikidata"]({box});'
         f'nwr["historic"~"^(monument|castle|memorial|ruins|archaeological_site)$"]["wikidata"]({box});'
+        # Parques y templos conocidos (con Wikidata): se visitan gratis.
+        f'nwr["leisure"="park"]["name"]["wikidata"]({box});'
+        f'nwr["amenity"="place_of_worship"]["name"]["wikidata"]({box});'
         # Restaurantes que aceptan reserva y dicen cómo (web o teléfono).
         f'nwr["amenity"="restaurant"]["reservation"~"^(yes|required|recommended)$"]["name"]'
         f'["website"]({box});'
@@ -47,6 +65,10 @@ def build_query(south: float, west: float, north: float, east: float) -> str:
         f'nwr["leisure"="dog_park"]({box});'
         f'nwr["tourism"~"^(hotel|apartment|guest_house|hostel|motel)$"]["dog"~"^(yes|leashed)$"]["name"]({box});'
         f");out center {MAX_RESULTS};"
+        # Y en qué ciudad y barrio cae el centro de la zona (para la cabecera
+        # "Madrid · Centro"): las zonas administrativas que lo contienen.
+        f"is_in({(south + north) / 2:.5f},{(west + east) / 2:.5f})->.z;"
+        'area.z["boundary"="administrative"]["admin_level"~"^(8|9|10)$"]["name"];out tags;'
     )
 
 
@@ -98,7 +120,39 @@ def _kind(tags: dict[str, Any]) -> SpotKind | None:
         return "wifi"
     if tags.get("tourism") or tags.get("historic"):
         return "sight"
+    if tags.get("leisure") == "park" or amenity == "place_of_worship":
+        return "sight"
     return None
+
+
+def _sight_sub(tags: dict[str, Any]) -> str | None:
+    """museum, viewpoint, park, worship...: qué clase de sitio que ver es."""
+    for key in ("tourism", "historic"):
+        value = tags.get(key)
+        if value in _SIGHT_SUBS:
+            return str(value)
+    if tags.get("leisure") == "park":
+        return "park"
+    if tags.get("amenity") == "place_of_worship":
+        return "worship"
+    return None
+
+
+def parse_place(row: Any, lat: float, lon: float) -> NearbySpot | None:
+    """Una zona administrativa (ciudad, distrito, barrio) como "place".
+
+    sub = su admin_level ("8" ciudad, "9" distrito, "10" barrio)."""
+    if not isinstance(row, dict) or row.get("type") != "area":
+        return None
+    oid = row.get("id")
+    raw_tags = row.get("tags")
+    if not isinstance(oid, int) or oid <= _AREA_BASE or not isinstance(raw_tags, dict):
+        return None
+    name = _text(raw_tags, "name")
+    level = raw_tags.get("admin_level")
+    if name is None or level not in ("8", "9", "10"):
+        return None
+    return NearbySpot(id=f"r{oid - _AREA_BASE}", kind="place", lat=lat, lon=lon, name=name, sub=level)
 
 
 def parse_spot(row: Any) -> NearbySpot | None:
@@ -168,6 +222,7 @@ def parse_spot(row: Any) -> NearbySpot | None:
         opening_hours=_text(tags, "opening_hours"),
         fee=True if fee == "yes" else False if fee == "no" else None,
         wikidata_id=qid if kind == "sight" else None,
+        sub=_sight_sub(tags) if kind == "sight" else None,
     )
 
 
@@ -201,7 +256,9 @@ class NearbyOverpass:
             raise OverpassError("respuesta de Overpass sin lista de elementos")
         seen: set[str] = set()
         out: list[NearbySpot] = []
-        for spot in (parse_spot(r) for r in rows):
+        mid_lat, mid_lon = round((south + north) / 2, 5), round((west + east) / 2, 5)
+        places = [p for p in (parse_place(r, mid_lat, mid_lon) for r in rows) if p is not None]
+        for spot in [*(parse_spot(r) for r in rows), *places]:
             if spot is not None and spot.id not in seen:
                 seen.add(spot.id)
                 out.append(spot)

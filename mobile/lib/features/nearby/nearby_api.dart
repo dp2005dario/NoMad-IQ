@@ -23,7 +23,11 @@ enum NearbyKind {
   /// que en OpenStreetMap dice que admite perros.
   vet,
   dogPark,
-  petStay;
+  petStay,
+
+  /// No es un sitio: la ciudad, el distrito o el barrio donde estás (su
+  /// nombre, para la cabecera "Madrid · Embajadores").
+  place;
 
   /// Cómo lo escribe el servidor ("dog_park" en vez de "dogPark").
   String get wire => switch (this) {
@@ -53,6 +57,7 @@ class NearbySpot {
     this.phone,
     this.cuisine,
     this.reservationRequired = false,
+    this.sub,
   });
 
   final String id;
@@ -72,6 +77,10 @@ class NearbySpot {
 
   /// true = OpenStreetMap dice que sin reserva no entras.
   final bool reservationRequired;
+
+  /// Sitios que ver: museum, viewpoint, park, worship, monument...
+  /// Zonas ([NearbyKind.place]): "8" ciudad, "9" distrito, "10" barrio.
+  final String? sub;
 
   static NearbySpot? parse(Object? json) {
     if (json is! Map<String, Object?>) return null;
@@ -116,6 +125,9 @@ class NearbySpot {
           : null,
       cuisine: text('cuisine'),
       reservationRequired: json['reservation'] == 'required',
+      sub: RegExp(r'^[a-z_0-9]{1,24}$').hasMatch(text('sub') ?? '')
+          ? text('sub')
+          : null,
     );
   }
 }

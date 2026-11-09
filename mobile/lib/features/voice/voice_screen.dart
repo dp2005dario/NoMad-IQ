@@ -18,26 +18,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
-import '../../core/router.dart';
 import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../easy/easy_home_screen.dart' show EasyTripSheet;
 import '../easy/easy_mode.dart';
-import 'voice_intents.dart';
-
-/// Lo que contesta Flyra: el texto (que también lee en alto) y, si toca,
-/// un botón para hacerlo.
-class _Answer {
-  const _Answer(this.text, {this.action, this.onAction, this.icon});
-
-  final String text;
-  final String? action;
-  final VoidCallback? onAction;
-  final IconData? icon;
-}
+import 'voice_answer.dart';
 
 class VoiceScreen extends StatefulWidget {
   const VoiceScreen({super.key});
@@ -52,7 +39,7 @@ class _VoiceScreenState extends State<VoiceScreen> {
 
   bool _listening = false;
   String? _heard;
-  _Answer? _answer;
+  VoiceAnswer? _answer;
 
   @override
   void dispose() {
@@ -87,7 +74,7 @@ class _VoiceScreenState extends State<VoiceScreen> {
 
   /// Contesta a [text] (dicho o escrito) y lo lee en alto.
   Future<void> _ask(String text) async {
-    final _Answer answer = _answerFor(text, AppLocalizations.of(context));
+    final VoiceAnswer answer = _answerFor(text, AppLocalizations.of(context));
     setState(() => (_heard = text, _answer = answer));
     // Leerlo en alto es un extra: si el móvil no tiene voz, se queda escrito.
     try {
@@ -97,105 +84,15 @@ class _VoiceScreenState extends State<VoiceScreen> {
     }
   }
 
-  _Answer _answerFor(String text, AppLocalizations t) {
-    final VoiceIntent? intent = matchIntent(text, _lang);
-    final EasyTrip trip = loadEasyTrip(_services.prefs);
-    void go(String route) => unawaited(context.push(route));
-    switch (intent) {
-      case VoiceIntent.flight:
-        final DateTime? dep = trip.departure;
-        if (!trip.hasFlight || dep == null) {
-          return _Answer(
-            t.voiceNoFlight,
-            action: t.voiceAddTrip,
-            icon: Icons.edit_calendar_rounded,
-            onAction: () => unawaited(_editTrip()),
-          );
-        }
-        final String date = DateFormat.MMMMEEEEd(_lang).format(dep);
-        final String time = DateFormat.Hm(_lang).format(dep);
-        final String? gate = trip.gate;
-        final String base = t.voiceFlightAt(trip.from!, trip.to!, date, time);
-        return _Answer(
-          gate == null || gate.isEmpty ? base : '$base ${t.voiceGate(gate)}',
-          action: t.airportTitle,
-          icon: Icons.local_airport_rounded,
-          onAction: () => go(Routes.airport(iata: trip.from, gate: gate)),
-        );
-      case VoiceIntent.hotel:
-        final String? address = trip.hotelAddress;
-        if (address == null) {
-          return _Answer(
-            t.voiceNoHotel,
-            action: t.voiceAddTrip,
-            icon: Icons.edit_calendar_rounded,
-            onAction: () => unawaited(_editTrip()),
-          );
-        }
-        return _Answer(
-          t.voiceHotel(trip.hotelName ?? address),
-          action: t.voiceTakeMe,
-          icon: Icons.directions_rounded,
-          onAction: () => unawaited(_services.openLink(directionsTo(address))),
-        );
-      case VoiceIntent.money:
-        return _Answer(
-          t.voiceMoney,
-          action: t.voiceOpen,
-          icon: Icons.receipt_long_rounded,
-          onAction: () => go(Routes.money()),
-        );
-      case VoiceIntent.visa:
-        return _Answer(
-          t.voiceVisa,
-          action: t.visaTitle,
-          icon: Icons.verified_user_rounded,
-          onAction: () => go(Routes.visa()),
-        );
-      case VoiceIntent.language:
-        return _Answer(
-          t.voiceLanguage,
-          action: t.voiceOpen,
-          icon: Icons.translate_rounded,
-          onAction: () => go(Routes.language),
-        );
-      case VoiceIntent.sos:
-        return _Answer(
-          t.voiceSos,
-          action: 'SOS',
-          icon: Icons.emergency_rounded,
-          onAction: () => go(Routes.sos),
-        );
-      case VoiceIntent.nearby:
-        return _Answer(
-          t.voiceNearby,
-          action: t.voiceOpen,
-          icon: Icons.near_me_rounded,
-          onAction: () => go(Routes.nearby),
-        );
-      case VoiceIntent.translate:
-        return _Answer(
-          t.voiceTranslate,
-          action: t.voiceOpen,
-          icon: Icons.record_voice_over_rounded,
-          onAction: () => go(Routes.assistant),
-        );
-      case VoiceIntent.drive:
-        return _Answer(
-          t.voiceDrive,
-          action: t.voiceOpen,
-          icon: Icons.directions_car_rounded,
-          onAction: () => go(Routes.drive),
-        );
-      case null:
-        return _Answer(
-          t.voiceUnknown,
-          action: t.voiceAskFlyra,
-          icon: Icons.auto_awesome_rounded,
-          onAction: () => go(Routes.flyra(question: text)),
-        );
-    }
-  }
+  VoiceAnswer _answerFor(String text, AppLocalizations t) => voiceAnswer(
+    text,
+    t: t,
+    lang: _lang,
+    trip: loadEasyTrip(_services.prefs),
+    go: (String route) => unawaited(context.push(route)),
+    editTrip: _editTrip,
+    openLink: _services.openLink,
+  );
 
   Future<void> _editTrip() async {
     final EasyTrip? trip = await showModalBottomSheet<EasyTrip>(
@@ -212,7 +109,7 @@ class _VoiceScreenState extends State<VoiceScreen> {
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
     final ThemeData theme = Theme.of(context);
-    final _Answer? answer = _answer;
+    final VoiceAnswer? answer = _answer;
     final List<String> examples = <String>[
       t.voiceExFlight,
       t.voiceExMoney,

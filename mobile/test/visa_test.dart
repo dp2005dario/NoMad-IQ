@@ -3,15 +3,16 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/vault/vault.dart';
 import 'package:eclipta/features/visa/mrz.dart';
 import 'package:eclipta/features/visa/visa_data.dart';
+import 'package:eclipta/features/visa/visa_screen.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 import 'vault_test.dart' show FakeUnlocker, newVault;
 
 // El ejemplo oficial de la norma OACI 9303 (país de mentira "Utopía").
@@ -97,9 +98,7 @@ void main() {
     final MemorySettingsStore store = MemorySettingsStore('es');
     await store.writeData(LocalData.visaPassport, 'MX');
     final List<Uri> opened = <Uri>[];
-    tester.view.physicalSize = const Size(1200, 5000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
+    final m.PageSpy spy = m.PageSpy();
     await pumpApp(
       tester,
       locale: 'es',
@@ -110,42 +109,100 @@ void main() {
         gateway: g,
         vault: vault,
         prefs: store,
+        webScene: spy.build,
         openLink: (Uri u) async {
           opened.add(u);
           return true;
         },
       ),
     );
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(seconds: 1)),
+    Map<String, Object?> data() => spy.data(VisaScreen.lastBridge!);
+    Map<String, Object?> verdict() =>
+        data()['verdict']! as Map<String, Object?>;
+    await spy.wait(
+      tester,
+      () => spy.pages.isNotEmpty && data()['verdict'] != null,
     );
-    await tester.pumpAndSettle();
 
     // Con pasaporte mexicano (lo guardado), EE. UU. pide visado.
-    expect(find.textContaining('México'), findsOneWidget);
-    expect(find.textContaining('Estados Unidos'), findsOneWidget);
-    expect(find.text('Necesitas visado de la embajada'), findsOneWidget);
+    expect(data()['fromTxt'], contains('México'));
+    expect(data()['toTxt'], contains('Estados Unidos'));
+    expect(verdict()['h'], 'Necesitas visado de la embajada');
 
     // Leer el pasaporte de la Bóveda: es español → ESTA, 90 días.
-    await tester.tap(find.text('Leer mi pasaporte'));
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 300)),
-    );
-    await tester.pumpAndSettle();
+    spy.send!('read');
+    await spy.wait(tester, () => data()['step'] == 1);
     expect(unlocker.asked, greaterThan(0));
-    expect(find.textContaining('España'), findsWidgets);
-    expect(find.text('Necesitas el ESTA'), findsOneWidget);
-    expect(find.text('Hasta 90 días'), findsOneWidget);
-    expect(find.text('PEREZ GARCIA'), findsOneWidget);
-    expect(find.text('ANA'), findsOneWidget);
-    expect(find.text(number), findsOneWidget);
+    expect(data()['fromTxt'], contains('España'));
+    expect(verdict()['h'], 'Necesitas el ESTA');
+    expect(verdict()['days'], 'Hasta 90 días');
+    expect(data()['title'], 'Pedir el ESTA');
+    final List<Map<String, Object?>> fields =
+        (data()['fields']! as List<Object?>).cast<Map<String, Object?>>();
+    expect(fields[0]['v'], 'PEREZ GARCIA');
+    expect(fields[1]['v'], 'ANA');
+    expect(fields[2]['v'], number);
+    expect(fields.last['v'], isNull);
     expect(store.readData(LocalData.visaPassport), 'ES');
 
-    await tester.tap(find.text('Todo correcto, seguir'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Abrir la web oficial'));
-    await tester.pumpAndSettle();
+    // Tocar un dato lo copia.
+    spy.send!('copy:2');
+    await spy.wait(
+      tester,
+      () => find
+          .text('Copiado. Se borrará del portapapeles en 1 minuto.')
+          .evaluate()
+          .isNotEmpty,
+    );
+
+    spy.send!('next');
+    await tester.pump();
+    expect(data()['step'], 2);
+    spy.send!('official');
     expect(opened.single.host, 'esta.cbp.dhs.gov');
+    vault.close();
+  });
+
+  testWidgets('sin foto del pasaporte en la Bóveda: Flyra lo dice', (
+    WidgetTester tester,
+  ) async {
+    final FakeGateway g = FakeGateway();
+    final session = newSession()..continueAsGuest();
+    final FakeUnlocker unlocker = FakeUnlocker();
+    final Vault vault = newVault(unlocker);
+    final MemorySettingsStore store = MemorySettingsStore('es');
+    await store.writeData(LocalData.visaPassport, 'ES');
+    final m.PageSpy spy = m.PageSpy();
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.visa(to: 'US'),
+      services: fakeServices(
+        session,
+        gateway: g,
+        vault: vault,
+        prefs: store,
+        webScene: spy.build,
+      ),
+    );
+    Map<String, Object?> data() => spy.data(VisaScreen.lastBridge!);
+    await spy.wait(
+      tester,
+      () => spy.pages.isNotEmpty && data()['apply'] == true,
+    );
+    spy.send!('read');
+    await spy.wait(tester, () => data()['fly'] != null);
+    expect(
+      (data()['fly']! as Map<String, Object?>)['title'],
+      'No consigo leer tu pasaporte',
+    );
+    // "Lo relleno a mano" sigue sin los datos del pasaporte.
+    spy.send!('manual');
+    await tester.pump();
+    expect(data()['fly'], isNull);
+    expect(data()['step'], 1);
+    expect((data()['fields']! as List<Object?>), hasLength(3));
     vault.close();
   });
 }

@@ -1,10 +1,23 @@
-// Ajustes (maqueta "Ajustes"): tu perfil, el idioma, la Bóveda, cerrar
-// sesión y "Borrar mi cuenta y mis datos" (con "Descargar mis datos" antes).
+// Ajustes: la maqueta "Ajustes" tal cual (assets/settings/ajustes.html,
+// dentro de un WebView). Tu foto o avatar (solo en este móvil), tu nombre,
+// tu correo y tu ID, los 4 interruptores de "Lo más importante", "Tu app"
+// (idioma, moneda, Modo fácil, privacidad, avisos y ayuda), ECLIPTA Premium
+// "Próximamente", cerrar sesión y "Borrar mi cuenta y mis datos".
+//
+// Los interruptores:
+//  - Avisos de chollos: apaga o enciende los avisos de bajadas de precio.
+//  - Entrar con huella o cara: la app pide tu huella al abrirse
+//    (app_lock.dart). La Bóveda la pide siempre.
+//  - Audioguías por zona: los avisos "estás en un sitio nuevo".
+//  - Tema oscuro: se guarda tu elección (por ahora la app solo es oscura).
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../auth/auth_api.dart';
 import '../../auth/session.dart';
@@ -14,13 +27,19 @@ import '../../core/router.dart';
 import '../../core/services.dart';
 import '../../core/settings.dart';
 import '../../core/theme.dart';
-import '../../widgets/user_avatar.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../widgets/user_avatar.dart' show isTrustedPhotoUrl;
+import '../flights/flights_page.dart' show unpackJson;
 import '../home/home_screen.dart' show displayName;
+import '../money/money_screen.dart' show MoneyTab;
+import '../push/notice_prefs.dart';
+import '../push/push_notice.dart';
+import '../route/web_scene.dart';
+import '../vault/vault_store.dart';
 import 'account_data.dart';
+import 'app_lock.dart';
 import 'profile_photo.dart';
-
-import 'package:image_picker/image_picker.dart';
+import 'settings_page.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key, this.saver = const DeviceDataSaver()});
@@ -28,36 +47,156 @@ class SettingsScreen extends StatefulWidget {
   /// Dónde se guarda "Descargar mis datos" (en los tests, uno falso).
   final DataSaver saver;
 
+  /// El puente de la última pantalla abierta (lo miran los tests).
+  static WebSceneBridge? lastBridge;
+
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _copied = false;
+  late final AppServices _services = ServicesScope.of(context);
+  final WebSceneBridge _bridge = SettingsScreen.lastBridge = WebSceneBridge();
+  final ProfilePhotoController _photo = ProfilePhotoController.instance;
+
+  /// La página se lee una vez (se guarda el texto, no la espera).
+  static String? _pageCache;
+  String? _html;
+  String? _sent;
+  bool _started = false;
   bool _busy = false;
 
-  void _say(String text) =>
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  /// Tu foto del móvil ya leída para la página (ruta → data:...).
+  final Map<String, String> _files = <String, String>{};
 
-  Future<void> _copyId(String id) async {
-    await Clipboard.setData(ClipboardData(text: SettingsScreenIds.short(id)));
-    if (!mounted) return;
-    setState(() => _copied = true);
-    Future<void>.delayed(const Duration(milliseconds: 1600), () {
-      if (mounted) setState(() => _copied = false);
-    });
+  /// Lo que la página debe recibir una vez (cómo quedaron los
+  /// interruptores, aunque no hayan cambiado).
+  Map<String, Object?> _once = <String, Object?>{};
+  int _round = 0;
+
+  /// Las audioguías y el "bienvenido" del aeropuerto van juntos (como en
+  /// Privacidad): los dos son avisos "estás en un sitio nuevo".
+  static const Set<PushKind> _guides = <PushKind>{
+    PushKind.zoneAudioguide,
+    PushKind.airportArrival,
+  };
+  static const Set<PushKind> _deals = <PushKind>{PushKind.fareAlert};
+
+  @override
+  void initState() {
+    super.initState();
+    _photo.addListener(_changed);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    _services.easyMode.addListener(_changed);
+    unawaited(_start());
+  }
+
+  @override
+  void dispose() {
+    _photo.removeListener(_changed);
+    _services.easyMode.removeListener(_changed);
+    super.dispose();
+  }
+
+  void _changed() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _start() async {
+    try {
+      _pageCache ??= await rootBundle.loadString(settingsPage, cache: false);
+    } on Object {
+      return;
+    }
+    if (mounted) setState(() {});
+  }
+
+  void _say(String text) => ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(SnackBar(content: Text(text)));
+
+  /// Lee tu foto del móvil para enseñarla en la página.
+  Future<void> _readFile(String path) async {
+    try {
+      final List<int> bytes = await File(path).readAsBytes();
+      _files[path] = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+    } on Object {
+      _files[path] = ''; // ya no está: se ve tu inicial
+    }
+    if (mounted) setState(() {});
+  }
+
+  /// Cómo quedaron los interruptores (se manda aunque no cambien).
+  void _resend() =>
+      setState(() => _once = <String, Object?>{..._once, 'round': ++_round});
+
+  Future<void> _toggle(String key, bool on) async {
+    final SettingsStore prefs = _services.prefs;
+    switch (key) {
+      case 'ofertas':
+        await setMuted(prefs, _deals, !on);
+      case 'ubicacion':
+        await setMuted(prefs, _guides, !on);
+      case 'oscuro':
+        await prefs.writeData(LocalData.darkTheme, on ? null : '0');
+        if (!on && mounted) {
+          _say(
+            'Por ahora ECLIPTA solo tiene tema oscuro. Tu elección queda guardada.',
+          );
+        }
+      case 'huella':
+        if (!on) {
+          await prefs.writeData(LocalData.appLock, null);
+        } else {
+          // Antes de encenderlo, se mira que tu huella funciona (si no, te
+          // quedarías fuera de la app).
+          final String reason = AppLocalizations.of(context).appLockReason;
+          final UnlockResult r = await _services.vault.verify(reason);
+          if (r == UnlockResult.ok) {
+            await prefs.writeData(LocalData.appLock, '1');
+          } else if (r == UnlockResult.unavailable && mounted) {
+            _say(
+              'Tu móvil no tiene huella, cara ni PIN. Ponlo en los ajustes del móvil y vuelve a probar.',
+            );
+          }
+        }
+    }
+    if (mounted) _resend();
+  }
+
+  Future<void> _source(int n) async {
+    final String? google = SessionScope.read(context).user?.photoUrl;
+    switch (n) {
+      case 0:
+        await _photo.pick(ImageSource.camera);
+      case 1:
+        await _photo.pick(ImageSource.gallery);
+      case 2:
+        if (isTrustedPhotoUrl(google)) {
+          await _photo.remove();
+        } else if (mounted) {
+          _say('Tu cuenta no tiene foto de Google.');
+        }
+      case 3:
+        await _photo.chooseInitial();
+    }
   }
 
   Future<void> _download() async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final AppServices services = ServicesScope.of(context);
     final SessionController session = SessionScope.read(context);
     setState(() => _busy = true);
     try {
       final Map<String, Object?> data = await collectMyData(
-        api: services.api,
+        api: _services.api,
         session: session,
-        prefs: services.prefs,
+        prefs: _services.prefs,
       );
       final bool saved = await widget.saver.save(
         exportFileName(DateTime.now()),
@@ -71,116 +210,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  /// Hoja inferior para cambiar la foto de perfil (solo en este móvil).
-  Future<void> _changePhoto() async {
-    final ProfilePhotoController photo = ProfilePhotoController.instance;
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (BuildContext sheet) {
-        final AppLocalizations t = AppLocalizations.of(sheet);
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                ListTile(
-                  leading: const Icon(Icons.photo_camera_rounded),
-                  title: Text(t.profilePhotoTake),
-                  onTap: () {
-                    Navigator.pop(sheet);
-                    unawaited(photo.pick(ImageSource.camera));
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.photo_library_rounded),
-                  title: Text(t.profilePhotoGallery),
-                  onTap: () {
-                    Navigator.pop(sheet);
-                    unawaited(photo.pick(ImageSource.gallery));
-                  },
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  child: Text(t.profilePhotoAvatars),
-                ),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: <Widget>[
-                    for (int i = 0; i < presetAvatars.length; i++)
-                      InkWell(
-                        customBorder: const CircleBorder(),
-                        onTap: () {
-                          Navigator.pop(sheet);
-                          unawaited(photo.choosePreset(i));
-                        },
-                        child: CircleAvatar(
-                          radius: 26,
-                          backgroundColor: presetAvatars[i].color,
-                          child: Icon(
-                            presetAvatars[i].icon,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                ListTile(
-                  leading: const Icon(Icons.hide_image_rounded),
-                  title: Text(t.profilePhotoRemove),
-                  onTap: () {
-                    Navigator.pop(sheet);
-                    unawaited(photo.remove());
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Cambiar la contraseña: pide la actual y la nueva (diálogo propio).
-  Future<void> _changePassword() async {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final SessionController session = SessionScope.read(context);
-    final (String, String)? pair = await showDialog<(String, String)>(
-      context: context,
-      builder: (BuildContext context) => const _ChangePasswordDialog(),
-    );
-    if (pair == null || !mounted) return;
-    setState(() => _busy = true);
-    try {
-      await session.changePassword(pair.$1, pair.$2);
-      if (mounted) _say(t.passwordChanged);
-    } on AuthException catch (e) {
-      if (!mounted) return;
-      _say(switch (e.error) {
-        AuthError.invalidCredentials => t.deleteWrongPassword,
-        AuthError.invalidInput => t.passwordWeak,
-        AuthError.network => t.errorNetwork,
-        AuthError.rateLimited => t.errorUnavailable,
-        _ => t.errorUnavailable,
-      });
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Future<void> _askDelete() async {
-    final _DeleteChoice? choice = await showDialog<_DeleteChoice>(
-      context: context,
-      builder: (BuildContext context) => const _DeleteDialog(),
-    );
-    if (!mounted || choice == null) return;
-    if (choice == _DeleteChoice.download) {
-      await _download();
-      return;
-    }
+  /// "Sí, borrar mi cuenta": se pide la contraseña y se borra todo.
+  Future<void> _askPassword() async {
     final String? password = await showDialog<String>(
       context: context,
       builder: (BuildContext context) => const _PasswordDialog(),
@@ -191,17 +222,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _erase(String password) async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final AppServices services = ServicesScope.of(context);
     final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
     final AccountEraser eraser = AccountEraser(
       session: SessionScope.read(context),
-      api: services.api,
-      vault: services.vault,
-      prefs: services.prefs,
-      family: services.family,
-      memories: services.memories,
-      homeWidgets: services.homeWidgets,
-      liveFlight: services.liveFlight,
+      api: _services.api,
+      vault: _services.vault,
+      prefs: _services.prefs,
+      family: _services.family,
+      memories: _services.memories,
+      homeWidgets: _services.homeWidgets,
+      liveFlight: _services.liveFlight,
     );
     setState(() => _busy = true);
     try {
@@ -225,323 +255,129 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  /// Lo que pide la página.
+  void _onMessage(String m) {
+    final List<String> p = m.split(':');
+    final int? n = p.length > 1 ? int.tryParse(p[1]) : null;
+    final Map<String, Object?>? data = p.length == 3 ? unpackJson(p[2]) : null;
+    final Object? key = data?['k'];
+    final SessionController session = SessionScope.read(context);
+    switch (p.first) {
+      case 'back':
+        context.canPop() ? context.pop() : context.go(Routes.home);
+      case 'copy':
+        final String? id = session.user?.id;
+        if (id != null) {
+          unawaited(Clipboard.setData(ClipboardData(text: shortId(id))));
+        }
+      case 'src' when n != null:
+        unawaited(_source(n));
+      case 'av' when n != null && n >= 0 && n <= presetAvatars.length:
+        unawaited(n == 0 ? _photo.chooseInitial() : _photo.choosePreset(n - 1));
+      case 'tog' when n != null && key is String:
+        unawaited(_toggle(key, n == 1));
+      case 'lang':
+        unawaited(context.push(Routes.language));
+      case 'cur':
+        unawaited(context.push(Routes.money(tab: MoneyTab.fx)));
+      case 'easy':
+        // "Letra grande y modo fácil": Inicio pasa al Modo fácil (y desde
+        // allí, "Modo normal" lo quita).
+        unawaited(_services.easyMode.set(true));
+        context.go(Routes.home);
+      case 'privacy':
+        unawaited(context.push(Routes.privacy));
+      case 'notices':
+        unawaited(context.push(Routes.notices));
+      case 'help':
+        unawaited(context.push(Routes.help));
+      case 'signout' when !_busy:
+        unawaited(session.signOut());
+      case 'signin':
+        unawaited(context.push(Routes.signIn));
+      case 'download' when !_busy:
+        unawaited(_download());
+      case 'erase' when !_busy:
+        unawaited(_askPassword());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final String? page = _pageCache;
+    if (page == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0B1217),
+        body: SizedBox.expand(),
+      );
+    }
     final AppLocalizations t = AppLocalizations.of(context);
-    final TextTheme text = Theme.of(context).textTheme;
     final SessionController session = SessionScope.of(context);
-    final SettingsController settings = SettingsScope.of(context);
-    final bool signedIn = session.status == SessionStatus.signedIn;
+    final Locale? locale = SettingsScope.of(context).locale;
     final UserProfile? user = session.user;
-    final String name = displayName(user?.email) ?? t.accountGuest;
-    final Locale? locale = settings.locale;
-
-    return Scaffold(
-      appBar: AppBar(title: Text(t.settingsTitle)),
-      body: Stack(
-        children: <Widget>[
-          ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-            children: <Widget>[
-              Text(
-                t.settingsSubtitle,
-                style: text.bodyMedium?.copyWith(color: NomadColors.textMuted),
-              ),
-              const SizedBox(height: 16),
-              // Tarjeta de perfil: inicial, nombre, email e ID.
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: <Widget>[
-                      // Tocar la foto: hacer foto, galería, avatar o quitar.
-                      Semantics(
-                        button: true,
-                        label: t.profilePhotoChange,
-                        child: InkWell(
-                          customBorder: const CircleBorder(),
-                          onTap: _changePhoto,
-                          child: UserAvatar(
-                            name: name,
-                            photoUrl: user?.photoUrl,
-                            size: 60,
-                            isMe: true,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Text(name, style: text.titleLarge),
-                            if (user != null) ...<Widget>[
-                              Text(
-                                user.email,
-                                style: text.bodySmall?.copyWith(
-                                  color: NomadColors.textMuted,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 6),
-                              InkWell(
-                                onTap: () => _copyId(user.id),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 4,
-                                  ),
-                                  child: Text(
-                                    _copied
-                                        ? t.settingsIdCopied
-                                        : t.settingsCopyId(
-                                            SettingsScreenIds.short(user.id),
-                                          ),
-                                    style: text.labelMedium?.copyWith(
-                                      color: NomadColors.mint,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              // ECLIPTA Premium: solo el anuncio "Próximamente" (sin precio
-              // ni botón de pagar: todavía no existe).
-              const SizedBox(height: 12),
-              _PremiumSoon(t: t),
-              _Header(t.settingsSectionApp),
-              Card(
-                child: Column(
-                  children: <Widget>[
-                    ListTile(
-                      leading: const Icon(
-                        Icons.translate_rounded,
-                        color: NomadColors.flights,
-                      ),
-                      title: Text(t.languageTitle),
-                      subtitle: Text(
-                        locale == null
-                            ? t.languageSystem
-                            : endonymFor(locale.languageCode),
-                      ),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () => context.push(Routes.language),
-                    ),
-                    const Divider(height: 1),
-                    // Modo fácil: Inicio con letras grandes y lo importante.
-                    ValueListenableBuilder<bool>(
-                      valueListenable: ServicesScope.of(context).easyMode,
-                      builder: (BuildContext context, bool easy, _) =>
-                          SwitchListTile(
-                            secondary: const Icon(
-                              Icons.text_increase_rounded,
-                              color: NomadColors.mint,
-                            ),
-                            title: Text(t.easyTitle),
-                            subtitle: Text(t.easySettingWhy),
-                            value: easy,
-                            onChanged: (bool on) => unawaited(
-                              ServicesScope.of(context).easyMode.set(on),
-                            ),
-                          ),
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.privacy_tip_rounded,
-                        color: NomadColors.mint,
-                      ),
-                      title: Text(t.settingsPrivacy),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () => context.push(Routes.privacy),
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.lock_rounded,
-                        color: NomadColors.safety,
-                      ),
-                      title: Text(t.settingsVault),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () => context.push(Routes.vault),
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.download_for_offline_rounded,
-                        color: NomadColors.flights,
-                      ),
-                      title: Text(t.offlineOpen),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () => context.push(Routes.offline),
-                    ),
-                    const Divider(height: 1),
-                    // El historial de avisos (también en la campana de Inicio).
-                    ListTile(
-                      leading: const Icon(
-                        Icons.notifications_rounded,
-                        color: NomadColors.money,
-                      ),
-                      title: Text(t.noticesTitle),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () => context.push(Routes.notices),
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(
-                        Icons.support_agent_rounded,
-                        color: NomadColors.group,
-                      ),
-                      title: Text(t.helpTitle),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () => context.push(Routes.help),
-                    ),
-                  ],
-                ),
-              ),
-              _Header(t.settingsSectionAccount),
-              Card(
-                child: Column(
-                  children: <Widget>[
-                    if (signedIn) ...<Widget>[
-                      ListTile(
-                        leading: const Icon(Icons.password_rounded),
-                        title: Text(t.passwordChangeTitle),
-                        trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: _busy ? null : _changePassword,
-                      ),
-                      const Divider(height: 1),
-                      ListTile(
-                        leading: const Icon(Icons.download_rounded),
-                        title: Text(t.downloadMyData),
-                        onTap: _busy ? null : _download,
-                      ),
-                      const Divider(height: 1),
-                      ListTile(
-                        leading: const Icon(Icons.logout_rounded),
-                        title: Text(t.signOut),
-                        onTap: _busy ? null : session.signOut,
-                      ),
-                      const Divider(height: 1),
-                      ListTile(
-                        leading: const Icon(
-                          Icons.delete_forever_rounded,
-                          color: NomadColors.safety,
-                        ),
-                        title: Text(
-                          t.settingsDeleteAccount,
-                          style: const TextStyle(color: NomadColors.safety),
-                        ),
-                        onTap: _busy ? null : _askDelete,
-                      ),
-                    ] else
-                      ListTile(
-                        leading: const Icon(
-                          Icons.login_rounded,
-                          color: NomadColors.mint,
-                        ),
-                        title: Text(t.signInFromGuest),
-                        onTap: () => context.push(Routes.signIn),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                t.settingsFooter(AppConfig.version),
-                textAlign: TextAlign.center,
-                style: text.bodySmall?.copyWith(color: NomadColors.textMuted),
-              ),
-            ],
-          ),
-          if (_busy)
-            const Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              child: LinearProgressIndicator(),
-            ),
-        ],
+    final bool signedIn = session.status == SessionStatus.signedIn;
+    final ProfilePhotoChoice choice = _photo.choice;
+    final String? path = choice.filePath;
+    if (path != null && !_files.containsKey(path)) unawaited(_readFile(path));
+    final String file = path == null ? '' : _files[path] ?? '';
+    final Set<PushKind> muted = mutedKinds(_services.prefs);
+    final String device = Platform.localeName;
+    final Map<String, Object?> data = settingsPageData(
+      name: displayName(user?.email) ?? t.accountGuest,
+      email: user?.email,
+      id: user?.id,
+      signedIn: signedIn,
+      photo: photoJson(
+        choice,
+        file: file.isEmpty ? null : file,
+        google: user?.photoUrl,
       ),
+      deals: !muted.containsAll(_deals),
+      lock: appLockOn(_services.prefs),
+      guides: !muted.containsAll(_guides),
+      dark: _services.prefs.readData(LocalData.darkTheme) != '0',
+      lang: locale == null ? t.languageSystem : endonymFor(locale.languageCode),
+      cur: currencyLabel(device),
+      easy: _services.easyMode.value,
+      version: AppConfig.version,
     );
-  }
-}
-
-abstract final class SettingsScreenIds {
-  /// El ID corto que se enseña: los 8 primeros caracteres del id de la
-  /// cuenta. Sirve para que soporte te encuentre sin pedirte el email.
-  static String short(String id) {
-    final String clean = id.replaceAll('-', '').toUpperCase();
-    return clean.length <= 8 ? clean : clean.substring(0, 8);
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(4, 24, 4, 8),
-    child: Text(
-      label,
-      style: Theme.of(context).textTheme.labelMedium
-          ?.copyWith(color: NomadColors.textMuted, letterSpacing: 1.2),
-    ),
-  );
-}
-
-enum _DeleteChoice { download, delete }
-
-/// "¿Borrar tu cuenta?" con sus tres salidas (como en la maqueta).
-class _DeleteDialog extends StatelessWidget {
-  const _DeleteDialog();
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final MaterialLocalizations m = MaterialLocalizations.of(context);
-    return AlertDialog(
-      icon: const Icon(
-        Icons.delete_forever_rounded,
-        color: NomadColors.safety,
-        size: 40,
-      ),
-      title: Text(t.deleteTitle),
-      content: SingleChildScrollView(child: Text(t.deleteBody)),
-      actions: <Widget>[
-        // En columna: con textos largos (alemán, hindi) no caben en fila.
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    final Map<String, Object?> once = _once;
+    final String push = settingsPushScript(<String, Object?>{...data, ...once});
+    if (_html == null) {
+      _html = settingsPageWith(page, data);
+      _sent = push;
+      _once = <String, Object?>{};
+    } else if (push != _sent) {
+      _sent = push;
+      _once = <String, Object?>{};
+      unawaited(_bridge.run(push));
+    }
+    final String html = _html!;
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B1217),
+      body: SafeArea(
+        bottom: false,
+        child: Stack(
           children: <Widget>[
-            OutlinedButton.icon(
-              icon: const Icon(Icons.download_rounded),
-              label: Text(t.downloadMyData),
-              onPressed: () => Navigator.pop(context, _DeleteChoice.download),
-            ),
-            const SizedBox(height: 8),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: NomadColors.safety,
+            _services.webScene?.call(html, _onMessage) ??
+                WebScene(html: html, onMessage: _onMessage, bridge: _bridge),
+            if (_busy)
+              const Positioned(
+                left: 0,
+                right: 0,
+                top: 0,
+                child: LinearProgressIndicator(),
               ),
-              onPressed: () => Navigator.pop(context, _DeleteChoice.delete),
-              child: Text(t.deleteConfirm),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(m.cancelButtonLabel),
-            ),
           ],
         ),
-      ],
+      ),
     );
   }
+}
+
+/// Lo de antes (lo usan los tests): el ID corto de tu cuenta.
+abstract final class SettingsScreenIds {
+  static String short(String id) => shortId(id);
 }
 
 /// Pide la contraseña. Es un StatefulWidget porque es dueño del
@@ -598,151 +434,6 @@ class _PasswordDialogState extends State<_PasswordDialog> {
           child: Text(t.deleteNow),
         ),
       ],
-    );
-  }
-}
-
-/// Pide la contraseña actual y la nueva. Es StatefulWidget porque es dueño de
-/// los controladores de texto (se liberan al cerrarse).
-class _ChangePasswordDialog extends StatefulWidget {
-  const _ChangePasswordDialog();
-
-  @override
-  State<_ChangePasswordDialog> createState() => _ChangePasswordDialogState();
-}
-
-class _ChangePasswordDialogState extends State<_ChangePasswordDialog> {
-  final TextEditingController _current = TextEditingController();
-  final TextEditingController _next = TextEditingController();
-
-  @override
-  void dispose() {
-    _current.dispose();
-    _next.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    if (_current.text.isEmpty || _next.text.length < 12) return;
-    Navigator.pop(context, (_current.text, _next.text));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final MaterialLocalizations m = MaterialLocalizations.of(context);
-    return AlertDialog(
-      title: Text(t.passwordChangeTitle),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          TextField(
-            controller: _current,
-            obscureText: true,
-            autofocus: true,
-            autofillHints: const <String>[AutofillHints.password],
-            decoration: InputDecoration(labelText: t.passwordCurrent),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _next,
-            obscureText: true,
-            autofillHints: const <String>[AutofillHints.newPassword],
-            decoration: InputDecoration(labelText: t.passwordNew),
-            onSubmitted: (_) => _submit(),
-          ),
-        ],
-      ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(m.cancelButtonLabel),
-        ),
-        FilledButton(onPressed: _submit, child: Text(t.passwordChangeTitle)),
-      ],
-    );
-  }
-}
-
-/// La tarjeta "ECLIPTA Premium · Próximamente", con un brillo que la cruza
-/// una vez al abrir Ajustes (quieta con "reducir movimiento").
-class _PremiumSoon extends StatelessWidget {
-  const _PremiumSoon({required this.t});
-
-  final AppLocalizations t;
-
-  @override
-  Widget build(BuildContext context) {
-    final bool still = MediaQuery.disableAnimationsOf(context);
-    final Widget card = Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
-          colors: <Color>[Color(0xFF2B1F4F), Color(0xFF14324A)],
-        ),
-        border: Border.all(color: NomadColors.money.withValues(alpha: 0.6)),
-      ),
-      child: Row(
-        children: <Widget>[
-          const Icon(
-            Icons.workspace_premium_rounded,
-            color: NomadColors.money,
-            size: 32,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  t.premiumTitle,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
-                Text(
-                  t.premiumWhy,
-                  style: const TextStyle(color: NomadColors.textMuted),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: NomadColors.money.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              t.premiumSoon,
-              style: const TextStyle(
-                color: NomadColors.money,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (still) return card;
-    // El brillo: una franja clara que pasa de izquierda a derecha.
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: -1, end: 2),
-      duration: const Duration(milliseconds: 1400),
-      curve: Curves.easeInOut,
-      builder: (BuildContext context, double x, Widget? child) => ShaderMask(
-        blendMode: BlendMode.srcATop,
-        shaderCallback: (Rect r) => LinearGradient(
-          begin: Alignment(x - 1, 0),
-          end: Alignment(x, 0),
-          colors: <Color>[
-            Colors.transparent,
-            Colors.white.withValues(alpha: 0.18),
-            Colors.transparent,
-          ],
-        ).createShader(r),
-        child: child,
-      ),
-      child: card,
     );
   }
 }

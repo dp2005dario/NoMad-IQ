@@ -86,7 +86,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Flyra ha detectado Italiano'), findsOneWidget);
     expect(prefs.readData(LocalData.interpreterLang), 'it');
-    expect(find.text('Español ⇄ Italiano'), findsOneWidget);
+    expect(find.text('Italiano → Español'), findsOneWidget);
     expect(find.text("[es] Scusi, dov'è il museo?"), findsOneWidget);
   });
 
@@ -120,7 +120,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Español ⇄ 日本語'), findsOneWidget);
+    expect(find.text('Japonés · toca para cambiar'), findsOneWidget);
     // Falta el japonés: sin él no traduce.
     expect(find.textContaining('Descarga 日本語'), findsOneWidget);
     await tester.tap(find.byTooltip('Hablar'));
@@ -135,18 +135,20 @@ void main() {
     expect(translator.downloads, <String>['ja']);
     expect(find.textContaining('Descarga'), findsNothing);
 
-    // Yo hablo en español; la otra persona lo lee en japonés.
+    // Yo hablo en español; la otra persona lo lee en japonés (arriba).
     await tester.tap(find.byTooltip('Hablar'));
     await tester.pumpAndSettle();
     expect(mic.langs, <String>['es', 'es']);
-    expect(find.text('¿Dónde está la estación?'), findsOneWidget);
+    expect(find.text('Tú: ¿Dónde está la estación?'), findsOneWidget);
     expect(find.text('[ja] ¿Dónde está la estación?'), findsOneWidget);
+    expect(find.text('🇯🇵 [ja] ¿Dónde está la estación?'), findsOneWidget);
 
-    // La otra persona pulsa SU micro (el tooltip es el nombre de su idioma).
+    // La otra persona pulsa SU botón (el tooltip es el nombre de su idioma).
     await tester.tap(find.byTooltip('日本語'));
     await tester.pumpAndSettle();
     expect(mic.langs.last, 'ja');
     expect(find.text('[es] まっすぐです'), findsOneWidget);
+    expect(find.text('Japonés → Español'), findsOneWidget);
 
     // Nada oído: lo dice.
     await tester.tap(find.byTooltip('Hablar'));
@@ -158,8 +160,8 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
 
-    // Cambiar su idioma.
-    await tester.tap(find.text('Su idioma'));
+    // Cambiar su idioma: con la lista...
+    await tester.tap(find.byTooltip('Su idioma'));
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
       find.text('한국어'),
@@ -172,11 +174,19 @@ void main() {
     await tester.tap(find.text('한국어'));
     await tester.pumpAndSettle();
     expect(prefs.readData(LocalData.interpreterLang), 'ko');
-    expect(find.text('Español ⇄ 한국어'), findsOneWidget);
+    expect(find.text('Coreano · toca para cambiar'), findsOneWidget);
+    // ... o con los botones de abajo.
+    await tester.tap(find.text('🇬🇧 Inglés'));
+    await tester.pumpAndSettle();
+    expect(prefs.readData(LocalData.interpreterLang), 'en');
 
-    // La pestaña Pregunta.
+    // La pestaña Pregunta: Flyra contesta (aquí, sin servidor, lo dice).
     await tester.tap(find.text('Pregunta'));
     await tester.pumpAndSettle();
-    expect(find.text('Apuntar con la cámara'), findsOneWidget);
+    expect(find.text('FLYRA TE LO CUENTA'), findsOneWidget);
+    await tester.tap(find.text('¿Qué hay dentro?'));
+    await tester.pumpAndSettle();
+    expect(find.text('«¿Qué hay dentro?»'), findsOneWidget);
+    expect(find.textContaining('Prueba otra vez'), findsOneWidget);
   });
 }

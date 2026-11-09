@@ -8,6 +8,7 @@ package provider
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/dp2005dario/NoMad-IQ/services/flight-ingestor/internal/domain"
 )
@@ -39,4 +40,12 @@ type Searcher interface {
 type MonthlySearcher interface {
 	Name() string
 	Monthly(ctx context.Context, route domain.Route) ([]domain.MonthFare, error)
+}
+
+// DailySearcher da el billete más barato de cada día de un mes para una
+// ruta (el calendario de precios del buscador). oneWay = solo ida; si no,
+// ida y vuelta con cualquier vuelta.
+type DailySearcher interface {
+	Name() string
+	Daily(ctx context.Context, route domain.Route, month time.Time, oneWay bool) ([]domain.DayFare, error)
 }

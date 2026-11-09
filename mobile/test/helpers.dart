@@ -28,6 +28,7 @@ import 'package:eclipta/features/family/family.dart';
 import 'package:eclipta/features/memories/memories.dart';
 import 'package:eclipta/features/memories/travel_camera.dart';
 import 'package:eclipta/features/help/help_contacts.dart';
+import 'package:eclipta/features/sos/phone_contacts.dart';
 import 'package:eclipta/features/offline/city_downloader.dart';
 import 'package:eclipta/features/offline/saved_guides.dart';
 import 'package:eclipta/features/audioguide/guide_player.dart';
@@ -38,6 +39,7 @@ import 'package:eclipta/features/map/location.dart';
 import 'package:eclipta/features/map/location_tracker.dart';
 import 'package:eclipta/features/map/position_reporter.dart';
 import 'package:eclipta/features/push/notices.dart';
+import 'package:eclipta/features/route/flight3d.dart' show WebSceneBuilder;
 import 'package:eclipta/features/map/map_surface.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/camera/camera_device.dart';
@@ -226,6 +228,8 @@ AppServices fakeServices(
   Stream<bool> Function()? onlineChanges,
   DocSource? docSource,
   DocTextReader? docReader,
+  WebSceneBuilder? webScene,
+  PickPhoneContact? pickContact,
 }) {
   final FakeGateway g = gateway ?? FakeGateway();
   final FakeMap m = map ?? FakeMap();
@@ -247,6 +251,12 @@ AppServices fakeServices(
     tilesUrl: Uri.parse('https://tiles.test/planet'),
     glyphsUrl: 'https://tiles.test/fonts/{fontstack}/{range}.pbf',
     notices: notices ?? FakeNotices(),
+    // Las pantallas que son una página web, en blanco (en los tests no hay
+    // WebView); quien quiera mirarlas pasa su espía.
+    webScene:
+        webScene ??
+        (String html, void Function(String) onMessage) =>
+            const SizedBox.expand(),
     prefs: prefs,
     openBooking: openBooking ?? (Uri _) async => true,
     openLink: openLink ?? (Uri _) async => true,
@@ -264,6 +274,7 @@ AppServices fakeServices(
     power: power,
     saved: saved ?? const NoSavedGuides(),
     help: help,
+    pickContact: pickContact,
     family: family,
     newTravelCamera: newTravelCamera,
     share: share ?? (List<String> _, {String? text}) async {},
@@ -309,6 +320,17 @@ class FakeNotices implements NoticeCenter {
 
   @override
   Future<String?> launchRoute() async => launch;
+
+  /// Las notificaciones de datos para copiar (título, texto, botones).
+  final List<(String, String, List<(String, String)>)> copyData =
+      <(String, String, List<(String, String)>)>[];
+
+  @override
+  Future<void> showCopyData({
+    required String title,
+    required String body,
+    required List<(String, String)> copies,
+  }) async => copyData.add((title, body, copies));
 }
 
 /// Un GPS falso: el test decide la respuesta al permiso y manda posiciones.
@@ -396,6 +418,15 @@ class FakeMap implements MapSurfaceController {
 
   @override
   Future<void> showMe(GeoPoint? point) async => me = point;
+
+  /// Hacia dónde mira el mapa (lo último que pidió la pantalla).
+  double bearing = 0;
+
+  @override
+  Future<void> setBearing(double degrees) async {
+    bearing = degrees;
+    calls.add('bearing:${degrees.round()}');
+  }
 
   Map<String, Object?>? pins;
 

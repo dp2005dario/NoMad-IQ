@@ -1,5 +1,6 @@
 // Recuerdos: las cuentas de la historia, la lista guardada en el móvil, la
 // cámara de viaje (foto con pegatina → guardada → compartir) y la historia.
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -9,10 +10,12 @@ import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/camera/camera_device.dart' show CameraStart;
 import 'package:eclipta/features/camera/stamps.dart';
 import 'package:eclipta/features/memories/memories.dart';
+import 'package:eclipta/features/memories/memories_page.dart';
 import 'package:eclipta/features/memories/memories_screen.dart';
 import 'package:eclipta/features/memories/travel_camera.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 
 /// Una cámara falsa: "hace" fotos de 3 bytes y vídeos que no existen.
 class FakeTravelCamera implements TravelCamera {
@@ -140,6 +143,30 @@ void main() {
     expect(files.files, isEmpty);
   });
 
+  test('a la página solo va lo que ha cambiado', () {
+    expect(
+      changedKeys(
+        <String, Object?>{
+          'a': 1,
+          'b': <int>[1],
+        },
+        <String, Object?>{
+          'a': 1,
+          'b': <int>[2],
+          'c': 'x',
+        },
+      ),
+      <String, Object?>{
+        'b': <int>[2],
+        'c': 'x',
+      },
+    );
+    expect(
+      memoriesPushScript(<String, Object?>{'x': '<b>'}),
+      isNot(contains('<b>')),
+    );
+  });
+
   testWidgets('foto con la cámara de viaje: se guarda y se comparte', (
     WidgetTester tester,
   ) async {
@@ -147,6 +174,7 @@ void main() {
     final FakeTravelCamera camera = FakeTravelCamera();
     final MemoryMemoryFiles files = MemoryMemoryFiles();
     final List<List<String>> shared = <List<String>>[];
+    final m.PageSpy spy = m.PageSpy();
     final session = newSession()..continueAsGuest();
     tester.view.physicalSize = const Size(1200, 3000);
     tester.view.devicePixelRatio = 3;
@@ -161,18 +189,21 @@ void main() {
         prefs: store,
         newTravelCamera: () => camera,
         memoryFiles: files,
+        webScene: spy.build,
         share: (List<String> paths, {String? text}) async => shared.add(paths),
       ),
     );
+    Map<String, Object?> data() => spy.data(MemoriesScreen.lastBridge!);
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    expect(spy.pages.first, contains('ECLIPTA · Recuerdos'));
     expect(
-      find.text(
-        'Aún no hay nada. Aquí salen las fotos y los vídeos '
-        'que hagas con la cámara de viaje.',
-      ),
-      findsOneWidget,
+      data()['emptyTxt'],
+      'Aún no hay nada. Aquí salen las fotos y los vídeos '
+      'que hagas con la cámara de viaje.',
     );
+    expect(data()['grid'], isEmpty);
 
-    await tester.tap(find.byType(FloatingActionButton));
+    spy.send!('camera');
     await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel('Hacer foto'));
     await tester.pumpAndSettle();
@@ -192,7 +223,11 @@ void main() {
     expect(find.byType(BackButton), findsOneWidget);
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
-    expect(find.text('Recuerdos · 1 de 300'), findsOneWidget);
+    await spy.wait(
+      tester,
+      () => (data()['grid']! as List<Object?>).length == 1,
+    );
+    expect(data()['listH'], 'Recuerdos · 1 de 300');
   });
 
   testWidgets('la historia: portada, foto con "DÍA N · CIUDAD" y cifras', (
@@ -201,9 +236,22 @@ void main() {
     final MemorySettingsStore store = MemorySettingsStore('es');
     final MemoryMemoryFiles files = MemoryMemoryFiles();
     final DateTime now = DateTime.now();
-    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime today = DateTime(now.year, now.month, now.day, 12);
+    final List<List<String>> shared = <List<String>>[];
+    final List<String?> texts = <String?>[];
+    final m.PageSpy spy = m.PageSpy();
     final session = newSession()..continueAsGuest();
-    final services = fakeServices(session, prefs: store, memoryFiles: files);
+    final services = fakeServices(
+      session,
+      prefs: store,
+      memoryFiles: files,
+      webScene: spy.build,
+      share: (List<String> paths, {String? text}) async {
+        shared.add(paths);
+        texts.add(text);
+      },
+    );
+    await files.write('a.jpg', Uint8List.fromList(<int>[1, 2, 3]));
     await services.memories.add(photo('a.jpg', today, city: 'Madrid'));
     tester.view.physicalSize = const Size(1200, 3000);
     tester.view.devicePixelRatio = 3;
@@ -215,11 +263,38 @@ void main() {
       initialLocation: Routes.memories,
       services: services,
     );
-    expect(find.text('Madrid'), findsOneWidget);
+    Map<String, Object?> data() => spy.data(MemoriesScreen.lastBridge!);
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    expect(data()['route'], 'Madrid');
+    expect(data()['from'], 'Madrid');
+    expect(data()['to'], '');
+    final List<Object?> stats = data()['stats']! as List<Object?>;
+    expect((stats[2]! as Map<String, Object?>)['k'], 'fotos y vídeos');
 
-    await tester.tap(find.text('Viñetas'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Ver historia'));
+    // El vídeo grabado por la página: "Guardar vídeo" lo deja en Recuerdos.
+    spy.send!('video:save:mp4:${base64Encode(<int>[0, 0, 0, 24])}');
+    await spy.wait(tester, () => services.memories.all().length == 2);
+    final Memory video = services.memories.all().firstWhere(
+      (Memory x) => x.kind == MemoryKind.video,
+    );
+    expect(video.file, endsWith('.mp4'));
+
+    // "Crear historia" lo comparte (Instagram, WhatsApp... los elige el móvil).
+    spy.send!('video:share:webm:${base64Encode(<int>[1, 2])}');
+    await spy.wait(tester, () => shared.isNotEmpty);
+    expect(shared.single.single, '/memories/story_share.webm');
+    expect(texts.single, contains('Madrid'));
+
+    // Si el móvil no sabe grabar: las fotos y el texto.
+    spy.send!('novideo:group');
+    await spy.wait(tester, () => shared.length == 2);
+    expect(shared.last, <String>['/memories/a.jpg']);
+
+    // Viñetas y a pantalla completa.
+    spy.send!('style:1');
+    await tester.pump();
+    expect(data()['style'], 1);
+    spy.send!('full');
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
     expect(find.byType(StoryPlayer), findsOneWidget);

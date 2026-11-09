@@ -123,3 +123,49 @@ class DogProfile {
 
   DogProfile withPhoto(String? path) => DogProfile(name: name, photoPath: path);
 }
+
+/// La maleta de tu perro (como en la maqueta). Lo que ya has metido se
+/// guarda SOLO en el móvil.
+const List<String> dogBagItems = <String>[
+  'Correa y arnés',
+  'Bozal (si lo piden)',
+  'Bebedero plegable',
+  'Bolsas',
+  'Su comida',
+  'Cartilla y pasaporte',
+];
+
+class DogBag {
+  const DogBag(this._store);
+
+  final SettingsStore _store;
+
+  /// Las cosas ya metidas (por su número en [dogBagItems]).
+  Set<int> packed() {
+    try {
+      final Object? list = jsonDecode(
+        _store.readData(LocalData.dogBag) ?? '[]',
+      );
+      if (list is! List<Object?>) return <int>{};
+      return <int>{
+        for (final Object? i in list)
+          if (i is int && i >= 0 && i < dogBagItems.length) i,
+      };
+    } on FormatException {
+      return <int>{};
+    }
+  }
+
+  /// Mete o saca una cosa.
+  Future<Set<int>> toggle(int item) async {
+    final Set<int> all = packed();
+    if (!all.remove(item) && item >= 0 && item < dogBagItems.length) {
+      all.add(item);
+    }
+    await _store.writeData(
+      LocalData.dogBag,
+      jsonEncode((all.toList()..sort())),
+    );
+    return all;
+  }
+}

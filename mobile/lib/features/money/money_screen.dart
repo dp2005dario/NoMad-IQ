@@ -53,6 +53,12 @@ class _MoneyScreenState extends State<MoneyScreen> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
+    // El Bote común es su propia maqueta, a pantalla entera.
+    if (widget.tab == MoneyTab.kitty) return const KittyView();
+    // "Tu dinero fuera" también (la maqueta "Dinero").
+    if (widget.tab == MoneyTab.abroad) return const AbroadView();
+    // Y Divisas (la maqueta "Cambio de moneda").
+    if (widget.tab == MoneyTab.fx) return const FxView();
     return Scaffold(
       appBar: AppBar(title: Text(t.moneyTitle)),
       body: Column(
@@ -78,7 +84,12 @@ class _MoneyScreenState extends State<MoneyScreen> {
                             : NomadColors.text,
                       ),
                       showCheckmark: false,
-                      onSelected: (_) => setState(() => _tab = tab),
+                      onSelected: (_) =>
+                          tab == MoneyTab.kitty ||
+                              tab == MoneyTab.abroad ||
+                              tab == MoneyTab.fx
+                          ? context.push(Routes.money(tab: tab))
+                          : setState(() => _tab = tab),
                     ),
                   ),
               ],
@@ -87,10 +98,10 @@ class _MoneyScreenState extends State<MoneyScreen> {
           Expanded(
             child: switch (_tab) {
               MoneyTab.expenses => const ExpenseGroupsView(),
-              MoneyTab.fx => const FxView(),
+              MoneyTab.fx => const SizedBox.shrink(),
               MoneyTab.rooms => const RoomsView(),
-              MoneyTab.kitty => const KittyView(),
-              MoneyTab.abroad => const AbroadView(),
+              MoneyTab.kitty => const SizedBox.shrink(),
+              MoneyTab.abroad => const SizedBox.shrink(),
             },
           ),
         ],

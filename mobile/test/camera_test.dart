@@ -17,6 +17,7 @@ import 'package:eclipta/features/camera/speaker.dart';
 import 'package:eclipta/features/camera/stamps.dart';
 import 'package:eclipta/features/map/geo.dart';
 import 'package:eclipta/features/map/location.dart';
+import 'package:eclipta/features/passport/passport_screen.dart';
 
 import 'helpers.dart';
 
@@ -152,6 +153,14 @@ Future<void> pumpCamera(
 
 /// La pantalla tiene animaciones sin fin (el escáner): no se puede esperar a
 /// que "se calme", así que se avanza un rato fijo.
+/// La cámara mira sola cada 3 s si el móvil está quieto: la primera vuelta
+/// apunta hacia dónde miras y la segunda ya mira.
+Future<void> detect(WidgetTester tester) async {
+  await tester.pump(const Duration(seconds: 3));
+  await tester.pump(const Duration(seconds: 3));
+  await settle(tester);
+}
+
 Future<void> settle(WidgetTester tester) async {
   for (int i = 0; i < 10; i++) {
     await tester.pump(const Duration(milliseconds: 100));
@@ -187,7 +196,7 @@ void main() {
     });
   });
 
-  testWidgets('apuntar, reconocer, escuchar y guardar el sello', (
+  testWidgets('la cámara ve sola el monumento, Aceptar pone la audioguía', (
     WidgetTester tester,
   ) async {
     final LandmarkBackend b = LandmarkBackend();
@@ -202,11 +211,13 @@ void main() {
       prefs: prefs,
     );
     await settle(tester);
-    expect(find.text('Apunta a un monumento y toca el botón'), findsOneWidget);
+    // Buscando: sin botón de disparar, con las pistas que ya tiene.
+    expect(find.text('Apunta a un monumento…'), findsOneWidget);
+    expect(find.text('Buscando monumentos cerca…'), findsOneWidget);
+    expect(find.text('🧭 Brújula: miras al sur'), findsOneWidget);
+    expect(find.bySemanticsLabel('Reconocer'), findsNothing);
 
-    await tester.tap(find.bySemanticsLabel('Reconocer'));
-    await settle(tester);
-
+    await detect(tester);
     expect(cam.photos, 1);
     final Map<String, Object?> body = b.sent.single;
     expect(body['heading'], 180);
@@ -217,92 +228,73 @@ void main() {
       0xd8,
       0xff,
     ]);
+    expect(find.text('¡Monumento detectado!'), findsOneWidget);
+    expect(find.text('FLYRA · MONUMENTO DETECTADO'), findsOneWidget);
+    expect(find.text('👁️ La forma coincide'), findsOneWidget);
+    expect(find.text('Real Casa de Correos'), findsOneWidget); // el recuadro
+
+    await tester.tap(find.text('Aceptar'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Abriendo la audioguía…'), findsOneWidget);
+    expect(find.text('Real Casa de Correos · en español'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 900));
+    await settle(tester);
+    expect(find.text('Abriendo la audioguía…'), findsNothing);
+    expect(find.text('Monumento reconocido'), findsOneWidget);
     expect(find.text('RECONOCIDO'), findsOneWidget);
-    expect(find.text('Real Casa de Correos'), findsWidgets);
     expect(find.text('1768'), findsOneWidget);
     expect(find.text('33 m'), findsOneWidget);
-
-    await tester.tap(find.text('Escuchar'));
-    await settle(tester);
+    expect(find.text('Raro'), findsOneWidget);
     expect(voice.said.single, contains('campanadas'));
 
-    await tester.tap(find.text('Mi sello'));
-    await settle(tester);
-    expect(find.text('Sello guardado'), findsOneWidget);
+    // Reconocido en la foto: el sello ya es tuyo (con dónde está).
     expect(StampBook(prefs).has('Q1503138'), isTrue);
-    // El sello guarda dónde está, para su página del Pasaporte.
     expect(StampBook(prefs).all().single.lat, isNotNull);
-
-    // "¿No es este?": se elige el Oso y se ve su ficha.
-    await tester.tap(find.textContaining('El Oso y el Madroño'));
+    await tester.tap(find.text('Ver mi sello'));
     await settle(tester);
-    expect(find.text('1967'), findsOneWidget);
-    expect(find.text('¿ES ESTE?'), findsOneWidget);
-
-    await tester.tap(find.byTooltip('Escanear otra vez'));
-    await settle(tester);
-    expect(find.text('Apunta a un monumento y toca el botón'), findsOneWidget);
+    expect(find.byType(PassportScreen), findsOneWidget);
   });
 
-  testWidgets('la cámara ve sola el monumento y Flyra pregunta', (
-    WidgetTester tester,
-  ) async {
-    final LandmarkBackend b = LandmarkBackend();
-    final FakeCamera cam = FakeCamera();
-    final FakeSpeaker voice = FakeSpeaker();
-    await pumpCamera(tester, b: b, camera: () => cam, speaker: voice);
-    await settle(tester);
-    // Primera vuelta: apunta hacia dónde miras. Segunda (móvil quieto): mira.
-    await tester.pump(const Duration(seconds: 8));
-    await tester.pump(const Duration(seconds: 8));
-    await settle(tester);
-    expect(b.sent, hasLength(1));
-    expect(find.text('Flyra ha visto un monumento'), findsOneWidget);
-    expect(find.textContaining('Real Casa de Correos'), findsOneWidget);
-
-    // Cancelar: se va y no vuelve a preguntar por el mismo.
-    await tester.tap(find.text('Cancelar'));
-    await settle(tester);
-    expect(find.text('Flyra ha visto un monumento'), findsNothing);
-    await tester.pump(const Duration(seconds: 8));
-    await tester.pump(const Duration(seconds: 8));
-    await settle(tester);
-    expect(find.text('Flyra ha visto un monumento'), findsNothing);
-    expect(voice.said, isEmpty);
-  });
-
-  testWidgets('Aceptar abre la ficha y empieza la audioguía', (
+  testWidgets('Cancelar enseña la ficha sin leerla y no vuelve a preguntar', (
     WidgetTester tester,
   ) async {
     final LandmarkBackend b = LandmarkBackend();
     final FakeSpeaker voice = FakeSpeaker();
     await pumpCamera(tester, b: b, camera: FakeCamera.new, speaker: voice);
     await settle(tester);
-    await tester.pump(const Duration(seconds: 8));
-    await tester.pump(const Duration(seconds: 8));
+    await detect(tester);
+    await tester.tap(find.text('Cancelar'));
     await settle(tester);
-    await tester.tap(find.text('Aceptar'));
-    await settle(tester);
+    expect(find.text('FLYRA · MONUMENTO DETECTADO'), findsNothing);
     expect(find.text('RECONOCIDO'), findsOneWidget);
-    expect(voice.said.single, contains('campanadas'));
+    expect(voice.said, isEmpty);
+
+    // "Escanear otra vez" mira ya mismo; por el mismo ya no pregunta.
+    await tester.tap(find.byTooltip('Escanear otra vez'));
+    await settle(tester);
+    expect(b.sent, hasLength(2));
+    expect(find.text('Apunta a un monumento…'), findsOneWidget);
+    expect(find.text('FLYRA · MONUMENTO DETECTADO'), findsNothing);
   });
 
-  testWidgets('si nadie contesta, el aviso se cierra solo', (
+  testWidgets('si nadie contesta, el aviso se cierra y queda la ficha', (
     WidgetTester tester,
   ) async {
     final LandmarkBackend b = LandmarkBackend();
-    await pumpCamera(tester, b: b, camera: FakeCamera.new);
+    final FakeSpeaker voice = FakeSpeaker();
+    await pumpCamera(tester, b: b, camera: FakeCamera.new, speaker: voice);
     await settle(tester);
-    await tester.pump(const Duration(seconds: 8));
-    await tester.pump(const Duration(seconds: 8));
-    await settle(tester);
-    expect(find.text('Flyra ha visto un monumento'), findsOneWidget);
+    await detect(tester);
+    expect(find.text('FLYRA · MONUMENTO DETECTADO'), findsOneWidget);
     await tester.pump(const Duration(seconds: 9));
     await settle(tester);
-    expect(find.text('Flyra ha visto un monumento'), findsNothing);
+    expect(find.text('FLYRA · MONUMENTO DETECTADO'), findsNothing);
+    expect(find.text('RECONOCIDO'), findsOneWidget);
+    expect(voice.said, isEmpty);
   });
 
-  testWidgets('nada famoso cerca', (WidgetTester tester) async {
+  testWidgets('nada famoso cerca: sigue buscando', (WidgetTester tester) async {
     final LandmarkBackend b = LandmarkBackend()
       ..response = <String, Object?>{
         'status': 'none',
@@ -311,22 +303,22 @@ void main() {
       };
     await pumpCamera(tester, b: b, camera: FakeCamera.new);
     await settle(tester);
-    await tester.tap(find.bySemanticsLabel('Reconocer'));
-    await settle(tester);
-    expect(find.textContaining('No reconozco ningún lugar'), findsOneWidget);
+    await detect(tester);
+    expect(b.sent, hasLength(1));
+    expect(find.text('Apunta a un monumento…'), findsOneWidget);
+    expect(find.text('FLYRA · MONUMENTO DETECTADO'), findsNothing);
   });
 
-  testWidgets('sin usos hoy: aviso y el botón se apaga', (
+  testWidgets('sin usos hoy: lo dice y deja de mirar', (
     WidgetTester tester,
   ) async {
     final LandmarkBackend b = LandmarkBackend()..failWith = 429;
     await pumpCamera(tester, b: b, camera: FakeCamera.new);
     await settle(tester);
-    await tester.tap(find.bySemanticsLabel('Reconocer'));
-    await settle(tester);
+    await detect(tester);
     expect(find.textContaining('escaneos gratis de hoy'), findsOneWidget);
-    await tester.tap(find.bySemanticsLabel('Reconocer'));
-    await settle(tester);
+    await tester.tap(find.byTooltip('Escanear otra vez'));
+    await detect(tester);
     expect(b.sent, hasLength(1));
   });
 
@@ -377,11 +369,15 @@ void main() {
     );
     await settle(tester);
     expect(made, hasLength(1));
-    await tester.tap(find.text('Inicio'));
+    // A pantalla completa, sin la barra: se sale con la X.
+    expect(find.text('Inicio'), findsNothing);
+    await tester.tap(find.byTooltip('Cerrar la cámara'));
     await settle(tester);
     expect(made.single.disposed, isTrue);
     await tester.tap(find.byTooltip('Cámara'));
     await settle(tester);
     expect(made, hasLength(2));
+    // El Mapa (debajo) empezó a mandar tu posición: se deja terminar el lote.
+    await tester.pump(const Duration(seconds: 61));
   });
 }

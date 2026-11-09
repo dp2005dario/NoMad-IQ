@@ -187,12 +187,12 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: price-consumer
 
-    # Buscador de vuelos (origen, destino, fechas, viajeros) y precio por
-    # meses (Explorar): públicos, como los chollos, pero con su límite más
-    # estricto.
+    # Buscador de vuelos (origen, destino, fechas, viajeros), precio por
+    # meses (Explorar) y por días (el calendario del buscador): públicos, como
+    # los chollos, pero con su límite más estricto.
     fares-search:
       entryPoints: [web]
-      rule: Method(`GET`) && (Path(`/v1/fares/search`) || Path(`/v1/fares/months`))
+      rule: Method(`GET`) && (Path(`/v1/fares/search`) || Path(`/v1/fares/months`) || Path(`/v1/fares/days`))
       priority: 100
       middlewares: [strip-identity, search-rate-limit]
       service: price-consumer

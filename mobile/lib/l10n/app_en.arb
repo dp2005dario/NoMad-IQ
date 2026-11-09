@@ -2342,6 +2342,1696 @@
   "@moneySettleConfirm": {
     "description": "Button: record payment."
   },
+  "gastosYourMoney": "YOUR MONEY",
+  "@gastosYourMoney": {
+    "description": "Section label above the 3 money tiles, uppercase"
+  },
+  "gastosPaidBy": "{name} paid",
+  "@gastosPaidBy": {
+    "description": "Under the expense title: who paid",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosPaidByRead": "{name} paid · receipt read by Flyra",
+  "@gastosPaidByRead": {
+    "description": "Under the expense title: who paid and that Flyra read the receipt",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosPaidByMe": "You paid",
+  "@gastosPaidByMe": {
+    "description": "Under the expense title: you paid"
+  },
+  "gastosPaidByMeRead": "You paid · receipt read by Flyra",
+  "@gastosPaidByMeRead": {
+    "description": "Under the expense title: you paid and Flyra read the receipt"
+  },
+  "gastosMyProfile": "Your profile photo and settings",
+  "@gastosMyProfile": {
+    "description": "Accessibility label of your avatar button: profile and settings"
+  },
+  "gastosPrinting": "PRINTING THE RECEIPT…",
+  "@gastosPrinting": {
+    "description": "Stage label while the receipt animation prints, uppercase"
+  },
+  "gastosReading": "FLYRA IS READING THE LINES…",
+  "@gastosReading": {
+    "description": "Stage label while Flyra reads the lines, uppercase"
+  },
+  "gastosReady": "DONE · {n} LINES SPLIT",
+  "@gastosReady": {
+    "description": "Stage label when done, n = number of lines, uppercase",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosReprint": "Print again",
+  "@gastosReprint": {
+    "description": "Button to replay the printing animation"
+  },
+  "gastosScanQr": "Scan the receipt's QR",
+  "@gastosScanQr": {
+    "description": "Button: scan the tax QR code of the receipt"
+  },
+  "gastosEqual": "Equal parts",
+  "@gastosEqual": {
+    "description": "Split option: equal parts"
+  },
+  "gastosByItem": "By what each person had",
+  "@gastosByItem": {
+    "description": "Split option: by what each person had"
+  },
+  "gastosTable": "Let everyone mark theirs on their phone",
+  "@gastosTable": {
+    "description": "Button: let everyone mark their own dishes from their phone"
+  },
+  "gastosLinesTitle": "DISHES READ FROM THE RECEIPT · TAP WHO HAD IT",
+  "@gastosLinesTitle": {
+    "description": "Label above the receipt dishes, uppercase"
+  },
+  "gastosForOne": "for 1",
+  "@gastosForOne": {
+    "description": "Status of a dish that only one person had"
+  },
+  "gastosEach": "÷{n} · {amount} each",
+  "@gastosEach": {
+    "description": "Status of a shared dish: split among n people, amount each",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosExtras": "EXTRAS · SPLIT BY WHAT EACH PERSON HAD",
+  "@gastosExtras": {
+    "description": "Card label for extras split by consumption, uppercase"
+  },
+  "gastosCover": "Bread and cover charge on the receipt",
+  "@gastosCover": {
+    "description": "Row: bread and cover charge on the receipt"
+  },
+  "gastosDiscount": "Discount on the receipt",
+  "@gastosDiscount": {
+    "description": "Row: discount on the receipt"
+  },
+  "gastosVatNote": "VAT is already in each price, it isn't split separately. The tip isn't on the receipt: it's added on top.",
+  "@gastosVatNote": {
+    "description": "Note under extras: VAT is already included, tip goes on top"
+  },
+  "gastosMyPart": "Your share: dishes {amount}",
+  "@gastosMyPart": {
+    "description": "Start of your breakdown: dishes amount",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosMyCover": "+ cover {amount}",
+  "@gastosMyCover": {
+    "description": "Breakdown part: plus cover charge",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosMyDiscount": "− discount {amount}",
+  "@gastosMyDiscount": {
+    "description": "Breakdown part: minus discount",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosMyTip": "+ tip {amount}",
+  "@gastosMyTip": {
+    "description": "Breakdown part: plus tip",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosMyTotal": "= {amount}",
+  "@gastosMyTotal": {
+    "description": "Breakdown end: equals total",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosSumBad": "Doesn't match: the dishes add up to {lines} and the receipt says {total}",
+  "@gastosSumBad": {
+    "description": "Status: dishes don't add up to the receipt total",
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosSumBadQr": "Doesn't match: the receipt adds up to {lines} and the QR says {total}",
+  "@gastosSumBadQr": {
+    "description": "Status: the receipt lines don't add up to the tax QR total",
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosSumOk": "Split {total} · matches the receipt total",
+  "@gastosSumOk": {
+    "description": "Status: everything split and matches the receipt total",
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosSumOkQr": "Split {total} · matches the QR total",
+  "@gastosSumOkQr": {
+    "description": "Status: everything split and matches the QR total",
+    "placeholders": {
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosSumTip": "(+ {amount} tip)",
+  "@gastosSumTip": {
+    "description": "Added to the status when there is a tip",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosPaidTag": "PAID",
+  "@gastosPaidTag": {
+    "description": "Small badge on the card of who paid, uppercase"
+  },
+  "gastosSettledTag": "SETTLED",
+  "@gastosSettledTag": {
+    "description": "Small badge: you owe nothing, uppercase"
+  },
+  "gastosYouOwe": "You owe {name}",
+  "@gastosYouOwe": {
+    "description": "Debt card: you owe this person",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosOwedToYou": "You're owed",
+  "@gastosOwedToYou": {
+    "description": "Debt card when you paid: they owe you"
+  },
+  "gastosSettle": "Settle",
+  "@gastosSettle": {
+    "description": "Button: settle the debt"
+  },
+  "gastosSettledButton": "Settled ✓",
+  "@gastosSettledButton": {
+    "description": "Button label when already settled"
+  },
+  "gastosQrMismatch": "The dishes add up to {lines} and the receipt's QR says {total}. I may have misread a line: check them on the receipt.",
+  "@gastosQrMismatch": {
+    "description": "Flyra alert after scanning the QR: lines total vs QR total",
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "gastosAlertOk": "Got it",
+  "@gastosAlertOk": {
+    "description": "Button that closes Flyra's alert"
+  },
+  "ticketTpv": "POS",
+  "@ticketTpv": {
+    "description": "Label on the card terminal drawing (point of sale), uppercase"
+  },
+  "ticketDiners": "Diners {n}",
+  "@ticketDiners": {
+    "description": "Receipt line: number of diners",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "ticketQty": "QTY",
+  "@ticketQty": {
+    "description": "Receipt column header: units, uppercase"
+  },
+  "ticketItem": "ITEM",
+  "@ticketItem": {
+    "description": "Receipt column header: item, uppercase"
+  },
+  "ticketPrice": "AMOUNT",
+  "@ticketPrice": {
+    "description": "Receipt column header: amount, uppercase"
+  },
+  "ticketCover": "BREAD & COVER",
+  "@ticketCover": {
+    "description": "Receipt line: bread and cover charge, uppercase"
+  },
+  "ticketDiscountLine": "DISCOUNT",
+  "@ticketDiscountLine": {
+    "description": "Receipt line: discount, uppercase"
+  },
+  "ticketLinesFound": "{n} LINES DETECTED",
+  "@ticketLinesFound": {
+    "description": "Label stuck on the receipt: n lines detected, uppercase",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "tableSheetText": "Show the QR or send the code to the group. Everyone joins with the app and marks theirs on their phone.",
+  "@tableSheetText": {
+    "description": "Sheet text: show the QR or send the code so everyone marks theirs"
+  },
+  "tableCopyCode": "Copy code",
+  "@tableCopyCode": {
+    "description": "Button: copy the group code"
+  },
+  "tableLive": "LIVE · WHO MARKED WHAT",
+  "@tableLive": {
+    "description": "Label above the live list of who marked what, uppercase"
+  },
+  "tableMine": "You marked {n} dishes ✓",
+  "@tableMine": {
+    "description": "Live list: you have marked n dishes",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "tableNothingMine": "You haven't marked anything yet",
+  "@tableNothingMine": {
+    "description": "Live list: you haven't marked anything"
+  },
+  "tableDone": "Done",
+  "@tableDone": {
+    "description": "Button that closes the share-with-the-table sheet"
+  },
+  "qrNone": "I couldn't find the tax QR code in the photo.",
+  "@qrNone": {
+    "description": "Message when no tax QR code was found in the photo"
+  },
+  "qrSheetNote": "The QR only has these 4 details and a link to the tax office to check the invoice. I read the place's name and the dishes from the receipt photo.",
+  "@qrSheetNote": {
+    "description": "Note in the QR sheet: what the tax QR contains"
+  },
+  "qrUse": "Use this data",
+  "@qrUse": {
+    "description": "Button: use the QR data"
+  },
+  "settleWith": "Settle up with {name}",
+  "@settleWith": {
+    "description": "Sheet title: settle up with a person",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleToBy": "to {name} by Bizum",
+  "@settleToBy": {
+    "description": "Under the amount: to this person by Bizum",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleConcept": "Reference",
+  "@settleConcept": {
+    "description": "Row label: payment concept"
+  },
+  "settleFlyraBizum": "Bizum doesn't let other apps fill it in. Easiest: I copy the amount and reference and you paste them into Bizum in your bank app.",
+  "@settleFlyraBizum": {
+    "description": "Flyra explains how to pay by Bizum"
+  },
+  "settleCopyBizum": "Copy for Bizum",
+  "@settleCopyBizum": {
+    "description": "Main button: copy amount and reference for Bizum"
+  },
+  "settleAsk": "Ask {name} to request it by Bizum (pay with 1 tap)",
+  "@settleAsk": {
+    "description": "Button: ask the person to send you a Bizum request",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleAskText": "Hi {name}! Can you send me a Bizum request for {amount} for \"{concept}\"? Then I can pay you with one tap.",
+  "@settleAskText": {
+    "description": "Message sent to the person asking for a Bizum request",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      },
+      "concept": {
+        "type": "String"
+      }
+    }
+  },
+  "settleAskedTitle": "Message ready for {name}",
+  "@settleAskedTitle": {
+    "description": "After sharing the request message",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleAskedText": "You ask them to send you a Bizum request for {amount} from their bank. It will reach your bank app and you just accept it with your PIN.",
+  "@settleAskedText": {
+    "description": "Explains what happens after asking for a Bizum request",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "settleOk": "OK",
+  "@settleOk": {
+    "description": "Button OK"
+  },
+  "settleCash": "I already paid in cash",
+  "@settleCash": {
+    "description": "Button: I already paid in cash"
+  },
+  "settleCopiedLine": "Copied: {amount} · {concept}",
+  "@settleCopiedLine": {
+    "description": "Confirmation of what was copied",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "concept": {
+        "type": "String"
+      }
+    }
+  },
+  "settleOpenBank": "Open your bank app: Bizum → Send → paste → confirm",
+  "@settleOpenBank": {
+    "description": "Steps to pay in the bank app"
+  },
+  "settleSentQuestion": "Have you paid {name} yet?",
+  "@settleSentQuestion": {
+    "description": "Question after copying or opening PayPal",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleYesPaid": "Yes, mark as settled",
+  "@settleYesPaid": {
+    "description": "Button: yes, mark as settled"
+  },
+  "settleNotYet": "Not yet",
+  "@settleNotYet": {
+    "description": "Button: not yet"
+  },
+  "settlePaypalOnly": "Only if {name} has PayPal.me",
+  "@settlePaypalOnly": {
+    "description": "Label: only if the person has PayPal.me",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settlePaypalFees": "The link opens PayPal with the amount filled in. Fees depend on PayPal.",
+  "@settlePaypalFees": {
+    "description": "Note on PayPal link"
+  },
+  "settleBack": "Back",
+  "@settleBack": {
+    "description": "Button: go back"
+  },
+  "settleReady": "Done",
+  "@settleReady": {
+    "description": "Button that closes the settled screen"
+  },
+  "settleDoneTitle": "Settled with {name}",
+  "@settleDoneTitle": {
+    "description": "Big title after settling",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleDoneText": "You record it: ECLIPTA can't see your bank. {name} will see it in the kitty.",
+  "@settleDoneText": {
+    "description": "Note after settling",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "vfTitle": "READ FROM THE RECEIPT'S VERIFACTU QR",
+  "@vfTitle": {
+    "description": "Card title: data read from the VeriFactu QR code on a Spanish receipt, uppercase"
+  },
+  "vfNif": "Shop tax ID",
+  "@vfNif": {
+    "description": "Label: tax ID of the shop"
+  },
+  "vfNumber": "Invoice no.",
+  "@vfNumber": {
+    "description": "Label: invoice number"
+  },
+  "vfDate": "Date",
+  "@vfDate": {
+    "description": "Label: date"
+  },
+  "vfTotal": "Total amount",
+  "@vfTotal": {
+    "description": "Label: total amount"
+  },
+  "vfHelp": "The tax office QR only has these 4 details. I read the dishes from the photo of the receipt.",
+  "@vfHelp": {
+    "description": "Explains what the tax QR contains"
+  },
+  "vfCheck": "Check with the tax office",
+  "@vfCheck": {
+    "description": "Button: verify the invoice on the tax office website"
+  },
+  "ticketDiscount": "Discount on the receipt: −{amount}. It's already taken off the total and split by what each person had.",
+  "@ticketDiscount": {
+    "description": "Note about a discount found on the receipt",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "tipTitle": "Tip",
+  "@tipTitle": {
+    "description": "Label: tip"
+  },
+  "tipNone": "None",
+  "@tipNone": {
+    "description": "Chip: no tip"
+  },
+  "tipAdded": "+{tip} tip · Total to split: {total}",
+  "@tipAdded": {
+    "description": "Shows the tip added and the new total to split",
+    "placeholders": {
+      "tip": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "previewTitle": "What each person pays",
+  "@previewTitle": {
+    "description": "Section title: how much each person pays"
+  },
+  "paidTag": "paid",
+  "@paidTag": {
+    "description": "Small badge next to the person who paid"
+  },
+  "mismatchTitle": "Doesn't match the receipt",
+  "@mismatchTitle": {
+    "description": "Flyra warning title: the lines don't match the receipt total"
+  },
+  "mismatchText": "The lines add up to {lines} and the receipt says {total}. I may have misread a price: check it or add the missing line.",
+  "@mismatchText": {
+    "description": "Flyra explains the mismatch between lines and the printed total",
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "mismatchQr": "The lines add up to {lines} and the receipt's QR says {total}. I may have misread a price: check it or add the missing line.",
+  "@mismatchQr": {
+    "description": "Same as mismatchText but the total comes from the tax QR code",
+    "placeholders": {
+      "lines": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "mismatchUseSum": "Use the sum",
+  "@mismatchUseSum": {
+    "description": "Button: use the sum of the lines as the total"
+  },
+  "ticketAdjust": "Tip and adjustments",
+  "@ticketAdjust": {
+    "description": "Receipt row for the difference between total and lines (tip, bread, discount)"
+  },
+  "liveTitle": "Who ticked what",
+  "@liveTitle": {
+    "description": "Card title: who has ticked which dishes"
+  },
+  "liveNone": "Nothing ticked yet",
+  "@liveNone": {
+    "description": "Person hasn't ticked anything yet"
+  },
+  "liveRefresh": "Refresh",
+  "@liveRefresh": {
+    "description": "Button tooltip: refresh to see what others ticked"
+  },
+  "tableTitle": "Split with the table",
+  "@tableTitle": {
+    "description": "Card title: split with everyone at the table"
+  },
+  "tableText": "Send the group code to everyone. Each person joins in the app and ticks their own dishes on their phone.",
+  "@tableText": {
+    "description": "Explains how friends tick their own dishes"
+  },
+  "tableShare": "Send to the group",
+  "@tableShare": {
+    "description": "Button: send to the group"
+  },
+  "tableShareText": "“{expense}”: join the “{group}” group on ECLIPTA with the code {code} and tick what you had.",
+  "@tableShareText": {
+    "description": "Text shared with friends: expense name, group name and join code",
+    "placeholders": {
+      "expense": {
+        "type": "String"
+      },
+      "group": {
+        "type": "String"
+      },
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "settleBizumTitle": "Bizum or bank transfer",
+  "@settleBizumTitle": {
+    "description": "Payment method title: Bizum or bank transfer"
+  },
+  "settleBizum": "No bank lets another app fill in a payment. Copy the amount and description and paste them into your bank app.",
+  "@settleBizum": {
+    "description": "Explains that bank apps can't be filled in by other apps"
+  },
+  "settleCopy": "Copy amount and description",
+  "@settleCopy": {
+    "description": "Button: copy amount and description"
+  },
+  "settleCopied": "Copied",
+  "@settleCopied": {
+    "description": "Button after copying"
+  },
+  "settlePaypalTitle": "PayPal.me link",
+  "@settlePaypalTitle": {
+    "description": "Payment method title"
+  },
+  "settlePaypalNote": "Only if {name} has PayPal.me: it opens with the amount filled in. Fees depend on PayPal.",
+  "@settlePaypalNote": {
+    "description": "Only if the other person has PayPal.me",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settlePaypalHint": "username",
+  "@settlePaypalHint": {
+    "description": "Hint: PayPal.me username"
+  },
+  "settlePaypalOpen": "Open",
+  "@settlePaypalOpen": {
+    "description": "Button: open PayPal"
+  },
+  "settleHonest": "You mark it yourself: ECLIPTA can't see your bank.",
+  "@settleHonest": {
+    "description": "Note that the app doesn't see your bank"
+  },
+  "settleBankLabel": "Your bank",
+  "@settleBankLabel": {
+    "description": "Row label: the user's bank"
+  },
+  "settleBankChange": "change",
+  "@settleBankChange": {
+    "description": "Small link to change the bank"
+  },
+  "settleBankAsk": "Which bank do you use for Bizum? (only the first time)",
+  "@settleBankAsk": {
+    "description": "Question shown once: which bank the user pays Bizum from"
+  },
+  "settleBankOther": "Other bank",
+  "@settleBankOther": {
+    "description": "Bank picker option: another bank"
+  },
+  "settleBankNote": "Saved on this phone. Bank names without logos: the app opens the official app you have installed.",
+  "@settleBankNote": {
+    "description": "Note under the bank picker"
+  },
+  "settleYourBank": "your bank",
+  "@settleYourBank": {
+    "description": "Bank name when none chosen yet"
+  },
+  "settleFlyraOpen": "Bizum doesn't let other apps fill it in. Easiest: I open {bank} straight away, with the amount and reference copied and in a notification from me so you can paste them with one tap.",
+  "@settleFlyraOpen": {
+    "description": "Flyra explains how paying by Bizum works",
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "settleOpenIn": "Open Bizum in {bank}",
+  "@settleOpenIn": {
+    "description": "Main button: open Bizum in the user's bank app",
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "settleTapWith": "Tap phones with {name}",
+  "@settleTapWith": {
+    "description": "Button: bring both phones together",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleNotifLine": "Flyra notification with the details: tap it to copy each one",
+  "@settleNotifLine": {
+    "description": "Done line: a notification has the data"
+  },
+  "settleOpeningLine": "Opening {bank}…: Bizum → Send → paste → confirm",
+  "@settleOpeningLine": {
+    "description": "Done line: opening the bank app and the steps",
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "settleSentBizum": "Have you sent the Bizum to {name}?",
+  "@settleSentBizum": {
+    "description": "Question after opening the bank",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleReqTitle": "Message sent to {name} in the group",
+  "@settleReqTitle": {
+    "description": "Info title after asking the other person",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settleDoneGroup": "You record it: ECLIPTA can't see your bank. We let {name} know in the group.",
+  "@settleDoneGroup": {
+    "description": "Text under Settled: the user records it, the group sees it",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tapTitle": "Settling the debt",
+  "@tapTitle": {
+    "description": "Phones-together sheet title while settling"
+  },
+  "tapReady": "All set!",
+  "@tapReady": {
+    "description": "Phones-together sheet title when finished"
+  },
+  "tapConnected": "Connected",
+  "@tapConnected": {
+    "description": "Chip when both phones connect"
+  },
+  "tapYou": "You",
+  "@tapYou": {
+    "description": "Label on your phone: you"
+  },
+  "tapDebtWith": "Debt with {name}",
+  "@tapDebtWith": {
+    "description": "Label of the debt bar",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "tapOpening": "Opening {bank}…",
+  "@tapOpening": {
+    "description": "Spinner text: opening the bank app",
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "notifPayTitle": "Flyra · Bizum details",
+  "@notifPayTitle": {
+    "description": "Notification title with the Bizum data"
+  },
+  "notifCopyAmount": "Copy amount",
+  "@notifCopyAmount": {
+    "description": "Notification button: copy the amount"
+  },
+  "notifCopyConcept": "Copy reference",
+  "@notifCopyConcept": {
+    "description": "Notification button: copy the reference"
+  },
+  "settleNoApp": "I can't find the {bank} app on this phone: open it yourself and paste the details.",
+  "@settleNoApp": {
+    "description": "When the bank app is not installed",
+    "placeholders": {
+      "bank": {
+        "type": "String"
+      }
+    }
+  },
+  "exwTitle": "Explore",
+  "@exwTitle": {
+    "description": "Explore screen title"
+  },
+  "exwSub": "Pick a month and see when it's best to visit each country in the world.",
+  "@exwSub": {
+    "description": "Explore subtitle"
+  },
+  "exwMap": "Map",
+  "@exwMap": {
+    "description": "Toggle: flat map"
+  },
+  "exwGlobe": "Globe",
+  "@exwGlobe": {
+    "description": "Toggle: 3D globe"
+  },
+  "exwClouds": "Clouds",
+  "@exwClouds": {
+    "description": "Toggle: show clouds"
+  },
+  "exwLoading": "Drawing the terrain…",
+  "@exwLoading": {
+    "description": "While the globe is being drawn"
+  },
+  "exwHintGlobe": "Drag any way · pinch to zoom",
+  "@exwHintGlobe": {
+    "description": "Hint on the globe"
+  },
+  "exwHintMap": "Drag and pinch to zoom in",
+  "@exwHintMap": {
+    "description": "Hint on the flat map"
+  },
+  "exwAvoid": "Avoid",
+  "@exwAvoid": {
+    "description": "Legend: worst time"
+  },
+  "exwBestTime": "Best time",
+  "@exwBestTime": {
+    "description": "Legend: best time"
+  },
+  "exwSource": "Terrain: NASA Blue Marble. Climate: NASA POWER (30-year averages).",
+  "@exwSource": {
+    "description": "Data source under the map"
+  },
+  "exwTopNow": "Best right now",
+  "@exwTopNow": {
+    "description": "Section: best places this month"
+  },
+  "exwAllCountries": "All countries",
+  "@exwAllCountries": {
+    "description": "Section: all countries"
+  },
+  "exwSearch": "Search country",
+  "@exwSearch": {
+    "description": "Search field placeholder"
+  },
+  "exwCount": "{n} of {total}",
+  "@exwCount": {
+    "description": "How many countries are listed",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "exwShow": "Show",
+  "@exwShow": {
+    "description": "Button: show the list"
+  },
+  "exwHide": "Hide",
+  "@exwHide": {
+    "description": "Button: hide the list"
+  },
+  "exwNoData": "No data",
+  "@exwNoData": {
+    "description": "No data for this"
+  },
+  "exwGreat": "Great time to go",
+  "@exwGreat": {
+    "description": "Verdict: very good time"
+  },
+  "exwGood": "Good time",
+  "@exwGood": {
+    "description": "Verdict: good time"
+  },
+  "exwFair": "So-so time",
+  "@exwFair": {
+    "description": "Verdict: so-so time"
+  },
+  "exwAvoidVerdict": "Better to avoid",
+  "@exwAvoidVerdict": {
+    "description": "Verdict: better avoid"
+  },
+  "exwBestMonth": "{month}. Best month: {best}.",
+  "@exwBestMonth": {
+    "description": "Under the verdict: chosen month and best month",
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "best": {
+        "type": "String"
+      }
+    }
+  },
+  "exwTemp": "Average temperature",
+  "@exwTemp": {
+    "description": "Stat: average temperature"
+  },
+  "exwRain": "Rain this month",
+  "@exwRain": {
+    "description": "Stat: rain this month"
+  },
+  "exwTourists": "Tourists",
+  "@exwTourists": {
+    "description": "Stat: how many tourists"
+  },
+  "exwCost": "Daily cost",
+  "@exwCost": {
+    "description": "Stat: daily cost"
+  },
+  "exwSafety": "Safety",
+  "@exwSafety": {
+    "description": "Stat: safety"
+  },
+  "exwYear": "Score through the year",
+  "@exwYear": {
+    "description": "Chart title: score through the year"
+  },
+  "exwClose": "Close",
+  "@exwClose": {
+    "description": "Close button label"
+  },
+  "exwZoomIn": "Zoom in",
+  "@exwZoomIn": {
+    "description": "Zoom in button"
+  },
+  "exwZoomOut": "Zoom out",
+  "@exwZoomOut": {
+    "description": "Zoom out button"
+  },
+  "exwZoomAll": "See the whole world",
+  "@exwZoomAll": {
+    "description": "Button: see the whole world"
+  },
+  "exwLoadFail": "Couldn't load the map",
+  "@exwLoadFail": {
+    "description": "The globe could not be drawn"
+  },
+  "nbOffers": "Deals now",
+  "@nbOffers": {
+    "description": "Nearby tab: deals right now"
+  },
+  "nbTwoHours": "I have 2 hours",
+  "@nbTwoHours": {
+    "description": "Nearby tab: plans for 2 hours"
+  },
+  "nbNow": "now {time}",
+  "@nbNow": {
+    "description": "Nearby header: current time",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "nbBack": "Back",
+  "@nbBack": {
+    "description": "Back button label"
+  },
+  "nbTilt": "3D tilt",
+  "@nbTilt": {
+    "description": "Map control: 3D tilt"
+  },
+  "nbCenter": "Center on my position",
+  "@nbCenter": {
+    "description": "Map control: center on me"
+  },
+  "nbExpand": "Enlarge map",
+  "@nbExpand": {
+    "description": "Map control: enlarge map"
+  },
+  "nbCredit": "Generated illustrative map",
+  "@nbCredit": {
+    "description": "Note on the map: it is an illustration"
+  },
+  "nbInfoOffers": "Active deals",
+  "@nbInfoOffers": {
+    "description": "Map badge: active deals"
+  },
+  "nbInfoFree": "Free places and plans",
+  "@nbInfoFree": {
+    "description": "Map badge: free places"
+  },
+  "nbInfoPlans": "Plans up to 2 h",
+  "@nbInfoPlans": {
+    "description": "Map badge: plans up to 2 h"
+  },
+  "nbFit": "Plans that fit in 2 h",
+  "@nbFit": {
+    "description": "List header: plans that fit in 2 h"
+  },
+  "nbSortTime": "Duration",
+  "@nbSortTime": {
+    "description": "Sort by duration"
+  },
+  "nbSortWalk": "Walking",
+  "@nbSortWalk": {
+    "description": "Sort by walking time"
+  },
+  "nbSortPrice": "Price",
+  "@nbSortPrice": {
+    "description": "Sort by price"
+  },
+  "nbEndsAt": "You finish at {time}",
+  "@nbEndsAt": {
+    "description": "Plan card: finish time",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "nbClosesIn": "Closes in {time}",
+  "@nbClosesIn": {
+    "description": "Card: place closes in X",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "nbEndsIn": "Ends in {time}",
+  "@nbEndsIn": {
+    "description": "Card: deal ends in X",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "nbOpen24": "Open 24 h",
+  "@nbOpen24": {
+    "description": "Card: open 24 hours"
+  },
+  "nbWalkMin": "{n} min walk",
+  "@nbWalkMin": {
+    "description": "Minutes walking",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "nbToFirst": "to the first stop",
+  "@nbToFirst": {
+    "description": "Plan card: to the first stop"
+  },
+  "nbMin": "{n} min",
+  "@nbMin": {
+    "description": "Duration in minutes",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "nbMinWalk": "{n} min on foot",
+  "@nbMinWalk": {
+    "description": "Map ring: minutes on foot",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "nbPlan": "Plan",
+  "@nbPlan": {
+    "description": "Badge on a plan card"
+  },
+  "nbOneStop": "One stop",
+  "@nbOneStop": {
+    "description": "Plan with one stop"
+  },
+  "nbStops": "{n} stops",
+  "@nbStops": {
+    "description": "Plan with n stops",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "nbJoin": "{a} and {b}",
+  "@nbJoin": {
+    "description": "Join the last two names: A and B",
+    "placeholders": {
+      "a": {
+        "type": "String"
+      },
+      "b": {
+        "type": "String"
+      }
+    }
+  },
+  "nbArrived": "You've arrived",
+  "@nbArrived": {
+    "description": "Walk panel: you arrived"
+  },
+  "nbLeft": "{min} min · {m} m to go",
+  "@nbLeft": {
+    "description": "Walk panel: time and distance left",
+    "placeholders": {
+      "min": {
+        "type": "String"
+      },
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "nbTurnRight": "Turn right",
+  "@nbTurnRight": {
+    "description": "Walk: turn right"
+  },
+  "nbTurnLeft": "Turn left",
+  "@nbTurnLeft": {
+    "description": "Walk: turn left"
+  },
+  "nbStraight": "Go straight",
+  "@nbStraight": {
+    "description": "Walk: go straight"
+  },
+  "nbInMeters": "in {m} m",
+  "@nbInMeters": {
+    "description": "Walk: in X meters",
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "nbPause": "Pause",
+  "@nbPause": {
+    "description": "Walk: pause"
+  },
+  "nbResume": "Continue",
+  "@nbResume": {
+    "description": "Walk: continue"
+  },
+  "nbExit": "Exit",
+  "@nbExit": {
+    "description": "Walk: exit"
+  },
+  "nbRoute": "Route",
+  "@nbRoute": {
+    "description": "Walk: open real route in maps"
+  },
+  "nbHere": "You're already here",
+  "@nbHere": {
+    "description": "Toast: you are already here"
+  },
+  "nbYou": "You",
+  "@nbYou": {
+    "description": "Map marker: you"
+  },
+  "nbNoOffers": "No deal data near you",
+  "@nbNoOffers": {
+    "description": "Empty deals tab"
+  },
+  "nbNoPlans": "No well-known places close enough for a 2 h plan.",
+  "@nbNoPlans": {
+    "description": "Empty plans tab"
+  },
+  "nbLoading": "Looking for what's nearby…",
+  "@nbLoading": {
+    "description": "Nearby: searching"
+  },
+  "nbMuseum": "Museum",
+  "@nbMuseum": {
+    "description": "Kind of place: museum"
+  },
+  "nbGallery": "Gallery",
+  "@nbGallery": {
+    "description": "Kind of place: art gallery"
+  },
+  "nbViewpoint": "Viewpoint",
+  "@nbViewpoint": {
+    "description": "Kind of place: viewpoint"
+  },
+  "nbAttraction": "Attraction",
+  "@nbAttraction": {
+    "description": "Kind of place: attraction"
+  },
+  "nbArtwork": "Artwork",
+  "@nbArtwork": {
+    "description": "Kind of place: public artwork"
+  },
+  "nbMonument": "Monument",
+  "@nbMonument": {
+    "description": "Kind of place: monument"
+  },
+  "nbCastle": "Castle",
+  "@nbCastle": {
+    "description": "Kind of place: castle"
+  },
+  "nbMemorial": "Memorial",
+  "@nbMemorial": {
+    "description": "Kind of place: memorial"
+  },
+  "nbRuins": "Ruins",
+  "@nbRuins": {
+    "description": "Kind of place: ruins"
+  },
+  "nbSite": "Archaeological site",
+  "@nbSite": {
+    "description": "Kind of place: archaeological site"
+  },
+  "nbPark": "Park",
+  "@nbPark": {
+    "description": "Kind of place: park"
+  },
+  "nbWorship": "Place of worship",
+  "@nbWorship": {
+    "description": "Kind of place: church, temple…"
+  },
+  "nbSight": "Place to see",
+  "@nbSight": {
+    "description": "Kind of place: something to see"
+  },
+  "hoTitle": "Hotels",
+  "@hoTitle": {
+    "description": "Hotels screen brand subtitle"
+  },
+  "hoLegend": "Sleep cheap",
+  "@hoLegend": {
+    "description": "Map legend title"
+  },
+  "hoCheap": "Cheap",
+  "@hoCheap": {
+    "description": "Legend: cheap"
+  },
+  "hoMid": "Medium",
+  "@hoMid": {
+    "description": "Legend: medium price"
+  },
+  "hoDear": "Expensive",
+  "@hoDear": {
+    "description": "Legend: expensive"
+  },
+  "hoCenter": "Center on the landmark",
+  "@hoCenter": {
+    "description": "Map control: center on the monument"
+  },
+  "hoBest": "Best total",
+  "@hoBest": {
+    "description": "Pin badge: best total price"
+  },
+  "hoPerNight": "per night",
+  "@hoPerNight": {
+    "description": "Small label: per night"
+  },
+  "hoNightsTrain": "{n} nights with train",
+  "@hoNightsTrain": {
+    "description": "Small label: n nights with train",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "hoChosen": "Chosen area",
+  "@hoChosen": {
+    "description": "Strip: chosen zone"
+  },
+  "hoTapZone": "Tap an area on the map",
+  "@hoTapZone": {
+    "description": "Strip hint: tap a zone"
+  },
+  "hoAway": "{km} from {place}",
+  "@hoAway": {
+    "description": "Distance from the place",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      },
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "hoNightCap": "Per night",
+  "@hoNightCap": {
+    "description": "Stat: per night"
+  },
+  "hoToMon": "To the landmark",
+  "@hoToMon": {
+    "description": "Stat: time to the landmark"
+  },
+  "hoRound": "Round trip",
+  "@hoRound": {
+    "description": "Stat: round trip ticket"
+  },
+  "hoByTrain": "Train or metro from {name}",
+  "@hoByTrain": {
+    "description": "Line: by train or metro from station",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "hoByWalk": "On foot to {place}",
+  "@hoByWalk": {
+    "description": "Line: walking to the place",
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "hoExamples": "For example: {list}",
+  "@hoExamples": {
+    "description": "Sample lodging names",
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "hoStay": "Lodging",
+  "@hoStay": {
+    "description": "Breakdown: lodging"
+  },
+  "hoTransport": "Transport",
+  "@hoTransport": {
+    "description": "Breakdown: transport"
+  },
+  "hoNightsN": "{n} nights",
+  "@hoNightsN": {
+    "description": "n nights",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "hoDaysN": "{n} days",
+  "@hoDaysN": {
+    "description": "n days",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "hoTotal": "Total with train",
+  "@hoTotal": {
+    "description": "Breakdown: total with train"
+  },
+  "hoSave": "You save {money} over {n} nights versus sleeping next to {place}.",
+  "@hoSave": {
+    "description": "Savings vs sleeping next to the place",
+    "placeholders": {
+      "money": {
+        "type": "String"
+      },
+      "n": {
+        "type": "String"
+      },
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "hoNearest": "It's the closest area.",
+  "@hoNearest": {
+    "description": "The chosen zone is the nearest"
+  },
+  "hoEnterHint": "Check the price on Booking and note it here.",
+  "@hoEnterHint": {
+    "description": "Hint to enter real prices"
+  },
+  "hoRoute": "Show route on the map",
+  "@hoRoute": {
+    "description": "Button: show route on map"
+  },
+  "hoPinCount": "{n} stays",
+  "@hoPinCount": {
+    "description": "Pin label: n lodgings",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "hoEnter": "Enter",
+  "@hoEnter": {
+    "description": "Placeholder: enter a price"
+  },
+  "hoMoreNights": "More nights",
+  "@hoMoreNights": {
+    "description": "Stepper: more nights"
+  },
+  "hoLessNights": "Fewer nights",
+  "@hoLessNights": {
+    "description": "Stepper: fewer nights"
+  },
+  "hoLoading": "Looking for places to stay…",
+  "@hoLoading": {
+    "description": "Searching lodgings"
+  },
+  "hoTarget": "Your destination",
+  "@hoTarget": {
+    "description": "Chip: your destination"
+  },
+  "hoMinutes": "~{n} min",
+  "@hoMinutes": {
+    "description": "About n minutes",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "hoEiffel": "Eiffel Tower",
+  "@hoEiffel": {
+    "description": "Landmark name"
+  },
+  "hoEiffelS": "Eiffel",
+  "@hoEiffelS": {
+    "description": "Landmark short name"
+  },
+  "hoSagrada": "Sagrada Família",
+  "@hoSagrada": {
+    "description": "Landmark name"
+  },
+  "hoSagradaS": "Sagrada",
+  "@hoSagradaS": {
+    "description": "Landmark short name"
+  },
+  "hoColiseo": "Colosseum",
+  "@hoColiseo": {
+    "description": "Landmark name"
+  },
+  "hoBigBen": "Big Ben",
+  "@hoBigBen": {
+    "description": "Landmark name"
+  },
+  "hoBrandenburg": "Brandenburg Gate",
+  "@hoBrandenburg": {
+    "description": "Landmark name"
+  },
+  "hoBrandenburgS": "Brandenburg",
+  "@hoBrandenburgS": {
+    "description": "Landmark short name"
+  },
+  "hoDisney": "Disneyland Paris",
+  "@hoDisney": {
+    "description": "Landmark name"
+  },
+  "hoDisneyS": "Disneyland",
+  "@hoDisneyS": {
+    "description": "Landmark short name"
+  },
+  "hoParis": "Paris",
+  "@hoParis": {
+    "description": "City name"
+  },
+  "hoBarcelona": "Barcelona",
+  "@hoBarcelona": {
+    "description": "City name"
+  },
+  "hoRome": "Rome",
+  "@hoRome": {
+    "description": "City name"
+  },
+  "hoLondon": "London",
+  "@hoLondon": {
+    "description": "City name"
+  },
+  "hoBerlin": "Berlin",
+  "@hoBerlin": {
+    "description": "City name"
+  },
+  "hoMarne": "Marne-la-Vallée",
+  "@hoMarne": {
+    "description": "Town name"
+  },
+  "hoSince": "since {year}",
+  "@hoSince": {
+    "description": "Built since a year",
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "hoAD": "AD {year}",
+  "@hoAD": {
+    "description": "Year AD",
+    "placeholders": {
+      "year": {
+        "type": "String"
+      }
+    }
+  },
+  "cpSub": "Routes from other travellers, ready to make your own",
+  "@cpSub": {
+    "description": "Copy trip feed subtitle"
+  },
+  "cpCodeBtn": "I have a code",
+  "@cpCodeBtn": {
+    "description": "Header button: open a trip by its code"
+  },
+  "cpMap1": "3D route · 1 stop",
+  "@cpMap1": {
+    "description": "3D route label, one stop"
+  },
+  "cpMapN": "3D route · {n} stops",
+  "@cpMapN": {
+    "description": "3D route label, several stops",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "cpDuration": "Length",
+  "@cpDuration": {
+    "description": "Stat label: trip length"
+  },
+  "cpStops": "Stops",
+  "@cpStops": {
+    "description": "Stat label: number of stops"
+  },
+  "cpCost": "Cost",
+  "@cpCost": {
+    "description": "Stat label: total cost"
+  },
+  "cpPerDay": "Per day",
+  "@cpPerDay": {
+    "description": "Stat label: cost per day"
+  },
+  "cpVote1": "1 vote",
+  "@cpVote1": {
+    "description": "Rating count, exactly one"
+  },
+  "cpVotesN": "{n} votes",
+  "@cpVotesN": {
+    "description": "Rating count, several",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "cpNoVotes": "no votes yet",
+  "@cpNoVotes": {
+    "description": "Nobody has rated yet"
+  },
+  "cpYourVote": "your vote: {n}",
+  "@cpYourVote": {
+    "description": "Your own rating",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "cpTapRate": "tap to rate",
+  "@cpTapRate": {
+    "description": "Hint to rate the trip"
+  },
+  "cpYours": "it’s your trip",
+  "@cpYours": {
+    "description": "Shown instead of the rate hint on your own trip"
+  },
+  "cpCopy": "Copy this trip",
+  "@cpCopy": {
+    "description": "Button: copy this trip"
+  },
+  "cpCopied": "Copied to My trips",
+  "@cpCopied": {
+    "description": "Button after copying"
+  },
+  "cpThanks1": "Thanks for rating it 1 star",
+  "@cpThanks1": {
+    "description": "Toast after giving 1 star"
+  },
+  "cpThanksN": "Thanks for rating it {n} stars",
+  "@cpThanksN": {
+    "description": "Toast after giving several stars",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "cpCopiedToast": "Trip copied to My trips",
+  "@cpCopiedToast": {
+    "description": "Toast after copying a trip"
+  },
+  "cpRouteTitle": "The route, stop by stop",
+  "@cpRouteTitle": {
+    "description": "Story slide title about the route"
+  },
+  "cpRouteBody": "See the route in 3D and turn the map in your head: {list}.",
+  "@cpRouteBody": {
+    "description": "Story slide text, list of stops",
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "cpStop": "Stop {n}",
+  "@cpStop": {
+    "description": "Map pin label, stop number",
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
+  },
+  "cpEmpty": "Nobody has posted a trip yet. Share yours and tick “Post on the wall”.",
+  "@cpEmpty": {
+    "description": "Feed is empty"
+  },
+  "cpPublic": "Post on the wall",
+  "@cpPublic": {
+    "description": "Switch when sharing: show on the public wall"
+  },
+  "cpPublicHint": "It will appear in Copy this trip for everyone, not only for people with the code.",
+  "@cpPublicHint": {
+    "description": "Explains the public wall switch"
+  },
+  "cpNote": "Tell it in a few lines (optional)",
+  "@cpNote": {
+    "description": "Optional text field when sharing"
+  },
+  "cpOwnRate": "You can’t rate your own trip",
+  "@cpOwnRate": {
+    "description": "Toast: you cannot rate your own trip"
+  },
+  "cpLoading": "Looking for trips…",
+  "@cpLoading": {
+    "description": "Loading the trips wall"
+  },
+  "helpSoon": "Not available yet: we’re switching it on very soon.",
+  "@helpSoon": {
+    "description": "Help option whose partner is not set up yet"
+  },
+  "vaultSlotTicket": "Tickets",
+  "@vaultSlotTicket": {
+    "description": "Vault card: event tickets"
+  },
+  "vaultSlotContacts": "Emergency contacts",
+  "@vaultSlotContacts": {
+    "description": "Vault card: emergency contacts"
+  },
+  "vaultSlotDriving": "Driving licence",
+  "@vaultSlotDriving": {
+    "description": "Vault card: driving licence"
+  },
+  "vaultSlotCar": "Car rental",
+  "@vaultSlotCar": {
+    "description": "Vault card: car rental"
+  },
+  "vaultSlotTrain": "Train / bus",
+  "@vaultSlotTrain": {
+    "description": "Vault card: train or bus ticket"
+  },
+  "vaultSlotEsim": "eSIM",
+  "@vaultSlotEsim": {
+    "description": "Vault card: eSIM"
+  },
   "moneyBalances": "Who owes what",
   "@moneyBalances": {
     "description": "Header: who owes what."
@@ -3816,6 +5506,10 @@
     "description": "Section (uppercase)."
   },
   "sosAddContact": "Add contact",
+  "sosFromPhone": "Choose from contacts",
+  "@sosFromPhone": {
+    "description": "Button: open the phone address book to pick an emergency contact."
+  },
   "@sosAddContact": {
     "description": "Button."
   },
@@ -3997,6 +5691,10 @@
   "noticesFooter": "At most one place notice every 45 minutes, and never the same place twice in a day. Safety notices always arrive. This history only exists on your phone.",
   "@noticesFooter": {
     "description": "Explains limits and privacy."
+  },
+  "noticesYesterday": "Yesterday",
+  "@noticesYesterday": {
+    "description": "Notices history: time label for a notice from yesterday."
   },
   "noticesClear": "Clear history",
   "@noticesClear": {
@@ -9356,5 +11054,17 @@
   "hubYouPin": "YOU",
   "@hubYouPin": {
     "description": "Map marker for the user's position, very short, uppercase"
+  },
+  "appLockTitle": "ECLIPTA is locked",
+  "@appLockTitle": {
+    "description": "Screen shown when the app asks for fingerprint/face to open (Settings > sign in with fingerprint)"
+  },
+  "appLockButton": "Unlock",
+  "@appLockButton": {
+    "description": "Button on the lock screen that asks for fingerprint/face again"
+  },
+  "appLockReason": "Open ECLIPTA",
+  "@appLockReason": {
+    "description": "Text inside the system fingerprint dialog when opening the app"
   }
 }

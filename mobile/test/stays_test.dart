@@ -1,6 +1,9 @@
-// Dormir barato: zonas para dormir (junto al sitio y estaciones con
-// alojamientos), "Ver precios" en Booking con las fechas, y la calculadora
-// del total real (alojamiento + trenes) frente a dormir al lado.
+// Hoteles / Dormir barato: la página de la maqueta con las zonas reales para
+// dormir (junto al sitio y estaciones con alojamientos), los precios que
+// apuntas tú y "Ver precios" en Booking con tus noches.
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -8,6 +11,8 @@ import 'package:eclipta/core/router.dart';
 import 'package:eclipta/features/map/geo.dart';
 import 'package:eclipta/features/stays/stays_api.dart';
 import 'package:eclipta/features/stays/stays_math.dart';
+import 'package:eclipta/features/stays/stays_page.dart';
+import 'package:eclipta/l10n/generated/app_localizations.dart';
 
 import 'helpers.dart';
 
@@ -75,7 +80,53 @@ void main() {
     expect(u.queryParameters.containsKey('aid'), isFalse);
   });
 
-  testWidgets('zonas, radios, Booking y total real', (
+  test(
+    'la página: chips, zonas en su sitio, precios tuyos y nada inventado',
+    () {
+      final AppLocalizations t = lookupAppLocalizations(const Locale('es'));
+      final List<StayChip> chips = landmarkChips(t);
+      expect(chips.first.name, 'Torre Eiffel');
+      expect(chips[1].year, 'desde 1882');
+      final StayArea area = StayArea.parse(staysJson);
+      final Map<String, Object?> data = staysPageData(
+        t: t,
+        language: 'es',
+        chips: chips,
+        current: 0,
+        nights: 3,
+        center: chips.first.point,
+        area: area,
+        prices: <String, StayPrices>{'n100': StayPrices()..night = 90},
+      );
+      final List<Map<String, Object?>> zones = (data['zones']! as List<Object?>)
+          .cast<Map<String, Object?>>();
+      expect(zones, hasLength(3));
+      expect(zones.first['by'], 'walk');
+      expect(zones.first['night'], isNull); // sin precio: no se inventa
+      // Saint-Denis está al norte (y negativo) y algo al este.
+      expect(zones[1]['y']! as int, lessThan(-8000));
+      expect(zones[1]['x']! as int, greaterThan(4000));
+      expect(zones[1]['night'], 90);
+      final Map<String, Object?> tx = data['t']! as Map<String, Object?>;
+      expect(
+        tx['lodgings'],
+        '{n} alojamientos · {budget} económicos (albergues, pensiones)',
+      );
+      expect(data['attr'], '© OpenStreetMap contributors (ODbL)');
+
+      final String page = File(staysPage).readAsStringSync();
+      expect(page, isNot(contains('Datos de ejemplo')));
+      expect(page, isNot(contains('Maison')));
+      expect(page, contains(staysMarker));
+      final String html = staysPageWith(page, <String, Object?>{
+        ...data,
+        'msg': '</script>',
+      });
+      expect(html, isNot(contains('"</script>"')));
+    },
+  );
+
+  testWidgets('abre la maqueta en tu destino; apuntar precio y Booking', (
     WidgetTester tester,
   ) async {
     final FakeGateway g = FakeGateway()..publicPrefixes.add('/v1/stays');
@@ -85,10 +136,9 @@ void main() {
       return FakeGateway.json(staysJson);
     };
     final List<Uri> opened = <Uri>[];
+    final List<String> pages = <String>[];
+    void Function(String)? send;
     final session = newSession()..continueAsGuest();
-    tester.view.physicalSize = const Size(1200, 5000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
     await pumpApp(
       tester,
       locale: 'es',
@@ -101,52 +151,68 @@ void main() {
           opened.add(u);
           return true;
         },
+        webScene: (String html, void Function(String) onMessage) {
+          pages.add(html);
+          send = onMessage;
+          return const SizedBox.expand();
+        },
       ),
     );
-    await tester.pumpAndSettle();
+    Future<Map<String, Object?>> settled([int after = 0]) async {
+      bool done() =>
+          pages.length > after &&
+          (pageData(pages.last)['zones']! as List<Object?>).isNotEmpty;
+      for (int i = 0; i < 50 && !done(); i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 100)),
+        );
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(done(), isTrue);
+      return pageData(pages.last);
+    }
 
+    final Map<String, Object?> data = await settled();
     // Solo la casilla de ~2 km sale del móvil.
-    expect(sent.single.queryParameters, <String, String>{
+    expect(sent.last.queryParameters, <String, String>{
       'lat': '48.86',
       'lon': '2.3',
     });
-    expect(find.text('Torre'), findsOneWidget);
-    expect(find.text('Junto al sitio'), findsOneWidget);
-    expect(find.text('Saint-Denis'), findsOneWidget);
-    expect(find.text('Versailles'), findsNothing);
-    expect(find.textContaining('Saint-Denis, con 30 alojamientos'), findsOne);
+    final List<Object?> chips = data['chips']! as List<Object?>;
+    expect((chips.first! as Map<String, Object?>)['name'], 'Torre');
+    expect(chips, hasLength(9)); // destino, cerca de ti, 6 monumentos, mapa
+    expect(data['cur'], 0);
 
-    await tester.tap(find.text('Hasta 35 km'));
-    await tester.pumpAndSettle();
-    expect(find.text('Versailles'), findsOneWidget);
-    await tester.tap(find.text('Hasta 15 km'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Ver precios').at(1));
+    send!('night:1:9000');
+    send!('fare:1:300');
+    send!('nights:4');
+    send!('book:1');
     expect(opened.single.queryParameters['latitude'], '48.93560');
-    expect(opened.single.queryParameters['group_adults'], '2');
+    final DateTime inDay = DateTime.parse(
+      opened.single.queryParameters['checkin']!,
+    );
+    expect(
+      DateTime.parse(opened.single.queryParameters['checkout']!)
+          .difference(inDay)
+          .inDays,
+      4,
+    );
+    send!('book:99'); // una zona que no existe: nada
+    expect(opened, hasLength(1));
 
-    // Total real: al lado 150 €/noche; en Saint-Denis 90 €/noche + 3 € tren.
-    await tester.tap(find.text('Calcular el total real').first);
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Precio por noche'),
-      '150',
-    );
-    await tester.pump();
-    await tester.tap(find.text('Calcular el total real').at(1));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Precio por noche').at(1),
-      '90',
-    );
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Billete por trayecto'),
-      '3',
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Total real: 450'), findsOneWidget);
-    expect(find.text('Total real: 318'), findsOneWidget);
-    expect(find.text('Te ahorras 132 frente a dormir al lado'), findsOne);
+    // Otro chip (la Torre Eiffel): se pide su zona y lo apuntado se guarda.
+    final int before = pages.length;
+    send!('chip:2');
+    final Map<String, Object?> again = await settled(before);
+    expect(again['cur'], 2);
+    expect(again['nights'], 4);
+    final Map<String, Object?> sd =
+        (again['zones']! as List<Object?>)[1]! as Map<String, Object?>;
+    expect((sd['night'], sd['fare']), (90.0, 3.0));
   });
 }
+
+/// Los datos que la app metió en la página.
+Map<String, Object?> pageData(String html) => jsonDecode(
+  html.substring(html.indexOf('var ECL=') + 8, html.indexOf(';\nvar T=ECL.t')),
+) as Map<String, Object?>;

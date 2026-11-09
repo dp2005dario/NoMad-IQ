@@ -156,29 +156,38 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('MAD'), findsOneWidget);
-    // En la tarjeta y en el aviso de Flyra de abajo, que además lo dice.
+    // Arriba, el aeropuerto; en la tarjeta y en el panel de Flyra, el giro.
+    expect(find.textContaining('MAD'), findsOneWidget);
     expect(find.text('Sigue recto 111 m'), findsNWidgets(2));
+    // Como en la maqueta, la voz empieza apagada: se enciende y lo dice.
+    expect(voice.said, isEmpty);
+    await tester.tap(find.bySemanticsLabel('Voz de Flyra'));
+    await tester.pumpAndSettle();
     expect(voice.said, contains('Sigue recto 111 m'));
-    expect(find.text('Puerta K42'), findsOneWidget);
-    expect(find.text('Planta 1'), findsOneWidget);
-    expect(find.text('Te da tiempo'), findsOneWidget);
+    expect(find.text('TU PUERTA'), findsOneWidget);
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller!.text,
+      'K42',
+    );
+    expect(find.text('Planta 1 · Sigue también los carteles'), findsOneWidget);
+    expect(find.text('2 min'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Baño'));
+    await tester.tap(find.text('Baño'));
     await tester.pumpAndSettle();
     expect(find.text('Gira a la derecha'), findsNWidgets(2));
     expect(voice.said.last, 'Gira a la derecha');
 
-    // Con el altavoz apagado, Flyra se calla (el aviso sigue abajo).
-    await tester.tap(find.byTooltip('Voz de Flyra'));
+    // Con la voz apagada, Flyra se calla (el aviso sigue en pantalla).
+    await tester.tap(find.bySemanticsLabel('Voz de Flyra'));
     await tester.pumpAndSettle();
     final int before = voice.said.length;
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Puerta'));
+    await tester.tap(find.text('Puerta'));
     await tester.pumpAndSettle();
     expect(voice.said, hasLength(before));
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Baño'));
+    await tester.tap(find.text('Baño'));
     await tester.pumpAndSettle();
-    expect(find.text('1 min · 59 m'), findsOneWidget);
+    expect(find.text('1 min'), findsOneWidget);
+    expect(find.text('59 m'), findsOneWidget);
   });
 
   testWidgets('un aeropuerto sin dibujar dentro lo dice', (

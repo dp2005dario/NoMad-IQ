@@ -1,5 +1,6 @@
-// Tests de Dinero → Tu dinero fuera: cajeros (con un GPS y un servidor
-// falsos), tarjetas (guardadas solo en el móvil) y el presupuesto.
+// Tests de Dinero → Tu dinero fuera (la maqueta "Dinero"): cajeros (con
+// un GPS y un servidor falsos), los cálculos de tarjetas y los gastos del
+// viaje.
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -12,13 +13,14 @@ import 'package:eclipta/features/map/location.dart';
 import 'package:eclipta/features/money/atms_api.dart';
 import 'package:eclipta/features/money/atms_panel.dart';
 import 'package:eclipta/features/money/expenses_api.dart';
-import 'package:eclipta/features/money/insurance_panel.dart';
+import 'package:eclipta/features/money/abroad_view.dart';
 import 'package:eclipta/features/money/money_screen.dart';
 import 'package:eclipta/features/money/travel_cards.dart';
 import 'package:eclipta/features/money/trip_budget.dart';
 
 import 'helpers.dart';
-import 'money_test.dart' show MoneyBackend, groupId, groupJson, pumpMoney;
+import 'money_test.dart'
+    show MoneyBackend, PageSpy, groupId, groupJson, pumpMoney;
 
 /// Un GPS con permiso que da el cruce de Shibuya.
 class ShibuyaLocation extends FakeLocation {
@@ -187,132 +189,137 @@ void main() {
   });
 
   group('pantallas', () {
-    testWidgets('buscar cajeros: zona redondeada y el más cercano arriba', (
+    testWidgets('cajeros: con permiso se buscan solos, el más cercano arriba', (
       WidgetTester tester,
     ) async {
       final MoneyBackend b = MoneyBackend();
       final List<Uri> sent = <Uri>[];
-      final List<Uri> opened = <Uri>[];
       b.g.publicPrefixes.add('/v1/atms');
       b.g.services['/v1/atms'] = (http.Request r) {
         sent.add(r.url);
         return FakeGateway.json(atmsJson);
       };
+      final PageSpy spy = PageSpy();
       await pumpMoney(
         tester,
         backend: b,
         location: ShibuyaLocation(),
-        openBooking: (Uri u) async {
-          opened.add(u);
-          return true;
-        },
+        webScene: spy.build,
         initialLocation: Routes.money(tab: MoneyTab.abroad),
       );
-      expect(find.textContaining('di que no'), findsOneWidget);
-      await tester.tap(find.text('Buscar cajeros cerca'));
-      await tester.pumpAndSettle();
+      await spy.wait(
+        tester,
+        () =>
+            spy.pages.isNotEmpty &&
+            (spy.data(AbroadView.lastBridge!)['atms']! as List<Object?>)
+                .isNotEmpty,
+      );
+      // La zona va redondeada (no se manda dónde estás exactamente).
       expect(sent.single.queryParameters, <String, String>{
         'lat': '35.66',
         'lon': '139.70',
       });
-      // Pestaña "Sin comisión" (la de por defecto): solo Seven Bank.
-      expect(find.text('Seven Bank'), findsOneWidget);
-      expect(find.text('Japan Post Bank'), findsNothing);
-      expect(find.textContaining('Abierto 24 h'), findsOneWidget);
-      // "Todos los bancos": los dos, el más cercano primero.
-      await tester.tap(find.text('Todos los bancos'));
+      final Map<String, Object?> d = spy.data(AbroadView.lastBridge!);
+      final List<Object?> atms = d['atms']! as List<Object?>;
+      final Map<String, Object?> first = atms.first! as Map<String, Object?>;
+      expect(first['name'], 'Cajero Seven Bank');
+      expect(first['fee'], '0 €');
+      expect(first['meta'], contains('abierto 24 h'));
+      final Map<String, Object?> second = atms.last! as Map<String, Object?>;
+      expect(second['name'], 'Cajero Japan Post Bank');
+      expect(second['fee'], 'Con comisión');
+      expect(second['short'], 'JAP');
+      expect(d['atmCount'], 2);
+      expect(d['atmNote'], '');
+      // "Abrir mapa 3D": el mapa de cajeros de la app.
+      spy.send!('map3d');
       await tester.pumpAndSettle();
-      final Offset seven = tester.getTopLeft(find.text('Seven Bank'));
-      final Offset post = tester.getTopLeft(find.text('Japan Post Bank'));
-      expect(seven.dy, lessThan(post.dy));
-      expect(find.text('Cobra comisión'), findsOneWidget);
-      final Finder osm = find.text('Ver en OSM').first;
-      await tester.ensureVisible(osm);
-      await tester.tap(osm);
-      await tester.pumpAndSettle();
-      expect(opened.single.host, 'www.openstreetmap.org');
-      final Finder go = find.text('Ir').first;
-      await tester.ensureVisible(go);
-      await tester.tap(go);
-      await tester.pumpAndSettle();
-      expect(opened.last.host, 'www.google.com');
-      expect(opened.last.queryParameters['travelmode'], 'walking');
+      expect(find.byType(AtmsPanel), findsOneWidget);
     });
 
-    testWidgets('dos tarjetas: la más barata sale "MEJOR AQUÍ"', (
+    testWidgets('cajeros: sin permiso lo dice y lo pide al tocar', (
       WidgetTester tester,
     ) async {
-      final MemorySettingsStore prefs = MemorySettingsStore();
+      final FakeLocation gps = FakeLocation()
+        ..onRequest = LocationAccess.deniedForever;
+      final PageSpy spy = PageSpy();
       await pumpMoney(
         tester,
-        prefs: prefs,
+        location: gps,
+        webScene: spy.build,
         initialLocation: Routes.money(tab: MoneyTab.abroad),
       );
-      await tester.tap(find.text('Tarjetas'));
-      await tester.pumpAndSettle();
-      Future<void> add(String name, String last4, String pay) async {
-        await tester.tap(find.text('Añadir tarjeta'));
-        await tester.pumpAndSettle();
-        final Finder fields = find.descendant(
-          of: find.byType(AlertDialog),
-          matching: find.byType(TextField),
-        );
-        await tester.enterText(fields.at(0), name);
-        await tester.enterText(fields.at(1), last4);
-        await tester.enterText(fields.at(2), pay);
-        await tester.enterText(fields.at(3), pay);
-        await tester.tap(find.text('Guardar'));
-        await tester.pumpAndSettle();
-      }
-
-      await add('Débito', '4821', '3');
-      await add('Crédito viaje', '0937', '0');
-      expect(find.text('MEJOR AQUÍ'), findsOneWidget);
-      expect(find.text('•••• 4821'), findsOneWidget);
-      expect(find.textContaining('«Crédito viaje»'), findsOneWidget);
-      final Map<String, Object?> saved = sentCards(prefs);
-      expect((saved['cards']! as List<Object?>).length, 2);
-      expect(
-        ((saved['cards']! as List<Object?>).first!
-            as Map<String, Object?>)['last4'],
-        '4821',
+      await spy.wait(tester, () => spy.pages.isNotEmpty);
+      Map<String, Object?> d = spy.data(AbroadView.lastBridge!);
+      expect(d['atmBtn'], 'Usar mi ubicación');
+      expect(d['atmNote'], contains('ubicación'));
+      spy.send!('locate');
+      await spy.wait(
+        tester,
+        () => spy.data(AbroadView.lastBridge!)['atmNote'] != d['atmNote'],
       );
+      d = spy.data(AbroadView.lastBridge!);
+      expect(d['atmNote'], contains('Activa la ubicación'));
     });
 
-    testWidgets('presupuesto: elegir bote, límite y ver la previsión', (
+    testWidgets('gastos: elegir el bote del viaje, límite y añadir a mano', (
       WidgetTester tester,
     ) async {
       final MemorySettingsStore prefs = MemorySettingsStore();
       final MoneyBackend b = MoneyBackend()..current = groupJson();
+      final PageSpy spy = PageSpy();
       await pumpMoney(
         tester,
         backend: b,
         prefs: prefs,
+        webScene: spy.build,
         initialLocation: Routes.money(tab: MoneyTab.abroad),
       );
-      await tester.tap(find.text('Presupuesto'));
+      await spy.wait(
+        tester,
+        () => (spy.data(AbroadView.lastBridge!)['trips']! as List<Object?>)
+            .isNotEmpty,
+      );
+      Map<String, Object?> d = spy.data(AbroadView.lastBridge!);
+      expect(d['trip'], isNull);
+      expect(d['tripNote'], contains('Elige el bote'));
+      // "Cambiar" → el bote "Madrid" → tu límite.
+      spy.send!('trip:0');
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), '100');
       await tester.tap(find.text('Guardar'));
-      await tester.pumpAndSettle();
-      expect(TripBudget.load(prefs)!.limitMinor, 10000);
-      // Tu parte de la cena (43 €) ya está gastada.
-      expect(find.textContaining('PRESUPUESTO 100,00'), findsOneWidget);
-      expect(find.text('Sigo igual'), findsOneWidget);
-      expect(find.text('Cambiar presupuesto'), findsOneWidget);
-    });
-
-    testWidgets('seguro: explica que vive en la Bóveda', (
-      WidgetTester tester,
-    ) async {
-      await pumpMoney(
+      await spy.wait(
         tester,
-        initialLocation: Routes.money(tab: MoneyTab.abroad),
+        () => spy.data(AbroadView.lastBridge!)['trip'] != null,
       );
-      await tester.tap(find.text('Seguro'));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('Bóveda'), findsWidgets);
-      expect(find.byType(InsurancePanel), findsOneWidget);
+      expect(TripBudget.load(prefs)!.limitMinor, 10000);
+      d = spy.data(AbroadView.lastBridge!);
+      final Map<String, Object?> trip = d['trip']! as Map<String, Object?>;
+      expect(trip['limit'], 100);
+      // Tu parte de la cena (43 €) ya está gastada.
+      expect(trip['spent'], 43);
+      expect(trip['head'], startsWith('MADRID · DÍA'));
+      expect(
+        (trip['recent']! as List<Object?>).first,
+        containsPair('name', 'Cena en La Latina'),
+      );
+      expect((d['trips']! as List<Object?>).first, containsPair('on', true));
+      // "Añadir a mano": 12 € de comida, pagado por ti y solo para ti.
+      spy.send!(
+        'add:0:${base64Url.encode(utf8.encode(jsonEncode(<String, Object?>{'c': 0, 'n': 'Desayuno', 'a': 12}))).replaceAll('=', '')}',
+      );
+      await spy.wait(tester, () => b.expenses.isNotEmpty);
+      expect(b.expenses.single['title'], 'Desayuno');
+      expect(b.expenses.single['amount_minor'], 1200);
+      expect(b.expenses.single['participants'], <Object?>[1]);
+      expect(b.expenses.single['payer_seat'], 1);
+      // "Sin viaje activo": deja de contar.
+      spy.send!('notrip');
+      await spy.wait(
+        tester,
+        () => spy.data(AbroadView.lastBridge!)['trip'] == null,
+      );
+      expect(TripBudget.load(prefs), isNull);
     });
   });
 }

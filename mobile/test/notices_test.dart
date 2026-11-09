@@ -6,10 +6,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/passport/passport_screen.dart';
 import 'package:eclipta/features/push/notice_log.dart';
+import 'package:eclipta/features/push/notices_page.dart';
+import 'package:eclipta/features/push/notices_screen.dart';
 import 'package:eclipta/features/push/push_notice.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 
 NoticeEntry entry(PushKind kind, String title, int minute, {String? route}) =>
     NoticeEntry(
@@ -62,12 +66,13 @@ void main() {
     expect(all.single.route, isNull);
   });
 
-  testWidgets('pestañas por tipo; tocar un aviso abre su pantalla', (
+  testWidgets('tu historial en la maqueta; tocar un aviso abre su pantalla', (
     WidgetTester tester,
   ) async {
     final FakeGateway g = FakeGateway();
     final SessionController session = await signedInSession(g);
     final MemorySettingsStore prefs = MemorySettingsStore();
+    final m.PageSpy spy = m.PageSpy();
     final NoticeLog log = NoticeLog(prefs);
     await log.add(entry(PushKind.zoneAudioguide, 'Estás en Sol', 1));
     await log.add(
@@ -82,26 +87,60 @@ void main() {
       locale: 'es',
       session: session,
       initialLocation: Routes.home,
-      services: fakeServices(session, gateway: g, prefs: prefs),
+      services: fakeServices(
+        session,
+        gateway: g,
+        prefs: prefs,
+        webScene: spy.build,
+      ),
     );
-    // Los Avisos están dentro de Ajustes (pestaña de la barra de abajo).
-    await tester.tap(find.text('Ajustes'));
+    // Los Avisos están dentro de Ajustes (se abre con tu foto en el Mapa):
+    // "Historial de avisos" en su página.
+    // Ajustes se abre con tu foto, arriba en el Mapa (como en la maqueta).
+    await tester.tap(find.text('Mapa'));
     await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('Avisos'),
-      300,
-      scrollable: find.byType(Scrollable).last,
+    await tester.tap(find.bySemanticsLabel('Tu foto de perfil y ajustes'));
+    await tester.pumpAndSettle();
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    spy.to('ECLIPTA · Ajustes')('notices');
+    await tester.pumpAndSettle();
+    await spy.wait(
+      tester,
+      () => spy.pages.any((String h) => h.contains('ECLIPTA · Avisos')),
     );
-    await tester.tap(find.text('Avisos'));
     await tester.pumpAndSettle();
-    expect(find.text('Chollo'), findsOneWidget);
-    expect(find.text('Estás en Sol'), findsOneWidget);
+    // La maqueta con el historial de verdad (el más nuevo primero).
+    final Map<String, Object?> d = spy.data(
+      NoticesScreen.lastBridge!,
+      title: 'ECLIPTA · Avisos',
+    );
+    final List<Object?> items = d['items']! as List<Object?>;
+    expect(
+      <Object?>[
+        for (final Object? i in items) (i! as Map<String, Object?>)['title'],
+      ],
+      <String>['Chollo', 'Cuidado', 'Estás en Sol'],
+    );
+    expect(
+      <Object?>[
+        for (final Object? i in items) (i! as Map<String, Object?>)['kind'],
+      ],
+      <String>['flight', 'safety', 'zone'],
+    );
+    expect(d['tabs'], <String>['Todos', 'Zonas', 'Vuelos', 'Grupo']);
 
-    await tester.tap(find.text('Seguridad'));
+    // Tocar "Cuidado" abre su pantalla.
+    spy.to('ECLIPTA · Avisos')('open:1');
     await tester.pumpAndSettle();
-    expect(find.text('Chollo'), findsNothing);
-    await tester.tap(find.text('Cuidado'));
-    await tester.pumpAndSettle();
-    expect(find.text('Mi pasaporte'), findsOneWidget);
+    expect(find.byType(PassportScreen), findsOneWidget);
+  });
+
+  test('la hora: de hoy, de ayer o la fecha', () {
+    final DateTime now = DateTime(2026, 11, 8, 18);
+    expect(noticeTime(DateTime(2026, 11, 8, 9, 5), now, 'Ayer'), '09:05');
+    expect(noticeTime(DateTime(2026, 11, 7, 23), now, 'Ayer'), 'Ayer');
+    expect(noticeTime(DateTime(2026, 10, 24, 10), now, 'Ayer'), '24/10');
+    expect(noticeDrawing(PushKind.groupChat), 'group');
+    expect(noticeDrawing(PushKind.airportArrival), 'flight');
   });
 }

@@ -153,17 +153,61 @@ void main() {
     tester.view.physicalSize = const Size(1200, 4000);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
+    CardsScreen.undoTime = const Duration(milliseconds: 50);
+    final List<String> pages = <String>[];
+    void Function(String)? send;
     await pumpApp(
       tester,
       locale: 'es',
       session: session,
       initialLocation: Routes.cards,
-      services: fakeServices(session, gateway: g, prefs: store),
+      services: fakeServices(
+        session,
+        gateway: g,
+        prefs: store,
+        webScene: (String html, void Function(String) onMessage) {
+          pages.add(html);
+          send = onMessage;
+          return const SizedBox.expand();
+        },
+      ),
     );
-    await tester.pumpAndSettle();
-    expect(find.text('Crear una liga'), findsOneWidget);
+    Future<void> wait(bool Function() done) async {
+      for (int i = 0; i < 100 && !done(); i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      expect(done(), isTrue);
+    }
 
-    await tester.tap(find.text('Crear una liga'));
+    // Lo último que sabe la página: lo de la carga más lo que llegó después.
+    Map<String, Object?> data() {
+      expect(pages.toSet(), hasLength(1));
+      final String html = pages.first;
+      final int at = html.indexOf('window.ECL=') + 'window.ECL='.length;
+      final Map<String, Object?> d = jsonDecode(
+        html.substring(at, html.indexOf(';</script>', at)),
+      ) as Map<String, Object?>;
+      for (final String js in CardsScreen.lastBridge!.sent) {
+        final int a = js.indexOf('ECLin(') + 'ECLin('.length;
+        d.addAll(
+          jsonDecode(js.substring(a, js.length - 1)) as Map<String, Object?>,
+        );
+      }
+      return d;
+    }
+
+    Map<String, Object?> swap(int i) =>
+        (data()['swaps']! as List<Object?>)[i]! as Map<String, Object?>;
+
+    await wait(() => pages.isNotEmpty && g.calls.contains('GET /v1/leagues'));
+    await tester.pumpAndSettle();
+    // Sin liga: la maqueta invita a crear una o entrar con un código.
+    expect(swap(0)['kind'], 'join');
+    expect(swap(0)['button'], 'Crear una liga');
+    send!('create');
     await tester.pumpAndSettle();
     await tester.enterText(
       find.widgetWithText(TextField, 'Nombre de la liga'),
@@ -175,6 +219,7 @@ void main() {
     );
     await tester.tap(find.widgetWithText(FilledButton, 'Crear una liga').last);
     await tester.pumpAndSettle();
+    await wait(() => uploaded != null && swap(0)['kind'] != 'join');
     expect(store.readGroupName(), 'Darío');
     // Se suben los sellos antes de leer la clasificación.
     expect((uploaded!['cards']! as List<Object?>).single, <String, Object?>{
@@ -185,24 +230,25 @@ void main() {
     });
 
     // Cambiar: Noelia ofrece Fushimi Inari por la Torre de Tokio.
-    expect(
-      find.text('Noelia te da Fushimi Inari por tu Torre de Tokio'),
-      findsOneWidget,
+    expect(swap(0)['kind'], 'in');
+    expect(swap(0)['title'], 'Tu Torre de Tokio por su Fushimi Inari');
+    expect((swap(0)['theirs']! as Map<String, Object?>)['label'], 'LEGENDARIA');
+    // Aceptar y deshacer: no se manda nada.
+    send!('accept:0');
+    send!('undo:0');
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 120)),
     );
-    await tester.tap(find.widgetWithText(FilledButton, 'Cambiar'));
-    await tester.pumpAndSettle();
-    expect(g.calls, contains('POST /v1/leagues/$id/swaps/s1/accept'));
-    expect(find.text('Copias que te han dado'), findsOneWidget);
-
-    // Proponer: ya no le puedo pedir Fushimi (la tengo), sí el Coliseo.
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Noelia'));
-    await tester.pumpAndSettle();
-    expect(find.text('Coliseo'), findsOneWidget);
-    await tester.tap(find.text('Coliseo'));
-    await tester.tap(find.text('Torre de Tokio'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Enviar la oferta'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    expect(g.calls, isNot(contains('POST /v1/leagues/$id/swaps/s1/accept')));
+    // Aceptar de verdad: pasado el tiempo de deshacer, se manda.
+    send!('accept:0');
+    await wait(() => g.calls.contains('POST /v1/leagues/$id/swaps/s1/accept'));
+    // Ya tengo Fushimi: ahora a Noelia solo le puedo pedir el Coliseo.
+    await wait(() => swap(0)['kind'] == 'new');
+    expect(swap(0)['title'], 'Tu Torre de Tokio por su Coliseo');
+    send!('offer:0');
+    await wait(() => proposed != null);
     expect(proposed, <String, Object?>{
       'to_seat': 2,
       'give_qid': 'Q183536',
@@ -210,12 +256,14 @@ void main() {
     });
 
     // Liga y amigos.
-    await tester.tap(find.text('Liga'));
     await tester.pumpAndSettle();
-    expect(find.text('Vas el 2 de 2'), findsOneWidget);
-    expect(find.text('Te faltan 290 puntos para Noelia'), findsOneWidget);
-    await tester.tap(find.text('Amigos'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Kioto'), findsOneWidget);
+    final Map<String, Object?> d = data();
+    expect(d['headPos'], 'Vas 2.º de 2');
+    expect(d['headSub'], 'Te faltan 290 puntos para Noelia');
+    final Map<String, Object?> friend =
+        (d['friends']! as List<Object?>).single! as Map<String, Object?>;
+    expect(friend['where'], 'Kioto');
+    expect(friend['meta'], contains('tiene 1 cromo que te falta'));
+    CardsScreen.undoTime = const Duration(seconds: 30);
   });
 }

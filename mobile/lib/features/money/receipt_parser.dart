@@ -18,12 +18,28 @@ import 'expenses_api.dart';
 
 /// Lo que se sacó del ticket.
 class ParsedReceipt {
-  const ParsedReceipt({required this.items, this.totalMinor});
+  const ParsedReceipt({
+    required this.items,
+    this.totalMinor,
+    this.discountMinor = 0,
+    this.veriFactu,
+  });
 
   final List<TicketItem> items;
 
   /// El TOTAL que pone el ticket (null si no se encontró).
   final int? totalMinor;
+
+  /// Los descuentos del ticket, sumados y en positivo (0 = ninguno). No son
+  /// una línea: ya están restados del TOTAL.
+  final int discountMinor;
+
+  /// Lo leído del QR de Hacienda (null si el ticket no lo tenía).
+  final VeriFactu? veriFactu;
+
+  /// El total del que más fiarse: el del QR (lo firma el comercio para
+  /// Hacienda) y, si no, el TOTAL impreso.
+  int? get trustedTotal => veriFactu?.totalMinor ?? totalMinor;
 
   /// La suma de las líneas leídas.
   int get itemsMinor =>
@@ -84,7 +100,12 @@ const List<String> _skipWords = <String>[
   'TABLE',
   'CAJA',
   'COMENSALES',
+];
+
+// Descuentos: no son platos, ya vienen restados del TOTAL.
+const List<String> _discountWords = <String>[
   'DESCUENTO',
+  'DTO',
   'DISCOUNT',
   'RABATT',
   'SCONTO',
@@ -92,9 +113,10 @@ const List<String> _skipWords = <String>[
 ];
 
 /// [digits]: cuántos decimales tiene la moneda (EUR 2, JPY 0).
-ParsedReceipt parseReceipt(List<String> rows, {int digits = 2}) {
+ParsedReceipt parseReceipt(List<String> rows, {int digits = 2, String? qr}) {
   final List<TicketItem> items = <TicketItem>[];
   int? total;
+  int discount = 0;
   for (final String raw in rows) {
     final String row = raw.trim();
     if (row.isEmpty) continue;
@@ -106,6 +128,10 @@ ParsedReceipt parseReceipt(List<String> rows, {int digits = 2}) {
       if (total == null || priced.minor > total) total = priced.minor;
       continue;
     }
+    if (_discountWords.any((String w) => _hasWord(upper, w))) {
+      discount += priced.minor.abs(); // "-5,00" o "5,00": siempre resta
+      continue;
+    }
     if (_skipWords.any((String w) => _hasWord(upper, w))) continue;
     if (priced.minor <= 0) continue;
     final _Named? named = _splitQty(priced.label);
@@ -115,7 +141,79 @@ ParsedReceipt parseReceipt(List<String> rows, {int digits = 2}) {
       TicketItem(name: named.name, qty: named.qty, priceMinor: priced.minor),
     );
   }
-  return ParsedReceipt(items: items, totalMinor: total);
+  return ParsedReceipt(
+    items: items,
+    totalMinor: total,
+    discountMinor: discount,
+    veriFactu: qr == null || digits != 2 ? null : parseVeriFactu(qr),
+  );
+}
+
+/// Los 4 datos del QR "VeriFactu" de un ticket español. El QR es un enlace a
+/// Hacienda para comprobar la factura, y solo trae esto (ni el nombre del
+/// local ni los platos):
+///   https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR
+///     ?nif=B00000000&numserie=FS-2026-004817&fecha=22-10-2026&importe=86.00
+class VeriFactu {
+  const VeriFactu({
+    required this.nif,
+    required this.number,
+    required this.date,
+    required this.totalMinor,
+    required this.link,
+  });
+
+  /// El NIF del local.
+  final String nif;
+
+  /// El número de la factura.
+  final String number;
+  final DateTime date;
+  final int totalMinor;
+
+  /// El enlace de Hacienda para comprobarla.
+  final Uri link;
+}
+
+/// null si el texto no es un QR VeriFactu (o le falta algún dato).
+VeriFactu? parseVeriFactu(String text) {
+  final Uri? uri = Uri.tryParse(text.trim());
+  if (uri == null ||
+      uri.scheme != 'https' ||
+      !uri.host.endsWith('agenciatributaria.gob.es')) {
+    return null;
+  }
+  final Map<String, String> q = uri.queryParameters;
+  final String? nif = q['nif'];
+  final String? number = q['numserie'];
+  final RegExpMatch? day = RegExp(r'^(\d{2})-(\d{2})-(\d{4})$')
+      .firstMatch(q['fecha'] ?? '');
+  // El importe va con punto y 2 decimales: "86.00" (o "-12.50" si devuelve).
+  final RegExpMatch? amount = RegExp(r'^(\d{1,9})(?:\.(\d{1,2}))?$')
+      .firstMatch(q['importe'] ?? '');
+  if (nif == null ||
+      nif.isEmpty ||
+      number == null ||
+      number.isEmpty ||
+      day == null ||
+      amount == null) {
+    return null;
+  }
+  final int month = int.parse(day.group(2)!);
+  final int dayOfMonth = int.parse(day.group(1)!);
+  if (month < 1 || month > 12 || dayOfMonth < 1 || dayOfMonth > 31) {
+    return null;
+  }
+  final String cents = (amount.group(2) ?? '').padRight(2, '0');
+  final int total = int.parse(amount.group(1)!) * 100 + int.parse(cents);
+  if (total <= 0) return null;
+  return VeriFactu(
+    nif: nif,
+    number: number,
+    date: DateTime(int.parse(day.group(3)!), month, dayOfMonth),
+    totalMinor: total,
+    link: uri,
+  );
 }
 
 class _Priced {

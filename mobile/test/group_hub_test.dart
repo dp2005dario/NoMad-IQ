@@ -17,6 +17,7 @@ import 'package:eclipta/features/plans/plans_api.dart';
 import 'package:eclipta/l10n/generated/app_localizations_es.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 
 const String tripId = '6f1c2d3e-4a5b-4c6d-8e9f-0a1b2c3d4e5f';
 const String base = '/v1/group-negotiations/$tripId';
@@ -88,6 +89,12 @@ class HubBackend {
       ];
       sentTastes.add(myTastes);
       return FakeGateway.json(tripJson(myTastes));
+    };
+    g.services['/v1/expense-groups/trip'] = (http.Request r) {
+      pots.add(
+        (jsonDecode(r.body) as Map<String, Object?>)['trip_id']! as String,
+      );
+      return FakeGateway.json(m.groupJson());
     };
     g.services['/v1/geocode'] = (_) => FakeGateway.json(<String, Object?>{
       'items': <Object?>[
@@ -190,6 +197,8 @@ class HubBackend {
   }
 
   final FakeGateway g = FakeGateway();
+  // El bote del viaje: debes 43 € (como en Gastos).
+  final List<String> pots = <String>[];
   List<String> myTastes = <String>['tapas', 'late'];
   final List<List<String>> sentTastes = <List<String>>[];
   final List<String> cravings = <String>[];
@@ -352,14 +361,13 @@ void main() {
     expect(const NewPlan(title: 'X').toJson().containsKey('kind'), isFalse);
   });
 
-  testWidgets('Grupo con destino: gustos, dormir, antojos y hora dorada', (
+  testWidgets('Grupo con destino: la maqueta con gustos, dormir y antojos', (
     WidgetTester tester,
   ) async {
-    tester.view.physicalSize = const Size(1200, 12000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
     final HubBackend b = HubBackend();
     final List<Uri> opened = <Uri>[];
+    final List<String> pages = <String>[];
+    void Function(String)? send;
     final SessionController s = await signedInSession(b.g);
     await pumpApp(
       tester,
@@ -373,90 +381,113 @@ void main() {
           opened.add(u);
           return true;
         },
+        webScene: (String html, void Function(String) onMessage) {
+          pages.add(html);
+          send = onMessage;
+          return const SizedBox.expand();
+        },
       ),
     );
+    // Deja correr las llamadas de verdad hasta que [done].
+    Future<void> wait(bool Function() done) async {
+      for (int i = 0; i < 100 && !done(); i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      expect(done(), isTrue);
+    }
 
-    // Atajos y "Gustos de cada uno".
-    expect(find.text('Chat del viaje'), findsWidgets);
-    expect(find.text('El bote común'), findsOneWidget);
-    expect(find.text('Gustos de cada uno'), findsOneWidget);
-    expect(find.text(t.tastesHintMine), findsOneWidget);
-    // El ejemplo del chat: así se apuntan los gustos sin tocar nada.
-    expect(find.text(t.hubChatSample), findsOneWidget);
-    await tester.tap(find.text('Museos').first);
-    await tester.pumpAndSettle();
-    expect(b.sentTastes.single, <String>['tapas', 'late', 'museums']);
-    // Los de Noelia se ven, pero no se tocan.
-    await tester.tap(
-      find
-          .descendant(
-            of: find.byType(AnimatedContainer),
-            matching: find.text('Noelia'),
-          )
-          .first,
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Esto lo marcó Noelia en su móvil.'), findsOneWidget);
-    await tester.tap(find.text('Museos').first);
-    await tester.pumpAndSettle();
-    expect(b.sentTastes, hasLength(1));
+    // Lo último que sabe la página: lo de la carga más lo que llegó después.
+    Map<String, Object?> data() {
+      // La página se carga una vez; lo nuevo llega sin recargar.
+      expect(pages.toSet(), hasLength(1));
+      final String html = pages.first;
+      final int at = html.indexOf('window.ECL=') + 'window.ECL='.length;
+      final Map<String, Object?> d = jsonDecode(
+        html.substring(at, html.indexOf(';</script>', at)),
+      ) as Map<String, Object?>;
+      for (final String js in TripHub.lastBridge!.sent) {
+        final int a = js.indexOf('ECLin(') + 'ECLin('.length;
+        d.addAll(
+          jsonDecode(js.substring(a, js.length - 1)) as Map<String, Object?>,
+        );
+      }
+      return d;
+    }
 
-    // Los 4 pasos, en pestañas, con datos reales.
+    await wait(() => pages.isNotEmpty);
+    await wait(() => (data()['spots']! as List<Object?>).isNotEmpty);
+    await wait(() => (data()['options']! as List<Object?>).length == 2);
+    Map<String, Object?> d = data();
+    expect(d['title'], 'Lisboa');
+    // Los gastos van unidos al viaje: lo que debes en su bote.
+    await wait(() => data()['debt'] != '');
+    d = data();
+    expect(b.pots.first, tripId);
+    expect(d['debt'], startsWith('Debes 43'));
+    expect(d['sub'], '2 viajeros');
+    expect(d['flyraTitle'], '¡Tengo un acuerdo para los 2!');
+    expect(d['wants'], <String>['Tú: Tapas', 'Noelia: Tapas']);
     expect(
-      find.text(
-        'Lo que más se repite: Tapas (2) · Museos (1) · Con vistas (1)',
+      (d['zones']! as List<Object?>).map(
+        (Object? z) => (z! as Map<String, Object?>)['title'],
       ),
-      findsOneWidget,
+      <String>['Junto a Lisboa', 'Alfama'],
     );
-    await tester.tap(find.text('Zona'));
-    await tester.pumpAndSettle();
-    expect(find.text('Primera opción: Junto a Lisboa'), findsOneWidget);
-    expect(find.text('Abrir Booking'), findsNothing);
-    await tester.tap(find.text('Dormir'));
-    await tester.pumpAndSettle();
-    expect(find.text('Abrir Booking'), findsOneWidget);
-    await tester.tap(find.text('Zona'));
-    await tester.pumpAndSettle();
+
+    // Tus gustos: "Museos" (el 4.º chip) se guarda.
+    send!('taste:3');
+    await wait(() => b.sentTastes.isNotEmpty);
+    expect(b.sentTastes.single, <String>['tapas', 'late', 'museums']);
 
     // Votad dónde dormir: Noelia ya eligió Alfama; al elegirla yo, acuerdo.
-    expect(find.text('Votos que faltan, contando el tuyo: 1.'), findsOneWidget);
-    await tester.tap(find.text('Alfama'));
-    await tester.pumpAndSettle();
+    final List<Object?> opts = d['options']! as List<Object?>;
+    expect((opts[1]! as Map<String, Object?>)['yes'], 1);
+    send!('zone:1');
+    await wait(() => b.votes.length == 2);
     expect(b.added, isEmpty); // las dos zonas ya estaban en el tablero
     expect(b.votes, <String>['p1=false', 'p2=true']);
-    expect(find.text(t.sleepDeal), findsOneWidget);
-    expect(find.text('Abrir Booking'), findsOneWidget); // el del acuerdo
+    await wait(
+      () =>
+          ((data()['options']! as List<Object?>)[1]!
+              as Map<String, Object?>)['yes'] ==
+          2,
+    );
 
-    // "¿Qué os apetece?": empieza por tapas (el gusto más repetido).
+    // "¿Qué os apetece?": empieza por tapas (el gusto más repetido); lo de
+    // más de 1 km no sale.
     expect(b.cravings, <String>['tapas']);
-    expect(find.text('Muy lejos'), findsNothing);
-    expect(find.text('Petiscos da Sé'), findsOneWidget);
-    expect(find.text('Encaja con Tú, Noelia'), findsNWidgets(2));
-    await tester.ensureVisible(find.text('Me apetece').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Me apetece').first);
-    await tester.pumpAndSettle();
+    d = data();
+    final List<Object?> spots = d['spots']! as List<Object?>;
+    final List<Object?> names = spots
+        .map((Object? x) => (x! as Map<String, Object?>)['t'])
+        .toList();
+    expect(names, isNot(contains('Muy lejos')));
+    expect(names, contains('Petiscos da Sé'));
+    expect(
+      (spots.first! as Map<String, Object?>)['why'],
+      'Encaja con Tú, Noelia',
+    );
+    final int petiscos = names.indexOf('Petiscos da Sé');
+    send!('spot:$petiscos:1');
+    await wait(() => b.votes.length == 3);
     expect(b.added.single, <String, Object?>{
       'title': 'Petiscos da Sé',
       'note': 'Tapas',
       'kind': 'crave',
     });
     expect(b.votes.last, 'p3=true');
-    expect(find.text('1 de 2 se apuntan'), findsOneWidget);
     // "Ir": Google Maps andando hasta el sitio.
-    await tester.ensureVisible(find.text('Ir').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Ir').first);
+    send!('go:0');
     await tester.pumpAndSettle();
     expect(opened.last.host, 'www.google.com');
     expect(opened.last.queryParameters['travelmode'], 'walking');
-    await tester.ensureVisible(find.text('Café').first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Café').first);
-    await tester.pumpAndSettle();
+    // Otro antojo: café.
+    send!('crave:3');
+    await wait(() => b.cravings.length == 2);
     expect(b.cravings, <String>['tapas', 'cafe']);
-    expect(find.textContaining('Hora dorada hoy sobre las'), findsOneWidget);
-    expect(find.text(t.craveSource), findsOneWidget);
-    expect(find.text('De dónde saca Flyra los datos'), findsOneWidget);
+    expect(data()['golden'], startsWith('Hora dorada hoy sobre las'));
   });
 }

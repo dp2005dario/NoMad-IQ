@@ -16,6 +16,7 @@ import 'core/config.dart';
 import 'features/events/event_reminders.dart';
 import 'features/settings/profile_photo.dart';
 import 'core/services.dart';
+import 'features/sos/phone_contacts.dart';
 import 'features/vault/doc_source.dart';
 import 'features/vault/vault.dart';
 import 'features/vault/vault_store.dart';
@@ -105,6 +106,7 @@ Future<void> main() async {
     speaker: DeviceSpeaker(),
     translator: MlKitTranslator(),
     speechInput: DeviceSpeechInput(),
+    pickContact: pickPhoneContact,
     languageGuesser: MlKitLanguageGuesser(),
     receipts: DeviceReceiptScanner(),
     docSource: DeviceDocSource(),

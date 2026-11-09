@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
@@ -12,12 +13,20 @@ import 'package:eclipta/features/family/family.dart';
 import 'package:eclipta/features/push/notice_prefs.dart';
 import 'package:eclipta/features/push/push_notice.dart';
 import 'package:eclipta/features/settings/account_data.dart';
+import 'package:eclipta/features/settings/profile_photo.dart';
 import 'package:eclipta/features/settings/settings_screen.dart';
 import 'package:eclipta/features/vault/vault.dart';
 import 'package:eclipta/features/vault/vault_store.dart';
 
+import 'package:eclipta/features/settings/privacy_screen.dart';
+
 import 'helpers.dart';
+import 'money_test.dart' as m;
 import 'vault_test.dart' show FakeUnlocker;
+
+/// Como lo empaqueta la página (base64url sin "=").
+String pack(Map<String, Object?> v) =>
+    base64Url.encode(utf8.encode(jsonEncode(v))).replaceAll('=', '');
 
 class MemorySaver implements DataSaver {
   final Map<String, Uint8List> saved = <String, Uint8List>{};
@@ -213,106 +222,185 @@ void main() {
   });
 
   group('pantalla', () {
-    Future<(FakeGateway, SessionController, MemorySaver)> open(
-      WidgetTester tester,
-    ) async {
+    // Ajustes es la maqueta en una página web: el "espía" la recoge y hace
+    // de página (manda lo que tocarías).
+    Future<(FakeGateway, SessionController, m.PageSpy, MemorySettingsStore)>
+    open(WidgetTester tester, {FakeUnlocker? finger}) async {
       final FakeGateway g = FakeGateway();
       serveMyData(g);
       final SessionController session = await signedInSession(g);
-      final MemorySaver saver = MemorySaver();
-      tester.view.physicalSize = const Size(1200, 3400);
+      final MemorySettingsStore prefs = MemorySettingsStore();
+      final m.PageSpy spy = m.PageSpy();
+      tester.view.physicalSize = const Size(1200, 2600);
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
+      addTearDown(
+        () => ProfilePhotoController.instance.debugSet(
+          const ProfilePhotoChoice(),
+        ),
+      );
       await pumpApp(
         tester,
         locale: 'es',
         session: session,
         initialLocation: Routes.home,
-        services: fakeServices(session, gateway: g),
+        services: fakeServices(
+          session,
+          gateway: g,
+          prefs: prefs,
+          webScene: spy.build,
+          vault: Vault(
+            keys: MemoryVaultKeyStore(),
+            files: MemoryVaultFiles(),
+            unlocker: finger ?? FakeUnlocker(),
+          ),
+        ),
       );
-      // Ajustes está en la barra de abajo.
-      await tester.tap(find.text('Ajustes'));
+      // Ajustes se abre con tu foto, arriba en el Mapa (como en la maqueta).
+      await tester.tap(find.text('Mapa'));
       await tester.pumpAndSettle();
-      expect(find.text('Ajustes'), findsWidgets);
-      return (g, session, saver);
+      await tester.tap(find.bySemanticsLabel('Tu foto de perfil y ajustes'));
+      await tester.pumpAndSettle();
+      await spy.wait(tester, () => spy.pages.isNotEmpty);
+      return (g, session, spy, prefs);
     }
 
-    testWidgets('cambiar la contraseña: bien, mal y floja', (
+    // Inicio (otra página web) también está abierta, debajo.
+    const String title = 'ECLIPTA · Ajustes';
+    Map<String, Object?> data(m.PageSpy spy) =>
+        spy.data(SettingsScreen.lastBridge!, title: title);
+
+    Future<void> send(WidgetTester tester, m.PageSpy spy, String msg) async {
+      spy.to(title)(msg);
+      for (int i = 0; i < 5; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+    }
+
+    testWidgets('tu perfil, tu foto y los interruptores', (
       WidgetTester tester,
     ) async {
-      final (FakeGateway g, _, _) = await open(tester);
-      Future<void> change(String current, String next) async {
-        await tester.tap(find.text('Cambiar contraseña'));
-        await tester.pumpAndSettle();
-        await tester.enterText(
-          find.widgetWithText(TextField, 'Contraseña actual'),
-          current,
-        );
-        await tester.enterText(
-          find.widgetWithText(
-            TextField,
-            'Contraseña nueva (12 caracteres o más)',
-          ),
-          next,
-        );
-        await tester.tap(
-          find.widgetWithText(FilledButton, 'Cambiar contraseña'),
-        );
-        await tester.pumpAndSettle();
-      }
+      final FakeUnlocker finger = FakeUnlocker();
+      final (_, _, m.PageSpy spy, MemorySettingsStore prefs) = await open(
+        tester,
+        finger: finger,
+      );
+      Map<String, Object?> d = data(spy);
+      expect(d['name'], 'Ana');
+      expect(d['email'], 'ana@example.com');
+      expect(d['id'], 'U1');
+      expect(d['signedIn'], isTrue);
+      expect(d['ver'], '1.0.0');
+      expect(d['lang'], 'Español');
+      expect(d['easy'], 'Normal');
+      expect(d['photo'], <String, Object?>{'av': 0});
+      expect(d['toggles'], <String, Object?>{
+        'ofertas': true,
+        'huella': false,
+        'ubicacion': true,
+        'oscuro': true,
+      });
 
-      await change('no es esta', 'otra contraseña larga');
-      expect(find.text('Esa contraseña no es correcta.'), findsOneWidget);
-      expect(g.accounts['ana@example.com'], 'una contraseña larga');
+      // Un avatar de viajero (el 3 de la maqueta es el sol) y vuelta a la
+      // inicial con "Quitar".
+      await send(tester, spy, 'av:3');
+      expect(ProfilePhotoController.instance.choice.preset, 2);
+      expect(data(spy)['photo'], <String, Object?>{'av': 3});
+      await send(tester, spy, 'src:3');
+      expect(ProfilePhotoController.instance.choice.initial, isTrue);
+      expect(data(spy)['photo'], <String, Object?>{'av': 0});
+      // "De Google" sin foto en la cuenta: se explica.
+      await send(tester, spy, 'src:2');
+      await tester.pump();
+      expect(find.text('Tu cuenta no tiene foto de Google.'), findsOneWidget);
 
-      // El aviso anterior sigue en cola unos segundos.
-      await tester.pump(const Duration(seconds: 5));
-      await tester.pumpAndSettle();
-      await change('una contraseña larga', 'otra contraseña larga');
-      expect(find.textContaining('Contraseña cambiada'), findsOneWidget);
-      expect(g.accounts['ana@example.com'], 'otra contraseña larga');
+      // Chollos y audioguías: se apagan esos avisos.
+      await send(
+        tester,
+        spy,
+        'tog:0:${pack(<String, Object?>{'k': 'ofertas'})}',
+      );
+      await send(
+        tester,
+        spy,
+        'tog:0:${pack(<String, Object?>{'k': 'ubicacion'})}',
+      );
+      expect(mutedKinds(prefs), <PushKind>{
+        PushKind.fareAlert,
+        PushKind.zoneAudioguide,
+        PushKind.airportArrival,
+      });
+      // La huella: primero se comprueba que funciona.
+      finger.answer = UnlockResult.cancelled;
+      await send(
+        tester,
+        spy,
+        'tog:1:${pack(<String, Object?>{'k': 'huella'})}',
+      );
+      expect(prefs.data[LocalData.appLock], isNull);
+      // La página recibe que sigue apagada.
+      expect((data(spy)['toggles']! as Map<String, Object?>)['huella'], false);
+      finger.answer = UnlockResult.ok;
+      await send(
+        tester,
+        spy,
+        'tog:1:${pack(<String, Object?>{'k': 'huella'})}',
+      );
+      expect(prefs.data[LocalData.appLock], '1');
+      await send(
+        tester,
+        spy,
+        'tog:0:${pack(<String, Object?>{'k': 'oscuro'})}',
+      );
+      expect(prefs.data[LocalData.darkTheme], '0');
+      d = data(spy);
+      expect(d['toggles'], <String, Object?>{
+        'ofertas': false,
+        'huella': true,
+        'ubicacion': false,
+        'oscuro': false,
+      });
+      expect(finger.asked, 2);
     });
 
-    testWidgets('desde Inicio se abre Ajustes con tu perfil', (
+    testWidgets('las filas de "Tu app" abren su pantalla', (
       WidgetTester tester,
     ) async {
-      await open(tester);
-      expect(find.text('Ana'), findsOneWidget);
-      expect(find.text('ana@example.com'), findsOneWidget);
-      expect(find.text('ID: U1 · copiar'), findsOneWidget);
-      expect(find.text('Borrar mi cuenta y mis datos'), findsOneWidget);
-      // Premium: solo el aviso, sin precio ni botón de pagar.
-      expect(find.text('ECLIPTA Premium'), findsOneWidget);
-      expect(find.text('Próximamente'), findsOneWidget);
-      expect(find.text('Avisos'), findsOneWidget);
-      // Ajustes es una lista larga: la versión está al final.
-      await tester.scrollUntilVisible(
-        find.textContaining('ECLIPTA 1.0.0'),
-        300,
+      final (_, _, m.PageSpy spy, _) = await open(tester);
+      await send(tester, spy, 'privacy');
+      await tester.pumpAndSettle();
+      await spy.wait(
+        tester,
+        () => spy.pages.any((String h) => h.contains('ECLIPTA · Privacidad')),
       );
-      expect(find.textContaining('ECLIPTA 1.0.0'), findsOneWidget);
+      expect(
+        spy.data(
+          PrivacyScreen.lastBridge!,
+          title: 'ECLIPTA · Privacidad',
+        )['prot'],
+        'Este teléfono está protegido',
+      );
+      GoRouter.of(tester.element(find.byType(PrivacyScreen))).pop();
+      await tester.pumpAndSettle();
+      // "Letra grande y modo fácil": Inicio pasa al Modo fácil.
+      await send(tester, spy, 'easy');
+      await tester.pumpAndSettle();
+      await spy.wait(
+        tester,
+        () => spy.pages.any((String h) => h.contains('ECLIPTA · Modo fácil')),
+      );
     });
 
     testWidgets(
       'borrar la cuenta pide la contraseña y vuelve a la Bienvenida',
       (WidgetTester tester) async {
-        final (FakeGateway g, SessionController session, _) = await open(
-          tester,
-        );
-        await tester.scrollUntilVisible(
-          find.text('Borrar mi cuenta y mis datos'),
-          300,
-        );
-        // Al centro de la pantalla, que la barra de abajo no lo tape.
-        await Scrollable.ensureVisible(
-          tester.element(find.text('Borrar mi cuenta y mis datos')),
-          alignment: 0.5,
-        );
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Borrar mi cuenta y mis datos'));
-        await tester.pumpAndSettle();
-        expect(find.text('¿Borrar tu cuenta?'), findsOneWidget);
-        await tester.tap(find.text('Sí, borrar mi cuenta'));
+        final (FakeGateway g, SessionController session, m.PageSpy spy, _) =
+            await open(tester);
+        // "Sí, borrar mi cuenta" en la hoja de la página.
+        await send(tester, spy, 'erase');
         await tester.pumpAndSettle();
 
         // Contraseña mal: aviso y la cuenta sigue.
@@ -322,9 +410,7 @@ void main() {
         expect(find.text('Esa contraseña no es correcta.'), findsOneWidget);
         expect(session.status, SessionStatus.signedIn);
 
-        await tester.tap(find.text('Borrar mi cuenta y mis datos'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Sí, borrar mi cuenta'));
+        await send(tester, spy, 'erase');
         await tester.pumpAndSettle();
         await tester.enterText(find.byType(TextField), 'una contraseña larga');
         await tester.tap(find.text('Borrar para siempre'));
@@ -337,6 +423,40 @@ void main() {
         );
       },
     );
+
+    testWidgets('con "Entrar con huella" la app pide la huella al abrir', (
+      WidgetTester tester,
+    ) async {
+      final FakeGateway g = FakeGateway();
+      final SessionController session = await signedInSession(g);
+      final MemorySettingsStore prefs = MemorySettingsStore();
+      prefs.data[LocalData.appLock] = '1';
+      final FakeUnlocker finger = FakeUnlocker()
+        ..answer = UnlockResult.cancelled;
+      await pumpApp(
+        tester,
+        locale: 'es',
+        session: session,
+        initialLocation: Routes.home,
+        services: fakeServices(
+          session,
+          gateway: g,
+          prefs: prefs,
+          vault: Vault(
+            keys: MemoryVaultKeyStore(),
+            files: MemoryVaultFiles(),
+            unlocker: finger,
+          ),
+        ),
+      );
+      expect(finger.asked, 1);
+      expect(find.text('ECLIPTA está bloqueada'), findsOneWidget);
+      finger.answer = UnlockResult.ok;
+      await tester.tap(find.text('Desbloquear'));
+      await tester.pumpAndSettle();
+      expect(finger.asked, 2);
+      expect(find.text('ECLIPTA está bloqueada'), findsNothing);
+    });
   });
 
   testWidgets('Privacidad: apagar los chollos se guarda; seguridad fija', (
@@ -345,6 +465,45 @@ void main() {
     final FakeGateway g = FakeGateway();
     final SessionController session = await signedInSession(g);
     final MemorySettingsStore prefs = MemorySettingsStore();
+    final m.PageSpy spy = m.PageSpy();
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.privacy,
+      services: fakeServices(
+        session,
+        gateway: g,
+        prefs: prefs,
+        webScene: spy.build,
+      ),
+    );
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    Map<String, Object?> data() => spy.data(PrivacyScreen.lastBridge!);
+    Map<String, Object?> toggle(String key) =>
+        (data()['toggles']! as List<Object?>).firstWhere(
+              (Object? t) => (t! as Map<String, Object?>)['key'] == key,
+            )!
+            as Map<String, Object?>;
+    expect(data()['prot'], 'Este teléfono está protegido');
+    expect(data()['knowH'], 'Qué sabemos de ti');
+    expect(data()['offCount'], 'Ninguna');
+    expect(toggle('flights')['on'], isTrue);
+    spy.send!('t:flights:0');
+    await tester.pumpAndSettle();
+    expect(mutedKinds(prefs), <PushKind>{PushKind.fareAlert});
+    expect(toggle('flights')['on'], isFalse);
+    expect(toggle('safety')['locked'], isTrue);
+    // Sin Firebase (tests) no hay "Olvidar este teléfono".
+    expect(data()['push'], isFalse);
+  });
+
+  testWidgets('Privacidad: cambiar la contraseña: bien y mal', (
+    WidgetTester tester,
+  ) async {
+    final FakeGateway g = FakeGateway();
+    final SessionController session = await signedInSession(g);
+    final m.PageSpy spy = m.PageSpy();
     tester.view.physicalSize = const Size(1200, 3800);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -352,22 +511,37 @@ void main() {
       tester,
       locale: 'es',
       session: session,
-      initialLocation: Routes.settings,
-      services: fakeServices(session, gateway: g, prefs: prefs),
+      initialLocation: Routes.privacy,
+      services: fakeServices(session, gateway: g, webScene: spy.build),
     );
-    await tester.tap(find.text('Privacidad y seguridad'));
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    expect(spy.data(PrivacyScreen.lastBridge!)['pwdTxt'], 'Cambiar contraseña');
+    Future<void> change(String current, String next) async {
+      spy.send!('password');
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Contraseña actual'),
+        current,
+      );
+      await tester.enterText(
+        find.widgetWithText(
+          TextField,
+          'Contraseña nueva (12 caracteres o más)',
+        ),
+        next,
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Cambiar contraseña'));
+      await tester.pumpAndSettle();
+    }
+
+    await change('no es esta', 'otra contraseña larga');
+    expect(find.text('Esa contraseña no es correcta.'), findsOneWidget);
+    expect(g.accounts['ana@example.com'], 'una contraseña larga');
+    // El aviso anterior sigue en pantalla unos segundos.
+    await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
-    expect(find.text('Este teléfono está protegido'), findsOneWidget);
-    expect(find.text('Qué sabemos de ti'), findsOneWidget);
-    await tester.tap(find.text('Chollos de vuelos'));
-    await tester.pumpAndSettle();
-    expect(mutedKinds(prefs), <PushKind>{PushKind.fareAlert});
-    final SwitchListTile safety = tester.widget(
-      find.widgetWithText(SwitchListTile, 'Avisos de seguridad'),
-    );
-    expect(safety.value, isTrue);
-    expect(safety.onChanged, isNull);
-    // Sin Firebase (tests) no hay "Olvidar este teléfono".
-    expect(find.text('Olvidar este teléfono'), findsNothing);
+    await change('una contraseña larga', 'otra contraseña larga');
+    expect(find.textContaining('Contraseña cambiada'), findsOneWidget);
+    expect(g.accounts['ana@example.com'], 'otra contraseña larga');
   });
 }

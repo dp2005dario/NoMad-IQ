@@ -85,6 +85,12 @@ type MonthlySearcher interface {
 	Monthly(ctx context.Context, origin, destination string) (domain.MonthlyResult, error)
 }
 
+// DailySearcher da el precio más barato de cada día de un mes (el
+// calendario del buscador). Opcional, como MonthlySearcher.
+type DailySearcher interface {
+	Daily(ctx context.Context, origin, destination string, year int, month time.Month, oneWay bool) (domain.DailyResult, error)
+}
+
 // Config son los límites de la API.
 type Config struct {
 	// Searcher del buscador; nil = buscador desactivado (responde 503).
@@ -114,6 +120,7 @@ func New(cfg Config, st Store, watcher Watcher, log *slog.Logger) http.Handler {
 	mux.HandleFunc("GET /v1/fares/history/{route_key}", public(h.history))
 	mux.HandleFunc("GET /v1/fares/search", public(h.search))
 	mux.HandleFunc("GET /v1/fares/months", public(h.months))
+	mux.HandleFunc("GET /v1/fares/days", public(h.days))
 	mux.HandleFunc("GET /v1/fares/alerts", h.withUser(h.alerts))
 	mux.HandleFunc("DELETE /v1/fares/me", h.withUser(h.eraseMe))
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
@@ -389,6 +396,69 @@ func (h *handler) months(w http.ResponseWriter, r *http.Request, _ string) {
 		Provider:    res.Provider,
 		ObservedAt:  res.ObservedAt.UTC(),
 		Months:      out,
+	})
+}
+
+// days: el calendario de precios del buscador. GET /v1/fares/days?origin=MAD
+// &destination=HND&month=2027-03&one_way=true → el más barato de cada día.
+func (h *handler) days(w http.ResponseWriter, r *http.Request, _ string) {
+	q := r.URL.Query()
+	origin := strings.ToUpper(strings.TrimSpace(q.Get("origin")))
+	destination := strings.ToUpper(strings.TrimSpace(q.Get("destination")))
+	if !iata.MatchString(origin) || !iata.MatchString(destination) || origin == destination {
+		problem(w, http.StatusBadRequest, "origin y destination: dos aeropuertos IATA distintos")
+		return
+	}
+	month, err := time.Parse("2006-01", q.Get("month"))
+	if err != nil {
+		problem(w, http.StatusBadRequest, "month: AAAA-MM")
+		return
+	}
+	oneWay := q.Get("one_way") == "true"
+	daily, ok := h.cfg.Searcher.(DailySearcher)
+	if !ok {
+		problem(w, http.StatusServiceUnavailable, "el buscador no está disponible")
+		return
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), searchTimeout)
+	defer cancel()
+	res, err := daily.Daily(ctx, origin, destination, month.Year(), month.Month(), oneWay)
+	switch {
+	case errors.Is(err, domain.ErrSearchBusy):
+		w.Header().Set("Retry-After", "5")
+		problem(w, http.StatusTooManyRequests, "mucha gente buscando: inténtalo en unos segundos")
+		return
+	case domain.IsValidation(err):
+		problem(w, http.StatusBadRequest, err.Error())
+		return
+	case err != nil:
+		h.unavailable(w, "days", err)
+		return
+	}
+	out := make([]dayJSON, 0, len(res.Days))
+	for _, d := range res.Days {
+		link := safeLink(d.DeepLink)
+		if link == "" || d.Date.Year() != month.Year() || d.Date.Month() != month.Month() || d.PricePerAdult.Validate("price") != nil {
+			continue
+		}
+		out = append(out, dayJSON{
+			Date:          d.Date.Format(time.DateOnly),
+			PricePerAdult: moneyJSON{AmountMinor: d.PricePerAdult.AmountMinor, Currency: d.PricePerAdult.Currency},
+			Carrier:       d.CarrierIATA,
+			DepartureAt:   d.DepartureAt,
+			ReturnAt:      d.ReturnAt,
+			Transfers:     d.Transfers,
+			BookingURL:    link,
+		})
+	}
+	writeJSON(w, http.StatusOK, daysJSON{
+		Origin:      origin,
+		Destination: destination,
+		Month:       month.Format("2006-01"),
+		OneWay:      oneWay,
+		Provider:    res.Provider,
+		ObservedAt:  res.ObservedAt.UTC(),
+		Days:        out,
 	})
 }
 

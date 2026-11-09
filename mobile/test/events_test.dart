@@ -1,5 +1,6 @@
 // Qué pasa en tus fechas: festivos y eventos reales (con su fuente), días
 // del viaje, filtro por día y guardados (solo en el móvil).
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -10,11 +11,14 @@ import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/easy/easy_mode.dart';
 import 'package:eclipta/features/events/event_reminders.dart';
 import 'package:eclipta/features/events/events_api.dart';
+import 'package:eclipta/features/events/events_screen.dart';
+import 'package:eclipta/features/route/web_scene.dart';
 import 'package:eclipta/features/map/geo.dart';
 import 'package:eclipta/features/vault/vault.dart';
 import 'package:eclipta/features/vault/vault_store.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 
 /// La huella siempre "coincide".
 class _Finger implements Unlocker {
@@ -29,6 +33,12 @@ class _Finger implements Unlocker {
 
 String day(DateTime d) =>
     '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+WebSceneBridge bridge() => EventsScreen.lastBridge!;
+
+/// Como lo empaqueta la página (base64url sin "=").
+String pack(Map<String, Object?> v) =>
+    base64Url.encode(utf8.encode(jsonEncode(v))).replaceAll('=', '');
 
 void main() {
   final DateTime start = DateUtils.dateOnly(DateTime.now())
@@ -98,9 +108,7 @@ void main() {
     final List<Uri> opened = <Uri>[];
     final MemoryEventReminders reminders = MemoryEventReminders();
     final session = newSession()..continueAsGuest();
-    tester.view.physicalSize = const Size(1200, 4000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
+    final m.PageSpy spy = m.PageSpy();
     await pumpApp(
       tester,
       locale: 'es',
@@ -115,9 +123,15 @@ void main() {
           opened.add(u);
           return true;
         },
+        webScene: spy.build,
       ),
     );
-    await tester.pumpAndSettle();
+    await spy.wait(
+      tester,
+      () =>
+          spy.pages.isNotEmpty &&
+          (spy.data(bridge())['events']! as List<Object?>).isNotEmpty,
+    );
 
     // Tus fechas del Modo fácil: 5 días desde la salida.
     expect(sent.single.queryParameters, <String, String>{
@@ -125,39 +139,35 @@ void main() {
       'from': day(start),
       'to': day(start.add(const Duration(days: 4))),
     });
-    expect(find.text('Lisbon'), findsOneWidget);
+    final Map<String, Object?> d = spy.data(bridge());
+    expect(d['sub'], startsWith('Lisbon · '));
+    expect(d['src'], 'TICKETMASTER');
+    expect(d['days'], hasLength(5));
+    final List<Object?> ev = d['events']! as List<Object?>;
+    Map<String, Object?> at(int i) => ev[i]! as Map<String, Object?>;
     // 1 festivo + 2 eventos = 3 cosas en tus fechas.
-    expect(find.text('3'), findsOneWidget);
-    expect(find.text('cosas pasan en tus fechas'), findsOneWidget);
-    expect(find.text('TICKETMASTER'), findsOneWidget);
-    expect(
-      find.text('Festivo: algunas tiendas y museos pueden cerrar'),
-      findsOneWidget,
-    );
-    expect(find.textContaining('(precio del organizador)'), findsOneWidget);
-    expect(find.text('Fuentes: Nager.Date, Ticketmaster'), findsOneWidget);
+    expect(ev, hasLength(3));
+    expect(at(0)['price'], 'Festivo: algunas tiendas y museos pueden cerrar');
+    expect(at(0)['stTxt'], 'FESTIVO');
+    // (Entre el número y el € va un espacio que no se parte.)
+    expect(at(1)['price'], matches(r'^Entradas desde 45\s€ en Ticketmaster$'));
+    expect(at(1)['when'], contains('21:00 · Altice Arena'));
+    // El enlace raro no se enseña.
+    expect(at(2)['url'], '');
 
-    await tester.tap(find.text('Entradas'));
+    spy.send!('open:0:${pack(<String, Object?>{'u': at(1)['url']})}');
+    // Uno que no es de los eventos no se abre.
+    spy.send!(
+      'open:0:${pack(<String, Object?>{'u': 'https://evil.example/'})}',
+    );
+    await tester.pump();
     expect(opened.single.host, 'www.ticketmaster.pt');
 
-    // Solo el día del partido.
-    // El primero es el botón del día (arriba); el otro, la fecha de la tarjeta.
-    await tester.tap(
-      find.text('${start.add(const Duration(days: 2)).day}').first,
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Benfica - Porto'), findsOneWidget);
-    expect(find.text('Dia de Portugal'), findsNothing);
-
-    await tester.tap(find.byTooltip('Guardar'));
-    await tester.pumpAndSettle();
+    spy.send!('save:1:${pack(<String, Object?>{'id': 't-b'})}');
+    await spy.wait(tester, () => reminders.scheduled['t-b'] != null);
     expect(store.readData(LocalData.savedEvents), '["t-b"]');
     // El partido no tiene hora: solo el aviso de la víspera.
     expect(reminders.scheduled['t-b'], hasLength(1));
-    expect(
-      find.text('Guardado. Flyra te avisa la víspera y 2 horas antes.'),
-      findsOneWidget,
-    );
   });
 
   testWidgets('mapa de verdad con los puntos y lo lejos que está tu hotel', (
@@ -182,38 +192,42 @@ void main() {
       LocalData.eventsHotel,
       '{"iata":"LIS","lat":38.76,"lon":-9.1}',
     );
-    final FakeMap map = FakeMap();
     final session = newSession()..continueAsGuest();
-    tester.view.physicalSize = const Size(1200, 4000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
+    final m.PageSpy spy = m.PageSpy();
     await pumpApp(
       tester,
       locale: 'es',
       session: session,
       initialLocation: Routes.events(iata: 'LIS'),
-      services: fakeServices(session, gateway: g, prefs: store, map: map),
+      services: fakeServices(
+        session,
+        gateway: g,
+        prefs: store,
+        webScene: spy.build,
+      ),
     );
-    await tester.pumpAndSettle();
-
+    await spy.wait(
+      tester,
+      () =>
+          spy.pages.isNotEmpty &&
+          (spy.data(bridge())['events']! as List<Object?>).isNotEmpty,
+    );
+    final Map<String, Object?> d = spy.data(bridge());
     final int walk = (hotel.distanceTo(const GeoPoint(38.768, -9.094)) / 80)
         .round();
-    expect(find.text('🏨 A $walk min andando de tu hotel'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('Cambiar dónde está tu hotel'),
-      300,
-      scrollable: find.byType(Scrollable).first,
+    final List<Object?> ev = d['events']! as List<Object?>;
+    expect(
+      (ev[1]! as Map<String, Object?>)['when'],
+      endsWith('a $walk min andando de tu hotel'),
     );
-    // Dos eventos y el hotel (en blanco).
-    final List<Object?> pins = map.pins!['features']! as List<Object?>;
-    expect(pins, hasLength(3));
-    expect((pins.last! as Map<String, Object?>)['id'], 'hotel');
-
-    // Tocar el mapa junto al estadio: solo ese evento.
-    map.spec!.onTap(const GeoPoint(38.7530, -9.1850));
-    await tester.pumpAndSettle();
-    expect(find.text('Benfica - Porto'), findsOneWidget);
-    expect(find.text('Concierto en el estadio'), findsNothing);
+    expect(d['hotel'], isTrue);
+    expect(d['sub'], endsWith(' · cerca de tu hotel'));
+    // Dos pines: el estadio, a la izquierda (oeste) del hotel.
+    final List<Object?> pins = d['pins']! as List<Object?>;
+    expect(pins, hasLength(2));
+    final Map<String, Object?> far = pins.last! as Map<String, Object?>;
+    expect(far['id'], 't-b');
+    expect(far['x']! as int, lessThan(50));
   });
 
   testWidgets('el hotel sale de una reserva de la Bóveda y lo eliges tú', (
@@ -263,9 +277,7 @@ void main() {
     );
     vault.close();
     final session = await signedInSession(g);
-    tester.view.physicalSize = const Size(1200, 4000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
+    final m.PageSpy spy = m.PageSpy();
     await pumpApp(
       tester,
       locale: 'es',
@@ -277,17 +289,17 @@ void main() {
         prefs: store,
         map: FakeMap(),
         vault: vault,
+        webScene: spy.build,
       ),
     );
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('Marca tu hotel para ver qué te pilla cerca'),
-      300,
-      scrollable: find.byType(Scrollable).first,
+    await spy.wait(
+      tester,
+      () =>
+          spy.pages.isNotEmpty &&
+          (spy.data(bridge())['events']! as List<Object?>).isNotEmpty,
     );
-    await tester.ensureVisible(
-      find.text('Marca tu hotel para ver qué te pilla cerca'),
-    );
+    // Tocando la ciudad y las fechas: "Marca tu hotel".
+    spy.send!('options');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Marca tu hotel para ver qué te pilla cerca'));
     await tester.pumpAndSettle();
@@ -306,7 +318,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(store.readData(LocalData.eventsHotel), contains('38.7146'));
-    expect(find.textContaining('de tu hotel'), findsWidgets);
+    await spy.wait(tester, () => spy.data(bridge())['hotel'] == true);
     vault.close();
   });
 }

@@ -1,479 +1,161 @@
-// Inicio (maqueta "ECLIPTA Inicio"):
-//   1. Arriba, "ECLIPTA" y la ciudad donde estás (si el GPS ya tiene
-//      permiso).
-//   2. Flyra en grande: una bola que "respira" con ondas. TOCARLA abre el
-//      chat; MANTENERLA PULSADA es hablarle (el micro del móvil escucha y la
-//      pregunta llega al chat). Debajo, Flyra se presenta palabra a palabra
-//      y una caja para escribirle.
-//   3. "Todo en ECLIPTA": un carrusel infinito de cuadrados con foto que se
-//      inclinan en 3D al deslizar (el del centro, grande y nítido).
-//   4. "Mi pasaporte": se rellena escaneando pasaporte y DNI.
-//   5. "Mi álbum de cromos": un libro que se abre y pasa páginas.
-//   6. El SOS: un cuarto de acero que hay que mantener pulsado 2 s.
-//   7. Atajos que aún no están en el carrusel (cromos, sellos...).
-//
-// Animaciones: duran un rato y se paran (no gastan batería sin fin) y con
-// "reducir movimiento" del móvil no hay ninguna.
+// Inicio: la maqueta "ECLIPTA Inicio" tal cual (assets/inicio/inicio.html,
+// dentro de un WebView):
+//   1. Arriba, "ECLIPTA", "Probar aviso" (repite el último aviso de Flyra),
+//      volver a ver la entrada de Flyra y la ciudad donde estás.
+//   2. Flyra en grande: MANTENER PULSADA la bola es hablarle (el micro del
+//      móvil escucha y la pregunta llega al chat). O escribirle en la caja.
+//   3. "Todo en ECLIPTA": el carrusel de 19 cuadrados; el del centro abre su
+//      pantalla.
+//   4. "Mi pasaporte": se rellena escaneando pasaporte y DNI con la cámara.
+//   5. "Mi álbum de cromos": tus sellos de monumentos en un libro.
+//   6. El SOS: mantener 2 s, cuenta atrás de 5 y avisar a tus contactos por
+//      WhatsApp o SMS (con tu ubicación) o llamar a emergencias.
+//   7. Tus 3 contactos de emergencia.
 import 'dart:async';
-import 'dart:math' as math;
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
-import '../../core/motion.dart';
+import '../../auth/session.dart';
 import '../../core/router.dart';
-import '../../widgets/space_background.dart';
-import 'flyra_intro.dart';
-import 'home_album.dart';
-import 'home_sos.dart';
-import 'my_passport.dart';
 import '../../core/services.dart';
-import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../widgets/flyra_avatar.dart';
+import '../../widgets/user_avatar.dart' show isTrustedPhotoUrl;
+import '../camera/stamps.dart';
+import '../flights/flights_page.dart' show unpackJson;
+import '../flyra/flyra_mini.dart';
 import '../map/geo.dart';
-import '../map/location.dart' show LocationAccess;
+import '../map/location.dart';
 import '../money/money_screen.dart' show MoneyTab;
+import '../passport/passport.dart';
+import '../route/flight3d.dart' show CountryCodes;
 import '../route/geo.dart' show LatLon;
+import '../route/web_scene.dart';
 import '../route/world_data.dart';
-import '../sos/where_am_i.dart' show nearestAirport;
+import '../settings/profile_photo.dart';
+import '../sos/emergency_data.dart';
+import '../sos/sos_screen.dart' show SosContactDialog;
+import '../sos/sos_store.dart';
+import '../sos/where_am_i.dart';
 import '../visa/visa_data.dart' show CountryNames;
+import 'home_album.dart';
+import 'home_page.dart';
+import 'my_passport.dart';
 
-class HomeScreen extends StatelessWidget {
+/// Qué abre cada cuadrado del carrusel (en el MISMO orden que la maqueta).
+final List<void Function(BuildContext)> homeTiles =
+    <void Function(BuildContext)>[
+      (BuildContext c) => c.push(Routes.explore()),
+      (BuildContext c) => c.push(Routes.nearby),
+      (BuildContext c) => c.push(Routes.stays()),
+      (BuildContext c) => c.go(Routes.flights),
+      (BuildContext c) => c.push(Routes.before),
+      (BuildContext c) => c.push(Routes.visa()),
+      (BuildContext c) => c.push(Routes.airport()),
+      (BuildContext c) => c.push(Routes.vault),
+      (BuildContext c) => c.push(Routes.money()),
+      (BuildContext c) => c.push(Routes.money(tab: MoneyTab.fx)),
+      (BuildContext c) => c.push(Routes.travelWith),
+      (BuildContext c) => c.push(Routes.copyTrip()),
+      (BuildContext c) => c.push(Routes.memories),
+      (BuildContext c) => c.push(Routes.drive),
+      // Las audioguías viven en el Mapa: se abren al tocar una zona.
+      (BuildContext c) => c.go(Routes.map),
+      (BuildContext c) => c.push(Routes.radar()),
+      (BuildContext c) => c.push(Routes.widgets),
+      (BuildContext c) => c.push(Routes.assistant),
+      (BuildContext c) => c.push(Routes.language),
+    ];
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final TextTheme text = Theme.of(context).textTheme;
-    return Scaffold(
-      // El fondo espacial de la maqueta (estrellas y nubes de color).
-      body: SpaceBackground(
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(0, 16, 0, 120),
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: <Widget>[
-                    const Text(
-                      'ECLIPTA',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 3,
-                      ),
-                    ),
-                    const Spacer(),
-                    // Ajustes y Avisos están en la barra de abajo (pestaña
-                    // Ajustes), no aquí: así Inicio es igual que la maqueta.
-                    const _WhereChip(),
-                  ],
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                // Al bajar y dejar de verse, Flyra deja de moverse.
-                child: OnScreenOnly(child: _FlyraHero()),
-              ),
-              const SizedBox(height: 28),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    // Como la maqueta: una línea pequeña en mayúsculas y el
-                    // título grande debajo.
-                    Text(
-                      t.homeAllTitle.toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.3,
-                        color: NomadColors.textMuted,
-                      ),
-                    ),
-                    Text(t.homeAllSub, style: text.titleLarge),
-                  ],
-                ),
-              ),
-              const _Carousel(),
-              const SizedBox(height: 28),
-              // "Mi pasaporte": se rellena escaneando pasaporte y DNI.
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Text(
-                      t.homePassEyebrow.toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.3,
-                        color: NomadColors.textMuted,
-                      ),
-                    ),
-                    Text(t.homePassTitle, style: text.titleLarge),
-                    const SizedBox(height: 12),
-                    // Deja de flotar cuando no se ve.
-                    const OnScreenOnly(child: HomePassport()),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 36),
-              // "Mi álbum de cromos": los sellos de los monumentos.
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Text(
-                      t.homeAlbumEyebrow.toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.3,
-                        color: NomadColors.textMuted,
-                      ),
-                    ),
-                    Text(t.homeAlbumTitle, style: text.titleLarge),
-                    const SizedBox(height: 12),
-                    const HomeAlbum(),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 36),
-              // El SOS de la maqueta: un cuarto de acero; mantener 2 s.
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: HomeSos(),
-              ),
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(t.shortcutsTitle, style: text.titleLarge),
-              ),
-              const SizedBox(height: 12),
-              // Rejilla que se adapta: 2 columnas en móvil, más en tablet. La
-              // altura de cada atajo NO es fija: con letra grande (accesibilidad)
-              // o escrituras altas (árabe, hindi) crece en vez de cortarse.
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: LayoutBuilder(
-                  builder: (BuildContext context, BoxConstraints box) {
-                    const double gap = 12;
-                    final int columns = (box.maxWidth / 200).floor().clamp(
-                      2,
-                      6,
-                    );
-                    final double width =
-                        (box.maxWidth - gap * (columns - 1)) / columns;
-                    final List<Widget> tiles = <Widget>[
-                      // Preguntarle a Flyra en voz alta (o escrito).
-                      _Shortcut(
-                        icon: Icons.mic_rounded,
-                        color: NomadColors.group,
-                        label: t.voiceTitle,
-                        onTap: () => context.push(Routes.voice),
-                      ),
-                      // Liga y cambios de cromos con tus amigos.
-                      _Shortcut(
-                        icon: Icons.style_rounded,
-                        color: NomadColors.group,
-                        label: t.cardsTitle,
-                        onTap: () => context.push(Routes.cards),
-                      ),
-                      // La carta del restaurante, traducida y explicada.
-                      _Shortcut(
-                        icon: Icons.restaurant_menu_rounded,
-                        color: NomadColors.money,
-                        label: t.menuTitle,
-                        onTap: () => context.push(Routes.menu),
-                      ),
-                      // Los sellos de los monumentos que reconoce la cámara.
-                      _Shortcut(
-                        icon: Icons.approval_rounded,
-                        color: const Color(0xFFE9C46A),
-                        label: t.passportTitle,
-                        onTap: () => context.push(Routes.passport),
-                      ),
-                    ];
-                    return Wrap(
-                      spacing: gap,
-                      runSpacing: gap,
-                      children: <Widget>[
-                        for (final Widget tile in tiles)
-                          SizedBox(width: width, child: tile),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Flyra en grande: la bola que respira, las ondas, la pista y la caja.
-class _FlyraHero extends StatefulWidget {
-  const _FlyraHero();
+  /// El puente de la última pantalla abierta (lo miran los tests).
+  static WebSceneBridge? lastBridge;
 
   @override
-  State<_FlyraHero> createState() => _FlyraHeroState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _FlyraHeroState extends State<_FlyraHero> with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> {
   late final AppServices _services = ServicesScope.of(context);
+  final WebSceneBridge _bridge = HomeScreen.lastBridge = WebSceneBridge();
+  final ProfilePhotoController _photo = ProfilePhotoController.instance;
 
-  // Una "respiración" dura 5 s (2,5 s de ida y 2,5 de vuelta), sin fin.
-  late final AnimationController _breath = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2500),
-  );
-  // El brillo de detrás de Flyra da una vuelta entera en 40 s.
-  late final AnimationController _glow = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 40),
-  );
-  final TextEditingController _input = TextEditingController();
+  /// La página se lee una vez (se guarda el texto, no la espera).
+  static String? _pageCache;
+  String? _html;
+  String? _sent;
+  bool _started = false;
+
+  String? _place;
+  MyDocs? _docs;
+  CountryNames? _names;
+  bool _askedNames = false;
+  List<AlbumPage>? _album;
+  int _stamps = 0;
+  List<String>? _friends;
   bool _listening = false;
 
+  /// El SOS: dónde estás (se busca al empezar la cuenta atrás).
+  bool _locating = false;
+  GeoPoint? _here;
+  Whereabouts _where = const Whereabouts();
+
+  /// Tu foto del móvil ya leída para la página (ruta → data:...).
+  final Map<String, String> _files = <String, String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _photo.addListener(_changed);
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _breath.stop();
-      _glow.stop();
-    } else if (!_breath.isAnimating && _breath.value == 0) {
-      Motion.loop(_breath, reverse: true);
-      Motion.loop(_glow, testCount: 1);
+    if (_started) return;
+    _started = true;
+    unawaited(_start());
+    unawaited(_findPlace());
+    _loadAlbum();
+    if (SessionScope.of(context).status == SessionStatus.signedIn) {
+      unawaited(_loadFriends());
     }
   }
 
   @override
   void dispose() {
+    _photo.removeListener(_changed);
     if (_listening) unawaited(_services.speechInput.stop());
-    _breath.dispose();
-    _glow.dispose();
-    _input.dispose();
     super.dispose();
   }
 
-  /// Abre el chat (con la pregunta ya escrita, si la hay).
-  void _openChat([String? question]) {
-    final String q = (question ?? '').trim();
-    unawaited(context.push(Routes.flyra(question: q.isEmpty ? null : q)));
+  void _changed() {
+    if (mounted) setState(() {});
   }
 
-  /// Mantener pulsada la bola: escucha en el idioma de la app.
-  Future<void> _holdStart() async {
-    final String lang = Localizations.localeOf(context).languageCode;
-    setState(() => _listening = true);
-    final String? heard = await _services.speechInput.listen(lang);
-    if (!mounted) return;
-    setState(() => _listening = false);
-    if (heard != null && heard.trim().isNotEmpty) _openChat(heard);
-  }
-
-  Future<void> _holdEnd() async {
-    if (_listening) await _services.speechInput.stop();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    return Column(
-      children: <Widget>[
-        Semantics(
-          // container: un nodo propio (si no, se junta con la caja de abajo).
-          container: true,
-          button: true,
-          label: t.talkToFlyra,
-          hint: t.homeHoldToTalk,
-          excludeSemantics: true,
-          child: GestureDetector(
-            onTap: _openChat,
-            onLongPressStart: (_) => unawaited(_holdStart()),
-            onLongPressEnd: (_) => unawaited(_holdEnd()),
-            child: SizedBox.square(
-              dimension: 240,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: <Widget>[
-                  // El brillo de detrás (aurora + aro de colores que gira).
-                  Positioned(
-                    left: -70,
-                    top: -50,
-                    right: -70,
-                    bottom: -90,
-                    child: IgnorePointer(
-                      child: RepaintBoundary(
-                        child: CustomPaint(painter: _GlowPainter(_glow)),
-                      ),
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: AnimatedBuilder(
-                      animation: _breath,
-                      builder: (BuildContext context, Widget? _) =>
-                          _Orb(breath: _breath.value, listening: _listening),
-                    ),
-                  ),
-                  // La entrada: el pájaro de chispas que vuela a la bola.
-                  const Positioned(
-                    left: -110,
-                    top: -110,
-                    width: 460,
-                    height: 460,
-                    child: FlyraIntro(size: 460),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        _Greeting(text: t.homeFlyraHello),
-        const SizedBox(height: 6),
-        Text(
-          _listening ? t.voiceListening : t.homeHoldToTalk,
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        Text(
-          t.homeHearsYou,
-          style: const TextStyle(color: NomadColors.textMuted, fontSize: 12.5),
-        ),
-        const SizedBox(height: 12),
-        // La caja: escribir y enviar abre el chat con la pregunta.
-        TextField(
-          controller: _input,
-          textInputAction: TextInputAction.send,
-          onSubmitted: (String v) {
-            _input.clear();
-            _openChat(v);
-          },
-          decoration: InputDecoration(
-            hintText: t.homeWriteFlyra,
-            filled: true,
-            fillColor: NomadColors.surfaceHigh,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(20),
-              borderSide: BorderSide.none,
-            ),
-            suffixIcon: IconButton(
-              tooltip: t.flyraSend,
-              onPressed: () {
-                final String v = _input.text;
-                _input.clear();
-                _openChat(v);
-              },
-              icon: const Icon(Icons.send_rounded, color: NomadColors.mint),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// "Soy Flyra, ¿en qué puedo ayudarte?" apareciendo palabra a palabra
-/// (como en la maqueta). Con "reducir movimiento", sale entera.
-class _Greeting extends StatefulWidget {
-  const _Greeting({required this.text});
-
-  final String text;
-
-  @override
-  State<_Greeting> createState() => _GreetingState();
-}
-
-class _GreetingState extends State<_Greeting>
-    with SingleTickerProviderStateMixin {
-  late final List<String> _words = widget.text.split(' ');
-  // Espera a que el pájaro de la entrada llegue a la bola y luego escribe
-  // una palabra cada 220 ms.
-  late final int _wait = flyraIntroGreetAt.inMilliseconds;
-  late final int _write = 220 * _words.length + 400;
-  late final AnimationController _show = AnimationController(
-    vsync: this,
-    duration: Duration(milliseconds: _wait + _write),
-  );
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_show.status != AnimationStatus.dismissed) return;
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _show.value = 1;
-    } else {
-      unawaited(_show.forward());
+  Future<void> _start() async {
+    try {
+      _pageCache ??= await rootBundle.loadString(homePage, cache: false);
+    } on Object {
+      return;
     }
+    if (mounted) setState(() {});
   }
 
-  @override
-  void dispose() {
-    _show.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    label: widget.text,
-    excludeSemantics: true,
-    child: AnimatedBuilder(
-      animation: _show,
-      builder: (BuildContext context, Widget? _) {
-        final double start = _wait / (_wait + _write);
-        final double v = ((_show.value - start) / (1 - start)).clamp(0, 1);
-        final int n = (_words.length * v).ceil();
-        return Text(
-          _words.take(n).join(' '),
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 19,
-            fontWeight: FontWeight.w800,
-            height: 1.2,
-          ),
-        );
-      },
-    ),
-  );
-}
-
-/// La ciudad donde estás ("Lisboa, Portugal"): la del aeropuerto más cercano
-/// a menos de 80 km. Solo si el GPS ya tiene permiso (Inicio no lo pide).
-/// Sin dato, no se enseña nada (nada inventado).
-class _WhereChip extends StatefulWidget {
-  const _WhereChip();
-
-  @override
-  State<_WhereChip> createState() => _WhereChipState();
-}
-
-class _WhereChipState extends State<_WhereChip> {
-  String? _place;
-  bool _asked = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_asked) return;
-    _asked = true;
-    unawaited(_find());
-  }
-
-  Future<void> _find() async {
-    final AppServices services = ServicesScope.of(context);
+  /// La ciudad de arriba: solo si el GPS ya tiene permiso (no se pide aquí).
+  Future<void> _findPlace() async {
     final String lang = Localizations.localeOf(context).languageCode;
     try {
-      if (await services.location.check() != LocationAccess.granted) return;
-      final PositionFix? fix = await services.location.current();
+      if (await _services.location.check() != LocationAccess.granted) return;
+      final PositionFix? fix = await _services.location.current();
       if (fix == null) return;
-      final Airports airports = await services.loadAirports();
+      final Airports airports = await _services.loadAirports();
       final Airport? a = nearestAirport(
         airports.all,
         LatLon(fix.point.lat, fix.point.lon),
@@ -496,568 +178,331 @@ class _WhereChipState extends State<_WhereChip> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final String? place = _place;
-    if (place == null) return const SizedBox.shrink();
-    return Flexible(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: NomadColors.surfaceHigh,
-          borderRadius: BorderRadius.circular(99),
-          border: Border.all(color: const Color(0xFF243540)),
+  /// Tus cromos, agrupados por país (como en el Pasaporte).
+  void _loadAlbum() {
+    final List<Stamp> stamps = StampBook(_services.prefs).all();
+    _stamps = stamps.length;
+    if (stamps.isEmpty) {
+      _album = const <AlbumPage>[];
+      return;
+    }
+    unawaited(() async {
+      List<PassportPage> pages;
+      try {
+        final WorldData world = await WorldData.load();
+        final CountryCodes codes = await CountryCodes.load();
+        pages = pagesOf(stamps, airports: world.airports.all, codes: codes);
+      } on Object {
+        pages = pagesOf(stamps);
+      }
+      if (!mounted) return;
+      final AppLocalizations t = AppLocalizations.of(context);
+      setState(
+        () => _album = albumPagesOf(
+          pages,
+          titleOf: (PassportPage p) {
+            final String? c = p.country;
+            if (c == null) return t.passportElsewhere;
+            final String city = p.cities.isEmpty ? c : p.cities.first;
+            return '${flagOf(c)} $city';
+          },
         ),
-        child: Row(
+      );
+    }());
+  }
+
+  /// Los amigos con cromos que te faltan (del servidor, solo con cuenta).
+  Future<void> _loadFriends() async {
+    try {
+      final List<String> f = await _services.leagues.friendsWithMissing();
+      if (mounted && f.isNotEmpty) setState(() => _friends = f);
+    } on Object {
+      // Sin conexión o sin ligas: se queda la línea de siempre.
+    }
+  }
+
+  /// La lista de países (para "España" en vez de "ESP"), una vez.
+  void _needNames() {
+    if (_askedNames) return;
+    _askedNames = true;
+    unawaited(
+      CountryNames.load().then((CountryNames n) {
+        if (mounted) setState(() => _names = n);
+      }, onError: (Object _) {}),
+    );
+  }
+
+  /// Lee tu foto del móvil para enseñarla en la tarjeta.
+  Future<void> _readFile(String path) async {
+    try {
+      final List<int> bytes = await File(path).readAsBytes();
+      _files[path] = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+    } on Object {
+      _files[path] = '';
+    }
+    if (mounted) setState(() {});
+  }
+
+  // --- Lo que pide la página.
+
+  /// "Probar aviso": Flyra repite su último aviso (o dice que no hay).
+  void _note() {
+    final FlyraNote? last = FlyraNotes.instance.last;
+    FlyraNotes.instance.say(
+      last ??
+          const FlyraNote(
+            FlyraNoteKind.tip,
+            'Aún no tienes avisos. Cuando pase algo, te lo digo aquí.',
+          ),
+    );
+  }
+
+  /// Mantener pulsada la bola: escucha en el idioma de la app.
+  Future<void> _listen() async {
+    final String lang = Localizations.localeOf(context).languageCode;
+    _listening = true;
+    final String? heard = await _services.speechInput.listen(lang);
+    _listening = false;
+    if (!mounted) return;
+    if (heard != null && heard.trim().isNotEmpty) _ask(heard);
+  }
+
+  void _ask(String question) =>
+      unawaited(context.push(Routes.flyra(question: question.trim())));
+
+  /// Escanear pasaporte y DNI (a pantalla completa, con la cámara).
+  Future<void> _scan() async {
+    final MyDocs before = _docs ?? MyDocs.load(_services.prefs);
+    final MyDocs? after = await Navigator.of(context, rootNavigator: true)
+        .push<MyDocs>(
+          MaterialPageRoute<MyDocs>(
+            fullscreenDialog: true,
+            builder: (_) => PassportScanScreen(start: before),
+          ),
+        );
+    if (after == null || !mounted) return;
+    await after.save(_services.prefs);
+    if (mounted) setState(() => _docs = after);
+  }
+
+  /// La foto de la tarjeta: hacer una o elegirla de la galería.
+  Future<void> _choosePhoto() async {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final ImageSource? from = await showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext sheet) => SafeArea(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Icon(
-              Icons.place_outlined,
-              size: 14,
-              color: NomadColors.textMuted,
+            ListTile(
+              leading: const Icon(Icons.photo_camera_rounded),
+              title: Text(t.profilePhotoTake),
+              onTap: () => Navigator.pop(sheet, ImageSource.camera),
             ),
-            const SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                place,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: NomadColors.textMuted,
-                ),
-              ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_rounded),
+              title: Text(t.profilePhotoGallery),
+              onTap: () => Navigator.pop(sheet, ImageSource.gallery),
             ),
           ],
         ),
       ),
     );
+    if (from != null) await _photo.pick(from);
   }
-}
 
-/// La bola de Flyra. [breath] va de 0 a 1 (inspira/espira); al escuchar se
-/// hace un poco más grande y brilla más.
-class _Orb extends StatelessWidget {
-  const _Orb({required this.breath, required this.listening});
+  /// Al empezar la cuenta atrás del SOS: dónde estás (para el mensaje y el
+  /// número de emergencias de ese país).
+  Future<void> _locate() async {
+    if (_locating) return;
+    setState(() => _locating = true);
+    final LocationSource gps = _services.location;
+    try {
+      LocationAccess access = await gps.check();
+      if (access == LocationAccess.denied) access = await gps.request();
+      if (access == LocationAccess.granted) {
+        final PositionFix fix = await gps.watch().first.timeout(
+          const Duration(seconds: 15),
+        );
+        final Whereabouts where = await whereabouts(fix.point);
+        if (mounted) {
+          setState(() {
+            _here = fix.point;
+            _where = where;
+          });
+        }
+      }
+    } on Object {
+      // Sin GPS: el SOS sigue funcionando (emergencias y contactos).
+    }
+    if (mounted) setState(() => _locating = false);
+  }
 
-  final double breath;
-  final bool listening;
+  String _sosText() =>
+      sosMessage(AppLocalizations.of(context).sosMessage, _here);
+
+  /// "Cambiar" o "Añadir" un contacto de emergencia (hueco [i]).
+  Future<void> _pick(int i) async {
+    final List<SosContact> all = loadContacts(_services.prefs);
+    final SosContact? old = i < all.length ? all[i] : null;
+    final SosContact? c = await showDialog<SosContact>(
+      context: context,
+      builder: (BuildContext context) => SosContactDialog(initial: old),
+    );
+    if (c == null || !mounted) return;
+    final List<SosContact> now = <SosContact>[...all];
+    if (old != null) {
+      now[i] = c;
+    } else if (now.length < maxSosContacts) {
+      now.add(c);
+    }
+    await saveContacts(_services.prefs, now);
+    if (mounted) setState(() {});
+  }
+
+  void _onMessage(String m) {
+    final List<String> p = m.split(':');
+    final int? n = p.length > 1 ? int.tryParse(p[1]) : null;
+    final Map<String, Object?>? data = p.length == 3 ? unpackJson(p[2]) : null;
+    final Object? q = data?['q'];
+    final List<SosContact> people = loadContacts(_services.prefs);
+    final SosContact? who = n != null && n >= 0 && n < people.length
+        ? people[n]
+        : null;
+    switch (p.first) {
+      case 'note':
+        _note();
+      case 'hold' when n == 1:
+        if (!_listening) unawaited(_listen());
+      case 'hold':
+        if (_listening) unawaited(_services.speechInput.stop());
+      case 'ask' when q is String && q.trim().isNotEmpty:
+        _ask(q);
+      case 'tile' when n != null && n >= 0 && n < homeTiles.length:
+        homeTiles[n](context);
+      case 'scan':
+        unawaited(_scan());
+      case 'photo':
+        unawaited(_choosePhoto());
+      case 'cards':
+        unawaited(context.push(Routes.cards));
+      case 'sos':
+        unawaited(_locate());
+      case 'wa' when who != null:
+        unawaited(_services.openLink(whatsappUri(who, _sosText())));
+      case 'sms' when who != null:
+        unawaited(_services.openLink(smsUri(<SosContact>[who], _sosText())));
+      case 'call':
+        unawaited(
+          _services.openLink(telUri(numbersFor(_where.country).general)),
+        );
+      case 'pick' when n != null && n >= 0 && n < 3:
+        unawaited(_pick(n));
+      case 'more':
+        unawaited(context.push(Routes.sos));
+    }
+  }
+
+  Map<String, Object?> _data(AppLocalizations t) {
+    final String lang = Localizations.localeOf(context).languageCode;
+    final MyDocs docs = _docs ??= MyDocs.load(_services.prefs);
+    final ReadDoc? pass = docs.passport;
+    final ReadDoc? id = docs.id;
+    final ReadDoc? any = pass ?? id;
+    if (any != null) _needNames();
+    // La foto: la que elegiste en el móvil o la de tu cuenta de Google.
+    final ProfilePhotoChoice choice = _photo.choice;
+    final String? path = choice.filePath;
+    if (path != null && !_files.containsKey(path)) unawaited(_readFile(path));
+    final String? google = SessionScope.of(context).user?.photoUrl;
+    final String photo = path != null
+        ? _files[path] ?? ''
+        : choice.isNone && isTrustedPhotoUrl(google)
+        ? google!
+        : '';
+    final List<AlbumPage> album = _album ?? const <AlbumPage>[];
+    final List<String>? friends = _friends;
+    final GeoPoint? here = _here;
+    final String? city = _where.city;
+    return <String, Object?>{
+      'place': _place ?? '',
+      'empty': t.homePassEmpty,
+      'mrzEmpty': t.homePassMrzEmpty,
+      'pass': <String, Object?>{
+        'ape': any?.surname ?? '',
+        'nom': any?.given ?? '',
+        'nac': any == null ? '' : countryOf(_names, any.nationality, lang),
+        'blood': MedicalCard.load(_services.prefs).blood ?? '',
+        'num': pass?.numberTail ?? '',
+        'exp': pass == null ? '' : passportDay(pass.expiry, lang),
+        'dni': id?.numberTail ?? '',
+        'nacim': any == null ? '' : passportDay(any.birth, lang),
+        'val': id == null ? '' : passportDay(id.expiry, lang),
+        'mrz': pass == null
+            ? null
+            : mrzLines(pass.nationality, pass.surname, pass.given),
+        'cta': pass != null && id != null
+            ? t.homePassBoth
+            : pass != null
+            ? t.homePassOnlyPass
+            : id != null
+            ? t.homePassOnlyId
+            : t.homePassCta,
+        'done': any != null,
+        'photo': photo,
+      },
+      'album': <String, Object?>{
+        'pages': albumJson(album),
+        'tap': t.homeAlbumTap(_stamps),
+        'howto': _stamps == 0 ? t.homeAlbumHowTo : '',
+        'friends': friends == null
+            ? t.cardsSubtitle
+            : t.homeFriendsMissing(friends.length),
+        'faces': <String>[
+          for (final String f in (friends ?? const <String>[]).take(3))
+            String.fromCharCodes(f.trim().runes.take(1)).toUpperCase(),
+        ],
+      },
+      'contacts': contactsJson(loadContacts(_services.prefs)),
+      'sos': <String, Object?>{
+        'msg': _sosText(),
+        'where': _locating
+            ? t.sosLocating
+            : here == null
+            ? t.sosNoLocation
+            : '${coordsText(here)}${city == null ? '' : ' · $city'}',
+        'call': numbersFor(_where.country).general,
+      },
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
-    final double scale = listening ? 1.12 : 1 + 0.06 * breath;
-    return Stack(
-      alignment: Alignment.center,
-      children: <Widget>[
-        // Tres ondas que salen de la bola, desfasadas (menta, violeta, menta).
-        for (int i = 0; i < 3; i++)
-          _Wave(
-            t: (breath / 3 + i / 3) % 1,
-            color: i == 1 ? const Color(0xFF9B7BFF) : NomadColors.mint,
-          ),
-        Transform.scale(
-          scale: scale,
-          child: Container(
-            width: 168,
-            height: 168,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const RadialGradient(
-                center: Alignment(-0.36, -0.44),
-                colors: <Color>[
-                  Color(0xFF7CF0BC),
-                  NomadColors.mint,
-                  Color(0xFF5A5BD9),
-                  Color(0xFF9B7BFF),
-                ],
-                stops: <double>[0, 0.38, 0.78, 1],
-              ),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: NomadColors.mint.withValues(
-                    alpha: listening ? 0.65 : 0.33,
-                  ),
-                  blurRadius: listening ? 80 : 60,
-                ),
-                BoxShadow(
-                  color: const Color(0xFF9B7BFF).withValues(alpha: 0.2),
-                  blurRadius: 120,
-                ),
-              ],
-            ),
-            child: const FlyraAvatar(size: 100),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// El brillo de detrás de Flyra (como la maqueta):
-/// - una "aurora" de tres manchas de color (menta, violeta y azul) que
-///   respira despacio;
-/// - un aro de colores muy borroso que gira (una vuelta en 40 s);
-/// - un anillo más pequeño pegado a la bola que gira más deprisa.
-class _GlowPainter extends CustomPainter {
-  _GlowPainter(this.t) : super(repaint: t);
-
-  /// De 0 a 1 en 40 s.
-  final Animation<double> t;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // La bola está en el centro del cuadrado de 240 (70 y 50 px de margen).
-    const Offset c = Offset(70 + 120, 50 + 120);
-    // La aurora respira 3 veces por vuelta (unos 13 s cada vez).
-    final double pulse = 0.5 - 0.5 * math.cos(t.value * 3 * 2 * math.pi);
-    for (final (Offset at, double r, Color col) in <(Offset, double, Color)>[
-      (c + const Offset(0, -10), 190, const Color(0x333DDC97)),
-      (c + const Offset(80, -40), 170, const Color(0x409B7BFF)),
-      (c + const Offset(-90, 40), 150, const Color(0x305A5BD9)),
-    ]) {
-      final double rr = r * (1 + 0.04 * pulse);
-      canvas.drawCircle(
-        at + Offset(0, 10 * pulse),
-        rr,
-        Paint()
-          ..shader = RadialGradient(
-            colors: <Color>[
-              col.withValues(alpha: col.a * (1 - 0.15 * pulse)),
-              col.withValues(alpha: 0),
-            ],
-          ).createShader(Rect.fromCircle(center: at, radius: rr)),
+    final String? page = _pageCache;
+    if (page == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0B1217),
+        body: SizedBox.expand(),
       );
     }
-    // El aro grande y borroso que gira.
-    canvas.save();
-    canvas.translate(c.dx, c.dy);
-    canvas.rotate(t.value * 2 * math.pi);
-    const Rect ring = Rect.fromLTRB(-200, -200, 200, 200);
-    canvas.drawCircle(
-      Offset.zero,
-      190,
-      Paint()
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 36)
-        ..shader = const SweepGradient(
-          colors: <Color>[
-            Color(0x00000000),
-            Color(0x223DDC97),
-            Color(0x269B7BFF),
-            Color(0x00000000),
-            Color(0x00000000),
-          ],
-          stops: <double>[0, 0.2, 0.4, 0.6, 1],
-        ).createShader(ring),
-    );
-    // El anillo pegado a la bola: 4 vueltas por cada vuelta del grande.
-    canvas.rotate(t.value * 3 * 2 * math.pi);
-    canvas.drawCircle(
-      Offset.zero,
-      92,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 14
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)
-        ..shader = const SweepGradient(
-          colors: <Color>[
-            Color(0x00000000),
-            Color(0x883DDC97),
-            Color(0x00000000),
-            Color(0x889B7BFF),
-            Color(0x00000000),
-          ],
-          stops: <double>[0, 0.1, 0.4, 0.6, 0.8],
-        ).createShader(const Rect.fromLTRB(-100, -100, 100, 100)),
-    );
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint(_GlowPainter old) => false;
-}
-
-/// Una onda: un aro que crece y se desvanece ([t] de 0 a 1).
-class _Wave extends StatelessWidget {
-  const _Wave({required this.t, required this.color});
-
-  final double t;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => IgnorePointer(
-    child: Transform.scale(
-      scale: 0.8 + 0.6 * t,
-      child: Container(
-        width: 172,
-        height: 172,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: color.withValues(alpha: 0.6 * (1 - t)),
-            width: 1.5,
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-/// Un cuadrado del carrusel: foto, icono, nombre y una línea.
-class _Tile {
-  const _Tile(this.title, this.sub, this.color, this.open, {this.photo = true});
-
-  final String Function(AppLocalizations) title;
-  final String Function(AppLocalizations) sub;
-  final Color color;
-  final void Function(BuildContext) open;
-
-  /// Widgets no tiene foto (en la maqueta es un dibujo): fondo de color.
-  final bool photo;
-}
-
-// En el MISMO orden que la maqueta (icono-N y foto-N de assets/inicio/).
-final List<_Tile> _tiles = <_Tile>[
-  _Tile(
-    (AppLocalizations t) => t.planExplore,
-    (AppLocalizations t) => t.homeSub0,
-    NomadColors.mint,
-    (BuildContext c) => c.push(Routes.explore()),
-  ),
-  _Tile(
-    (AppLocalizations t) => t.mapNearby,
-    (AppLocalizations t) => t.homeSub1,
-    const Color(0xFF58B4E6),
-    (BuildContext c) => c.push(Routes.nearby),
-  ),
-  _Tile(
-    (AppLocalizations t) => t.homeTitleHotels,
-    (AppLocalizations t) => t.homeSub2,
-    const Color(0xFF9B7BFF),
-    (BuildContext c) => c.push(Routes.stays()),
-  ),
-  _Tile(
-    (AppLocalizations t) => t.navFlights,
-    (AppLocalizations t) => t.homeSub3,
-    const Color(0xFF58B4E6),
-    (BuildContext c) => c.go(Routes.flights),
-  ),
-  _Tile(
-    (AppLocalizations t) => t.beforeTitle,
-    (AppLocalizations t) => t.homeSub4,
-    const Color(0xFF9B7BFF),
-    (BuildContext c) => c.push(Routes.before),
-  ),
-  _Tile(
-    (AppLocalizations t) => t.visaTitle,
-    (AppLocalizations t) => t.homeSub5,
-    NomadColors.mint,
-    (BuildContext c) => c.push(Routes.visa()),
-  ),
-  _Tile(
-    (AppLocalizations t) => t.airportTitle,
-    (AppLocalizations t) => t.homeSub6,
-    const Color(0xFF58B4E6),
-    (BuildContext c) => c.push(Routes.airport()),
-  ),
-  _Tile(
-    (AppLocalizations t) => t.shortcutVault,
-    (AppLocalizations t) => t.homeSub7,
-    const Color(0xFF9B7BFF),
-    (BuildContext c) => c.push(Routes.vault),
-  ),
-  _Tile(
-    (AppLocalizations t) => t.shortcutExpenses,
-    (AppLocalizations t) => t.homeSub8,
-    const Color(0xFFFFC857),
-    (BuildContext c) => c.push(Routes.money()),
-  ),
-  _Tile(
-    (AppLocalizations t) => t.moneyTabFx,
-    (AppLocalizations t) => t.homeSub9,
-    NomadColors.mint,
-    (BuildContext c) => c.push(Routes.money(tab: MoneyTab.fx)),
-  ),
-  _Tile(
-    (AppLocalizations t) => t.homeTitleWith,
-    (AppLocalizations t) => t.homeSub10,
-    const Color(0xFFFF8A9A),
-    (BuildContext c) => c.push(Routes.travelWith),
-  ),
-  _Tile(
-    (AppLocalizations t) => t.copyTitle,
-    (AppLocalizations t) => t.homeSub11,
-    const Color(0xFF9B7BFF),
-    (BuildContext c) => c.push(Routes.copyTrip()),
-  ),
-  _Tile(
-    (AppLocalizations t) => t.memTitle,
-    (AppLocalizations t) => t.homeSub12,
-    const Color(0xFF58B4E6),
-    (BuildContext c) => c.push(Routes.memories),
-  ),
-  _Tile(
-    (AppLocalizations t) => t.driveShort,
-    (AppLocalizations t) => t.homeSub13,
-    const Color(0xFFFFC857),
-    (BuildContext c) => c.push(Routes.drive),
-  ),
-  // Las audioguías viven en el Mapa: se abren al tocar una zona.
-  _Tile(
-    (AppLocalizations t) => t.shortcutAudioguides,
-    (AppLocalizations t) => t.homeSub14,
-    const Color(0xFF9B7BFF),
-    (BuildContext c) => c.go(Routes.map),
-  ),
-  _Tile(
-    (AppLocalizations t) => t.mapRadar,
-    (AppLocalizations t) => t.homeSub15,
-    const Color(0xFFFF8A65),
-    (BuildContext c) => c.push(Routes.radar()),
-  ),
-  _Tile(
-    (AppLocalizations t) => t.widgetsTitle,
-    (AppLocalizations t) => t.homeSub16,
-    const Color(0xFF58B4E6),
-    (BuildContext c) => c.push(Routes.widgets),
-    photo: false,
-  ),
-  _Tile(
-    (AppLocalizations t) => t.assistantTitle,
-    (AppLocalizations t) => t.homeSub17,
-    NomadColors.mint,
-    (BuildContext c) => c.push(Routes.assistant),
-  ),
-  _Tile(
-    (AppLocalizations t) => t.shortcutLanguage,
-    (AppLocalizations t) => t.homeSub18,
-    NomadColors.mint,
-    (BuildContext c) => c.push(Routes.language),
-  ),
-];
-
-/// El carrusel "infinito": empieza en una página muy alta y cada página es
-/// el cuadrado número (página % 19), así se puede deslizar sin fin.
-class _Carousel extends StatefulWidget {
-  const _Carousel();
-
-  @override
-  State<_Carousel> createState() => _CarouselState();
-}
-
-class _CarouselState extends State<_Carousel> {
-  static final int _start = _tiles.length * 500;
-  final PageController _pages = PageController(
-    viewportFraction: 0.66,
-    initialPage: _start,
-  );
-  int _current = _start;
-
-  @override
-  void dispose() {
-    _pages.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final bool still = MediaQuery.disableAnimationsOf(context);
-    final int n = _tiles.length;
-    // 8 puntitos (como la maqueta): marcan por dónde vas de los 19.
-    final int dot = ((_current % n) / (n - 1) * 7).round();
-    return Column(
-      children: <Widget>[
-        SizedBox(
-          height: 300,
-          child: PageView.builder(
-            controller: _pages,
-            onPageChanged: (int p) => setState(() => _current = p),
-            itemBuilder: (BuildContext context, int page) {
-              final _Tile tile = _tiles[page % n];
-              return AnimatedBuilder(
-                animation: _pages,
-                builder: (BuildContext context, Widget? child) {
-                  // Cuánto se aleja del centro (0 = en el centro).
-                  final double off =
-                      _pages.hasClients && _pages.position.haveDimensions
-                      ? (_pages.page ?? page.toDouble()) - page
-                      : (_current - page).toDouble();
-                  final double a = math.min(off.abs(), 1);
-                  final Matrix4 m = Matrix4.identity()
-                    ..setEntry(3, 2, 0.0012)
-                    ..rotateY(still ? 0 : off.clamp(-1.5, 1.5) * 0.35);
-                  return Opacity(
-                    opacity: 1 - 0.4 * a,
-                    child: Transform(
-                      alignment: Alignment.center,
-                      transform: m,
-                      child: Transform.scale(scale: 1 - 0.14 * a, child: child),
-                    ),
-                  );
-                },
-                child: _TileCard(
-                  index: page % n,
-                  tile: tile,
-                  t: t,
-                  onTap: () {
-                    if (page != _current) {
-                      unawaited(
-                        _pages.animateToPage(
-                          page,
-                          duration: const Duration(milliseconds: 350),
-                          curve: Curves.easeOutCubic,
-                        ),
-                      );
-                    } else {
-                      tile.open(context);
-                    }
-                  },
-                ),
-              );
-            },
-          ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            for (int i = 0; i < 8; i++)
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                margin: const EdgeInsets.symmetric(horizontal: 2.5),
-                width: i == dot ? 18 : 5,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: i == dot ? NomadColors.mint : const Color(0xFF243540),
-                  borderRadius: BorderRadius.circular(9),
-                ),
-              ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _TileCard extends StatelessWidget {
-  const _TileCard({
-    required this.index,
-    required this.tile,
-    required this.t,
-    required this.onTap,
-  });
-
-  final int index;
-  final _Tile tile;
-  final AppLocalizations t;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final String title = tile.title(t);
-    final String sub = tile.sub(t);
-    return Semantics(
-      button: true,
-      label: '$title. $sub',
-      excludeSemantics: true,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 12),
-        child: Material(
-          clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-            side: BorderSide(color: tile.color.withValues(alpha: 0.35)),
-          ),
-          color: const Color(0xFF0F1A22),
-          child: InkWell(
-            onTap: onTap,
-            child: Stack(
-              fit: StackFit.expand,
-              children: <Widget>[
-                if (tile.photo)
-                  Image.asset(
-                    'assets/inicio/foto-$index.webp',
-                    fit: BoxFit.cover,
-                    excludeFromSemantics: true,
-                    errorBuilder: (BuildContext c, Object e, StackTrace? s) =>
-                        const SizedBox.shrink(),
-                  )
-                else
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        center: Alignment.topLeft,
-                        radius: 1.3,
-                        colors: <Color>[
-                          tile.color.withValues(alpha: 0.45),
-                          const Color(0xFF0F1A22),
-                        ],
-                      ),
-                    ),
-                  ),
-                // Oscurece abajo para que el texto se lea sobre la foto.
-                const DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: <Color>[
-                        Color(0x330B1217),
-                        Color(0x000B1217),
-                        Color(0xE60B1217),
-                      ],
-                      stops: <double>[0, 0.3, 1],
-                    ),
-                  ),
-                ),
-                PositionedDirectional(
-                  top: 14,
-                  start: 14,
-                  child: Image.asset(
-                    'assets/inicio/icono-$index.webp',
-                    width: 64,
-                    height: 64,
-                    excludeFromSemantics: true,
-                    errorBuilder: (BuildContext c, Object e, StackTrace? s) =>
-                        const SizedBox.shrink(),
-                  ),
-                ),
-                PositionedDirectional(
-                  start: 18,
-                  end: 18,
-                  bottom: 16,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          height: 1.05,
-                          shadows: <Shadow>[
-                            Shadow(color: Color(0xAA000000), blurRadius: 8),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        sub,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFFD6E2DE),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+    final Map<String, Object?> data = _data(AppLocalizations.of(context));
+    final String push = homePushScript(data);
+    if (_html == null) {
+      _html = homePageWith(page, data);
+      _sent = push;
+    } else if (push != _sent) {
+      _sent = push;
+      unawaited(_bridge.run(push));
+    }
+    final String html = _html!;
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B1217),
+      body: SafeArea(
+        bottom: false,
+        child:
+            _services.webScene?.call(html, _onMessage) ??
+            WebScene(html: html, onMessage: _onMessage, bridge: _bridge),
       ),
     );
   }
@@ -1073,44 +518,4 @@ String? displayName(String? email) {
       .first;
   if (local.isEmpty) return null;
   return local[0].toUpperCase() + local.substring(1);
-}
-
-class _Shortcut extends StatelessWidget {
-  const _Shortcut({
-    required this.icon,
-    required this.color,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final Color color;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Icon(icon, color: color, size: 28),
-              const SizedBox(height: 20),
-              Text(
-                label,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

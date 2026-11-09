@@ -1,11 +1,17 @@
 // Tests de pantallas: comprueban lo que VE el usuario, como si tocara el móvil.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:eclipta/features/home/home_screen.dart';
+import 'package:eclipta/features/vault/vault_screen.dart';
+import 'package:eclipta/features/flights/flights_screen.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/auth/google_id_token.dart';
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/settings/language_screen.dart';
+import 'package:eclipta/l10n/generated/app_localizations.dart';
 
+import 'money_test.dart' as m;
 import 'helpers.dart';
 
 /// La Bienvenida solo se ve sin sesión.
@@ -95,13 +101,13 @@ void main() {
     await tester.ensureVisible(find.text('Entrar como invitado'));
     await tester.tap(find.text('Entrar como invitado'));
     await tester.pumpAndSettle();
-    expect(find.text('ECLIPTA'), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
 
     await tester.tap(find.text('Vuelos'));
     await tester.pumpAndSettle();
     // Vuelos ya existe y un invitado también entra (ve los precios reales;
     // ver flights_test.dart).
-    expect(find.text('Cazador de vuelos'), findsOneWidget);
+    expect(find.byType(FlightsScreen), findsOneWidget);
 
     await tester.tap(find.byTooltip('Cámara'));
     await tester.pumpAndSettle();
@@ -111,67 +117,96 @@ void main() {
       findsOneWidget,
     );
 
+    // La cámara va a pantalla completa: la X vuelve a donde estabas.
+    await tester.tap(find.byTooltip('Cerrar la cámara'));
+    await tester.pumpAndSettle();
+    expect(find.byType(FlightsScreen), findsOneWidget);
     await tester.tap(find.text('Inicio'));
     await tester.pumpAndSettle();
-    expect(find.text('ECLIPTA'), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
   });
 
   testWidgets('los atajos abren su pantalla con flecha atrás', (
     WidgetTester tester,
   ) async {
-    await pumpApp(tester, locale: 'es', initialLocation: Routes.home);
-    // La Bóveda está en el carrusel: se desliza hasta ella, se centra con
-    // un toque y otro toque la abre.
-    await tester.scrollUntilVisible(
-      find.byType(PageView),
-      300,
-      scrollable: find.byType(Scrollable).first,
+    final SessionController guest = newSession()..continueAsGuest();
+    final m.PageSpy spy = m.PageSpy();
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: guest,
+      initialLocation: Routes.home,
+      services: fakeServices(guest, webScene: spy.build),
     );
-    await tester.dragUntilVisible(
-      find.text('Bóveda'),
-      find.byType(PageView),
-      const Offset(-250, 0),
-    );
+    // La Bóveda es el cuadrado 8 del carrusel de Inicio (una página web).
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    spy.send!('tile:7');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Bóveda'));
+    // La Bóveda es la maqueta (sin barra de arriba): se vuelve con el
+    // botón "atrás" del móvil.
+    expect(find.byType(VaultScreen), findsOneWidget);
+    await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
-    if (find.text('Bóveda').evaluate().isNotEmpty) {
-      await tester.tap(find.text('Bóveda'));
-    }
-    await tester.pumpAndSettle();
-    expect(find.text('Toca para abrir con tu huella'), findsOneWidget);
-    await tester.tap(find.byType(BackButton));
-    await tester.pumpAndSettle();
-    // De vuelta en Inicio (por donde estaba: el carrusel).
-    expect(find.byType(PageView), findsOneWidget);
+    // De vuelta en Inicio.
+    expect(find.byType(VaultScreen), findsNothing);
+    expect(find.byType(HomeScreen), findsOneWidget);
   });
 
   testWidgets('una dirección inventada no rompe la app', (
     WidgetTester tester,
   ) async {
     await pumpApp(tester, locale: 'es', initialLocation: '/soon/nada');
-    expect(find.text('ECLIPTA'), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
   });
 
   testWidgets('cambiar de idioma cambia toda la app y se recuerda', (
     WidgetTester tester,
   ) async {
     setDeviceLocale(tester, 'es');
+    final m.PageSpy spy = m.PageSpy();
+    final SessionController session = newSession()..continueAsGuest();
+    final MemorySettingsStore prefs = MemorySettingsStore();
     final SettingsController settings = await pumpApp(
       tester,
       initialLocation: Routes.language,
+      session: session,
+      services: fakeServices(session, prefs: prefs, webScene: spy.build),
     );
-    await tester.enterText(find.byType(TextField), 'deut');
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Deutsch'));
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    Map<String, Object?> data() =>
+        spy.data(LanguageScreen.lastBridge!, title: 'ECLIPTA · Idioma');
+    final List<Object?> langs = data()['langs']! as List<Object?>;
+    // "El del móvil" primero y luego los 25 idiomas de la app.
+    expect(langs, hasLength(AppLocalizations.supportedLocales.length + 1));
+    final Map<String, Object?> de =
+        langs.firstWhere(
+              (Object? l) => (l! as Map<String, Object?>)['code'] == 'de',
+            )!
+            as Map<String, Object?>;
+    expect(de['native'], 'Deutsch');
+    expect(de['sub'], 'Alemán');
+    expect((de['pv']! as Map<String, Object?>)['btn'], 'Flüge');
+    expect(data()['sel'], 'system');
+
+    spy.send!('lang:de');
     await tester.pumpAndSettle();
     expect(settings.locale, const Locale('de'));
-    expect(find.text('Sprache'), findsOneWidget); // el título ya está en alemán
+    expect(data()['title'], 'Sprache'); // el título ya está en alemán
+    expect(data()['sel'], 'de');
 
-    await tester.enterText(find.byType(TextField), 'zzz');
+    // Apagar "Flyra y las audioguías también en este idioma": se quedan en
+    // alemán aunque la app cambie.
+    spy.send!('ai:0');
     await tester.pumpAndSettle();
-    expect(find.textContaining('zzz'), findsWidgets);
-    expect(find.byType(RadioListTile<String?>), findsNothing);
+    expect(prefs.readData(LocalData.contentLang), 'de');
+    expect(data()['ai'], isFalse);
+    spy.send!('ai:1');
+    await tester.pumpAndSettle();
+    expect(prefs.readData(LocalData.contentLang), isNull);
+
+    spy.send!('lang:system');
+    await tester.pumpAndSettle();
+    expect(settings.locale, isNull);
   });
 
   test('un idioma guardado se recupera al abrir la app', () async {

@@ -7,11 +7,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/home/home_screen.dart';
 import 'package:eclipta/features/home/my_passport.dart';
 import 'package:eclipta/features/vault/doc_source.dart';
 import 'package:eclipta/features/visa/mrz.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 
 /// Pone el dígito de control al final de [s].
 String withCheck(String s) => '$s${mrzCheckDigit(s)}';
@@ -98,6 +100,7 @@ void main() {
       passportMrz(),
       idMrz(),
     ]);
+    final m.PageSpy spy = m.PageSpy();
     final session = newSession()..continueAsGuest();
     tester.view.physicalSize = const Size(1200, 3000);
     tester.view.devicePixelRatio = 3;
@@ -112,19 +115,16 @@ void main() {
         prefs: prefs,
         docSource: cam,
         docReader: reader,
+        webScene: spy.build,
       ),
     );
-    await tester.pumpAndSettle();
-    await tester.scrollUntilVisible(
-      find.text('Toca para escanear pasaporte y DNI'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Sin añadir · escanea tu pasaporte'), findsOneWidget);
-    // Sin foto de perfil: el hueco invita a ponerla (no un icono de persona).
-    expect(find.text('Añadir foto'), findsOneWidget);
-    await tester.tap(find.text('Toca para escanear pasaporte y DNI'));
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    Map<String, Object?> pass() =>
+        spy.data(HomeScreen.lastBridge!)['pass']! as Map<String, Object?>;
+    expect(pass()['done'], isFalse);
+    expect(pass()['cta'], 'Toca para escanear pasaporte y DNI');
+    // Tocar el pasaporte de la página abre la cámara.
+    spy.send!('scan');
     await tester.pumpAndSettle();
     expect(find.text('Foto 1 de 2 · Pasaporte'), findsOneWidget);
 
@@ -157,13 +157,16 @@ void main() {
     await tester.tap(find.text('Listo'));
     await tester.pumpAndSettle();
 
-    // La tarjeta, rellena. El número entero no está guardado en ningún sitio.
-    expect(find.text('Pasaporte y DNI añadidos'), findsOneWidget);
-    expect(find.text('EJEMPLO'), findsOneWidget);
-    expect(find.text('LUNA'), findsOneWidget);
-    expect(find.text('••••••916'), findsOneWidget);
-    expect(find.text('••••••78Z'), findsOneWidget);
-    expect(find.text('02 SEPT 2031'), findsOneWidget);
+    // La tarjeta de la página, rellena. El número entero no está guardado
+    // en ningún sitio.
+    await spy.wait(tester, () => pass()['done'] == true);
+    expect(pass()['cta'], 'Pasaporte y DNI añadidos');
+    expect(pass()['ape'], 'EJEMPLO');
+    expect(pass()['nom'], 'LUNA');
+    expect(pass()['num'], '••••••916');
+    expect(pass()['dni'], '••••••78Z');
+    expect(pass()['exp'], '02 SEPT 2031');
+    expect(pass()['val'], '10 JUN 2032');
     final String saved = prefs.readData(LocalData.myDocs)!;
     expect(saved, isNot(contains('XDE482916')));
     expect(saved, isNot(contains('12345678Z')));

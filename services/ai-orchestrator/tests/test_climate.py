@@ -119,3 +119,34 @@ async def test_api_degrades_when_nasa_fails(status: int) -> None:
         resp = await client.get("/v1/climate", params={"lat": 1, "lon": 1})
     assert resp.status_code == 503
     assert resp.headers["Retry-After"] == "60"
+
+
+async def test_countries_fill_in_the_background_then_come_from_cache() -> None:
+    fake = FakeNasa()
+    svc, _ = service(fake)
+    points = (("ES", 40.2, -3.6), ("JP", 36.2, 138.2))
+    found, complete = await svc.countries(points)
+    # La primera vez no hay nada: se piden en segundo plano.
+    assert (found, complete) == ({}, False)
+    assert svc._filler is not None
+    await svc._filler
+    found, complete = await svc.countries(points)
+    assert complete and set(found) == {"ES", "JP"}
+    assert len(fake.requests) == 2
+
+
+async def test_country_climate_api_lists_temp_and_rain() -> None:
+    fake = FakeNasa()
+    svc, _ = service(fake)
+    async with api(svc) as client:
+        first = (await client.get("/v1/climate/countries")).json()
+        assert first["complete"] is False
+        assert svc._filler is not None
+        svc._filler.cancel()
+        await svc.at(40.9, -4.0)  # España ya en la caché
+        resp = await client.get("/v1/climate/countries")
+    body = resp.json()
+    assert resp.headers["Cache-Control"] == "no-store"
+    assert body["countries"]["ES"][0] == [5.0, 62.0]
+    assert len(body["countries"]["ES"]) == 12
+    assert "NASA" in body["attribution"]

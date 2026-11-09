@@ -74,4 +74,58 @@ class ClimateApi {
       for (final Object? item in items) ?MonthClimate.parse(item),
     ];
   }
+
+  /// El clima de cada país (código ISO → 12 meses de [temperatura, lluvia]),
+  /// para Explorar. [complete] = false si el servidor aún los está pidiendo.
+  Future<CountryClimate> countries() async {
+    final Object? json = await _api.getJson(
+      '/v1/climate/countries',
+      public: true,
+    );
+    return CountryClimate.parse(json);
+  }
+}
+
+/// El clima de todos los países que tiene el servidor (ver [ClimateApi]).
+class CountryClimate {
+  const CountryClimate({required this.byCountry, required this.complete});
+
+  /// "ES" → [[temperatura, lluvia], ...] de enero a diciembre.
+  final Map<String, List<List<double>>> byCountry;
+  final bool complete;
+
+  static CountryClimate parse(Object? json) {
+    final Map<String, List<List<double>>> out = <String, List<List<double>>>{};
+    if (json is! Map<String, Object?>) {
+      return const CountryClimate(
+        byCountry: <String, List<List<double>>>{},
+        complete: false,
+      );
+    }
+    final Object? countries = json['countries'];
+    if (countries is Map<String, Object?>) {
+      for (final MapEntry<String, Object?> e in countries.entries) {
+        final Object? months = e.value;
+        if (!RegExp(r'^[A-Z]{2}$').hasMatch(e.key) ||
+            months is! List<Object?> ||
+            months.length != 12) {
+          continue;
+        }
+        final List<List<double>> rows = <List<double>>[];
+        for (final Object? m in months) {
+          if (m is List<Object?> &&
+              m.length == 2 &&
+              m[0] is num &&
+              m[1] is num) {
+            rows.add(<double>[
+              (m[0]! as num).toDouble(),
+              (m[1]! as num).toDouble(),
+            ]);
+          }
+        }
+        if (rows.length == 12) out[e.key] = rows;
+      }
+    }
+    return CountryClimate(byCountry: out, complete: json['complete'] == true);
+  }
 }

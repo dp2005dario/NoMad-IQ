@@ -13,7 +13,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 from collections.abc import AsyncIterator
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 
 import asyncpg
 import pytest
@@ -27,6 +27,8 @@ from ai_orchestrator.expenses.store import (
     NotAllowedError,
     PostgresExpenses,
 )
+from ai_orchestrator.negotiation.domain import GroupOption
+from ai_orchestrator.negotiation.store import NewNegotiation, PostgresNegotiations
 from ai_orchestrator.store import create_pool, migrate
 
 pytestmark = pytest.mark.integration
@@ -168,3 +170,35 @@ async def test_erase_my_data(pool: asyncpg.Pool[asyncpg.Record]) -> None:
     # Repetir no rompe nada.
     again = await PostgresEraser(pool).erase(alex)
     assert again.groups_deleted == again.seats_anonymized == 0
+
+
+async def test_trip_group_is_shared_by_the_trip(pool: asyncpg.Pool[asyncpg.Record]) -> None:
+    """Grupo: el viaje tiene UN bote; el primero lo crea y los demás entran solos."""
+    alex, bea, eve = person(), person(), person()
+    trip = await PostgresNegotiations(pool, requests_topic="ai.group-negotiation-requests.v1").create(
+        NewNegotiation(
+            organizer_id=alex,
+            title="Lisboa con amigos",
+            currency="EUR",
+            language="es",
+            options=(GroupOption(option_id="lisboa", label="Lisboa", price_minor=30000),),
+            member_ids=(alex, bea),
+            max_rounds=3,
+            deadline=datetime.now(UTC) + timedelta(hours=24),
+        )
+    )
+    store = PostgresExpenses(pool)
+    nid = trip.negotiation_id
+    # Los dos lo abren a la vez: un solo bote, con los dos dentro.
+    first, second = await asyncio.gather(store.for_trip(nid, alex), store.for_trip(nid, bea))
+    assert first.group_id == second.group_id
+    again = await store.for_trip(nid, alex)
+    assert again.group_id == first.group_id
+    assert again.title == "Lisboa con amigos"
+    assert again.currency == "EUR"
+    assert sorted(m.user_id for m in again.members) == sorted([alex, bea])
+    # Quien no es del viaje no lo ve.
+    with pytest.raises(GroupNotFoundError):
+        await store.for_trip(nid, eve)
+    with pytest.raises(GroupNotFoundError):
+        await store.for_trip(str(uuid.uuid4()), alex)

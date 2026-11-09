@@ -1,16 +1,20 @@
-// Recuerdos (maqueta "Recuerdos"): tus fotos y vídeos del viaje y la
+// Recuerdos (maqueta "Recuerdos"): la maqueta tal cual
+// (assets/memories/recuerdos.html) con tus fotos y vídeos del viaje y la
 // "historia" que se monta sola: portada con la ruta y las fechas, hasta 6
 // fotos con "DÍA N · CIUDAD" y al final las cifras (días, ciudades, fotos,
-// sellos nuevos).
+// sellos nuevos). Debajo, todos tus recuerdos.
 //
-// La historia se reproduce DENTRO de la app (como las historias de
-// Instagram). Para compartirla se mandan las fotos y un texto resumen por el
-// menú del móvil: montar un vídeo en el móvil necesitaría un codificador
-// pesado (decenas de MB más en la app), y así sale gratis y rápido.
+// El vídeo lo graba la propia página (dibuja la historia en un lienzo y el
+// móvil lo graba, sin servidor y gratis). Si el móvil no sabe grabar, se
+// comparten las fotos y un texto resumen. Tocar la historia la abre a
+// pantalla completa (StoryPlayer, abajo).
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -19,7 +23,9 @@ import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../camera/stamps.dart';
+import '../route/web_scene.dart';
 import 'memories.dart';
+import 'memories_page.dart';
 
 /// Los tres estilos de la maqueta. Cambia cuánto dura cada diapositiva y cómo
 /// se dibuja el pie de foto.
@@ -64,8 +70,38 @@ class StoryData {
   final DateTime start;
 }
 
+/// Hace la imagen de una foto para la página, [width] píxeles de ancho
+/// (null si no se puede abrir).
+typedef MemoryPicture = Future<String?> Function(Uint8List bytes, int width);
+
+/// La de verdad: la foto pequeña, como PNG dentro del texto de la página.
+Future<String?> memoryImage(Uint8List bytes, int width) async {
+  try {
+    final ui.Codec codec = await ui.instantiateImageCodec(
+      bytes,
+      targetWidth: width,
+    );
+    final ui.FrameInfo frame = await codec.getNextFrame();
+    final ByteData? png = await frame.image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
+    frame.image.dispose();
+    codec.dispose();
+    if (png == null) return null;
+    return 'data:image/png;base64,${base64Encode(png.buffer.asUint8List())}';
+  } on Object {
+    // Una foto que no se puede abrir se queda sin imagen.
+    return null;
+  }
+}
+
 class MemoriesScreen extends StatefulWidget {
-  const MemoriesScreen({super.key});
+  const MemoriesScreen({super.key, this.image = memoryImage});
+
+  final MemoryPicture image;
+
+  /// La última conexión con la página (para las pruebas).
+  static WebSceneBridge? lastBridge;
 
   @override
   State<MemoriesScreen> createState() => _MemoriesScreenState();
@@ -73,15 +109,37 @@ class MemoriesScreen extends StatefulWidget {
 
 class _MemoriesScreenState extends State<MemoriesScreen> {
   late final AppServices _services = ServicesScope.of(context);
+  final WebSceneBridge _bridge = MemoriesScreen.lastBridge = WebSceneBridge();
+
+  // La página se lee una vez y se guarda (como String, no como Future).
+  static String? _pageCache;
+  String? _html;
+  Map<String, Object?> _shown = <String, Object?>{};
+
   List<Memory> _items = <Memory>[];
   Map<String, String> _paths = <String, String>{};
   DateTime _start = DateTime.now();
   StoryStyle _style = StoryStyle.cinema;
 
+  /// Las fotos ya hechas para la página: miniaturas (cuadrícula) y grandes
+  /// (historia), por nombre de archivo.
+  final Map<String, String> _thumbs = <String, String>{};
+  final Map<String, String> _big = <String, String>{};
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_load()));
+    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_open()));
+  }
+
+  Future<void> _open() async {
+    try {
+      _pageCache ??= await rootBundle.loadString(memoriesPage, cache: false);
+    } on Object {
+      return;
+    }
+    if (mounted) setState(() {});
+    await _load();
   }
 
   Future<void> _load() async {
@@ -96,6 +154,34 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       _paths = paths;
       _start = _services.memories.tripStart(DateTime.now());
     });
+    await _images();
+  }
+
+  /// Hace las fotos que faltan: pequeñas para la cuadrícula y algo más
+  /// grandes para las de la historia.
+  Future<void> _images() async {
+    final Set<String> story = <String>{
+      for (final Memory m in storyPhotos(_items, _start)) m.file,
+    };
+    bool changed = false;
+    for (final Memory m in _items) {
+      if (m.kind != MemoryKind.photo) continue;
+      final bool needThumb = !_thumbs.containsKey(m.file);
+      final bool needBig = story.contains(m.file) && !_big.containsKey(m.file);
+      if (!needThumb && !needBig) continue;
+      final Uint8List? bytes = await _services.memoryFiles.read(m.file);
+      if (bytes == null) continue;
+      if (needThumb) {
+        final String? t = await widget.image(bytes, 200);
+        if (t != null) _thumbs[m.file] = t;
+      }
+      if (needBig) {
+        final String? b = await widget.image(bytes, 540);
+        if (b != null) _big[m.file] = b;
+      }
+      changed = true;
+    }
+    if (changed && mounted) setState(() {});
   }
 
   StoryData _story(AppLocalizations t, String locale) {
@@ -133,6 +219,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     await _load();
   }
 
+  /// Sin vídeo (el móvil no sabe grabarlo): las fotos y un texto resumen.
   Future<void> _shareStory(StoryData s) async {
     final AppLocalizations t = AppLocalizations.of(context);
     await _services.share(<String>[
@@ -141,7 +228,54 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     ], text: t.memShareText(s.title, s.stats.days, s.stats.media));
   }
 
-  Future<void> _open(Memory m) async {
+  /// Llega el vídeo que ha grabado la página: se guarda en tus Recuerdos
+  /// ("save") o se comparte ("share", "group").
+  Future<void> _video(String mode, String ext, String data) async {
+    final AppLocalizations t = AppLocalizations.of(context);
+    final StoryData s = _story(
+      t,
+      Localizations.localeOf(context).toLanguageTag(),
+    );
+    final Uint8List bytes;
+    try {
+      bytes = base64Decode(data);
+    } on FormatException {
+      return;
+    }
+    if (bytes.isEmpty || (ext != 'mp4' && ext != 'webm')) return;
+    if (mode == 'save') {
+      if (_items.length >= maxMemories) {
+        _say(t.memFull);
+        return;
+      }
+      final String name = 'story_${DateTime.now().microsecondsSinceEpoch}.$ext';
+      await _services.memoryFiles.write(name, bytes);
+      await _services.memories.add(
+        Memory(file: name, kind: MemoryKind.video, at: DateTime.now()),
+      );
+      _say(t.memSavedHint);
+      await _load();
+      return;
+    }
+    // Para compartir: un archivo que se reescribe cada vez (no es un
+    // recuerdo nuevo).
+    final String path = await _services.memoryFiles.write(
+      'story_share.$ext',
+      bytes,
+    );
+    await _services.share(<String>[
+      path,
+    ], text: t.memShareText(s.title, s.stats.days, s.stats.media));
+  }
+
+  void _say(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  Future<void> _openMemory(Memory m) async {
     final AppLocalizations t = AppLocalizations.of(context);
     final String? path = _paths[m.file];
     final String? choice = await showModalBottomSheet<String>(
@@ -187,174 +321,167 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       );
       if (sure != true) return;
       await _services.memories.remove(m);
+      _thumbs.remove(m.file);
+      _big.remove(m.file);
       await _load();
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
+  /// Lo que pide la página.
+  void _onMessage(String msg) {
     final AppLocalizations t = AppLocalizations.of(context);
-    final String locale = Localizations.localeOf(context).toLanguageTag();
-    final StoryData story = _story(t, locale);
-    return Scaffold(
-      appBar: AppBar(title: Text(t.memTitle)),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
+    final List<String> p = msg.split(':');
+    final StoryData s = _story(
+      t,
+      Localizations.localeOf(context).toLanguageTag(),
+    );
+    switch (p.first) {
+      case 'back':
+        if (context.canPop()) context.pop();
+      case 'style' when p.length > 1:
+        final int i = int.tryParse(p[1]) ?? 0;
+        setState(() => _style = StoryStyle.values[i.clamp(0, 2)]);
+      case 'full':
+        unawaited(
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              fullscreenDialog: true,
+              builder: (_) => StoryPlayer(story: s, style: _style),
+            ),
+          ),
+        );
+      case 'open' when p.length > 1:
+        final int i = int.tryParse(p[1]) ?? -1;
+        if (i >= 0 && i < _items.length) unawaited(_openMemory(_items[i]));
+      case 'camera':
+        unawaited(() async {
           await context.push(Routes.travelCamera);
           await _load();
-        },
-        icon: const Icon(Icons.photo_camera_rounded),
-        label: Text(t.memCameraTitle),
-      ),
-      body: CustomScrollView(
-        slivers: <Widget>[
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList.list(
-              children: <Widget>[
-                _StoryCard(
-                  story: story,
-                  style: _style,
-                  onStyle: (StoryStyle s) => setState(() => _style = s),
-                  onStart: () => unawaited(_pickStart()),
-                  onPlay: story.photos.isEmpty
-                      ? null
-                      : () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            fullscreenDialog: true,
-                            builder: (_) =>
-                                StoryPlayer(story: story, style: _style),
-                          ),
-                        ),
-                  onShare: story.photos.isEmpty
-                      ? null
-                      : () => unawaited(_shareStory(story)),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '${t.memTitle} · ${t.memCount(_items.length, maxMemories)}',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  t.memOnlyHere,
-                  style: const TextStyle(color: NomadColors.textMuted),
-                ),
-                const SizedBox(height: 12),
-                if (_items.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: Text(t.memEmpty, textAlign: TextAlign.center),
-                  ),
-              ],
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 96),
-            sliver: SliverGrid.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                mainAxisSpacing: 4,
-                crossAxisSpacing: 4,
-              ),
-              itemCount: _items.length,
-              itemBuilder: (BuildContext context, int i) {
-                final Memory m = _items[i];
-                return _Thumb(
-                  memory: m,
-                  path: _paths[m.file],
-                  onTap: () => unawaited(_open(m)),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
+        }());
+      case 'start':
+        unawaited(_pickStart());
+      case 'empty':
+        _say(t.memNoPhotos);
+      case 'novideo':
+        if (s.photos.isEmpty) {
+          _say(t.memNoPhotos);
+        } else if (p.length > 1 && p[1] == 'save') {
+          _say(
+            'Este móvil no sabe crear el vídeo. Puedes compartir las fotos.',
+          );
+        } else {
+          unawaited(_shareStory(s));
+        }
+      case 'video' when p.length > 3:
+        unawaited(_video(p[1], p[2], p[3]));
+    }
   }
-}
 
-class _StoryCard extends StatelessWidget {
-  const _StoryCard({
-    required this.story,
-    required this.style,
-    required this.onStyle,
-    required this.onStart,
-    required this.onPlay,
-    required this.onShare,
-  });
-
-  final StoryData story;
-  final StoryStyle style;
-  final ValueChanged<StoryStyle> onStyle;
-  final VoidCallback onStart;
-  final VoidCallback? onPlay;
-  final VoidCallback? onShare;
+  Map<String, Object?> _data(AppLocalizations t) {
+    final String locale = Localizations.localeOf(context).toLanguageTag();
+    final StoryData s = _story(t, locale);
+    final List<String> cities = s.stats.cities;
+    final DateFormat long = DateFormat.MMMMEEEEd(locale);
+    String part(DateTime at) => switch (dayPartOf(at)) {
+      DayPart.morning => t.memMorning,
+      DayPart.afternoon => t.memAfternoon,
+      DayPart.sunset => t.memSunset,
+      DayPart.night => t.memNight,
+    };
+    final List<Map<String, Object?>> shots = <Map<String, Object?>>[];
+    for (final Memory m in s.photos) {
+      final String? src = _big[m.file];
+      if (src == null) continue;
+      final DateTime at = m.at.toLocal();
+      shots.add(<String, Object?>{
+        'src': src,
+        'lbl': <String>[
+          t.memDayN(tripDay(s.start, at)),
+          if (m.city case final String c) c.toUpperCase(),
+        ].join(' · '),
+        'sub': '${long.format(at)} · ${part(at)}',
+        'color': storyCaptionColors[shots.length % storyCaptionColors.length],
+      });
+    }
+    return <String, Object?>{
+      'title': 'Tu viaje en 30 s',
+      'sub': s.photos.isEmpty ? t.memNoPhotos : t.memStoryHint,
+      'backTxt': MaterialLocalizations.of(context).backButtonTooltip,
+      'from': cities.isEmpty ? '' : cities.first,
+      'to': cities.length < 2 ? '' : cities.last,
+      'dates': s.dates.toUpperCase(),
+      'route': s.title,
+      'shots': shots,
+      'stats': <Object?>[
+        <String, Object?>{'v': '${s.stats.days}', 'k': t.memDays},
+        <String, Object?>{'v': '${s.stats.cities.length}', 'k': t.memCities},
+        <String, Object?>{'v': '${s.stats.media}', 'k': t.memMedia},
+        <String, Object?>{'v': '${s.stats.stamps}', 'k': t.memStamps},
+      ],
+      'names': <String>[
+        s.title,
+        for (final Map<String, Object?> shot in shots) '${shot['lbl']}',
+        t.memStamps,
+      ],
+      'sceneTxt': t.memStory,
+      'styles': <String>[
+        for (final StoryStyle st in StoryStyle.values) storyStyleLabel(t, st),
+      ],
+      'style': _style.index,
+      'durs': <int>[
+        for (final StoryStyle st in StoryStyle.values) st.slide.inMilliseconds,
+      ],
+      'pauseTxt': t.memPause,
+      'playTxt': t.memResume,
+      'stylesTxt': t.memStory,
+      'storyTxt': 'Crear historia',
+      'storySub': 'Allí le pones la música que quieras',
+      'makingTxt': 'Creando vídeo…',
+      'saveTxt': 'Guardar vídeo',
+      'groupTxt': 'Enviar al grupo',
+      'listH': '${t.memTitle} · ${t.memCount(_items.length, maxMemories)}',
+      'onlyHere': t.memOnlyHere,
+      'cameraTxt': t.memCameraTitle,
+      'startTxt': t.memTripStart(DateFormat.yMMMd(locale).format(s.start)),
+      'emptyTxt': t.memEmpty,
+      'grid': <Object?>[
+        for (final Memory m in _items)
+          <String, Object?>{
+            'thumb': _thumbs[m.file] ?? '',
+            'video': m.kind == MemoryKind.video,
+            'label': m.kind == MemoryKind.video ? t.memVideo : t.memPhoto,
+          },
+      ],
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final String locale = Localizations.localeOf(context).toLanguageTag();
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(t.memStory, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 4),
-            Text(
-              story.photos.isEmpty ? t.memNoPhotos : t.memStoryHint,
-              style: const TextStyle(color: NomadColors.textMuted),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              story.title,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-            ),
-            Text(story.dates),
-            const SizedBox(height: 12),
-            _Stats(stats: story.stats),
-            const SizedBox(height: 12),
-            ActionChip(
-              avatar: const Icon(Icons.event_rounded, size: 18),
-              label: Text(
-                t.memTripStart(DateFormat.yMMMd(locale).format(story.start)),
-              ),
-              onPressed: onStart,
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: <Widget>[
-                for (final StoryStyle s in StoryStyle.values)
-                  ChoiceChip(
-                    selected: s == style,
-                    label: Text(storyStyleLabel(t, s)),
-                    onSelected: (_) => onStyle(s),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: onPlay,
-                    icon: const Icon(Icons.play_arrow_rounded),
-                    label: Text(t.memPlay),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton.outlined(
-                  tooltip: t.memShareStory,
-                  onPressed: onShare,
-                  icon: const Icon(Icons.ios_share_rounded),
-                ),
-              ],
-            ),
-          ],
-        ),
+    final String? page = _pageCache;
+    if (page == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0B1217),
+        body: SizedBox.expand(),
+      );
+    }
+    final Map<String, Object?> data = _data(AppLocalizations.of(context));
+    if (_html == null) {
+      _html = memoriesPageWith(page, data);
+    } else {
+      // Solo lo que ha cambiado: las fotos no se mandan otra vez.
+      final Map<String, Object?> diff = changedKeys(_shown, data);
+      if (diff.isNotEmpty) unawaited(_bridge.run(memoriesPushScript(diff)));
+    }
+    _shown = data;
+    final String html = _html!;
+    final AppServices services = ServicesScope.of(context);
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B1217),
+      body: SafeArea(
+        bottom: false,
+        child:
+            services.webScene?.call(html, _onMessage) ??
+            WebScene(html: html, onMessage: _onMessage, bridge: _bridge),
       ),
     );
   }
@@ -399,51 +526,6 @@ class _Stats extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-class _Thumb extends StatelessWidget {
-  const _Thumb({required this.memory, required this.path, required this.onTap});
-
-  final Memory memory;
-  final String? path;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final String? p = path;
-    final bool video = memory.kind == MemoryKind.video;
-    return Semantics(
-      button: true,
-      label: video ? t.memVideo : t.memPhoto,
-      child: InkWell(
-        onTap: onTap,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Stack(
-            fit: StackFit.expand,
-            children: <Widget>[
-              if (!video && p != null)
-                Image.file(
-                  File(p),
-                  fit: BoxFit.cover,
-                  // Miniatura pequeña: no carga la foto entera en memoria.
-                  cacheWidth: 240,
-                  errorBuilder: (_, _, _) =>
-                      const ColoredBox(color: NomadColors.surfaceHigh),
-                )
-              else
-                const ColoredBox(color: NomadColors.surfaceHigh),
-              if (video)
-                const Center(
-                  child: Icon(Icons.play_circle_fill_rounded, size: 36),
-                ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

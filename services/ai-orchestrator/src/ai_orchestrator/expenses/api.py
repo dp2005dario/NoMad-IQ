@@ -2,6 +2,8 @@
 
     POST /v1/expense-groups                          crear un bote (te da el código)
     POST /v1/expense-groups/join                     entrar con el código de un amigo
+    POST /v1/expense-groups/trip                     el bote de tu viaje en grupo (se crea o
+                                                     entras solo: sin código)
     GET  /v1/expense-groups                          mis botes, con mi saldo
     GET  /v1/expense-groups/{id}                     todo: gastos, pagos, saldos y quién paga a quién
     POST /v1/expense-groups/{id}/expenses            apuntar un gasto (a partes iguales o por platos)
@@ -23,13 +25,23 @@ from __future__ import annotations
 
 import uuid
 from datetime import date, datetime
-from typing import Annotated, Self
+from typing import Annotated, Literal, Self
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Response
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
 from ai_orchestrator.domain import CurrencyCode
-from ai_orchestrator.expenses.domain import KITTY, MAX_ITEMS, Item, Split, balances, kitty, settle, shares
+from ai_orchestrator.expenses.domain import (
+    KITTY,
+    MAX_ITEMS,
+    Item,
+    Split,
+    balances,
+    kitty,
+    settle,
+    shares,
+    with_extras,
+)
 from ai_orchestrator.expenses.store import (
     ExpenseNotFoundError,
     ExpenseRecord,
@@ -40,6 +52,7 @@ from ai_orchestrator.expenses.store import (
     NewExpense,
     NotAllowedError,
     PaymentRecord,
+    Rework,
     TooManyExpensesError,
 )
 from ai_orchestrator.identity import Principal, current_principal
@@ -73,6 +86,12 @@ class CreateGroup(BaseModel):
     my_name: Name
 
 
+class TripGroup(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    trip_id: uuid.UUID
+
+
 class JoinGroup(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -102,6 +121,11 @@ class CreateExpense(BaseModel):
     spent_on: date
     original_minor: Minor | None = None
     original_currency: CurrencyCode | None = None
+    # Extras del ticket (pantalla Gastos). amount_minor es lo que dice el
+    # ticket (ya con el cubierto y el descuento); la propina va encima.
+    cover_minor: int = Field(default=0, ge=0, le=MAX_MINOR)
+    discount_minor: int = Field(default=0, ge=0, le=MAX_MINOR)
+    tip_pct: Literal[0, 5, 10] = 0
 
     @model_validator(mode="after")
     def _check(self) -> Self:
@@ -110,6 +134,18 @@ class CreateExpense(BaseModel):
         if len(set(self.participants)) != len(self.participants):
             raise ValueError("participantes repetidos")
         return self
+
+
+class ReworkIn(BaseModel):
+    """Cambiar cómo se reparte un gasto: modo, quién tomó cada línea y extras."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    split: Literal["equal", "items"]
+    owners: list[list[Seat]] | None = Field(default=None, max_length=MAX_ITEMS)
+    cover_minor: int = Field(default=0, ge=0, le=MAX_MINOR)
+    discount_minor: int = Field(default=0, ge=0, le=MAX_MINOR)
+    tip_pct: Literal[0, 5, 10] = 0
 
 
 class Claim(BaseModel):
@@ -181,6 +217,10 @@ class ExpenseView(BaseModel):
     original_minor: int | None
     original_currency: str | None
     weights: list[int]
+    cover_minor: int
+    discount_minor: int
+    tip_pct: int
+    tip_minor: int
 
     @classmethod
     def of(cls, e: ExpenseRecord) -> ExpenseView:
@@ -202,6 +242,10 @@ class ExpenseView(BaseModel):
             original_minor=e.original_minor,
             original_currency=e.original_currency,
             weights=list(e.weights),
+            cover_minor=e.cover_minor,
+            discount_minor=e.discount_minor,
+            tip_pct=e.tip_pct,
+            tip_minor=e.tip_minor,
         )
 
 
@@ -354,6 +398,18 @@ def expense_router(store: ExpenseStore) -> APIRouter:
             raise HTTPException(status_code=409, detail="el bote está lleno (20 personas)") from exc
         return GroupView.of(record, principal.user_id)
 
+    @router.post("/trip", response_model=GroupView)
+    async def trip_group(
+        principal: Annotated[Principal, Depends(current_principal)], body: TripGroup
+    ) -> GroupView:
+        try:
+            record = await store.for_trip(str(body.trip_id), principal.user_id)
+        except GroupNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="viaje no encontrado") from exc
+        except GroupFullError as exc:
+            raise HTTPException(status_code=409, detail="el bote está lleno (20 personas)") from exc
+        return GroupView.of(record, principal.user_id)
+
     @router.get("", response_model=GroupList)
     async def list_groups(principal: Annotated[Principal, Depends(current_principal)]) -> GroupList:
         out: list[GroupSummary] = []
@@ -382,9 +438,18 @@ def expense_router(store: ExpenseStore) -> APIRouter:
     async def add_expense(
         principal: Annotated[Principal, Depends(current_principal)], group_id: GroupId, body: CreateExpense
     ) -> ExpenseView:
+        try:
+            amount, tip = with_extras(
+                body.amount_minor - body.cover_minor + body.discount_minor,
+                body.cover_minor,
+                body.discount_minor,
+                body.tip_pct,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         new = NewExpense(
             title=body.title,
-            amount_minor=body.amount_minor,
+            amount_minor=amount,
             payer_seat=body.payer_seat,
             split=body.split,
             participants=tuple(body.participants),
@@ -395,6 +460,10 @@ def expense_router(store: ExpenseStore) -> APIRouter:
             original_minor=body.original_minor,
             original_currency=body.original_currency,
             weights=tuple(body.weights),
+            cover_minor=body.cover_minor,
+            discount_minor=body.discount_minor,
+            tip_pct=body.tip_pct,
+            tip_minor=tip,
         )
         try:
             return ExpenseView.of(await store.add_expense(str(group_id), principal.user_id, new))
@@ -419,6 +488,30 @@ def expense_router(store: ExpenseStore) -> APIRouter:
             raise HTTPException(status_code=404, detail="gasto no encontrado") from exc
         except NotAllowedError as exc:
             raise HTTPException(status_code=403, detail=str(exc)) from exc
+        return ExpenseView.of(record)
+
+    @router.put("/{group_id}/expenses/{expense_id}/split", response_model=ExpenseView)
+    async def rework_expense(
+        principal: Annotated[Principal, Depends(current_principal)],
+        group_id: GroupId,
+        expense_id: Annotated[uuid.UUID, Path()],
+        body: ReworkIn,
+    ) -> ExpenseView:
+        change = Rework(
+            split=body.split,
+            owners=None if body.owners is None else tuple(tuple(o) for o in body.owners),
+            cover_minor=body.cover_minor,
+            discount_minor=body.discount_minor,
+            tip_pct=body.tip_pct,
+        )
+        try:
+            record = await store.rework(str(group_id), str(expense_id), principal.user_id, change)
+        except (GroupNotFoundError, ExpenseNotFoundError) as exc:
+            raise HTTPException(status_code=404, detail="gasto no encontrado") from exc
+        except NotAllowedError as exc:
+            raise HTTPException(status_code=403, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         return ExpenseView.of(record)
 
     @router.delete("/{group_id}/expenses/{expense_id}", status_code=204)

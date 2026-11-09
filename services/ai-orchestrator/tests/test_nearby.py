@@ -12,7 +12,7 @@ from conftest import InMemoryStore
 
 from ai_orchestrator.api import create_api
 from ai_orchestrator.nearby.domain import Nearby
-from ai_orchestrator.nearby.overpass import NearbyOverpass, build_query, parse_spot
+from ai_orchestrator.nearby.overpass import NearbyOverpass, build_query, parse_place, parse_spot
 from ai_orchestrator.nearby.service import NearbyService, NearbyUnavailableError
 from ai_orchestrator.places.wikimedia import RateLimiter
 
@@ -182,3 +182,28 @@ async def test_serves_stale_copy_when_overpass_fails() -> None:
     # Y si nunca se guardó esa casilla, sí hay error.
     with pytest.raises(NearbyUnavailableError):
         await svc.near(48.85, 2.35)
+
+
+def test_sight_types_and_place_names() -> None:
+    q = build_query(40.4, -3.71, 40.43, -3.69)
+    assert '["leisure"="park"]' in q and "place_of_worship" in q
+    assert "is_in(40.41500,-3.70000)" in q
+    view = parse_spot(node(21, tourism="viewpoint", name="Mirador", wikidata="Q1", fee="no"))
+    assert view is not None and (view.sub, view.fee) == ("viewpoint", False)
+    park = parse_spot(node(22, leisure="park", name="Retiro", wikidata="Q2"))
+    assert park is not None and (park.kind, park.sub) == ("sight", "park")
+    church = parse_spot(node(23, amenity="place_of_worship", name="San Isidro", wikidata="Q3"))
+    assert church is not None and church.sub == "worship"
+    # Un parque sin Wikidata no es "conocido": fuera.
+    assert parse_spot(node(24, leisure="park", name="Parquecito")) is None
+    city = parse_place(
+        {"type": "area", "id": 3_600_005_326, "tags": {"name": "Madrid", "admin_level": "8"}}, 40.4, -3.7
+    )
+    assert city is not None and (city.id, city.kind, city.name, city.sub) == ("r5326", "place", "Madrid", "8")
+    assert (
+        parse_place(
+            {"type": "area", "id": 3_600_000_001, "tags": {"name": "España", "admin_level": "2"}}, 0, 0
+        )
+        is None
+    )
+    assert parse_place(node(1, name="x"), 0, 0) is None

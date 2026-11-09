@@ -2,7 +2,8 @@
 //
 // Alguien comparte su viaje (título, destino, días y una lista de cosas con
 // su precio) y recibe un código de 8 letras. Con ese código cualquiera lo ve,
-// lo copia y le pide a Flyra que lo adapte a su presupuesto.
+// lo copia y le pide a Flyra que lo adapte a su presupuesto. Si marca
+// "Publicar en el muro", sale para todos en "Copia este viaje" con estrellas.
 import '../../core/api_client.dart';
 
 /// Qué tipo de cosa es cada línea (el mismo vocabulario que el servidor).
@@ -70,6 +71,12 @@ class SharedTrip {
     required this.lines,
     required this.copies,
     required this.mine,
+    this.createdAt,
+    this.note = '',
+    this.isPublic = false,
+    this.ratingAvg,
+    this.ratingCount = 0,
+    this.myRating,
   });
 
   final String code;
@@ -88,6 +95,20 @@ class SharedTrip {
   /// True si lo compartiste tú.
   final bool mine;
 
+  /// Cuándo se compartió (para el "hace 2 h" del muro).
+  final DateTime? createdAt;
+
+  /// Unas líneas que escribió quien lo comparte ("" si nada).
+  final String note;
+
+  /// ¿Sale en el muro de "Copia este viaje"?
+  final bool isPublic;
+
+  /// Estrellas: la media (null si nadie ha votado), cuántos votos y la tuya.
+  final double? ratingAvg;
+  final int ratingCount;
+  final int? myRating;
+
   int get totalMinor => linesTotal(lines);
 
   static SharedTrip parse(Object? json) {
@@ -101,6 +122,10 @@ class SharedTrip {
     final Object? days = json['days'];
     final Object? copies = json['copies'];
     final Object? items = json['items'];
+    final Object? avg = json['rating_avg'];
+    final Object? count = json['rating_count'];
+    final Object? my = json['my_rating'];
+    final Object? note = json['note'];
     if (days is! int || items is! List<Object?>) _bad();
     return SharedTrip(
       code: text('code'),
@@ -112,6 +137,12 @@ class SharedTrip {
       lines: <TripLine>[for (final Object? i in items) ?TripLine.parse(i)],
       copies: copies is int && copies >= 0 ? copies : 0,
       mine: json['mine'] == true,
+      createdAt: DateTime.tryParse('${json['created_at']}'),
+      note: note is String ? note : '',
+      isPublic: json['public'] == true,
+      ratingAvg: avg is num ? avg.toDouble() : null,
+      ratingCount: count is int && count >= 0 ? count : 0,
+      myRating: my is int && my >= 1 && my <= 5 ? my : null,
     );
   }
 }
@@ -201,6 +232,8 @@ class NewSharedTrip {
     required this.days,
     required this.currency,
     required this.lines,
+    this.isPublic = false,
+    this.note = '',
   });
 
   final String title;
@@ -210,6 +243,10 @@ class NewSharedTrip {
   final String currency;
   final List<TripLine> lines;
 
+  /// "Publicar en el muro": que lo vea cualquiera, no solo con el código.
+  final bool isPublic;
+  final String note;
+
   Map<String, Object?> toJson() => <String, Object?>{
     'title': title,
     'author': author,
@@ -217,6 +254,8 @@ class NewSharedTrip {
     'days': days,
     'currency': currency,
     'items': <Object?>[for (final TripLine l in lines) l.toJson()],
+    'public': isPublic,
+    if (note.isNotEmpty) 'note': note,
   };
 }
 
@@ -249,6 +288,19 @@ class SharedTripApi {
     if (items is! List<Object?>) _bad();
     return items.map(SharedTrip.parse).toList();
   }
+
+  /// El muro: los viajes que la gente ha publicado, del más nuevo.
+  Future<List<SharedTrip>> feed() async {
+    final Object? json = await _api.getJson('$_base/feed');
+    final Object? items = json is Map<String, Object?> ? json['items'] : null;
+    if (items is! List<Object?>) _bad();
+    return items.map(SharedTrip.parse).toList();
+  }
+
+  /// Tus estrellas (1-5) para un viaje. Votar otra vez cambia tu voto.
+  Future<SharedTrip> rate(String code, int stars) async => SharedTrip.parse(
+    await _api.postJson('$_base/$code/rate', <String, Object?>{'stars': stars}),
+  );
 
   Future<SharedTrip> get(String code) async =>
       SharedTrip.parse(await _api.getJson('$_base/$code'));

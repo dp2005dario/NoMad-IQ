@@ -1,7 +1,6 @@
 // Antes de salir: datos móviles, huella del vuelo y lista de la maleta.
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:eclipta/auth/session.dart';
@@ -9,12 +8,16 @@ import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/flights/climate_api.dart';
 import 'package:eclipta/features/route/geo.dart';
+import 'package:eclipta/features/easy/easy_mode.dart';
+import 'package:eclipta/features/trip/before_page.dart';
+import 'package:eclipta/features/trip/before_screen.dart';
 import 'package:eclipta/features/trip/before_trip.dart';
 import 'package:eclipta/features/trip/co2.dart';
 import 'package:eclipta/features/trip/plugs.dart';
 import 'package:eclipta/features/vault/vault.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 import 'vault_test.dart' show FakeUnlocker, newVault;
 
 const LatLon mad = LatLon(40.47, -3.56);
@@ -172,7 +175,18 @@ void main() {
     });
   });
 
-  testWidgets('pantalla: se pone el viaje y sale la lista con la Bóveda', (
+  test('reels: búsquedas de verdad en cada red', () {
+    final List<BeforeReel> r = reelsFor('Tokyo', 'Japón');
+    expect(r, hasLength(6));
+    expect(r.first.url.host, 'www.tiktok.com');
+    expect(r.first.url.queryParameters['q'], 'Tokyo de noche');
+    expect(r[1].url.path, '/explore/tags/Tokyo/');
+    expect(r[2].url.queryParameters['search_query'], contains('#shorts'));
+    expect(savedReels('roto'), isEmpty);
+    expect(savedReels('["a", 3]'), <String>{'a'});
+  });
+
+  testWidgets('pantalla: tu viaje, las tarjetas, la maleta y los reels', (
     WidgetTester tester,
   ) async {
     final FakeGateway g = FakeGateway();
@@ -190,69 +204,93 @@ void main() {
       expires: DateTime(2027, 1, 1),
     );
     vault.close();
-    tester.view.physicalSize = const Size(1200, 12000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
+    final MemorySettingsStore prefs = MemorySettingsStore('es');
+    await saveEasyTrip(
+      prefs,
+      EasyTrip(
+        from: 'MAD',
+        to: 'NRT',
+        departure: DateTime.now().add(const Duration(days: 9)),
+      ),
+    );
+    final List<Uri> opened = <Uri>[];
+    final m.PageSpy spy = m.PageSpy();
     await pumpApp(
       tester,
       locale: 'es',
       session: session,
       initialLocation: Routes.before,
-      services: fakeServices(session, gateway: g, vault: vault),
+      services: fakeServices(
+        session,
+        gateway: g,
+        vault: vault,
+        prefs: prefs,
+        webScene: spy.build,
+        openLink: (Uri u) async {
+          opened.add(u);
+          return true;
+        },
+      ),
     );
-    // Los aeropuertos de verdad (assets/geo) tardan un poco en cargarse.
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(seconds: 2)),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Antes de salir'), findsOneWidget);
-    expect(find.textContaining('Dinos a dónde vas'), findsOneWidget);
-
-    await tester.enterText(find.widgetWithText(TextField, 'Origen'), 'MAD');
-    await tester.enterText(find.widgetWithText(TextField, 'Destino'), 'NRT');
-    await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.event_rounded));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('ACEPTAR'));
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(seconds: 1)),
-    );
-    await tester.pumpAndSettle();
+    Map<String, Object?> d() => spy.data(BeforeTripScreen.lastBridge!);
+    // Los aeropuertos y los países de verdad (assets) tardan un poco.
+    await spy.wait(tester, () {
+      if (spy.pages.isEmpty) return false;
+      return (d()['facts']! as List<Object?>).length >= 5;
+    });
 
     // La Bóveda se abrió (además de la vez que la abrió el propio test).
     expect(unlocker.asked, 2);
-    expect(find.textContaining('Tokyo'), findsWidgets);
-    // Fuera de la UE: avisa de la eSIM, y pide adaptador para Japón.
-    expect(find.textContaining('eSIM'), findsWidgets);
-    expect(find.textContaining('Adaptador de enchufe'), findsOneWidget);
-    // "Japón en 30 segundos": las tarjetas con datos reales del país.
-    expect(find.text('JAPÓN EN 30 SEGUNDOS'), findsOneWidget);
-    expect(find.text('Tipo A/B · 100 V'), findsOneWidget);
-    // Detrás de la tarjeta (se da la vuelta al tocarla): qué comprar.
+    expect(d()['sub'], 'Japón · Tokyo · sales en 9 días');
+    expect(d()['heroK'], 'JAPÓN EN 30 SEGUNDOS');
+    expect(d()['torii'], isTrue);
+    final List<Map<String, Object?>> facts = (d()['facts']! as List<Object?>)
+        .cast<Map<String, Object?>>();
+    expect(facts.first['k'], 'ENCHUFE');
+    expect(facts.first['v'], 'Tipo A/B · 100 V');
+    expect(facts.first['more'], contains('Compra un adaptador'));
     expect(
-      find.textContaining('Compra un adaptador para enchufes tipo A, B'),
-      findsOneWidget,
+      facts.map((Map<String, Object?> f) => f['v']),
+      containsAll(<String>['Yen (¥ JPY)', 'La izquierda', 'Japonés']),
     );
-    expect(find.text('La izquierda'), findsOneWidget);
-    expect(find.text('¥ · Yen japonés'), findsOneWidget);
-    expect(find.text('Japonés'), findsOneWidget);
-    expect(find.text('Seguro de viaje'), findsOneWidget);
-    // Ya no está la huella de CO₂ (la maqueta no la lleva).
-    expect(find.textContaining('kg CO₂'), findsNothing);
-    // Los consejos de Flyra pasan con "Otro consejo →".
-    expect(find.textContaining('Elige tu pasaporte en Visado'), findsOneWidget);
-    await tester.tap(find.text('Otro consejo →'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Elige tu pasaporte en Visado'), findsNothing);
-    // Reels: botones a las apps oficiales.
-    expect(find.text('Reels de Japón'), findsOneWidget);
-    expect(find.text('TikTok'), findsOneWidget);
+    // Fuera de la UE: eSIM; y pide adaptador para Japón.
+    expect((d()['esim']! as Map<String, Object?>)['txt'], 'Elegir eSIM');
+    final List<Map<String, Object?>> pack = (d()['pack']! as List<Object?>)
+        .cast<Map<String, Object?>>();
+    expect(
+      pack.map((Map<String, Object?> p) => p['t']),
+      containsAll(<String>[
+        'Revisa tu pasaporte',
+        'Adaptador de enchufe tipo A/B',
+      ]),
+    );
+    expect(
+      ((d()['tips']! as List<Object?>).first! as Map<String, Object?>)['t'],
+      contains('Elige tu pasaporte en Visado'),
+    );
+    expect(d()['pct'], 0);
 
-    // Al marcar algo, sube el porcentaje de arriba.
-    expect(find.text('0%'), findsOneWidget);
-    await tester.tap(find.byType(Checkbox).first);
+    // Al marcar algo, sube el porcentaje de arriba (y se guarda).
+    spy.send!('pack:1:0');
     await tester.pumpAndSettle();
-    expect(find.text('0%'), findsNothing);
+    expect(d()['pct'], greaterThan(0));
+    expect(PackList(prefs).done(), contains(pack.first['id']));
+    // La eSIM, ya resuelta.
+    spy.send!('esim');
+    await tester.pumpAndSettle();
+    expect((d()['esim']! as Map<String, Object?>)['txt'], '✓ Instalada');
+
+    // Reels: se abre TikTok buscando, y se guarda en tu viaje.
+    spy.send!('reel:0');
+    spy.send!('save:1:0');
+    await tester.pumpAndSettle();
+    expect(opened.single.host, 'www.tiktok.com');
+    expect(d()['saved'], <int>[0]);
+
+    // Tocar el consejo lleva a su pantalla (Visado).
+    spy.send!('tip:0');
+    await tester.pumpAndSettle();
+    expect(find.byType(BeforeTripScreen), findsNothing);
     vault.close(); // que no quede el reloj del cierre automático
   });
 }

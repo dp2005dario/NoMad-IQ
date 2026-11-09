@@ -2,6 +2,8 @@
 
     POST   /v1/shared-trips                 compartir un viaje (te da el código)
     GET    /v1/shared-trips/mine            los que has compartido tú
+    GET    /v1/shared-trips/feed            el muro: los que la gente ha publicado
+    POST   /v1/shared-trips/{code}/rate     tus estrellas (1-5, una vez por persona)
     GET    /v1/shared-trips/{code}          ver un viaje con su código
     POST   /v1/shared-trips/{code}/copy     "Copiar a mis viajes" (cuenta una vez por persona)
     POST   /v1/shared-trips/{code}/adapt    Flyra lo adapta a tu presupuesto
@@ -22,7 +24,15 @@ from fastapi.responses import JSONResponse
 from ai_orchestrator.identity import Principal, current_principal
 from ai_orchestrator.negotiation.store import normalize_invite_code
 from ai_orchestrator.quota import QuotaExceededError
-from ai_orchestrator.shared_trips.domain import AdaptReply, AdaptRequest, MySharedTrips, SharedTrip, ShareTrip
+from ai_orchestrator.shared_trips.domain import (
+    AdaptReply,
+    AdaptRequest,
+    MySharedTrips,
+    RateRequest,
+    SharedTrip,
+    SharedTripFeed,
+    ShareTrip,
+)
 from ai_orchestrator.shared_trips.service import AdaptBusyError, TripAdapter
 from ai_orchestrator.shared_trips.store import SharedTripStore, TooManySharedError, TripRecord
 
@@ -31,7 +41,11 @@ PREFIX = "/v1/shared-trips"
 Code = Annotated[str, Path(min_length=1, max_length=20)]
 
 
-def view(record: TripRecord, user_id: str) -> SharedTrip:
+# Como mucho tantos viajes en el muro (los más nuevos).
+FEED_SIZE = 30
+
+
+def view(record: TripRecord, user_id: str, my_rating: int | None = None) -> SharedTrip:
     return SharedTrip(
         code=record.code,
         author=record.author,
@@ -44,6 +58,11 @@ def view(record: TripRecord, user_id: str) -> SharedTrip:
         copies=record.copies,
         mine=record.owner_id == user_id,
         created_at=record.created_at,
+        public=record.public,
+        note=record.note,
+        rating_avg=round(record.rating_sum / record.rating_count, 2) if record.rating_count else None,
+        rating_count=record.rating_count,
+        my_rating=my_rating,
     )
 
 
@@ -84,6 +103,22 @@ def shared_trip_router(store: SharedTripStore, adapter: TripAdapter | None = Non
     @router.get("/mine", response_model=MySharedTrips)
     async def mine(principal: Annotated[Principal, Depends(current_principal)]) -> MySharedTrips:
         return MySharedTrips(items=[view(r, principal.user_id) for r in await store.mine(principal.user_id)])
+
+    # Va antes que "/{code}": si no, "feed" se tomaría por un código.
+    @router.get("/feed", response_model=SharedTripFeed)
+    async def feed(principal: Annotated[Principal, Depends(current_principal)]) -> SharedTripFeed:
+        records = await store.feed(FEED_SIZE)
+        mine = await store.my_ratings(principal.user_id, [r.code for r in records])
+        return SharedTripFeed(items=[view(r, principal.user_id, mine.get(r.code)) for r in records])
+
+    @router.post("/{code}/rate", response_model=SharedTrip)
+    async def rate_trip(
+        principal: Annotated[Principal, Depends(current_principal)], code: Code, body: RateRequest
+    ) -> SharedTrip:
+        record = await store.rate(_code(code), principal.user_id, body.stars)
+        if record is None:
+            raise HTTPException(status_code=404, detail="viaje no encontrado")
+        return view(record, principal.user_id, body.stars)
 
     @router.get("/{code}", response_model=SharedTrip)
     async def get_trip(principal: Annotated[Principal, Depends(current_principal)], code: Code) -> SharedTrip:

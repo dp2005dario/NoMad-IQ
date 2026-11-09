@@ -12,6 +12,7 @@ import 'package:eclipta/core/money.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/group/group_api.dart';
+import 'package:eclipta/features/route/flight3d.dart' show WebSceneBuilder;
 
 import 'helpers.dart';
 
@@ -132,6 +133,7 @@ Future<GroupBackend> pumpGroup(
   GroupBackend? backend,
   MemorySettingsStore? prefs,
   bool guest = false,
+  WebSceneBuilder? webScene,
 }) async {
   tester.view.physicalSize = const Size(1200, 9000);
   tester.view.devicePixelRatio = 3;
@@ -145,7 +147,7 @@ Future<GroupBackend> pumpGroup(
     locale: 'es',
     session: s,
     initialLocation: initialLocation,
-    services: fakeServices(s, gateway: b.g, prefs: prefs),
+    services: fakeServices(s, gateway: b.g, prefs: prefs, webScene: webScene),
   );
   return b;
 }
@@ -373,7 +375,7 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
-  testWidgets('el resultado: la opción, por qué y lo que dijo cada agente', (
+  testWidgets('con destino: la maqueta del grupo con lo que salió', (
     WidgetTester tester,
   ) async {
     final GroupBackend b = GroupBackend()
@@ -410,35 +412,38 @@ void main() {
           'llm_used': true,
         },
       );
+    final List<String> pages = <String>[];
     await pumpGroup(
       tester,
       backend: b,
       initialLocation: Routes.groupTrip(tripId),
+      webScene: (String html, void Function(String) onMessage) {
+        pages.add(html);
+        return const SizedBox.expand();
+      },
     );
-    expect(find.text('Sin acuerdo: ha decidido el árbitro'), findsOneWidget);
-    expect(find.textContaining('Tras 3 rondas sin acuerdo'), findsOneWidget);
+    for (int i = 0; i < 50 && pages.isEmpty; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    // Sin el resultado nativo: la página de la maqueta, con el destino
+    // elegido, quiénes vais y cómo acabó la negociación.
+    final String html = pages.single;
+    final int at = html.indexOf('window.ECL=') + 'window.ECL='.length;
+    final Map<String, Object?> data = jsonDecode(
+      html.substring(at, html.indexOf(';</script>', at)),
+    ) as Map<String, Object?>;
+    expect(data['title'], 'Piso en Alfama');
+    expect(data['sub'], '2 viajeros');
+    expect(data['flyraTitle'], 'He elegido Piso en Alfama por el grupo');
     expect(
-      find.text(
-        'Se descartaron 2 opciones por superar el presupuesto de alguien.',
+      (data['people']! as List<Object?>).map(
+        (Object? p) => (p! as Map<String, Object?>)['name'],
       ),
-      findsOneWidget,
+      <String>['Tú', 'Noelia'],
     );
-    // Lo que dijo cada agente va debajo de la parte nueva (gustos, dormir...).
-    await tester.scrollUntilVisible(
-      find.text('Tu agente'),
-      400,
-      scrollable: find
-          .byWidgetPredicate(
-            (Widget w) =>
-                w is Scrollable && w.axisDirection == AxisDirection.down,
-          )
-          .first,
-    );
-    expect(find.text('Tu agente'), findsOneWidget);
-    expect(find.text('Agente de Noelia'), findsOneWidget);
-    expect(find.text('Su favorita'), findsOneWidget);
-    expect(find.text('Su opción n.º 2'), findsOneWidget);
-    expect(find.text('Decidido con reglas (sin IA)'), findsOneWidget);
     expect(find.text('Invita a tu grupo'), findsNothing);
   });
 }

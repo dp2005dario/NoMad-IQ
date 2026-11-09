@@ -1,12 +1,19 @@
-// Inicio: la bola de Flyra (tocar = chat, mantener = hablar), la caja de
-// escribir y el carrusel infinito de 19 cuadrados.
+// Inicio: la maqueta dentro de un WebView. Aquí se prueba lo que la app
+// hace con lo que manda la página: hablar a Flyra, los cuadrados del
+// carrusel, el SOS (WhatsApp, SMS, llamar) y los contactos.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/assistant/interpreter.dart';
-import 'package:eclipta/features/sos/sos_screen.dart';
+import 'package:eclipta/features/flights/explore_screen.dart';
+import 'package:eclipta/features/home/home_screen.dart';
+import 'package:eclipta/features/home/home_page.dart';
+import 'package:eclipta/features/map/geo.dart';
+import 'package:eclipta/features/sos/sos_store.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 
 /// Un micro de mentira que "oye" una frase.
 class HeardMic implements SpeechInput {
@@ -23,95 +30,134 @@ class HeardMic implements SpeechInput {
 }
 
 void main() {
+  test('datos para la página', () {
+    expect(rarityClass(null), 'm');
+    expect(rarityClass(80), 'v');
+    expect(rarityClass(1200), 'c');
+    expect(
+      coordsText(const GeoPoint(41.14961, -8.61099)),
+      '41.14961 N, 8.61099 O',
+    );
+    expect(
+      mrzLines('ESP', 'GARCIA LOPEZ', 'ANA').single,
+      startsWith('P<ESPGARCIA<LOPEZ<<ANA<<<'),
+    );
+    final Uri wa = whatsappUri(
+      const SosContact(name: 'Ana', phone: '+34 600 11 22 33'),
+      '¡Ayuda!',
+    );
+    expect(wa.host, 'wa.me');
+    expect(wa.path, '/34600112233');
+    expect(wa.queryParameters['text'], '¡Ayuda!');
+    // Ningún dato puede cerrar el script de la página.
+    expect(
+      homePageWith('<script>$homeMarker</script>', <String, Object?>{
+        'x': '</script>',
+      }),
+      isNot(contains('</script></script>')),
+    );
+  });
+
   testWidgets('mantener pulsada a Flyra le habla y abre el chat', (
     WidgetTester tester,
   ) async {
     final HeardMic mic = HeardMic();
+    final m.PageSpy spy = m.PageSpy();
     final session = await signedInSession(FakeGateway());
-    tester.view.physicalSize = const Size(1200, 3000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
     await pumpApp(
       tester,
       locale: 'es',
       session: session,
       initialLocation: Routes.home,
-      services: fakeServices(session, speechInput: mic),
+      services: fakeServices(session, speechInput: mic, webScene: spy.build),
     );
-    await tester.pumpAndSettle();
-    expect(find.text('Mantén pulsado para hablar'), findsOneWidget);
-    await tester.longPress(find.bySemanticsLabel('Hablar con Flyra'));
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    spy.send!('hold:1');
     await tester.pumpAndSettle();
     expect(mic.langs, <String>['es']);
     // La pregunta oída llega escrita a la caja del chat.
     expect(find.text('¿Qué visito hoy?'), findsOneWidget);
   });
 
-  testWidgets('el carrusel da la vuelta y un toque centra, otro abre', (
+  testWidgets('el cuadrado del centro abre su pantalla', (
     WidgetTester tester,
   ) async {
-    tester.view.physicalSize = const Size(1200, 3000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
-    await pumpApp(tester, locale: 'es', initialLocation: Routes.home);
+    final m.PageSpy spy = m.PageSpy();
+    final session = await signedInSession(FakeGateway());
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.home,
+      services: fakeServices(session, webScene: spy.build),
+    );
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    expect(homeTiles, hasLength(19));
+    spy.send!('tile:0');
     await tester.pumpAndSettle();
-    expect(find.text('Explorar'), findsOneWidget);
-    expect(find.text('Lugares y planes cerca'), findsOneWidget);
-    // Hacia atrás desde el primero aparece el último (es infinito).
-    await tester.drag(find.byType(PageView), const Offset(300, 0));
-    await tester.pumpAndSettle();
-    expect(find.text('Cambia el idioma'), findsOneWidget);
+    expect(find.byType(ExploreScreen), findsOneWidget);
   });
 
-  testWidgets('SOS: mantener 2 s, cuenta atrás, CANCELAR y luego avisar', (
+  testWidgets('SOS: WhatsApp, SMS y llamar; cambiar un contacto', (
     WidgetTester tester,
   ) async {
-    tester.view.physicalSize = const Size(1200, 3000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
-    await pumpApp(tester, locale: 'es', initialLocation: Routes.home);
-    await tester.pumpAndSettle();
-    final Finder room = find.byKey(const ValueKey<String>('homeSosHold'));
-    await tester.scrollUntilVisible(
-      room,
-      300,
-      scrollable: find.byType(Scrollable).first,
+    final m.PageSpy spy = m.PageSpy();
+    final session = await signedInSession(FakeGateway());
+    final MemorySettingsStore prefs = MemorySettingsStore();
+    await saveContacts(prefs, <SosContact>[
+      const SosContact(name: 'Ana', phone: '+34600112233'),
+    ]);
+    final List<Uri> opened = <Uri>[];
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.home,
+      services: fakeServices(
+        session,
+        prefs: prefs,
+        webScene: spy.build,
+        openLink: (Uri u) async {
+          opened.add(u);
+          return true;
+        },
+      ),
     );
-    await tester.pumpAndSettle();
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    final Map<String, Object?> d = spy.data(HomeScreen.lastBridge!);
+    expect((d['contacts']! as List<Object?>).single, <String, Object?>{
+      'n': 'Ana',
+      'p': '+34600112233',
+    });
+    expect((d['sos']! as Map<String, Object?>)['call'], '112');
 
-    // Soltar antes de 2 s no hace nada.
-    TestGesture finger = await tester.startGesture(tester.getCenter(room));
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
-    await finger.up();
+    spy.send!('sos');
     await tester.pumpAndSettle();
-    expect(find.text('CANCELAR'), findsNothing);
+    spy.send!('wa:0');
+    spy.send!('sms:0');
+    spy.send!('call');
+    await tester.pumpAndSettle();
+    expect(opened[0].host, 'wa.me');
+    expect(opened[0].queryParameters['text'], startsWith('¡Necesito ayuda!'));
+    expect(opened[1].scheme, 'sms');
+    expect(opened[2].toString(), 'tel:112');
 
-    // Mantener 2 s: cuenta atrás con CANCELAR.
-    finger = await tester.startGesture(tester.getCenter(room));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 2100));
-    await finger.up();
-    await tester.pump();
-    expect(find.text('CANCELAR'), findsOneWidget);
-    await tester.tap(find.text('CANCELAR'));
+    // "Añadir" en el segundo hueco: nombre y teléfono.
+    spy.send!('pick:1');
     await tester.pumpAndSettle();
-    expect(find.text('CANCELAR'), findsNothing);
-
-    // Otra vez, y esta vez se deja llegar a 0: se abre el SOS activado.
-    finger = await tester.startGesture(tester.getCenter(room));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 2100));
-    await finger.up();
-    for (int i = 0; i < 6; i++) {
-      await tester.pump(const Duration(seconds: 1));
-    }
+    await tester.enterText(find.byType(TextField).at(0), 'Luis');
+    await tester.enterText(find.byType(TextField).at(1), '+34 611 22 33 44');
+    await tester.tap(find.text('Guardar'));
     await tester.pumpAndSettle();
+    expect(loadContacts(prefs).map((SosContact c) => c.name), <String>[
+      'Ana',
+      'Luis',
+    ]);
     expect(
-      find.byWidgetPredicate((Widget w) => w is SosScreen && w.armed),
-      findsOneWidget,
+      (spy.data(HomeScreen.lastBridge!)['contacts']! as List<Object?>).length,
+      2,
     );
-    // La pantalla SOS espera al GPS hasta 15 s: se deja terminar.
+    // El GPS espera hasta 15 s una posición: se deja terminar.
     await tester.pump(const Duration(seconds: 16));
   });
 }

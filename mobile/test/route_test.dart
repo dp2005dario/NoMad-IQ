@@ -10,32 +10,40 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/core/api_client.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/theme.dart';
-import 'package:eclipta/features/route/city_sheet.dart';
 import 'package:eclipta/features/route/flight3d.dart';
 import 'package:eclipta/features/route/flight_route_screen.dart';
 import 'package:eclipta/features/flights/booking.dart';
 import 'package:eclipta/features/route/geo.dart';
 import 'package:eclipta/features/route/places_api.dart';
 import 'package:eclipta/features/route/world_data.dart';
+import 'package:eclipta/features/visa/visa_data.dart' show CountryNames;
 import 'package:eclipta/l10n/generated/app_localizations.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 
 const LatLon madrid = LatLon(40.472, -3.563);
 const LatLon tokyo = LatLon(35.765, 140.386);
 const LatLon losAngeles = LatLon(33.942, -118.408);
 
-Future<void> pumpRoute(
+/// Abre la Ruta con la página de verdad (sin WebView: [spy] la recoge).
+Future<m.PageSpy> pumpRoute(
   WidgetTester tester, {
   String from = 'MAD',
   String? to = 'NRT',
   PlaceLoader? places,
   OpenBooking? openLink,
-  WebSceneBuilder? scene3d,
 }) async {
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
+  final m.PageSpy spy = m.PageSpy();
+  // Los países se cargan una vez para toda la app: aquí, fuera del reloj de
+  // mentira (si no, la carga se quedaría colgada en la prueba siguiente).
+  await tester.runAsync(() async {
+    await CountryCodes.load();
+    await CountryNames.load();
+  });
   // Los datos reales de la app (assets/geo), cargados una vez.
   final WorldData world = (await tester.runAsync(WorldData.load))!;
   await tester.pumpWidget(
@@ -50,14 +58,32 @@ Future<void> pumpRoute(
         loadWorld: () async => world,
         places: places,
         openLink: openLink ?? (Uri _) async => true,
-        scene3d: scene3d,
+        scene3d: spy.build,
       ),
     ),
   );
-  // El "latido" de los puntos no para nunca: se avanza el reloj a mano.
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 1500));
+  await spy.wait(tester, () => spy.pages.isNotEmpty);
+  return spy;
 }
+
+/// Lo que sabe la página de la Ruta ahora.
+Map<String, Object?> routeData(m.PageSpy spy) =>
+    spy.data(FlightRouteScreen.lastBridge!, title: 'ECLIPTA · Ruta del vuelo');
+
+Map<String, Object?> place(m.PageSpy spy, String key) =>
+    routeData(spy)[key]! as Map<String, Object?>;
+
+String fact(m.PageSpy spy, String key, String name) =>
+    ((place(spy, key)['facts']! as List<Object?>).firstWhere(
+              (Object? f) => (f! as Map<String, Object?>)['k'] == name,
+            )!
+            as Map<String, Object?>)['v']!
+        as String;
+
+List<String> regions(m.PageSpy spy) => <String>[
+  for (final Object? r in routeData(spy)['regions']! as List<Object?>)
+    (r! as Map<String, Object?>)['label']! as String,
+];
 
 void main() {
   group('geo', () {
@@ -123,69 +149,55 @@ void main() {
     });
   });
 
-  testWidgets('mundo → origen → vuelo → llegada', (WidgetTester tester) async {
-    await pumpRoute(tester);
-    expect(find.text('MAD → NRT'), findsOneWidget);
-    expect(find.text('Madrid → Tokyo'), findsOneWidget);
-    expect(find.textContaining('10.7'), findsOneWidget); // km con punto español
-    expect(find.text('Mundo'), findsOneWidget);
+  testWidgets('la ruta de verdad: camino, por dónde pasa y la hora', (
+    WidgetTester tester,
+  ) async {
+    final m.PageSpy spy = await pumpRoute(tester);
+    expect(spy.pages.first, contains('ECLIPTA · Ruta del vuelo'));
+    final Map<String, Object?> d = routeData(spy);
+    expect(d['title'], 'Madrid → Tokyo');
+    expect(d['sub'], contains('10.7')); // km con punto español
+    expect(d['startTxt'], 'Empezar en Madrid');
+    // El mapa de la maqueta: x = longitud + 180, y = 90 − latitud.
+    expect((d['o']! as Map<String, Object?>)['x'], closeTo(176.4, 0.1));
+    expect((d['path']! as List<Object?>).length, 48);
+    expect((d['mins']! as int) ~/ 60, 13);
 
-    await tester.tap(find.text('Empezar en Madrid'));
-    await tester.pump(const Duration(milliseconds: 1300));
-    expect(find.text('ORIGEN'), findsOneWidget);
-    expect(find.textContaining('Hora local'), findsOneWidget);
+    await spy.wait(tester, () => regions(spy).contains('Sobrevolando Rusia'));
+    expect(regions(spy).first, 'Despegando de Madrid');
+    expect(regions(spy).last, 'Llegando a Tokyo');
+    // El camino más corto pasa por Rusia (nombres en español).
+    expect(regions(spy), contains('Sobrevolando Rusia'));
 
-    await tester.tap(find.text('Despegar hacia Tokyo'));
-    // En los tests cada animación arranca un fotograma después: la cámara se
-    // coloca y, en el siguiente, despega el avión.
-    await tester.pump(const Duration(milliseconds: 100));
-    await tester.pump(const Duration(milliseconds: 1300));
-    await tester.pump(const Duration(milliseconds: 100));
-    await tester.pump(const Duration(seconds: 5));
-    expect(find.text('Siguiendo el avión'), findsOneWidget);
-    expect(find.textContaining('Recorrido'), findsOneWidget);
-    expect(find.textContaining('Quedan'), findsOneWidget);
-    // A mitad de camino ya no está en 0 km.
-    expect(find.textContaining('Recorrido: 0 km'), findsNothing);
-
-    // El vuelo simulado dura 14 s: se avanza en varios pasos.
-    for (int i = 0; i < 4; i++) {
-      await tester.pump(const Duration(seconds: 4));
-    }
-    await tester.pump(const Duration(milliseconds: 1300));
-    expect(find.text('¡Has llegado a Tokyo!'), findsOneWidget);
+    expect(fact(spy, 'op', 'Hora'), matches(RegExp(r'^\d{1,2}:\d\d$')));
     // Tokio va 7 u 8 horas por delante de Madrid (según el horario de verano).
-    expect(
-      find.textContaining(RegExp(r'[78] h más que Madrid')),
-      findsOneWidget,
-    );
-
-    await tester.tap(find.text('Volver al origen'));
-    await tester.pump(const Duration(milliseconds: 1300));
-    expect(find.text('ORIGEN'), findsOneWidget);
+    expect(fact(spy, 'dp', 'Hora'), matches(RegExp(r'[78] h más que Madrid')));
+    expect(place(spy, 'op')['flag'], '🇪🇸');
+    expect(place(spy, 'dp')['sub'], 'Japón · has llegado');
+    // Sin fichas configuradas: lo dice, sin inventar.
+    expect(place(spy, 'op')['why'], contains('Aún no hay información'));
+    expect(fact(spy, 'op', 'Capital'), 'Sin datos');
   });
 
-  testWidgets('aterrizar ya', (WidgetTester tester) async {
-    await pumpRoute(tester, from: 'JFK', to: 'LHR');
-    await tester.tap(find.text('Empezar en New York'));
-    await tester.pump(const Duration(milliseconds: 1300));
-    await tester.tap(find.text('Despegar hacia London'));
-    await tester.pump(const Duration(milliseconds: 1500));
-    await tester.tap(find.text('Aterrizar ya'));
-    await tester.pump(const Duration(milliseconds: 1300));
-    expect(find.text('¡Has llegado a London!'), findsOneWidget);
-    expect(find.textContaining('h más que New York'), findsOneWidget);
+  testWidgets('sobre el océano: "Sobrevolando el mar"', (
+    WidgetTester tester,
+  ) async {
+    final m.PageSpy spy = await pumpRoute(tester, from: 'JFK', to: 'LHR');
+    await spy.wait(tester, () => regions(spy).length > 2);
+    expect(regions(spy), contains('Sobrevolando el mar'));
+    expect(fact(spy, 'dp', 'Hora'), contains('h más que New York'));
   });
 
   testWidgets('sin destino: se pregunta y se valida', (
     WidgetTester tester,
   ) async {
-    await pumpRoute(tester, to: null);
-    await tester.pump(const Duration(milliseconds: 500));
+    final m.PageSpy spy = await pumpRoute(tester, to: null);
+    await tester.pumpAndSettle();
     expect(
       find.text('Código del aeropuerto de destino (p. ej. NRT)'),
       findsOneWidget,
     );
+    expect(routeData(spy)['d'], isNull);
     await tester.enterText(find.byType(TextField), 'zzz');
     await tester.tap(find.text('Ver ruta'));
     await tester.pump(const Duration(milliseconds: 500));
@@ -193,7 +205,12 @@ void main() {
     await tester.enterText(find.byType(TextField), 'lis');
     await tester.tap(find.text('Ver ruta'));
     await tester.pump(const Duration(milliseconds: 1500));
-    expect(find.text('MAD → LIS'), findsOneWidget);
+    expect(routeData(spy)['title'], 'Madrid → Lisbon');
+
+    // "¿A dónde vuelas?" en la página vuelve a abrir la hoja.
+    spy.to('ECLIPTA · Ruta del vuelo')('pick');
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Ver ruta'), findsOneWidget);
   });
 
   group('fichas de ciudad', () {
@@ -262,75 +279,58 @@ void main() {
       expect(await places.get('XXX', 'es'), isNull);
     });
 
-    testWidgets('"Sobre Madrid" abre la ficha con lo más visitado', (
-      WidgetTester tester,
-    ) async {
-      final List<Uri> opened = <Uri>[];
-      final List<String> asked = <String>[];
-      await pumpRoute(
-        tester,
-        places: (String iata, String lang) async {
-          asked.add('$iata:$lang');
-          return PlaceCard.parse(madridJson);
-        },
-        openLink: (Uri u) async {
-          opened.add(u);
-          return true;
-        },
-      );
-      await tester.tap(find.text('Empezar en Madrid'));
-      await tester.pump(const Duration(milliseconds: 1300));
-      await tester.tap(find.text('Sobre Madrid'));
-      // Un fotograma abre la hoja y pide la ficha; el siguiente la pinta.
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(asked, <String>['MAD:es']);
-      expect(find.text('Por qué es famosa'), findsOneWidget);
-      expect(find.text('Madrid es la capital de España.'), findsOneWidget);
-      expect(find.text('3.280.782'), findsOneWidget);
-      expect(find.text('euro'), findsOneWidget);
-      expect(find.text('Lo más visitado'), findsOneWidget);
-      expect(find.text('Museo del Prado'), findsOneWidget);
-      await tester.tap(find.text('Leer más en Wikipedia'));
-      expect(opened.single.toString(), 'https://es.wikipedia.org/wiki/Madrid');
-      // Abajo del todo, de dónde salen textos y fotos (lo piden sus licencias).
-      await tester.scrollUntilVisible(
-        find.textContaining('Wikimedia Commons'),
-        200,
-        scrollable: find
-            .descendant(
-              of: find.byType(CitySheet),
-              matching: find.byType(Scrollable),
-            )
-            .first,
-      );
-      expect(find.textContaining('Wikimedia Commons'), findsOneWidget);
-    });
+    testWidgets(
+      'la ficha de Madrid: datos, por qué es famosa y lo más visitado',
+      (WidgetTester tester) async {
+        final List<Uri> opened = <Uri>[];
+        final List<String> asked = <String>[];
+        final m.PageSpy spy = await pumpRoute(
+          tester,
+          places: (String iata, String lang) async {
+            asked.add('$iata:$lang');
+            return iata == 'MAD' ? PlaceCard.parse(madridJson) : null;
+          },
+          openLink: (Uri u) async {
+            opened.add(u);
+            return true;
+          },
+        );
+        await spy.wait(
+          tester,
+          () => place(spy, 'op')['why'] == 'Madrid es la capital de España.',
+        );
+        expect(asked, <String>['MAD:es', 'NRT:es']);
+        expect(fact(spy, 'op', 'Capital'), 'Madrid');
+        expect(fact(spy, 'op', 'Moneda'), 'euro');
+        expect(fact(spy, 'op', 'Idioma'), 'español');
+        expect(place(spy, 'op')['sights'], <Object?>[
+          <String, Object?>{'name': 'Museo del Prado', 'img': ''},
+        ]);
+        // Tokio no tiene ficha: lo dice tal cual.
+        expect(place(spy, 'dp')['why'], contains('Aún no hay información'));
+        // De dónde salen textos y fotos (lo piden sus licencias).
+        expect(routeData(spy)['credits'], contains('Wikimedia Commons'));
 
-    testWidgets('si no hay ficha, se dice sin romper nada', (
+        spy.to('ECLIPTA · Ruta del vuelo')('more:o');
+        expect(
+          opened.single.toString(),
+          'https://es.wikipedia.org/wiki/Madrid',
+        );
+      },
+    );
+
+    testWidgets('si la ficha falla, se dice sin romper nada', (
       WidgetTester tester,
     ) async {
-      await pumpRoute(
+      final m.PageSpy spy = await pumpRoute(
         tester,
         places: (String iata, String lang) async =>
             throw const ApiException(ApiError.unavailable),
       );
-      await tester.tap(find.text('Empezar en Madrid'));
-      await tester.pump(const Duration(milliseconds: 1300));
-      await tester.tap(find.text('Sobre Madrid'));
-      // Un fotograma abre la hoja y pide la ficha; el siguiente la pinta.
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(find.textContaining('Aún no hay información'), findsOneWidget);
-    });
-
-    testWidgets('sin fichas configuradas no sale el botón', (
-      WidgetTester tester,
-    ) async {
-      await pumpRoute(tester);
-      await tester.tap(find.text('Empezar en Madrid'));
-      await tester.pump(const Duration(milliseconds: 1300));
-      expect(find.text('Sobre Madrid'), findsNothing);
+      await spy.wait(
+        tester,
+        () => '${place(spy, 'op')['why']}'.contains('Aún no hay información'),
+      );
     });
   });
 
@@ -381,7 +381,7 @@ void main() {
       expect(html, isNot(contains('fonts.googleapis')));
     });
 
-    testWidgets('"Despegar" abre el vuelo 3D y al terminar se ve la llegada', (
+    testWidgets('"Ver el vuelo en 3D" y al terminar se ve la llegada', (
       WidgetTester tester,
     ) async {
       final CountryCodes countries = (await tester.runAsync(
@@ -389,55 +389,49 @@ void main() {
       ))!;
       expect(countries['Spain'], 'ES');
       expect(countries['Japan'], 'JP');
-      Map<String, Object?>? config;
-      void Function(String)? send;
-      await pumpRoute(
-        tester,
-        scene3d: (String html, void Function(String) onMessage) {
-          final String json = RegExp(r'window\.NQ_FLIGHT = (.*);')
-              .firstMatch(html)!
-              .group(1)!;
-          config = jsonDecode(json) as Map<String, Object?>;
-          send = onMessage;
-          return const ColoredBox(color: Color(0xFF000000));
-        },
-      );
-      await tester.tap(find.text('Empezar en Madrid'));
-      await tester.pump(const Duration(milliseconds: 1300));
-      await tester.tap(find.text('Despegar hacia Tokyo'));
+      final m.PageSpy spy = await pumpRoute(tester);
+      expect(routeData(spy)['has3d'], isTrue);
+      spy.to('ECLIPTA · Ruta del vuelo')('fly3d');
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       // La plantilla y los países se leen de los assets (de verdad).
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 200)),
+      await spy.wait(
+        tester,
+        () => spy.pages.any((String h) => h.contains('window.NQ_FLIGHT = ')),
       );
-      await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
       expect(find.byType(Flight3dScreen), findsOneWidget);
-      expect(config!['lang'], 'es');
-      expect(config!['from'], <String, Object?>{
+      final String html = spy.pages.lastWhere(
+        (String h) => h.contains('window.NQ_FLIGHT = '),
+      );
+      final Map<String, Object?> config = jsonDecode(
+        RegExp(r'window\.NQ_FLIGHT = (.*);').firstMatch(html)!.group(1)!,
+      ) as Map<String, Object?>;
+      expect(config['lang'], 'es');
+      expect(config['from'], <String, Object?>{
         'code': 'MAD',
         'city': 'Madrid',
         'cc': 'ES',
       });
-      expect((config!['to']! as Map<String, Object?>)['cc'], 'JP');
-      final Map<String, Object?> t = config!['t']! as Map<String, Object?>;
+      expect((config['to']! as Map<String, Object?>)['cc'], 'JP');
+      final Map<String, Object?> t = config['t']! as Map<String, Object?>;
       expect(t['overflying'], 'Sobrevolando');
       expect(t['kmOf'], '{km} de {total} km');
       final Map<String, Object?> texts =
-          config!['texts']! as Map<String, Object?>;
+          config['texts']! as Map<String, Object?>;
       expect(
         (texts['alcala']! as Map<String, Object?>)['name'],
         'Puerta de Alcalá',
       );
 
       // La página avisa de que el pasajero pulsó "Continuar".
-      send!('done');
+      spy.to('window.NQ_FLIGHT = ')('done');
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 600));
       await tester.pump(const Duration(milliseconds: 1300));
       expect(find.byType(Flight3dScreen), findsNothing);
-      expect(find.text('¡Has llegado a Tokyo!'), findsOneWidget);
+      // La página de la Ruta salta al destino.
+      expect(routeData(spy)['arrive'], 1);
     });
   });
 }

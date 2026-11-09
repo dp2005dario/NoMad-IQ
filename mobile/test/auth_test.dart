@@ -8,8 +8,10 @@ import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/auth/token_store.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/features/home/home_screen.dart';
+import 'package:eclipta/features/settings/settings_screen.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 
 const String email = 'dario@example.com';
 const String password = 'una-contraseña-larga';
@@ -234,7 +236,14 @@ void main() {
       WidgetTester tester,
     ) async {
       final FakeGateway gw = FakeGateway();
-      await pumpApp(tester, locale: 'es', session: newSession(gw));
+      final SessionController session = newSession(gw);
+      final m.PageSpy spy = m.PageSpy();
+      await pumpApp(
+        tester,
+        locale: 'es',
+        session: session,
+        services: fakeServices(session, gateway: gw, webScene: spy.build),
+      );
       await tester.ensureVisible(find.text('Continuar con correo'));
       await tester.tap(find.text('Continuar con correo'));
       await tester.pumpAndSettle();
@@ -254,16 +263,23 @@ void main() {
       await tester.enterText(find.byType(TextFormField).at(1), password);
       await tester.tap(find.widgetWithText(FilledButton, 'Crear cuenta'));
       await tester.pumpAndSettle();
-      expect(find.text('ECLIPTA'), findsOneWidget);
+      expect(find.byType(HomeScreen), findsOneWidget);
 
-      // Ajustes está en la barra de abajo.
-      await tester.tap(find.text('Ajustes'));
+      // Ajustes se abre con tu foto, arriba en el Mapa (como en la maqueta).
+      await tester.tap(find.text('Mapa'));
       await tester.pumpAndSettle();
-      expect(find.text(email), findsOneWidget);
-      // Ajustes es una lista larga: hay que llegar hasta el botón.
-      await tester.scrollUntilVisible(find.text('Cerrar sesión'), 300);
+      await tester.tap(find.bySemanticsLabel('Tu foto de perfil y ajustes'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Cerrar sesión'));
+      await spy.wait(tester, () => spy.pages.isNotEmpty);
+      expect(
+        spy.data(
+          SettingsScreen.lastBridge!,
+          title: 'ECLIPTA · Ajustes',
+        )['email'],
+        email,
+      );
+      // "Cerrar sesión" (en la página de Ajustes).
+      spy.to('ECLIPTA · Ajustes')('signout');
       await tester.pumpAndSettle();
       expect(
         find.text('Continuar con correo'),
@@ -304,17 +320,31 @@ void main() {
     testWidgets('el invitado puede pasar a crear su cuenta', (
       WidgetTester tester,
     ) async {
-      await pumpApp(tester, locale: 'es', initialLocation: Routes.home);
-      expect(find.text('ECLIPTA'), findsOneWidget);
-      // Ajustes está en la barra de abajo.
-      await tester.tap(find.text('Ajustes'));
-      await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(
-        find.text('Inicia sesión o crea una cuenta'),
-        300,
+      final SessionController guest = newSession()..continueAsGuest();
+      final m.PageSpy spy = m.PageSpy();
+      await pumpApp(
+        tester,
+        locale: 'es',
+        session: guest,
+        initialLocation: Routes.home,
+        services: fakeServices(guest, webScene: spy.build),
       );
+      expect(find.byType(HomeScreen), findsOneWidget);
+      // Ajustes se abre con tu foto, arriba en el Mapa (como en la maqueta).
+      await tester.tap(find.text('Mapa'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Inicia sesión o crea una cuenta'));
+      await tester.tap(find.bySemanticsLabel('Tu foto de perfil y ajustes'));
+      await tester.pumpAndSettle();
+      await spy.wait(tester, () => spy.pages.isNotEmpty);
+      expect(
+        spy.data(
+          SettingsScreen.lastBridge!,
+          title: 'ECLIPTA · Ajustes',
+        )['signedIn'],
+        isFalse,
+      );
+      // Sin cuenta, "Cerrar sesión" es "Entrar con tu cuenta".
+      spy.to('ECLIPTA · Ajustes')('signin');
       await tester.pumpAndSettle();
       expect(find.widgetWithText(FilledButton, 'Entrar'), findsOneWidget);
     });

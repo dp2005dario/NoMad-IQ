@@ -1,6 +1,5 @@
 // "Viajo con mi perro": cabina o bodega, lo que hace falta para la UE, su
 // nombre y foto, y los veterinarios/parques/hoteles de alrededor.
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:eclipta/auth/session.dart';
@@ -8,8 +7,11 @@ import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/nearby/nearby_api.dart';
 import 'package:eclipta/features/travel_with/travel_with.dart';
+import 'package:eclipta/features/travel_with/travel_with_page.dart';
+import 'package:eclipta/features/travel_with/travel_with_screen.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 import 'nearby_test.dart' show SolLocation;
 
 const Map<String, Object?> dogJson = <String, Object?>{
@@ -101,7 +103,7 @@ void main() {
     });
   });
 
-  testWidgets('pantalla: nombre, peso y veterinarios cerca', (
+  testWidgets('pantalla: nombre, peso, pasaporte, maleta y veterinarios', (
     WidgetTester tester,
   ) async {
     final FakeGateway g = FakeGateway()..publicPrefixes.add('/v1/nearby');
@@ -110,9 +112,7 @@ void main() {
     final MemorySettingsStore store = MemorySettingsStore();
     final List<Uri> links = <Uri>[];
     final List<Uri> maps = <Uri>[];
-    tester.view.physicalSize = const Size(1200, 5200);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
+    final m.PageSpy spy = m.PageSpy();
     await pumpApp(
       tester,
       locale: 'es',
@@ -123,6 +123,7 @@ void main() {
         gateway: g,
         prefs: store,
         location: SolLocation(),
+        webScene: spy.build,
         openLink: (Uri u) async {
           links.add(u);
           return true;
@@ -133,53 +134,87 @@ void main() {
         },
       ),
     );
-    await tester.pumpAndSettle();
-    expect(find.text('Viajo con mi perro'), findsOneWidget);
-    // Sin nombre todavía: "tu perro". Con nombre, se guarda en el móvil.
-    expect(find.text('Para tu perro, cerca de ti'), findsOneWidget);
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Nombre de tu perro'),
-      'Luna',
+    Map<String, Object?> data() => spy.data(TravelWithScreen.lastBridge!);
+    List<Map<String, Object?>> rows(String key) =>
+        (data()[key]! as List<Object?>).cast<Map<String, Object?>>();
+    await spy.wait(
+      tester,
+      () => spy.pages.isNotEmpty && rows('spots').isNotEmpty,
     );
-    await tester.pumpAndSettle();
-    expect(find.text('Para Luna, cerca de ti'), findsOneWidget);
+    expect(spy.pages.first, contains('ECLIPTA · Viajo con mi perro'));
+    // Sin nombre todavía: "tu perro". Con nombre, se guarda en el móvil.
+    final Map<String, Object?> t = data()['t']! as Map<String, Object?>;
+    expect(t['mapLabel'], 'Para tu perro, cerca de ti');
+    spy.send!('name:Luna');
+    await tester.pump();
     expect(DogProfile.load(store).name, 'Luna');
+    expect(data()['petH'], 'Pasaporte de Luna para la UE');
+    expect(
+      (data()['t']! as Map<String, Object?>)['mapLabel'],
+      'Para Luna, cerca de ti',
+    );
 
     // 7 kg + 2 de transportín = 9 → bodega. Con 5,5 cabe.
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Peso de tu mascota (kg)'),
-      '7',
+    spy.send!('petKg:7');
+    await tester.pump();
+    expect(
+      (data()['verdict']! as Map<String, Object?>)['h'],
+      'Tendrá que ir en bodega',
     );
-    await tester.pumpAndSettle();
-    expect(find.text('Tendrá que ir en bodega'), findsOneWidget);
-    await tester.enterText(
-      find.widgetWithText(TextField, 'Peso de tu mascota (kg)'),
-      '5,5',
+    expect(rows('chips')[1]['t'], '9 kg con transportín');
+    spy.send!('petKg:5,5');
+    await tester.pump();
+    expect(
+      (data()['verdict']! as Map<String, Object?>)['h'],
+      'Puede ir contigo en cabina',
     );
-    await tester.pumpAndSettle();
-    expect(find.text('Puede ir contigo en cabina'), findsOneWidget);
+    expect(rows('chips').last['t'], 'Va en cabina');
 
-    await tester.tap(find.text('Microchip'));
-    await tester.pumpAndSettle();
+    spy.send!('check:0');
+    await spy.wait(tester, () => rows('checks').first['on'] == true);
     expect(store.readData(LocalData.petChecks), contains('microchip'));
 
-    // Veterinarios: el de Sol, con su teléfono para llamar.
-    expect(find.text('Clínica Veterinaria Sol'), findsOneWidget);
-    await tester.tap(find.byTooltip('Llamar'));
+    // La maleta se guarda en el móvil.
+    spy.send!('bag:2');
+    await spy.wait(tester, () => rows('bag')[2]['on'] == true);
+    expect(DogBag(store).packed(), <int>{2});
+
+    // Veterinarios: el de Sol, con su teléfono para llamar, y en el mapa.
+    expect(rows('spots').first['name'], 'Clínica Veterinaria Sol');
+    expect(rows('pins').map((Map<String, Object?> p) => p['k']), <String>[
+      'vet',
+      'dogPark',
+      'petStay',
+    ]);
+    spy.send!('spot:0:call');
     expect(links.single.toString(), 'tel:+34911223344');
-    await tester.tap(find.byTooltip('Ir'));
+    spy.send!('spot:0:go');
     expect(maps.single.queryParameters['travelmode'], 'walking');
+    spy.send!('goNear');
+    expect(maps, hasLength(2));
 
-    await tester.tap(find.widgetWithText(ChoiceChip, 'Parques para perros'));
-    await tester.pumpAndSettle();
-    expect(find.text('Parque canino'), findsOneWidget);
-    expect(find.text('Clínica Veterinaria Sol'), findsNothing);
+    spy.send!('kind:dogPark');
+    await tester.pump();
+    expect(rows('spots').single['name'], 'Parque canino');
 
-    await tester.tap(
-      find.widgetWithText(ChoiceChip, 'Hoteles que admiten perros'),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Web'));
+    spy.send!('kind:petStay');
+    await tester.pump();
+    spy.send!('spot:0:web');
     expect(links.last.host, 'can.example');
+  });
+
+  test('los kilos como se escriben y ningún dato cierra el script', () {
+    expect(kgLabel(9), '9');
+    expect(kgLabel(7.5), '7,5');
+    expect(
+      travelWithPageWith('window.ECL=$travelWithMarker;', <String, Object?>{
+        'x': '</script>',
+      }),
+      isNot(contains('</script>')),
+    );
+    expect(
+      travelWithPushScript(<String, Object?>{'x': '<b>'}),
+      isNot(contains('<b>')),
+    );
   });
 }

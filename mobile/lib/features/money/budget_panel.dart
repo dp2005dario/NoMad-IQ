@@ -129,6 +129,30 @@ class _BudgetPanelState extends State<BudgetPanel> {
   }
 }
 
+/// El formulario de tu viaje (bote, límite y fechas) a pantalla entera.
+/// Devuelve lo guardado, o null si cancelas.
+Future<TripBudget?> editTripBudget(
+  BuildContext context, {
+  required List<ExpenseGroupSummary> pots,
+  required DateTime now,
+  TripBudget? initial,
+  String? potId,
+}) => Navigator.of(context).push<TripBudget>(
+  MaterialPageRoute<TripBudget>(
+    builder: (BuildContext context) => Scaffold(
+      appBar: AppBar(title: Text(AppLocalizations.of(context).abroadBudget)),
+      body: _BudgetForm(
+        pots: pots,
+        initial: initial,
+        startPot: potId,
+        now: now,
+        onSave: (TripBudget b) => Navigator.of(context).pop(b),
+        onCancel: () => Navigator.of(context).pop(),
+      ),
+    ),
+  ),
+);
+
 class _BudgetForm extends StatefulWidget {
   const _BudgetForm({
     required this.pots,
@@ -136,10 +160,14 @@ class _BudgetForm extends StatefulWidget {
     required this.now,
     required this.onSave,
     required this.onCancel,
+    this.startPot,
   });
 
   final List<ExpenseGroupSummary> pots;
   final TripBudget? initial;
+
+  /// El bote que sale ya elegido (si no, el de [initial] o el primero).
+  final String? startPot;
   final DateTime now;
   final ValueChanged<TripBudget> onSave;
   final VoidCallback? onCancel;
@@ -150,7 +178,11 @@ class _BudgetForm extends StatefulWidget {
 
 class _BudgetFormState extends State<_BudgetForm> {
   late String? _potId =
-      widget.pots.any((ExpenseGroupSummary p) => p.id == widget.initial?.potId)
+      widget.pots.any((ExpenseGroupSummary p) => p.id == widget.startPot)
+      ? widget.startPot
+      : widget.pots.any(
+          (ExpenseGroupSummary p) => p.id == widget.initial?.potId,
+        )
       ? widget.initial!.potId
       : widget.pots.isEmpty
       ? null

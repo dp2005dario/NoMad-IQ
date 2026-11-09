@@ -8,6 +8,10 @@ import 'package:eclipta/features/map/location.dart';
 import 'package:eclipta/features/route/geo.dart';
 import 'package:eclipta/features/route/world_data.dart';
 import 'package:eclipta/features/sos/emergency_data.dart';
+import 'package:eclipta/features/sos/phone_contacts.dart';
+import 'package:eclipta/features/sos/sos_screen.dart';
+import 'package:eclipta/core/services.dart';
+import 'package:eclipta/l10n/generated/app_localizations.dart';
 import 'package:eclipta/features/sos/sos_store.dart';
 import 'package:eclipta/features/sos/where_am_i.dart';
 
@@ -109,7 +113,7 @@ void main() {
       tester,
       locale: 'es',
       session: session,
-      initialLocation: Routes.home,
+      initialLocation: Routes.sos,
       services: fakeServices(
         session,
         gateway: g,
@@ -121,16 +125,6 @@ void main() {
         },
       ),
     );
-    // En Inicio, bajo el cuarto de acero, salen tus contactos de verdad;
-    // "Más contactos" abre la pantalla SOS.
-    await tester.scrollUntilVisible(
-      find.text('Más contactos'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Ana'), findsOneWidget);
-    await tester.tap(find.text('Más contactos'));
     await tester.pumpAndSettle();
     expect(find.text('¿Necesitas ayuda?'), findsOneWidget);
     gps.fixes.add(
@@ -173,5 +167,50 @@ void main() {
     expect(opened.first.toString(), 'tel:110');
     expect(opened.last.scheme, 'sms');
     expect(opened.last.queryParameters['body'], startsWith('¡Necesito ayuda!'));
+  });
+
+  test('la agenda: se limpia el número y sin número no vale', () {
+    final SosContact? ana = contactFromPhone(' Ana ', '+34 (600) 11-22-33');
+    expect(ana?.name, 'Ana');
+    expect(ana?.phone, '+34600112233');
+    expect(contactFromPhone(null, '600112233')?.name, '600112233');
+    expect(contactFromPhone('Ana', null), isNull);
+    expect(contactFromPhone('Ana', '12'), isNull);
+  });
+
+  testWidgets('"Elegir de la agenda" rellena nombre y teléfono', (
+    WidgetTester tester,
+  ) async {
+    Future<void> pump(PickPhoneContact? pick) async {
+      final AppServices services = fakeServices(
+        newSession()..continueAsGuest(),
+        pickContact: pick,
+      );
+      await tester.pumpWidget(
+        ServicesScope(
+          key: UniqueKey(),
+          services: services,
+          child: MaterialApp(
+            locale: const Locale('es'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: const Scaffold(body: SosContactDialog()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    // Sin agenda (tests, escritorio): no sale el botón.
+    await pump(null);
+    expect(find.text('Elegir de la agenda'), findsNothing);
+
+    await pump(
+      () async => const SosContact(name: 'Mamá', phone: '+34600112233'),
+    );
+    await tester.tap(find.text('Elegir de la agenda'));
+    await tester.pumpAndSettle();
+    expect(find.text('Mamá'), findsOneWidget);
+    expect(find.text('+34600112233'), findsOneWidget);
   });
 }

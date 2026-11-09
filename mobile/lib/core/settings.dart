@@ -61,6 +61,9 @@ enum LocalData {
   /// "Viajo con mi perro": su nombre y dónde está su foto (solo en el móvil).
   dogProfile,
 
+  /// La maleta de tu perro: lo que ya has metido (solo en el móvil).
+  dogBag,
+
   /// "1" = la app se abre en Modo fácil (letras grandes, solo lo importante).
   easyMode,
 
@@ -97,6 +100,31 @@ enum LocalData {
   /// Elegid planes: los match viajeros que ya te enseñamos en grande (para
   /// no repetir la celebración cada vez que entras).
   plansSeen,
+
+  /// Chat del viaje: los mensajes de Flyra que te gustaron ("viaje:número").
+  chatLikes,
+
+  /// Desde qué banco haces Bizum ("BBVA"), para "Abrir Bizum en tu banco".
+  bizumBank,
+
+  /// "1" = Ajustes > "Entrar con huella o cara": la app pide tu huella al
+  /// abrirse (y al volver tras un rato fuera).
+  appLock,
+
+  /// "0" = Ajustes > "Tema oscuro" apagado (por defecto, encendido).
+  darkTheme,
+
+  /// Cuándo abriste el Pasaporte por última vez (fecha ISO): los sellos de
+  /// después cuentan como "nuevos" en el botón del Mapa.
+  passportSeen,
+
+  /// Los reels de "Antes de salir" que guardaste para tu viaje (sus
+  /// búsquedas, en JSON).
+  beforeReels,
+
+  /// El idioma fijo de Flyra y las audioguías ("es"). Sin guardar = el
+  /// mismo que la app (el interruptor de la pantalla Idioma).
+  contentLang,
 }
 
 /// Dónde se guardan los ajustes. Es una interfaz (un "enchufe"): en la app real

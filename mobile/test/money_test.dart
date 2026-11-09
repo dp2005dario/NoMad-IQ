@@ -5,20 +5,30 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/api_client.dart';
+import 'package:eclipta/core/launch.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/flights/booking.dart';
 import 'package:eclipta/features/money/expenses_api.dart';
 import 'package:eclipta/features/money/fx_api.dart';
+import 'package:eclipta/features/money/fx_page.dart';
+import 'package:eclipta/features/money/fx_view.dart';
+import 'package:eclipta/features/money/gastos_widgets.dart';
 import 'package:eclipta/features/money/money_screen.dart';
 import 'package:eclipta/features/money/receipt_parser.dart';
 import 'package:eclipta/features/money/receipt_scanner.dart';
 import 'package:eclipta/features/money/rooms_view.dart';
+import 'package:eclipta/features/push/notices.dart';
 import 'package:eclipta/features/vault/vault.dart';
+
+import 'package:eclipta/features/route/web_scene.dart';
+import 'package:eclipta/features/route/flight3d.dart' show WebSceneBuilder;
+import 'package:eclipta/features/money/kitty_view.dart';
 
 import 'helpers.dart';
 
@@ -151,6 +161,20 @@ class MoneyBackend {
       weights.add(jsonDecode(r.body) as Map<String, Object?>);
       return http.Response('', 204);
     };
+    g.services['$base/$groupId/expenses/$expenseId/split'] = (http.Request r) {
+      final Map<String, Object?> body =
+          jsonDecode(r.body) as Map<String, Object?>;
+      reworks.add(body);
+      final List<Object?>? owners = body['owners'] as List<Object?>?;
+      return FakeGateway.json(
+        expenseJson(
+          split: body['split']! as String,
+          claimed: owners == null
+              ? const <int>[]
+              : (owners.first! as List<Object?>).cast<int>(),
+        ),
+      );
+    };
     g.services['$base/$groupId/expenses/$expenseId/items/0/claim'] =
         (http.Request r) {
           claims.add(jsonDecode(r.body) as Map<String, Object?>);
@@ -164,6 +188,7 @@ class MoneyBackend {
   final List<Map<String, Object?>> expenses = <Map<String, Object?>>[];
   final List<Map<String, Object?>> payments = <Map<String, Object?>>[];
   final List<Map<String, Object?>> claims = <Map<String, Object?>>[];
+  final List<Map<String, Object?>> reworks = <Map<String, Object?>>[];
   final List<Map<String, Object?>> kittyAsks = <Map<String, Object?>>[];
   final List<Map<String, Object?>> weights = <Map<String, Object?>>[];
 }
@@ -183,10 +208,20 @@ Map<String, Object?> kittyGroupJson() =>
 
 /// Un escáner de tickets falso que "lee" las filas que le digamos.
 class FakeScanner implements ReceiptScanner {
-  FakeScanner(this.rows);
+  FakeScanner(this.rows, {this.qr});
 
   final List<String>? rows;
+  final String? qr;
   final List<ReceiptSource> asked = <ReceiptSource>[];
+
+  @override
+  Future<ScannedTicket?> scanTicket(
+    ReceiptSource source, {
+    String currency = 'EUR',
+  }) async {
+    asked.add(source);
+    return rows == null ? null : ScannedTicket(rows: rows!, qr: qr);
+  }
 
   @override
   Future<List<String>?> scan(
@@ -216,6 +251,10 @@ Future<MoneyBackend> pumpMoney(
   FakeLocation? location,
   OpenBooking? openBooking,
   Vault? vault,
+  Future<bool> Function(Uri)? openLink,
+  ShareFiles? share,
+  FakeNotices? notices,
+  WebSceneBuilder? webScene,
 }) async {
   tester.view.physicalSize = const Size(1200, 9000);
   tester.view.devicePixelRatio = 3;
@@ -237,9 +276,69 @@ Future<MoneyBackend> pumpMoney(
       location: location,
       openBooking: openBooking,
       vault: vault,
+      openLink: openLink,
+      share: share,
+      notices: notices,
+      webScene: webScene,
     ),
   );
   return b;
+}
+
+/// La página de una maqueta que la app abre (sin WebView en los tests).
+class PageSpy {
+  final List<String> pages = <String>[];
+  void Function(String message)? send;
+
+  /// Lo que manda cada página (por su HTML): con varias pantallas web
+  /// abiertas a la vez (Inicio debajo de Ajustes), [send] es la última que
+  /// se dibujó, y [to] elige una.
+  final Map<String, void Function(String message)> _by =
+      <String, void Function(String message)>{};
+
+  Widget build(String html, void Function(String message) onMessage) {
+    pages.add(html);
+    send = onMessage;
+    _by[html] = onMessage;
+    return const SizedBox.expand();
+  }
+
+  /// Para mandar a la página cuyo HTML lleva [part] (su título, por ejemplo).
+  void Function(String message) to(String part) =>
+      _by.entries.lastWhere((MapEntry<String, void Function(String)> e) {
+        return e.key.contains(part);
+      }).value;
+
+  /// Espera (dejando correr las llamadas de verdad) hasta que [done].
+  Future<void> wait(WidgetTester tester, bool Function() done) async {
+    for (int i = 0; i < 100 && !done(); i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump(const Duration(milliseconds: 20));
+    }
+    expect(done(), isTrue);
+  }
+
+  /// Lo último que sabe la página: lo de la carga más lo que llegó después.
+  /// Con varias pantallas web, [title] dice cuál (si no, la última).
+  Map<String, Object?> data(WebSceneBridge bridge, {String? title}) {
+    final List<String> distinct = pages.toSet().toList();
+    final String html = title == null
+        ? distinct.last
+        : distinct.lastWhere((String h) => h.contains(title));
+    final int at = html.indexOf('window.ECL=') + 'window.ECL='.length;
+    final Map<String, Object?> d = jsonDecode(
+      html.substring(at, html.indexOf(';</script>', at)),
+    ) as Map<String, Object?>;
+    for (final String js in bridge.sent) {
+      final int a = js.indexOf('ECLin(') + 'ECLin('.length;
+      d.addAll(
+        jsonDecode(js.substring(a, js.length - 1)) as Map<String, Object?>,
+      );
+    }
+    return d;
+  }
 }
 
 void main() {
@@ -325,24 +424,11 @@ void main() {
   testWidgets('el atajo Gastos de Inicio abre Dinero', (
     WidgetTester tester,
   ) async {
-    await pumpMoney(tester, initialLocation: Routes.home);
-    // Gastos está en el carrusel de Inicio: deslizar, centrar y abrir.
-    await tester.scrollUntilVisible(
-      find.byType(PageView),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.dragUntilVisible(
-      find.text('Gastos'),
-      find.byType(PageView),
-      const Offset(-250, 0),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Gastos'));
-    await tester.pumpAndSettle();
-    if (find.text('Gastos').evaluate().isNotEmpty) {
-      await tester.tap(find.text('Gastos'));
-    }
+    final PageSpy spy = PageSpy();
+    await pumpMoney(tester, initialLocation: Routes.home, webScene: spy.build);
+    // Gastos es el cuadrado 9 del carrusel de Inicio (una página web).
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    spy.send!('tile:8');
     await tester.pumpAndSettle();
     expect(find.text('Dinero'), findsOneWidget);
     expect(find.text('Tu dinero'), findsOneWidget);
@@ -408,26 +494,107 @@ void main() {
   });
 
   testWidgets('saldar con Álex apunta el pago', (WidgetTester tester) async {
+    final MemorySettingsStore prefs = MemorySettingsStore();
     final MoneyBackend b = MoneyBackend()..current = groupJson();
     await pumpMoney(
       tester,
       backend: b,
+      prefs: prefs,
       initialLocation: Routes.expenseGroup(groupId),
     );
     expect(find.textContaining('Le debes a Álex'), findsOneWidget);
     await tester.tap(find.text('Saldar'));
     await tester.pumpAndSettle();
-    expect(find.text('Pagar a Álex'), findsOneWidget);
-    expect(find.text('43.00'), findsOneWidget);
-    await tester.tap(find.text('Ya le he pagado'));
+    expect(find.text('Saldar con Álex'), findsOneWidget);
+    // La primera vez pregunta el banco y lo guarda.
+    expect(
+      find.text('¿Desde qué banco haces Bizum? (solo la primera vez)'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Openbank'));
+    await tester.pumpAndSettle();
+    expect(prefs.readData(LocalData.bizumBank), 'Openbank');
+    expect(find.text('Abrir Bizum en Openbank'), findsOneWidget);
+    await tester.tap(find.text('Ya le pagué en efectivo'));
     await tester.pumpAndSettle();
     expect(b.payments.single, <String, Object?>{
       'to_seat': 2,
       'amount_minor': 4300,
     });
+    expect(find.text('Saldado con Álex'), findsOneWidget);
   });
 
-  testWidgets('tocar una línea del ticket: "esto me lo pedí yo"', (
+  testWidgets('juntar móviles: la escena y luego abrir el banco', (
+    WidgetTester tester,
+  ) async {
+    final FakeNotices notices = FakeNotices();
+    final MemorySettingsStore prefs = MemorySettingsStore();
+    await prefs.writeData(LocalData.bizumBank, 'BBVA');
+    // El portapapeles del sistema (en los tests hay que contestar a mano).
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (MethodCall call) async => null,
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    // Este móvil no tiene la app del banco instalada.
+    const MethodChannel apps = MethodChannel('nomadiq/apps');
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      apps,
+      (MethodCall call) async => false,
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        apps,
+        null,
+      ),
+    );
+    final MoneyBackend b = MoneyBackend()..current = groupJson();
+    await pumpMoney(
+      tester,
+      backend: b,
+      prefs: prefs,
+      notices: notices,
+      initialLocation: Routes.expenseGroup(groupId),
+    );
+    await tester.tap(find.text('Saldar'));
+    await tester.pumpAndSettle();
+    // Ya sabe el banco: directo a pagar.
+    expect(find.text('Abrir Bizum en BBVA'), findsOneWidget);
+    await tester.tap(find.text('Juntar móviles con Álex'));
+    await tester.pump();
+    expect(find.text('Deuda en proceso de saldar'), findsOneWidget);
+    expect(find.text('Deuda con Álex'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.text('Conectados'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+    // Al acabar: datos copiados, notificación de Flyra y el banco.
+    expect(notices.copyData.single.$1, 'Flyra · Datos para Bizum');
+    expect(notices.copyData.single.$3.first.$2, '43,00');
+    expect(find.text('¿Ya le has enviado el Bizum a Álex?'), findsOneWidget);
+    // Sin la app del banco: se explica qué hacer.
+    expect(find.textContaining('No encuentro la app de BBVA'), findsOneWidget);
+    await tester.tap(find.text('Sí, marcar saldado'));
+    await tester.pumpAndSettle();
+    expect(b.payments.single['amount_minor'], 4300);
+  });
+
+  test('notificación de Bizum: cada botón copia su dato', () {
+    const String payload = '$copyPrefix["43,00","Madrid"]';
+    expect(copyFromResponse(payload, 'copy_0'), '43,00');
+    expect(copyFromResponse(payload, 'copy_1'), 'Madrid');
+    expect(copyFromResponse(payload, null), '43,00'); // tocar la notificación
+    expect(copyFromResponse(payload, 'copy_7'), isNull);
+    expect(copyFromResponse('/money', null), isNull); // una ruta normal
+    expect(copyFromResponse('copy:no-json', null), isNull);
+  });
+
+  testWidgets('tocar quién tomó un plato guarda el reparto', (
     WidgetTester tester,
   ) async {
     final MoneyBackend b = MoneyBackend()..current = groupJson();
@@ -438,11 +605,15 @@ void main() {
     );
     await tester.tap(find.text('Cena en La Latina'));
     await tester.pumpAndSettle();
-    expect(find.text('Todos'), findsOneWidget); // las croquetas, de todos
-    await tester.tap(find.text('Croquetas'));
+    // Las croquetas son de todos; Álex se quita: solo para mí.
+    final Finder alex = find.byWidgetPredicate(
+      (Widget w) => w is PersonToggle && w.name == 'Álex' && w.on,
+    );
+    await tester.ensureVisible(alex.first);
+    await tester.tap(alex.first);
     await tester.pumpAndSettle();
-    expect(b.claims.single, <String, Object?>{'claimed': true});
-    expect(find.text('Todos'), findsNothing); // ahora son mías
+    expect(b.reworks.single['split'], 'items');
+    expect((b.reworks.single['owners']! as List<Object?>).first, <int>[1]);
   });
 
   group('divisas', () {
@@ -457,56 +628,69 @@ void main() {
       );
     });
 
-    testWidgets('lanzar la moneda: 50 € en yenes', (WidgetTester tester) async {
+    test('las fotos de cada divisa, con su valor como en la página', () {
+      expect(valueKey(50, 2), '0.5');
+      expect(valueKey(5, 2), '0.05');
+      expect(valueKey(200, 2), '2');
+      expect(valueKey(500, 0), '500');
+      final Map<String, Object?> eur = photoAssets('EUR')!;
+      expect(eur['s'], 'assets/divisas/eur/m-200.webp');
+      expect(
+        (eur['n']! as Map<String, String>)['5'],
+        'assets/divisas/eur/b-5.webp',
+      );
+      expect(
+        (eur['m']! as Map<String, String>)['0.5'],
+        'assets/divisas/eur/m-50.webp',
+      );
+      expect(photoAssets('MAD'), isNull);
+    });
+
+    testWidgets('la página: tipos del BCE, fotos y cambiar de moneda', (
+      WidgetTester tester,
+    ) async {
       final MemorySettingsStore prefs = MemorySettingsStore();
+      final PageSpy spy = PageSpy();
       await pumpMoney(
         tester,
         initialLocation: Routes.money(tab: MoneyTab.fx),
         guest: true, // los tipos son públicos
         prefs: prefs,
+        webScene: spy.build,
       );
-      // Flyra avisa siempre de que es solo informativa.
-      expect(find.textContaining('Solo informativa'), findsOneWidget);
-      // Botón rápido: escribe 20 en la caja.
-      await tester.tap(find.widgetWithText(ChoiceChip, '20'));
-      await tester.pump();
+      await spy.wait(
+        tester,
+        () =>
+            spy.pages.isNotEmpty &&
+            spy.data(FxView.lastBridge!)['day'] == '23-10-2026',
+      );
+      Map<String, Object?> d = spy.data(FxView.lastBridge!);
+      expect(d['from'], 'EUR');
+      expect(d['to'], 'GBP');
+      expect(d['rates'], <String, Object?>{
+        'EUR': 1.0,
+        'USD': 1.0812,
+        'JPY': 163.21,
+      });
+      expect(d['offline'], isFalse);
+      // Van las fotos del euro y la libra (como "data:"), no las demás.
+      final Map<String, Object?> ph = d['ph']! as Map<String, Object?>;
+      expect(ph.keys.toSet(), <String>{'EUR', 'GBP'});
       expect(
-        tester.widget<TextField>(find.byType(TextField).first).controller!.text,
-        '20',
+        (ph['EUR']! as Map<String, Object?>)['s'],
+        startsWith('data:image/webp;base64,'),
       );
-      await tester.tap(find.widgetWithText(ChoiceChip, '50'));
-      await tester.pump();
-      // Cada moneda con su bandera y su país.
-      expect(find.text('🇺🇸 USD · Estados Unidos'), findsOneWidget);
-      await tester.tap(find.textContaining('USD').first);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('🇯🇵 JPY · Japón').last);
-      await tester.pumpAndSettle();
-      expect(find.text('LISTA PARA LANZAR'), findsOneWidget);
-      await tester.tap(find.text('Lanzar la moneda'));
-      await tester.pump(const Duration(milliseconds: 800));
-      expect(find.text('¡AL AIRE!'), findsOneWidget);
-      await tester.pumpAndSettle();
-      expect(find.text('CAMBIADO A JPY'), findsOneWidget);
-      expect(find.textContaining('8.161'), findsOneWidget);
-      // En billetes: 5000 + 2000 + 1000 y el resto en monedas.
-      await tester.scrollUntilVisible(
-        find.text('Billetes según el banco central'),
-        300,
-        scrollable: find.byType(Scrollable).last,
+      // Al elegir el yen, la app manda sus fotos.
+      spy.send!(
+        'pair:0:${base64Url.encode(utf8.encode(jsonEncode(<String, Object?>{'f': 'EUR', 't': 'JPY'}))).replaceAll('=', '')}',
       );
-      expect(find.text('Cómo llevarlo en efectivo'), findsOneWidget);
-      expect(find.text('Menos piezas'), findsOneWidget);
-      expect(find.text('Equilibrado'), findsOneWidget);
-      expect(find.text('Sueltos y propinas'), findsOneWidget);
-      // El billete de 5000 ¥ sale con su foto (el lector dice su valor).
-      expect(find.bySemanticsLabel(RegExp('5.000')), findsOneWidget);
-      expect(find.byType(Image), findsWidgets);
-      // Los 161 ¥ que sobran salen como monedas dibujadas (el yen las
-      // tiene en la lista), no como texto.
-      expect(find.textContaining('en monedas'), findsNothing);
-      expect(find.text('¥500'), findsNothing);
-      expect(find.bySemanticsLabel(RegExp('100')), findsWidgets);
+      await spy.wait(
+        tester,
+        () => (spy.data(FxView.lastBridge!)['ph']! as Map<String, Object?>)
+            .containsKey('JPY'),
+      );
+      d = spy.data(FxView.lastBridge!);
+      expect(d['to'], 'JPY');
       // Se guardó una copia para usarla sin red.
       expect(prefs.data[LocalData.fxRates], contains('163.21'));
     });
@@ -517,14 +701,25 @@ void main() {
       final MemorySettingsStore prefs = MemorySettingsStore()
         ..data[LocalData.fxRates] = jsonEncode(ratesJson);
       final MoneyBackend b = MoneyBackend()..g.failWith = 503;
+      final PageSpy spy = PageSpy();
       await pumpMoney(
         tester,
         backend: b,
         initialLocation: Routes.money(tab: MoneyTab.fx),
         guest: true,
         prefs: prefs,
+        webScene: spy.build,
       );
-      expect(find.textContaining('Sin conexión'), findsOneWidget);
+      await spy.wait(
+        tester,
+        () =>
+            spy.pages.isNotEmpty &&
+            spy.data(FxView.lastBridge!)['offline'] == true,
+      );
+      expect(spy.data(FxView.lastBridge!)['day'], '23-10-2026');
+      // "Reintentar" vuelve a pedir los tipos.
+      spy.send!('retry');
+      await tester.pump();
     });
   });
 
@@ -586,55 +781,84 @@ void main() {
   });
 
   group('bote común y modo pareja', () {
-    testWidgets('poner dinero y pedir más a todos', (
+    testWidgets('poner dinero, gastar del bote y pedir más a todos', (
       WidgetTester tester,
     ) async {
       final MoneyBackend b = MoneyBackend()..current = kittyGroupJson();
+      final PageSpy page = PageSpy();
       await pumpMoney(
         tester,
         backend: b,
         initialLocation: Routes.money(tab: MoneyTab.kitty),
+        webScene: page.build,
       );
-      expect(find.text('Hecho'), findsNWidgets(2));
-      await tester.tap(find.text('Poner dinero'));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).last, '20');
-      await tester.tap(find.widgetWithText(FilledButton, 'ACEPTAR'));
-      await tester.pumpAndSettle();
+      await page.wait(tester, () => page.pages.isNotEmpty);
+      Map<String, Object?> pot() =>
+          page.data(KittyView.lastBridge!)['pot']! as Map<String, Object?>;
+      await page.wait(
+        tester,
+        () => page.data(KittyView.lastBridge!)['pot'] != null,
+      );
+      // La maqueta con el bote de verdad: 30 € cada uno, 50 € dentro.
+      expect(pot()['head'], 'BOTE MADRID · 2 PERSONAS');
+      expect(pot()['ask'], 30);
+      expect(pot()['goal'], 60);
+      expect(
+        (pot()['people']! as List<Object?>).map(
+          (Object? p) => (p! as Map<String, Object?>)['put'],
+        ),
+        <int>[30, 30],
+      );
+      // "Pedir 20 € más a cada uno".
+      page.send!('more');
+      await page.wait(tester, () => b.kittyAsks.isNotEmpty);
+      expect(b.kittyAsks.single, <String, Object?>{'ask_minor': 5000});
+      // "Poner mi parte": se apunta lo enviado a la hucha.
+      page.send!('put:20');
+      await page.wait(tester, () => b.payments.isNotEmpty);
       expect(b.payments.single, <String, Object?>{
         'to_seat': 0,
         'amount_minor': 2000,
       });
-      await tester.tap(find.textContaining('Cada uno:'));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).last, '40');
-      await tester.tap(find.widgetWithText(FilledButton, 'ACEPTAR'));
-      await tester.pumpAndSettle();
-      expect(b.kittyAsks.single, <String, Object?>{'ask_minor': 4000});
+      // "Gastar del bote" a mano.
+      page.send!(
+        'spend:0:${base64Url.encode(utf8.encode(jsonEncode(<String, Object?>{'n': 'Tuk-tuk', 'a': 12, 'c': 2}))).replaceAll('=', '')}',
+      );
+      await page.wait(tester, () => b.expenses.isNotEmpty);
+      expect(b.expenses.single['title'], 'Tuk-tuk');
+      expect(b.expenses.single['amount_minor'], 1200);
+      expect(b.expenses.single['payer_seat'], 0);
     });
 
-    testWidgets('pareja: repartir según ingresos guarda 60/40', (
+    testWidgets('pareja: repartir según sueldo guarda 60/40', (
       WidgetTester tester,
     ) async {
       final MoneyBackend b = MoneyBackend()..current = groupJson();
+      final PageSpy page = PageSpy();
       await pumpMoney(
         tester,
         backend: b,
         initialLocation: Routes.money(tab: MoneyTab.kitty),
+        webScene: page.build,
       );
-      expect(find.text('A medias'), findsOneWidget);
-      await tester.tap(find.text('Según ingresos'));
-      await tester.pumpAndSettle();
-      expect(find.text('Tú 60 % · 40 %'), findsOneWidget);
-      await tester.tap(find.widgetWithText(FilledButton, 'ACEPTAR'));
-      await tester.pumpAndSettle();
+      await page.wait(
+        tester,
+        () =>
+            page.pages.isNotEmpty &&
+            page.data(KittyView.lastBridge!)['couple'] != null,
+      );
+      final Map<String, Object?> couple =
+          page.data(KittyView.lastBridge!)['couple']! as Map<String, Object?>;
+      expect(couple['place'], 'Madrid');
+      expect((couple['ot']! as Map<String, Object?>)['name'], 'Álex');
+      page.send!('split:1');
+      await page.wait(tester, () => b.weights.isNotEmpty);
       expect(b.weights.single, <String, Object?>{
         'weights': <Object?>[
           <String, Object?>{'seat': 1, 'weight': 60},
           <String, Object?>{'seat': 2, 'weight': 40},
         ],
       });
-      expect(find.text('Reparto guardado'), findsOneWidget);
     });
 
     test('un gasto por porcentaje manda los pesos', () {

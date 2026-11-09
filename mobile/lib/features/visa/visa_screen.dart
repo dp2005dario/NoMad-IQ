@@ -1,17 +1,16 @@
-// Visado (maqueta "Pedir el ESTA"): qué te piden para entrar en otro país
-// con TU pasaporte y, si se pide por Internet (ESTA, eTA, e-Visa...), te
-// ayudamos a rellenarlo con los datos de tu pasaporte.
+// Visado (maqueta "Visado"): la maqueta tal cual (assets/visa/visado.html)
+// con lo que te piden para entrar en otro país con TU pasaporte y, si se
+// pide por Internet (ESTA, eTA, e-Visa...), los tres pasos para pedirlo con
+// los datos de tu pasaporte.
 //
 // Cómo es gratis y seguro a la vez:
 //   - La tabla "pasaporte × país" va dentro de la app (visa_data.dart).
 //   - Los datos del pasaporte salen de la foto que ya tienes en la Bóveda
 //     (zona MRZ, mrz.dart), se leen en el móvil y solo viven en memoria.
-//   - No mandamos nada a ninguna web: tú copias cada dato y lo pegas en la
-//     web OFICIAL (nunca intermediarios que cobran el doble). La maqueta
-//     soñaba con "rellenarlo solo", pero ninguna web oficial lo permite sin
-//     meter tus datos en un servidor ajeno: así es más honrado.
-//   - La maqueta también leía el chip NFC del pasaporte; la foto de la
-//     Bóveda da los mismos datos sin pedir permisos nuevos.
+//     (La maqueta leía el chip NFC; la foto da los mismos datos sin pedir
+//     permisos nuevos. Si no se puede leer, Flyra lo dice.)
+//   - No mandamos nada a ninguna web: tocas cada dato para copiarlo y lo
+//     pegas en la web OFICIAL (nunca intermediarios que cobran el doble).
 import 'dart:async';
 import 'dart:ui' as ui;
 
@@ -23,7 +22,6 @@ import 'package:intl/intl.dart';
 import '../../core/router.dart';
 import '../../core/services.dart';
 import '../../core/settings.dart';
-import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../easy/easy_mode.dart';
 import '../trip/trip_check.dart' show entryPermits, passportMarginMonths;
@@ -32,14 +30,19 @@ import '../route/flight3d.dart' show CountryCodes;
 import '../route/world_data.dart';
 import '../vault/vault.dart';
 import '../vault/vault_store.dart';
+import '../route/web_scene.dart';
 import 'mrz.dart';
 import 'visa_data.dart';
+import 'visa_page.dart';
 
 class VisaScreen extends StatefulWidget {
   const VisaScreen({super.key, this.to});
 
   /// País de destino ("US"); si no, el de tu próximo vuelo.
   final String? to;
+
+  /// La última conexión con la página (para las pruebas).
+  static WebSceneBridge? lastBridge;
 
   @override
   State<VisaScreen> createState() => _VisaScreenState();
@@ -48,8 +51,18 @@ class VisaScreen extends StatefulWidget {
 /// En qué paso de la solicitud estás (las tres rayitas de arriba).
 enum _Step { passport, review, send }
 
+/// Un dato de la lista de "Revisar": qué es, lo que pone (null = lo
+/// escribes tú en la web oficial) y lo que se copia.
+typedef _Field = ({String label, String? value, String? copy, bool warn});
+
 class _VisaScreenState extends State<VisaScreen> {
   late final AppServices _services = ServicesScope.of(context);
+  final WebSceneBridge _bridge = VisaScreen.lastBridge = WebSceneBridge();
+
+  // La página se lee una vez y se guarda (como String, no como Future).
+  static String? _pageCache;
+  String? _html;
+  String? _sent;
 
   VisaTable? _table;
   CountryNames? _names;
@@ -67,13 +80,23 @@ class _VisaScreenState extends State<VisaScreen> {
   @override
   void initState() {
     super.initState();
-    unawaited(_load());
+    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_open()));
   }
 
   @override
   void dispose() {
     _wipeClipboard?.cancel();
     super.dispose();
+  }
+
+  Future<void> _open() async {
+    try {
+      _pageCache ??= await rootBundle.loadString(visaPage, cache: false);
+    } on Object {
+      return;
+    }
+    if (mounted) setState(() {});
+    await _load();
   }
 
   Future<void> _load() async {
@@ -117,7 +140,7 @@ class _VisaScreenState extends State<VisaScreen> {
   String get _lang => Localizations.localeOf(context).languageCode;
 
   String _country(String code) =>
-      '${flagOf(code)}  ${_names?.name(code, _lang) ?? code}';
+      '${flagOf(code)} ${_names?.name(code, _lang) ?? code}';
 
   Future<void> _pick({required bool passport}) async {
     final CountryNames? names = _names;
@@ -148,6 +171,7 @@ class _VisaScreenState extends State<VisaScreen> {
   Future<void> _readPassport() async {
     final AppLocalizations t = AppLocalizations.of(context);
     final Vault vault = _services.vault;
+    setState(() => _noMrz = false);
     if (!vault.isOpen) {
       final UnlockResult r = await vault.open(t.vaultUnlockReason);
       if (r != UnlockResult.ok || !mounted) return;
@@ -198,458 +222,224 @@ class _VisaScreenState extends State<VisaScreen> {
       ..showSnackBar(SnackBar(content: Text(t.visaCopied)));
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final TextTheme text = Theme.of(context).textTheme;
+  EntryRequirement? get _need {
     final VisaTable? table = _table;
     final String? passport = _passport;
     final String? to = _to;
-    final EntryRequirement? need =
-        table == null || passport == null || to == null
-        ? null
-        : passport == to
-        ? null
-        : table.lookup(passport, to);
-
-    return Scaffold(
-      appBar: AppBar(title: Text(t.visaTitle)),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
-        children: <Widget>[
-          Text(
-            t.visaSubtitle,
-            style: text.bodyMedium?.copyWith(color: NomadColors.textMuted),
-          ),
-          const SizedBox(height: 12),
-          if (_failed)
-            Text(t.visaNoData)
-          else if (table == null)
-            const Center(child: CircularProgressIndicator())
-          else ...<Widget>[
-            _CountryField(
-              label: t.visaPassport,
-              value: passport == null ? null : _country(passport),
-              hint: t.visaPickCountry,
-              onTap: () => _pick(passport: true),
-            ),
-            const SizedBox(height: 8),
-            _CountryField(
-              label: t.visaDestination,
-              value: to == null ? null : _country(to),
-              hint: t.visaPickCountry,
-              onTap: () => _pick(passport: false),
-            ),
-            const SizedBox(height: 16),
-            if (passport != null && passport == to)
-              Text(t.visaSameCountry, style: text.titleMedium)
-            else if (need != null) ...<Widget>[
-              _Verdict(need: need, scheme: entryPermits[to]?.$1),
-              const SizedBox(height: 8),
-              Text(
-                t.visaSource(table.updated),
-                style: text.bodySmall?.copyWith(color: NomadColors.textMuted),
-              ),
-              const SizedBox(height: 16),
-              if (need.applyOnline || need.rule == EntryRule.embassy)
-                _apply(t, text, to!, need),
-            ],
-          ],
-        ],
-      ),
-    );
+    if (table == null || passport == null || to == null || passport == to) {
+      return null;
+    }
+    return table.lookup(passport, to);
   }
 
-  /// Los tres pasos: pasaporte → revisar → enviar.
-  Widget _apply(
-    AppLocalizations t,
-    TextTheme text,
-    String to,
-    EntryRequirement need,
-  ) {
-    final (String, String)? official = entryPermits[to];
-    final String scheme = official?.$1 ?? t.visaGenericScheme;
-    final List<String> labels = <String>[
-      t.visaStepPassport,
-      t.visaStepReview,
-      t.visaStepSend,
-    ];
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Text(t.visaApplyTitle(scheme), style: text.titleMedium),
-            const SizedBox(height: 12),
-            Row(
-              children: <Widget>[
-                for (int i = 0; i < labels.length; i++) ...<Widget>[
-                  if (i > 0) const SizedBox(width: 6),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Container(
-                          height: 6,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(3),
-                            color: i <= _step.index
-                                ? NomadColors.flights
-                                : NomadColors.outline,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          labels[i],
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            color: i <= _step.index
-                                ? null
-                                : NomadColors.textMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 16),
-            ...switch (_step) {
-              _Step.passport => _passportStep(t, text),
-              _Step.review => _reviewStep(t, text),
-              _Step.send => _sendStep(t, text, scheme, official?.$2),
-            },
-          ],
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _passportStep(AppLocalizations t, TextTheme text) => <Widget>[
-    Text(t.visaReadTitle, style: text.titleSmall),
-    const SizedBox(height: 4),
-    Text(t.visaReadBody),
-    const SizedBox(height: 12),
-    if (_noMrz) ...<Widget>[
-      Text(t.visaNoPassport, style: const TextStyle(color: NomadColors.money)),
-      TextButton.icon(
-        icon: const Icon(Icons.add_a_photo_rounded),
-        label: Text(t.visaAddToVault),
-        onPressed: () => context.push(Routes.vault),
-      ),
-    ],
-    FilledButton.icon(
-      icon: _reading
-          ? const SizedBox.square(
-              dimension: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : const Icon(Icons.fingerprint_rounded),
-      label: Text(t.visaRead),
-      onPressed: _reading ? null : _readPassport,
-    ),
-    TextButton(
-      onPressed: () => setState(() => _step = _Step.review),
-      child: Text(t.visaManual),
-    ),
-  ];
-
-  List<Widget> _reviewStep(AppLocalizations t, TextTheme text) {
+  /// Los datos de "Revisar": los del pasaporte (si se leyó) y los tuyos.
+  List<_Field> _fields(AppLocalizations t) {
     final MrzData? m = _mrz;
     String day(DateTime d) =>
         DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag())
             .format(d);
+    String iso(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
     final bool shortValidity =
         m != null &&
         m.expiry.isBefore(
           DateTime.now().add(const Duration(days: 30 * passportMarginMonths)),
         );
-    return <Widget>[
-      if (m != null) ...<Widget>[
-        _Field(t.visaFieldSurname, m.surname, t.visaFromPassport, _copy),
-        _Field(t.visaFieldName, m.givenNames, t.visaFromPassport, _copy),
-        _Field(t.visaFieldNumber, m.number, t.visaFromPassport, _copy),
-        _Field(
-          t.visaFieldBirth,
-          day(m.birth),
-          t.visaFromPassport,
-          _copy,
-          copyValue: DateFormat('yyyy-MM-dd').format(m.birth),
-        ),
-        _Field(
+    _Field f(String label, String? v, {String? copy, bool warn = false}) =>
+        (label: label, value: v, copy: copy ?? v, warn: warn);
+    return <_Field>[
+      if (m != null) ...<_Field>[
+        f(t.visaFieldSurname, m.surname),
+        f(t.visaFieldName, m.givenNames),
+        f(t.visaFieldNumber, m.number),
+        f(t.visaFieldBirth, day(m.birth), copy: iso(m.birth)),
+        f(
           t.visaFieldNationality,
           _names?.name(_passport ?? m.nationality, _lang) ?? m.nationality,
-          t.visaFromPassport,
-          _copy,
         ),
-        _Field(
+        f(
           t.visaFieldExpiry,
           day(m.expiry),
-          t.visaFromPassport,
-          _copy,
-          copyValue: DateFormat('yyyy-MM-dd').format(m.expiry),
+          copy: iso(m.expiry),
+          warn: shortValidity,
         ),
-        if (shortValidity)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              t.visaExpiresSoon(day(m.expiry)),
-              style: const TextStyle(color: NomadColors.money),
-            ),
-          ),
       ],
-      _Field(t.visaFieldAddress, null, t.visaYours, null),
-      _Field(t.visaFieldEmergency, null, t.visaYours, null),
-      _Field(t.visaFieldJob, null, t.visaYours, null),
-      const SizedBox(height: 8),
-      Text(t.visaYouAnswer, style: text.bodySmall),
-      const SizedBox(height: 12),
-      FilledButton(
-        onPressed: () => setState(() => _step = _Step.send),
-        child: Text(t.visaAllGood),
-      ),
+      f(t.visaFieldAddress, null),
+      f(t.visaFieldEmergency, null),
+      f(t.visaFieldJob, null),
     ];
   }
 
-  List<Widget> _sendStep(
-    AppLocalizations t,
-    TextTheme text,
-    String scheme,
-    String? url,
-  ) => <Widget>[
-    Text(t.visaReadyTitle, style: text.titleSmall),
-    const SizedBox(height: 4),
-    Text(url == null ? t.visaNoOfficial : t.visaReadyBody(scheme)),
-    const SizedBox(height: 8),
-    for (final (IconData icon, String line) in <(IconData, String)>[
-      (Icons.gpp_good_rounded, t.visaTipOfficial),
-      (Icons.schedule_rounded, t.visaTipWait),
-      (Icons.lock_rounded, t.visaTipSave),
-    ])
-      ListTile(
-        contentPadding: EdgeInsets.zero,
-        dense: true,
-        leading: Icon(icon, color: NomadColors.flights),
-        title: Text(line),
-      ),
-    if (url != null)
-      FilledButton.icon(
-        icon: const Icon(Icons.open_in_new_rounded),
-        label: Text(t.visaOpenOfficial),
-        onPressed: () => _services.openLink(Uri.parse(url)),
-      ),
-    TextButton.icon(
-      icon: const Icon(Icons.lock_rounded),
-      label: Text(t.visaSaveApproval),
-      onPressed: () => context.push(Routes.vault),
-    ),
-  ];
-}
-
-/// El veredicto grande: "No necesitas visado · hasta 90 días".
-class _Verdict extends StatelessWidget {
-  const _Verdict({required this.need, this.scheme});
-
-  final EntryRequirement need;
-  final String? scheme;
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final (
-      Color color,
-      IconData icon,
-      String title,
-      String more,
-    ) = switch (need.rule) {
-      EntryRule.free => (
-        NomadColors.mint,
-        Icons.check_circle_rounded,
-        t.visaFree,
-        t.visaFreeMore,
-      ),
-      EntryRule.onArrival => (
-        NomadColors.mint,
-        Icons.flight_land_rounded,
-        t.visaOnArrival,
-        t.visaOnArrivalMore,
-      ),
-      EntryRule.eta => (
-        NomadColors.flights,
-        Icons.assignment_rounded,
-        scheme == null ? t.visaEta : t.visaEtaNamed(scheme!),
-        t.visaEtaMore,
-      ),
-      EntryRule.eVisa => (
-        NomadColors.flights,
-        Icons.assignment_rounded,
-        t.visaEVisa,
-        t.visaEVisaMore,
-      ),
-      EntryRule.embassy => (
-        NomadColors.money,
-        Icons.account_balance_rounded,
-        t.visaEmbassy,
-        t.visaEmbassyMore,
-      ),
-      EntryRule.refused => (
-        NomadColors.safety,
-        Icons.block_rounded,
-        t.visaRefused,
-        t.visaRefusedMore,
-      ),
-      EntryRule.unknown => (
-        NomadColors.textMuted,
-        Icons.help_outline_rounded,
-        t.visaUnknown,
-        t.visaUnknownMore,
-      ),
-    };
-    final int? days = need.days;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        color: color.withValues(alpha: 0.12),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Icon(icon, color: color, size: 32),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium
-                      ?.copyWith(color: color),
-                ),
-                if (days != null)
-                  Text(
-                    t.visaDays(days),
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                const SizedBox(height: 4),
-                Text(more),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  void _onMessage(String m) {
+    final int i = m.indexOf(':');
+    final String what = i < 0 ? m : m.substring(0, i);
+    final String arg = i < 0 ? '' : m.substring(i + 1);
+    switch (what) {
+      case 'back':
+        if (context.canPop()) context.pop();
+      case 'from':
+        unawaited(_pick(passport: true));
+      case 'to':
+        unawaited(_pick(passport: false));
+      case 'read':
+        if (!_reading) unawaited(_readPassport());
+      case 'manual':
+        setState(() => (_step = _Step.review, _noMrz = false));
+      case 'copy':
+        final List<_Field> all = _fields(AppLocalizations.of(context));
+        final int n = int.tryParse(arg) ?? -1;
+        if (n >= 0 && n < all.length) {
+          if (all[n].copy case final String v) unawaited(_copy(v));
+        }
+      case 'next':
+        setState(() => _step = _Step.send);
+      case 'official':
+        final String? url = entryPermits[_to]?.$2;
+        if (url != null) unawaited(_services.openLink(Uri.parse(url)));
+      case 'vault':
+        setState(() => _noMrz = false);
+        unawaited(context.push(Routes.vault));
+      case 'flyHide':
+        setState(() => _noMrz = false);
+    }
   }
-}
 
-class _CountryField extends StatelessWidget {
-  const _CountryField({
-    required this.label,
-    required this.value,
-    required this.hint,
-    required this.onTap,
-  });
+  Map<String, Object?> _data(AppLocalizations t) {
+    final String? passport = _passport;
+    final String? to = _to;
+    final EntryRequirement? need = _need;
+    final (String, String)? official = to == null ? null : entryPermits[to];
+    final String scheme = official?.$1 ?? t.visaGenericScheme;
+    final bool apply =
+        need != null && (need.applyOnline || need.rule == EntryRule.embassy);
+    final MrzData? m = _mrz;
+    final bool shortValidity = _fields(t).any((_Field f) => f.warn);
 
-  final String label;
-  final String? value;
-  final String hint;
-  final VoidCallback onTap;
+    String? note;
+    if (_failed) {
+      note = t.visaNoData;
+    } else if (_table == null) {
+      note = null;
+    } else if (passport != null && passport == to) {
+      note = t.visaSameCountry;
+    } else if (passport == null || to == null) {
+      note = t.visaSubtitle;
+    }
 
-  @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(14),
-    child: InputDecorator(
-      decoration: InputDecoration(
-        labelText: label,
-        suffixIcon: const Icon(Icons.expand_more_rounded),
-      ),
-      child: Text(
-        value ?? hint,
-        style: value == null
-            ? const TextStyle(color: NomadColors.textMuted)
-            : null,
-      ),
-    ),
-  );
-}
+    Map<String, Object?>? verdict;
+    if (need != null) {
+      final (String tone, String h, String p) = switch (need.rule) {
+        EntryRule.free => ('ok', t.visaFree, t.visaFreeMore),
+        EntryRule.onArrival => ('ok', t.visaOnArrival, t.visaOnArrivalMore),
+        EntryRule.eta => (
+          'info',
+          official == null ? t.visaEta : t.visaEtaNamed(official.$1),
+          t.visaEtaMore,
+        ),
+        EntryRule.eVisa => ('info', t.visaEVisa, t.visaEVisaMore),
+        EntryRule.embassy => ('warn', t.visaEmbassy, t.visaEmbassyMore),
+        EntryRule.refused => ('bad', t.visaRefused, t.visaRefusedMore),
+        EntryRule.unknown => ('muted', t.visaUnknown, t.visaUnknownMore),
+      };
+      verdict = <String, Object?>{
+        'tone': tone,
+        'h': h,
+        'days': need.days == null ? '' : t.visaDays(need.days!),
+        'p': p,
+        'source': t.visaSource(_table!.updated),
+      };
+    }
 
-/// Una fila de datos: "Nº DE PASAPORTE · •••• 4821 · [Pasaporte] [Copiar]".
-class _Field extends StatelessWidget {
-  const _Field(
-    this.label,
-    this.value,
-    this.source,
-    this.onCopy, {
-    this.copyValue,
-  });
-
-  final String label;
-
-  /// null = lo tienes que escribir tú en la web oficial.
-  final String? value;
-  final String source;
-  final Future<void> Function(String)? onCopy;
-  final String? copyValue;
+    return <String, Object?>{
+      't': <String, Object?>{
+        'back': MaterialLocalizations.of(context).backButtonTooltip,
+        'steps': <String>[t.visaStepPassport, t.visaStepReview, t.visaStepSend],
+        'fromH': t.visaPassport.toUpperCase(),
+        'toH': t.visaDestination.toUpperCase(),
+        'readH': t.visaReadTitle,
+        'readP': t.visaReadBody,
+        'read': t.visaRead,
+        'reading': 'Leyendo tu pasaporte…',
+        'manual': t.visaManual,
+        'allGood': t.visaAllGood,
+        'readyH': t.visaReadyTitle,
+        'tipWait': t.visaTipWait,
+        'tipSave': t.visaTipSave,
+        'tipOfficial': t.visaTipOfficial,
+        'official': t.visaOpenOfficial,
+        'save': t.visaSaveApproval,
+        'copy': t.visaCopy,
+      },
+      'title': apply ? t.visaApplyTitle(scheme) : t.visaTitle,
+      'sub': to == null
+          ? t.visaCheck
+          : apply
+          ? '${_names?.name(to, _lang) ?? to} · lo rellenamos con tu Bóveda'
+          : t.visaCheck,
+      'fromTxt': passport == null ? t.visaPickCountry : _country(passport),
+      'toTxt': to == null ? t.visaPickCountry : _country(to),
+      'verdict': verdict,
+      'note': note ?? '',
+      'apply': apply,
+      'step': _step.index,
+      'reading': _reading,
+      'fields': <Object?>[
+        for (final _Field f in _fields(t))
+          <String, Object?>{
+            'k': f.label,
+            'v': f.value,
+            'from': f.value == null ? t.visaYours : t.visaFromPassport,
+            'src': f.value == null ? 'you' : 'pass',
+            'warn': f.warn,
+          },
+      ],
+      'youAnswer': <String>[
+        if (shortValidity && m != null)
+          t.visaExpiresSoon(
+            DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag())
+                .format(m.expiry),
+          ),
+        t.visaYouAnswer,
+      ].join(' '),
+      'readyP': official == null ? t.visaNoOfficial : t.visaReadyBody(scheme),
+      'hasOfficial': official != null,
+      'fly': _noMrz
+          ? <String, Object?>{
+              'title': 'No consigo leer tu pasaporte',
+              'text': t.visaNoPassport,
+              'retry': t.guideRetry,
+              'alt': t.visaAddToVault,
+            }
+          : null,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
-    final String? v = value;
-    final bool mine = v == null;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        color: NomadColors.surface,
-        border: Border.all(color: NomadColors.outline),
-      ),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: NomadColors.textMuted,
-                  ),
-                ),
-                if (v != null) Text(v),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(11),
-              color: mine ? NomadColors.money : NomadColors.flights,
-            ),
-            child: Text(
-              source,
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                color: NomadColors.background,
-              ),
-            ),
-          ),
-          if (v != null && onCopy != null)
-            IconButton(
-              tooltip: AppLocalizations.of(context).visaCopy,
-              icon: const Icon(Icons.copy_rounded, size: 18),
-              onPressed: () => onCopy!(copyValue ?? v),
-            )
-          else
-            const SizedBox(width: 12),
-        ],
+    final String? page = _pageCache;
+    if (page == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0B1217),
+        body: SizedBox.expand(),
+      );
+    }
+    final Map<String, Object?> data = _data(AppLocalizations.of(context));
+    final String push = visaPushScript(data);
+    if (_html == null) {
+      _html = visaPageWith(page, data);
+      _sent = push;
+    } else if (push != _sent) {
+      _sent = push;
+      unawaited(_bridge.run(push));
+    }
+    final String html = _html!;
+    final AppServices services = ServicesScope.of(context);
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B1217),
+      body: SafeArea(
+        bottom: false,
+        child:
+            services.webScene?.call(html, _onMessage) ??
+            WebScene(html: html, onMessage: _onMessage, bridge: _bridge),
       ),
     );
   }

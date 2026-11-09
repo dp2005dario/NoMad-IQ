@@ -1,24 +1,23 @@
-// Qué pasa en tus fechas (maqueta "Eventos", pantalla 40): festivos y
-// eventos de la ciudad a la que vas, en el mismo orden que la maqueta:
+// Qué pasa en tus fechas: la maqueta "Eventos" tal cual
+// (assets/events/eventos.html, dentro de un WebView). Festivos y eventos de
+// la ciudad a la que vas:
 //   1. El número grande de "cosas pasan en tus fechas".
 //   2. "TUS DÍAS · TOCA UNO" y los tipos (Música, Fiestas, Deporte...).
 //   3. Las tarjetas: estado de las entradas, cuenta atrás, "Entradas",
 //      "+ Planes" (a "Elegid planes" del viaje en grupo) y el corazón (Flyra
 //      te avisa la víspera y 2 horas antes).
-//   4. "Dónde pasan": los pines en su sitio real (coordenadas de
-//      Ticketmaster).
-//   5. El consejo de Flyra (solo si dos eventos coinciden el mismo día).
+//   4. "Dónde pasan": los pines a escala, con tu hotel en el punto azul.
+//   5. El consejo de Flyra (si dos eventos coinciden el mismo día).
 //
-// Lo de la maqueta que NO está, a propósito: el precio medio del hotel por
-// noche y frases como "hoteles +55 % esa noche". No hay datos gratis y
-// comprobados para eso, y la app no inventa nada. Lo que se ve aquí es real
-// y con fuente: festivos oficiales (Nager.Date) y eventos publicados en
-// Ticketmaster, con el precio que pone el organizador si lo pone.
+// Todo es real y con fuente: festivos oficiales (Nager.Date) y eventos
+// publicados en Ticketmaster, con el precio que pone el organizador si lo
+// pone. Tocando la ciudad y las fechas (arriba) se cambian, y tu hotel se
+// marca tocando el mapa.
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:timezone/data/latest_10y.dart' as tzdata;
@@ -28,14 +27,15 @@ import '../../core/api_client.dart';
 import '../../core/router.dart';
 import '../../core/services.dart';
 import '../../core/settings.dart';
-import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../widgets/flyra_avatar.dart';
 import '../easy/easy_mode.dart';
 import '../map/geo.dart';
-import '../map/pin_map.dart';
 import '../stays/pick_point_screen.dart';
-import '../flights/flights_screen.dart' show showOriginSheet;
+import '../flights/flights_page.dart' show unpackJson;
+import '../flights/origin_sheet.dart';
+import '../route/geo.dart' show LatLon;
+import '../route/web_scene.dart';
+import 'events_page.dart';
 import '../group/group_api.dart';
 import '../plans/plans_api.dart';
 import '../route/world_data.dart';
@@ -43,39 +43,14 @@ import 'event_reminders.dart';
 import 'hotel_sheet.dart';
 import 'events_api.dart';
 
-IconData eventIcon(EventKind k) => switch (k) {
-  EventKind.holiday => Icons.celebration_rounded,
-  EventKind.music => Icons.music_note_rounded,
-  EventKind.sports => Icons.sports_soccer_rounded,
-  EventKind.arts => Icons.theater_comedy_rounded,
-  EventKind.family => Icons.family_restroom_rounded,
-  EventKind.other => Icons.event_rounded,
-};
-
-Color eventColor(EventKind k) => switch (k) {
-  EventKind.holiday => NomadColors.money,
-  EventKind.music => NomadColors.group,
-  EventKind.sports => NomadColors.mint,
-  EventKind.arts => NomadColors.safety,
-  EventKind.family => NomadColors.flights,
-  EventKind.other => NomadColors.textMuted,
-};
-
-/// Los tipos de la fila de filtros (null = "Todo").
-const List<EventKind?> _cats = <EventKind?>[
-  null,
-  EventKind.music,
-  EventKind.holiday,
-  EventKind.sports,
-  EventKind.arts,
-  EventKind.family,
-];
-
 class EventsScreen extends StatefulWidget {
   const EventsScreen({super.key, this.iata});
 
   /// El aeropuerto de la ciudad (si no, el destino del Modo fácil).
   final String? iata;
+
+  /// El puente de la última pantalla abierta (lo miran los tests).
+  static WebSceneBridge? lastBridge;
 
   @override
   State<EventsScreen> createState() => _EventsScreenState();
@@ -83,6 +58,15 @@ class EventsScreen extends StatefulWidget {
 
 class _EventsScreenState extends State<EventsScreen> {
   late final AppServices _services = ServicesScope.of(context);
+  final WebSceneBridge _bridge = EventsScreen.lastBridge = WebSceneBridge();
+
+  /// La página se lee una vez (se guarda el texto, no la espera).
+  static String? _pageCache;
+  String? _html;
+  String? _sent;
+
+  /// Lo que la página debe enseñar una vez (un aviso).
+  Map<String, Object?> _once = <String, Object?>{};
   late final EasyTrip _trip = loadEasyTrip(_services.prefs);
   late String? _iata = widget.iata?.toUpperCase() ?? _trip.to;
   late DateTimeRange _dates = () {
@@ -97,11 +81,6 @@ class _EventsScreenState extends State<EventsScreen> {
   CityEvents? _found;
   bool _loading = false;
   ApiError? _error;
-  DateTime? _day;
-  EventKind? _cat;
-
-  /// El evento del pin que tocaste en el mapa (null = todos).
-  String? _pin;
 
   /// Los que ya mandaste a "Elegid planes" en esta visita.
   final Set<String> _planned = <String>{};
@@ -159,19 +138,8 @@ class _EventsScreenState extends State<EventsScreen> {
     if (mounted) setState(() => _hotel = p);
   }
 
-  /// "A 12 min andando de tu hotel" (a 80 m por minuto) o, si está lejos,
-  /// "A 7,5 km de tu hotel".
-  String? _fromHotel(AppLocalizations t, CityEvent e, String locale) {
-    final GeoPoint? h = _hotel;
-    if (h == null || e.lat == null || e.lon == null) return null;
-    final double m = h.distanceTo(GeoPoint(e.lat!, e.lon!));
-    if (m <= 3000) return t.eventsWalkFromHotel(math.max(1, (m / 80).round()));
-    return t.eventsKmFromHotel(NumberFormat('0.#', locale).format(m / 1000));
-  }
-
   /// La zona horaria de la ciudad ("Europe/Lisbon"), para la cuenta atrás.
   tz.Location? _zone;
-  Timer? _tick;
 
   static List<String>? _decode(String? raw) {
     if (raw == null) return null;
@@ -191,13 +159,17 @@ class _EventsScreenState extends State<EventsScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_load()));
+    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_start()));
   }
 
-  @override
-  void dispose() {
-    _tick?.cancel();
-    super.dispose();
+  Future<void> _start() async {
+    try {
+      _pageCache ??= await rootBundle.loadString(eventsPage, cache: false);
+    } on Object {
+      return;
+    }
+    if (mounted) setState(() {});
+    await _load();
   }
 
   static bool _tzReady = false;
@@ -221,7 +193,7 @@ class _EventsScreenState extends State<EventsScreen> {
   Future<void> _load() async {
     final String? iata = _iata;
     if (iata == null) return;
-    setState(() => (_loading = true, _error = null, _day = null, _pin = null));
+    setState(() => (_loading = true, _error = null));
     unawaited(_findZone(iata));
     try {
       final CityEvents found = await _services.events.between(
@@ -230,14 +202,8 @@ class _EventsScreenState extends State<EventsScreen> {
         _dates.end,
       );
       if (!mounted) return;
+      // La cuenta atrás la lleva la página (cada segundo).
       setState(() => (_found = found, _loading = false));
-      // La cuenta atrás: se repinta cada segundo mientras estás aquí.
-      _tick?.cancel();
-      if (found.events.any((CityEvent e) => e.time != null)) {
-        _tick = Timer.periodic(const Duration(seconds: 1), (_) {
-          if (mounted) setState(() {});
-        });
-      }
     } on ApiException catch (e) {
       if (mounted) setState(() => (_error = e.error, _loading = false));
     }
@@ -259,17 +225,18 @@ class _EventsScreenState extends State<EventsScreen> {
       initialDateRange: _dates,
     );
     if (range == null || !mounted) return;
-    // Como mucho un mes (lo que acepta el servidor).
-    final DateTime end = range.end.difference(range.start).inDays > 30
-        ? range.start.add(const Duration(days: 30))
+    // Como mucho los días que caben en la fila de la maqueta.
+    final DateTime end =
+        range.end.difference(range.start).inDays >= maxEventDays
+        ? range.start.add(const Duration(days: maxEventDays - 1))
         : range.end;
     setState(() => _dates = DateTimeRange(start: range.start, end: end));
     await _load();
   }
 
-  void _say(String text) => ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(text)));
+  /// Un aviso abajo (lo dibuja la página).
+  void _say(String text) =>
+      setState(() => _once = <String, Object?>{..._once, 'toast': text});
 
   /// Cuándo empieza (hora absoluta), si se sabe la hora y la zona.
   DateTime? _startOf(CityEvent e) {
@@ -284,9 +251,10 @@ class _EventsScreenState extends State<EventsScreen> {
     return tz.TZDateTime(zone, e.date.year, e.date.month, e.date.day, h, m);
   }
 
-  Future<void> _toggleSave(CityEvent e) async {
+  /// El corazón: [adding] = guardarlo (el aviso lo enseña la página).
+  Future<void> _setSaved(CityEvent e, bool adding) async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final bool adding = !_saved.contains(e.id);
+    if (adding == _saved.contains(e.id)) return;
     setState(() {
       _saved = <String>{..._saved};
       if (!_saved.remove(e.id)) _saved.add(e.id);
@@ -316,7 +284,6 @@ class _EventsScreenState extends State<EventsScreen> {
           body: when,
         ),
     ]);
-    if (mounted) _say(t.eventsSavedToast);
   }
 
   String _whenText(CityEvent e) {
@@ -398,7 +365,9 @@ class _EventsScreenState extends State<EventsScreen> {
   Future<void> _openVote() async {
     final GroupTrip? group = await _pickGroup();
     if (group == null || !mounted) return;
-    await context.push(Routes.groupPlans(group.id, city: _found?.city));
+    await context.push(
+      Routes.groupPlans(group.id, city: _found?.city, iata: _iata),
+    );
   }
 
   /// El consejo de Flyra: solo si dos eventos (no festivos) coinciden el
@@ -423,798 +392,158 @@ class _EventsScreenState extends State<EventsScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final TextTheme text = Theme.of(context).textTheme;
-    final String locale = Localizations.localeOf(context).toLanguageTag();
-    final CityEvents? found = _found;
-    final List<DateTime> days = <DateTime>[
-      for (
-        DateTime d = _dates.start;
-        !d.isAfter(_dates.end);
-        d = DateTime(d.year, d.month, d.day + 1)
-      )
-        d,
-    ];
-    final List<CityEvent> all = found?.events ?? const <CityEvent>[];
-    final List<CityEvent> shown = <CityEvent>[
-      for (final CityEvent e in all)
-        if (_pin != null
-            ? e.id == _pin
-            : (_day == null || DateUtils.isSameDay(e.date, _day)) &&
-                  (_cat == null || e.kind == _cat))
-          e,
-    ];
-    final String range =
-        '${DateFormat.MMMd(locale).format(_dates.start)} – ${DateFormat.MMMd(locale).format(_dates.end)}';
+  /// Dónde empezar a buscar tu hotel: el que tenías, el centro de los
+  /// eventos o el aeropuerto de la ciudad.
+  Future<GeoPoint?> _around() async {
+    if (_hotel case final GeoPoint h) return h;
     final List<CityEvent> pins = <CityEvent>[
-      for (final CityEvent e in all)
+      for (final CityEvent e in _found?.events ?? const <CityEvent>[])
         if (e.lat != null && e.lon != null) e,
     ];
-    final String? tip = found == null ? null : _tip(t, all, locale);
-    final bool tm = found?.sources.contains('Ticketmaster') ?? false;
-    return Scaffold(
-      appBar: AppBar(title: Text(t.eventsTitle)),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
-        children: <Widget>[
-          // La ciudad y las fechas (se pueden cambiar).
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: <Widget>[
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(minimumSize: const Size(0, 36)),
-                icon: const Icon(Icons.location_city_rounded),
-                label: Text(
-                  _iata == null
-                      ? t.eventsPickCity
-                      : found == null || found.city.isEmpty
-                      ? _iata!
-                      : found.city,
-                ),
-                onPressed: () => unawaited(_pickCity()),
-              ),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(minimumSize: const Size(0, 36)),
-                icon: const Icon(Icons.date_range_rounded),
-                label: Text(range),
-                onPressed: () => unawaited(_pickDates()),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (_iata == null)
-            Text(t.eventsNoCity)
-          else if (_loading)
-            const Padding(
-              padding: EdgeInsets.all(24),
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (_error != null)
-            Text(
-              _error == ApiError.network
-                  ? t.eventsOffline
-                  : t.eventsUnavailable,
-            )
-          else if (found != null) ...<Widget>[
-            // 1. El número grande.
-            _Hero(
-              count: all.length,
-              sub: _pin != null ? t.eventsMapFiltered : t.eventsHeroSub,
-              ticketmaster: tm,
-            ),
-            if (!tm)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                  t.eventsOnlyHolidays,
-                  style: const TextStyle(color: NomadColors.textMuted),
-                ),
-              ),
-            const SizedBox(height: 16),
-            // 2. Los días y los tipos.
-            Text(
-              t.eventsDaysTitle,
-              style: text.labelMedium?.copyWith(
-                color: NomadColors.textMuted,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.1,
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 72,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: <Widget>[
-                  _DayChip(
-                    top: t.eventsAllDays,
-                    big: '★',
-                    count: all.length,
-                    on: _day == null,
-                    onTap: () => setState(() => (_day = null, _pin = null)),
-                  ),
-                  for (final DateTime d in days.take(31))
-                    _DayChip(
-                      top: DateFormat.E(locale).format(d).toUpperCase(),
-                      big: '${d.day}',
-                      count: all
-                          .where(
-                            (CityEvent e) => DateUtils.isSameDay(e.date, d),
-                          )
-                          .length,
-                      on: _day != null && DateUtils.isSameDay(_day, d),
-                      onTap: () => setState(() => (_day = d, _pin = null)),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 40,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: <Widget>[
-                  for (final EventKind? k in _cats)
-                    Padding(
-                      padding: const EdgeInsetsDirectional.only(end: 8),
-                      child: ChoiceChip(
-                        avatar: Icon(
-                          k == null
-                              ? Icons.confirmation_number_rounded
-                              : eventIcon(k),
-                          size: 18,
-                        ),
-                        label: Text(switch (k) {
-                          null => t.eventsCatAll,
-                          EventKind.music => t.eventsCatMusic,
-                          EventKind.holiday => t.eventsCatParty,
-                          EventKind.sports => t.eventsCatSports,
-                          EventKind.arts => t.eventsCatArts,
-                          EventKind.family => t.eventsCatFamily,
-                          EventKind.other => t.eventsCatAll,
-                        }),
-                        selected: _cat == k,
-                        onSelected: (_) =>
-                            setState(() => (_cat = k, _pin = null)),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            // 3. Las tarjetas.
-            if (all.isEmpty)
-              Text(t.eventsNone)
-            else if (shown.isEmpty)
-              Text(
-                t.eventsEmptyFilter,
-                style: const TextStyle(color: NomadColors.textMuted),
-              ),
-            for (final CityEvent e in shown)
-              _EventCard(
-                event: e,
-                saved: _saved.contains(e.id),
-                planned: _planned.contains(e.id),
-                start: _startOf(e),
-                fromHotel: _fromHotel(t, e, locale),
-                onSave: () => unawaited(_toggleSave(e)),
-                onPlans: e.kind == EventKind.holiday
-                    ? null
-                    : () => unawaited(_toPlans(e)),
-                onOpen: e.url == null
-                    ? null
-                    : () => unawaited(_services.openBooking(e.url!)),
-              ),
-            // 4. Dónde pasan.
-            if (pins.length >= 2) ...<Widget>[
-              const SizedBox(height: 20),
-              Text(t.eventsMapTitle, style: text.titleLarge),
-              Text(
-                t.eventsMapSub,
-                style: text.bodySmall?.copyWith(color: NomadColors.textMuted),
-              ),
-              const SizedBox(height: 8),
-              PinMap(
-                pins: <MapPin>[
-                  for (final CityEvent e in pins)
-                    MapPin(
-                      id: e.id,
-                      point: GeoPoint(e.lat!, e.lon!),
-                      color: eventColor(e.kind),
-                    ),
-                  if (_hotel != null)
-                    MapPin(id: 'hotel', point: _hotel!, color: Colors.white),
-                ],
-                selected: _pin,
-                onPick: (MapPin p) {
-                  if (p.id == 'hotel') return;
-                  setState(
-                    () => (
-                      _pin = _pin == p.id ? null : p.id,
-                      _day = null,
-                      _cat = null,
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 8),
-              // Tu hotel: para saber qué te queda cerca.
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: TextButton.icon(
-                  onPressed: () => unawaited(_pickHotel(_centerOf(pins))),
-                  icon: const Icon(Icons.hotel_rounded),
-                  label: Text(
-                    _hotel == null ? t.eventsSetHotel : t.eventsChangeHotel,
-                  ),
-                ),
-              ),
-            ],
-            // 5. El consejo de Flyra.
-            if (tip != null) ...<Widget>[
-              const SizedBox(height: 16),
-              _Tip(text: tip),
-            ],
-            const SizedBox(height: 8),
-            TextButton.icon(
-              icon: const Icon(Icons.favorite_rounded),
-              label: Text(t.eventsVoteLink),
-              onPressed: () => unawaited(_openVote()),
-            ),
-            const SizedBox(height: 8),
-            if (found.sources.isNotEmpty)
-              Text(
-                t.eventsSources(found.sources.join(', ')),
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: NomadColors.textMuted,
-                ),
-              ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-/// El número grande de arriba, con notas musicales que suben.
-class _Hero extends StatefulWidget {
-  const _Hero({
-    required this.count,
-    required this.sub,
-    required this.ticketmaster,
-  });
-
-  final int count;
-  final String sub;
-  final bool ticketmaster;
-
-  @override
-  State<_Hero> createState() => _HeroState();
-}
-
-class _HeroState extends State<_Hero> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(seconds: 4),
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Con "reducir movimiento", sin notas que se muevan. Solo 3 vueltas
-      // (12 s) para no gastar batería.
-      if (mounted && !MediaQuery.of(context).disableAnimations) {
-        unawaited(_c.repeat(count: 3));
-      }
-    });
+    if (pins.isNotEmpty) return _centerOf(pins);
+    final String? iata = _iata;
+    if (iata == null) return null;
+    try {
+      final Airports all = await _services.loadAirports();
+      final LatLon? p = all[iata]?.position;
+      return p == null ? null : GeoPoint(p.lat, p.lon);
+    } on Object {
+      return null;
+    }
   }
 
-  @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
+  Future<void> _hotelHere() async {
+    final GeoPoint? around = await _around();
+    if (around != null && mounted) await _pickHotel(around);
   }
 
-  @override
-  Widget build(BuildContext context) {
+  /// Tocando la ciudad y las fechas: cambiar la ciudad, las fechas o
+  /// dónde está tu hotel.
+  Future<void> _options() async {
+    if (_iata == null) {
+      await _pickCity();
+      return;
+    }
     final AppLocalizations t = AppLocalizations.of(context);
-    final TextTheme text = Theme.of(context).textTheme;
-    return Container(
-      clipBehavior: Clip.antiAlias,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: <Color>[Color(0xFF2A1A5A), Color(0xFF1D1636)],
-        ),
-        border: Border.all(color: const Color(0xFF3E3163)),
-      ),
-      child: Stack(
-        children: <Widget>[
-          Positioned.fill(
-            child: IgnorePointer(
-              child: AnimatedBuilder(
-                animation: _c,
-                builder: (BuildContext context, _) =>
-                    CustomPaint(painter: _Notes(_c.value)),
-              ),
+    final MaterialLocalizations m = MaterialLocalizations.of(context);
+    final int? pick = await showModalBottomSheet<int>(
+      context: context,
+      useRootNavigator: true,
+      builder: (BuildContext sheet) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            ListTile(
+              leading: const Icon(Icons.location_city_rounded),
+              title: Text(t.eventsPickCity),
+              onTap: () => Navigator.of(sheet).pop(0),
             ),
-          ),
-          Row(
-            children: <Widget>[
-              Text(
-                '${widget.count}',
-                style: text.displayMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: const Color(0xFFFFD27A),
-                ),
+            ListTile(
+              leading: const Icon(Icons.date_range_rounded),
+              title: Text(m.dateRangePickerHelpText),
+              onTap: () => Navigator.of(sheet).pop(1),
+            ),
+            ListTile(
+              leading: const Icon(Icons.hotel_rounded),
+              title: Text(
+                _hotel == null ? t.eventsSetHotel : t.eventsChangeHotel,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      t.eventsHeroLabel(widget.count),
-                      style: text.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    Text(
-                      widget.sub,
-                      style: const TextStyle(color: Color(0xFFE3DAFF)),
-                    ),
-                    if (widget.ticketmaster) ...<Widget>[
-                      const SizedBox(height: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF026CDF),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'TICKETMASTER',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+              onTap: () => Navigator.of(sheet).pop(2),
+            ),
+          ],
+        ),
       ),
     );
+    if (!mounted) return;
+    switch (pick) {
+      case 0:
+        await _pickCity();
+      case 1:
+        await _pickDates();
+      case 2:
+        await _hotelHere();
+    }
   }
-}
 
-/// Las notas ♪ que suben por detrás del número.
-class _Notes extends CustomPainter {
-  const _Notes(this.t);
+  CityEvent? _event(Object? id) =>
+      _found?.events.where((CityEvent e) => e.id == id).firstOrNull;
 
-  final double t;
-
-  static const List<Color> _colors = <Color>[
-    Color(0xFFFFD27A),
-    Color(0xFFFF7AB6),
-    Color(0xFFB69CFF),
-    Color(0xFF7FE8B9),
-  ];
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    for (int k = 0; k < 6; k++) {
-      final double p = (t + k / 6) % 1;
-      final TextPainter note = TextPainter(
-        text: TextSpan(
-          text: '♪',
-          style: TextStyle(
-            fontSize: 14 + (k % 3) * 4,
-            color: _colors[k % 4].withValues(alpha: (1 - p) * 0.7),
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      final double x =
-          size.width * (0.35 + 0.1 * k) + math.sin(p * math.pi * 2 + k) * 10;
-      final double y = size.height * (1 - p) - 8;
-      note.paint(canvas, Offset(x % size.width, y));
+  /// Lo que pide la página.
+  void _onMessage(String m) {
+    final List<String> p = m.split(':');
+    final int? n = p.length > 1 ? int.tryParse(p[1]) : null;
+    final Map<String, Object?> data =
+        (p.length == 3 ? unpackJson(p[2]) : null) ?? const <String, Object?>{};
+    final CityEvent? e = _event(data['id']);
+    final Uri? url = Uri.tryParse('${data['u'] ?? ''}');
+    switch (p.first) {
+      case 'back':
+        if (context.canPop()) context.pop();
+      case 'options':
+        unawaited(_options());
+      case 'hotel':
+        unawaited(_hotelHere());
+      case 'save' when e != null && n != null:
+        unawaited(_setSaved(e, n == 1));
+      case 'plan' when e != null:
+        unawaited(_toPlans(e));
+      // Solo los enlaces de Ticketmaster de los eventos (siempre https).
+      case 'open'
+          when url != null &&
+              (_found?.events.any((CityEvent x) => x.url == url) ?? false):
+        unawaited(_services.openBooking(url));
+      case 'vote':
+        unawaited(_openVote());
     }
   }
 
   @override
-  bool shouldRepaint(_Notes old) => old.t != t;
-}
-
-/// Un día de la fila "TUS DÍAS": el día de la semana, el número y puntos
-/// según cuántas cosas pasan.
-class _DayChip extends StatelessWidget {
-  const _DayChip({
-    required this.top,
-    required this.big,
-    required this.count,
-    required this.on,
-    required this.onTap,
-  });
-
-  final String top;
-  final String big;
-  final int count;
-  final bool on;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsetsDirectional.only(end: 8),
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      width: 58,
-      transform: Matrix4.translationValues(0, on ? -3 : 0, 0),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: on
-            ? const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: <Color>[Color(0xFFFFD27A), Color(0xFFFF7AB6)],
-              )
-            : null,
-        color: on ? null : NomadColors.surface,
-        border: on ? null : Border.all(color: NomadColors.outline),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              top,
-              maxLines: 1,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                color: on ? const Color(0xFF120C24) : NomadColors.textMuted,
-              ),
-            ),
-            Text(
-              big,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                color: on ? const Color(0xFF120C24) : NomadColors.text,
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                for (int j = 0; j < 3; j++)
-                  Container(
-                    width: 5,
-                    height: 5,
-                    margin: const EdgeInsets.symmetric(horizontal: 1.5),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: j < math.min(3, count)
-                          ? (on
-                                ? const Color(0xFF120C24)
-                                : const Color(0xFFFF7AB6))
-                          : Colors.transparent,
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-/// "Dónde pasan": el mapa de verdad (OpenStreetMap, el mismo de la pantalla
-/// Mapa) con un punto de color por evento y uno blanco para tu hotel. Toca
-/// un punto para ver solo su evento.
-class _Tip extends StatelessWidget {
-  const _Tip({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: const Color(0xFF13342A),
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: const Color(0xFF23523F)),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        const FlyraAvatar(size: 28),
-        const SizedBox(width: 10),
-        Expanded(child: Text(text)),
-      ],
-    ),
-  );
-}
-
-/// "1 d 04:13:32".
-String _countdown(Duration d) {
-  String two(int n) => n.toString().padLeft(2, '0');
-  final int days = d.inDays;
-  final String hms =
-      '${two(d.inHours % 24)}:${two(d.inMinutes % 60)}:${two(d.inSeconds % 60)}';
-  return days > 0 ? '$days d $hms' : hms;
-}
-
-class _EventCard extends StatelessWidget {
-  const _EventCard({
-    required this.event,
-    required this.saved,
-    required this.planned,
-    required this.start,
-    required this.onSave,
-    required this.onPlans,
-    required this.onOpen,
-    this.fromHotel,
-  });
-
-  /// "A 12 min andando de tu hotel" (null = sin hotel o sin sitio).
-  final String? fromHotel;
-
-  final CityEvent event;
-  final bool saved;
-  final bool planned;
-
-  /// Cuándo empieza (null = no se sabe la hora): para la cuenta atrás.
-  final DateTime? start;
-  final VoidCallback onSave;
-  final VoidCallback? onPlans;
-  final VoidCallback? onOpen;
-
-  @override
   Widget build(BuildContext context) {
+    final String? page = _pageCache;
+    if (page == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0B1217),
+        body: SizedBox.expand(),
+      );
+    }
     final AppLocalizations t = AppLocalizations.of(context);
     final String locale = Localizations.localeOf(context).toLanguageTag();
-    final CityEvent e = event;
-    final Color color = eventColor(e.kind);
-    final String when = <String>[
-      DateFormat.MMMEd(locale).format(e.date),
-      ?e.time,
-      ?e.venue,
-    ].join(' · ');
-    final String? price = e.priceMin == null || e.currency == null
-        ? (e.kind != EventKind.holiday && e.url != null
-              ? t.eventsPriceAt
-              : null)
-        : t.eventsFrom(
-            NumberFormat.simpleCurrency(
-              locale: locale,
-              name: e.currency,
-            ).format(e.priceMin),
-          );
-    final (String, Color)? badge = e.kind == EventKind.holiday
-        ? (t.eventsStatusHoliday, NomadColors.money)
-        : switch (e.status) {
-            SaleStatus.onsale => (t.eventsStatusOnsale, NomadColors.flights),
-            SaleStatus.offsale => (
-              t.eventsStatusOffsale,
-              const Color(0xFFFFD27A),
-            ),
-            SaleStatus.cancelled => (
-              t.eventsStatusCancelled,
-              const Color(0xFFFF6B6B),
-            ),
-            SaleStatus.rescheduled => (
-              t.eventsStatusRescheduled,
-              NomadColors.safety,
-            ),
-            null => null,
-          };
-    final DateTime? start = this.start;
-    final Duration? left = start?.difference(DateTime.now());
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Container(
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: <Color>[Color(0xFF1D1636), Color(0xFF141E25)],
-          ),
-          border: Border.all(color: const Color(0xFF2E2650)),
-        ),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              // La columna de color con el día.
-              Container(
-                width: 70,
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(-0.4, -0.6),
-                    radius: 1.2,
-                    colors: <Color>[color, color.withValues(alpha: 0.35)],
-                  ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Icon(eventIcon(e.kind), color: Colors.white),
-                    Text(
-                      DateFormat.E(locale).format(e.date).toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    Text(
-                      '${e.date.day}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Row(
-                        children: <Widget>[
-                          if (badge != null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 7,
-                                vertical: 1,
-                              ),
-                              margin: const EdgeInsetsDirectional.only(end: 6),
-                              decoration: BoxDecoration(
-                                color: badge.$2,
-                                borderRadius: BorderRadius.circular(9),
-                              ),
-                              child: Text(
-                                badge.$1,
-                                style: const TextStyle(
-                                  color: Color(0xFF120C24),
-                                  fontSize: 9.5,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                          Expanded(
-                            child: Text(
-                              e.kind == EventKind.holiday
-                                  ? 'Nager.Date'
-                                  : 'Ticketmaster',
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: NomadColors.textMuted,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: saved ? t.eventsUnsave : t.eventsSave,
-                            visualDensity: VisualDensity.compact,
-                            icon: AnimatedScale(
-                              scale: saved ? 1.15 : 1,
-                              duration: const Duration(milliseconds: 250),
-                              curve: Curves.elasticOut,
-                              child: Icon(
-                                saved
-                                    ? Icons.favorite_rounded
-                                    : Icons.favorite_border_rounded,
-                                color: saved ? const Color(0xFFFF7AB6) : null,
-                              ),
-                            ),
-                            onPressed: onSave,
-                          ),
-                        ],
-                      ),
-                      Text(
-                        e.name,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                      Text(
-                        when,
-                        style: const TextStyle(color: NomadColors.textMuted),
-                      ),
-                      if (fromHotel case final String h)
-                        Text(
-                          '🏨 $h',
-                          style: const TextStyle(
-                            color: NomadColors.mint,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      if (e.kind == EventKind.holiday)
-                        Text(
-                          e.regional
-                              ? t.eventsHolidayRegional
-                              : t.eventsHoliday,
-                          style: const TextStyle(color: NomadColors.money),
-                        ),
-                      if (price != null)
-                        Text(
-                          price,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFFFFD27A),
-                          ),
-                        ),
-                      if (left != null)
-                        Text(
-                          '⏱ ${left.isNegative ? t.eventsHappening : t.eventsStartsIn(_countdown(left))}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontFeatures: <FontFeature>[
-                              FontFeature.tabularFigures(),
-                            ],
-                          ),
-                        ),
-                      if (onOpen != null || onPlans != null) ...<Widget>[
-                        const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 6,
-                          children: <Widget>[
-                            if (onOpen != null)
-                              FilledButton(
-                                style: FilledButton.styleFrom(
-                                  minimumSize: const Size(0, 32),
-                                  backgroundColor: color,
-                                  foregroundColor: const Color(0xFF120C24),
-                                ),
-                                onPressed: onOpen,
-                                child: Text(t.eventsTickets),
-                              ),
-                            if (onPlans != null)
-                              OutlinedButton(
-                                style: OutlinedButton.styleFrom(
-                                  minimumSize: const Size(0, 32),
-                                ),
-                                onPressed: planned ? null : onPlans,
-                                child: Text(
-                                  planned ? t.eventsInPlans : t.eventsToPlans,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+    final CityEvents? found = _found;
+    final Map<String, Object?> data = <String, Object?>{
+      ...eventsPageData(
+        iata: _iata,
+        from: _dates.start,
+        to: _dates.end,
+        found: found,
+        loading: _loading,
+        offline: _error == ApiError.network,
+        failed: _error != null && _error != ApiError.network,
+        saved: _saved,
+        planned: _planned,
+        hotel: _hotel,
+        startOf: _startOf,
+        tip: found == null ? null : _tip(t, found.events, locale),
+      ),
+      ..._once,
+    };
+    final String push = eventsPushScript(data);
+    if (_html == null) {
+      _html = eventsPageWith(page, data);
+      _sent = push;
+      _once = <String, Object?>{};
+    } else if (push != _sent) {
+      _sent = push;
+      _once = <String, Object?>{};
+      unawaited(_bridge.run(push));
+    }
+    final String html = _html!;
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B1217),
+      body: SafeArea(
+        bottom: false,
+        child:
+            _services.webScene?.call(html, _onMessage) ??
+            WebScene(html: html, onMessage: _onMessage, bridge: _bridge),
       ),
     );
   }

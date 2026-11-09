@@ -19,6 +19,7 @@ package grpcserver
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"strconv"
 	"sync"
@@ -29,6 +30,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	commonv1 "github.com/dp2005dario/NoMad-IQ/gen/go/nomadiq/common/v1"
 	flightsv1 "github.com/dp2005dario/NoMad-IQ/gen/go/nomadiq/flights/v1"
 
 	"github.com/dp2005dario/NoMad-IQ/services/flight-ingestor/internal/domain"
@@ -62,6 +64,7 @@ type SearchService struct {
 type cached struct {
 	offers   []domain.Offer
 	months   []domain.MonthFare // solo en las entradas de MonthlyFares
+	days     []domain.DayFare   // solo en las entradas de DailyFares
 	observed time.Time
 	expires  time.Time
 }
@@ -241,5 +244,69 @@ func (s *SearchService) MonthlyFares(ctx context.Context, req *flightsv1.Monthly
 		Months:     out,
 		ObservedAt: timestamppb.New(entry.observed),
 		Provider:   monthly.Name(),
+	}, nil
+}
+
+// DailyFares implementa el RPC del mismo nombre (el calendario de precios del
+// buscador). Misma caché y mismo "singleflight" que el resto: un mes de una
+// ruta popular cuesta UNA petición al proveedor cada CacheTTL.
+func (s *SearchService) DailyFares(ctx context.Context, req *flightsv1.DailyFaresRequest) (*flightsv1.DailyFaresResponse, error) {
+	daily, ok := s.searcher.(provider.DailySearcher)
+	if !ok {
+		return nil, status.Error(codes.Unimplemented, "este proveedor no da precios por días")
+	}
+	route, err := protomap.RouteFromProto(req.GetRoute())
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	y, m := int(req.GetYear()), int(req.GetMonth())
+	now := s.now().UTC()
+	thisMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	month := time.Date(y, time.Month(m), 1, 0, 0, 0, 0, time.UTC)
+	// Del mes actual a un año vista (lo que venden las aerolíneas).
+	if m < 1 || m > 12 || month.Before(thisMonth) || !month.Before(thisMonth.AddDate(0, domain.MaxMonths, 0)) {
+		return nil, status.Error(codes.InvalidArgument, "mes fuera de rango")
+	}
+	key := fmt.Sprintf("daily|%s-%s|%s|%t", route.Origin, route.Destination, month.Format("2006-01"), req.GetOneWay())
+	entry, ok := s.lookup(key)
+	if !ok {
+		v, err, _ := s.flight.Do(key, func() (any, error) {
+			if e, ok := s.lookup(key); ok {
+				return e, nil
+			}
+			fetchCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), s.cfg.Timeout)
+			defer cancel()
+			days, err := daily.Daily(fetchCtx, route, month, req.GetOneWay())
+			if err != nil {
+				return nil, err
+			}
+			if len(days) > 31 {
+				days = days[:31]
+			}
+			e := cached{days: days, observed: s.now().UTC()}
+			s.store(key, e)
+			return e, nil
+		})
+		if err != nil {
+			return nil, s.searchStatus(err)
+		}
+		entry = v.(cached)
+	}
+	out := make([]*flightsv1.DayFare, len(entry.days))
+	for i, d := range entry.days {
+		out[i] = &flightsv1.DayFare{
+			Date:          &commonv1.Date{Year: int32(d.Date.Year()), Month: int32(d.Date.Month()), Day: int32(d.Date.Day())},
+			PricePerAdult: protomap.MoneyToProto(d.PricePerAdult),
+			CarrierIata:   d.CarrierIATA,
+			DepartureAt:   d.DepartureAt,
+			ReturnAt:      d.ReturnAt,
+			Transfers:     int32(d.Transfers),
+			BookingUrl:    d.DeepLink,
+		}
+	}
+	return &flightsv1.DailyFaresResponse{
+		Days:       out,
+		ObservedAt: timestamppb.New(entry.observed),
+		Provider:   daily.Name(),
 	}, nil
 }

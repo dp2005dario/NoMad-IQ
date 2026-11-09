@@ -7,9 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:eclipta/core/router.dart';
+import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/group_chat/chat_api.dart';
+import 'package:eclipta/features/group_chat/chat_page.dart';
+import 'package:eclipta/features/group_chat/chat_screen.dart';
+import 'package:eclipta/features/route/web_scene.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 
 const String trip = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 
@@ -90,6 +95,12 @@ class FakeChat {
   }
 }
 
+WebSceneBridge bridge() => GroupChatScreen.lastBridge!;
+
+/// Como lo empaqueta la página (base64url sin "=").
+String pack(Map<String, Object?> v) =>
+    base64Url.encode(utf8.encode(jsonEncode(v))).replaceAll('=', '');
+
 void main() {
   test('leer el chat: lo raro se ignora y "@Flyra" se reconoce', () {
     final ChatPage page = ChatPage.parse(<String, Object?>{
@@ -118,72 +129,122 @@ void main() {
     expect(mentionsFlyra('hola @Flyra'), isFalse);
   });
 
-  testWidgets('tipo de viaje, escribir, @Flyra, mensajes nuevos y fin', (
+  test('la página: tarjetas de Flyra, día, QR y cifras del final', () {
+    ChatMessage msg(int id, String text, {bool mine = false, bool f = false}) =>
+        ChatMessage(
+          id: id,
+          name: f ? 'Flyra' : (mine ? 'Dario' : 'Pepa'),
+          text: text,
+          at: DateTime(2026, 11, 8, 12),
+          mine: mine,
+          flyra: f,
+          seat: f ? null : (mine ? 1 : 2),
+        );
+    final Map<String, Object?> d = chatPageData(
+      city: 'Oporto',
+      messages: <ChatMessage>[
+        msg(1, '@Flyra ¿Cuánto llevamos gastado?', mine: true),
+        msg(2, 'Las cuentas al día', f: true),
+        msg(3, '@Flyra ¿Mañana qué hacemos?', mine: true),
+        msg(4, 'Mirad', f: true),
+        msg(5, 'Hola', f: false),
+      ],
+      code: '7K2M9QXD',
+      now: DateTime(2026, 11, 8, 20),
+    );
+    final List<Object?> m = d['msgs']! as List<Object?>;
+    Map<String, Object?> at(int i) => m[i]! as Map<String, Object?>;
+    expect(at(0)['text'], '¿Cuánto llevamos gastado?');
+    expect(at(1)['card'], 'money');
+    // Sin match en Elegid planes, no hay tarjeta del plan.
+    expect(at(3).containsKey('card'), isFalse);
+    expect(at(4)['who'], 'p');
+    expect(d['day'], 'Hoy · domingo');
+    expect(
+      chatDayLabel(DateTime(2026, 11, 6), DateTime(2026, 11, 8)),
+      'viernes 6 nov',
+    );
+    expect(d['qr'], startsWith('M0 0h1v1h-1z'));
+    expect((d['stats']! as List<Object?>).first, <String, Object?>{
+      'v': '1',
+      'l': 'día',
+    });
+    expect(chatCard('Plan si llueve'), isNull);
+  });
+
+  /// Abre el chat con la página de mentira.
+  Future<m.PageSpy> open(
     WidgetTester tester,
-  ) async {
-    final FakeGateway g = FakeGateway();
-    final FakeChat server = FakeChat()..install(g);
+    FakeGateway g, {
+    SettingsStore? prefs,
+  }) async {
     final session = await signedInSession(g);
-    tester.view.physicalSize = const Size(1200, 3000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
+    final m.PageSpy spy = m.PageSpy();
     await pumpApp(
       tester,
       locale: 'es',
       session: session,
       initialLocation: Routes.groupChat(trip),
-      services: fakeServices(session, gateway: g),
+      services: fakeServices(
+        session,
+        gateway: g,
+        prefs: prefs,
+        webScene: spy.build,
+      ),
     );
-    await tester.pumpAndSettle();
+    await spy.wait(
+      tester,
+      () => spy.pages.isNotEmpty && spy.data(bridge())['first'] != null,
+    );
+    return spy;
+  }
+
+  testWidgets('con quién vas, escribir a Flyra, mensajes nuevos y me gusta', (
+    WidgetTester tester,
+  ) async {
+    final FakeGateway g = FakeGateway();
+    final FakeChat server = FakeChat()..install(g);
+    final MemorySettingsStore prefs = MemorySettingsStore();
+    final m.PageSpy spy = await open(tester, g, prefs: prefs);
+    List<Object?> msgs() => spy.data(bridge())['msgs']! as List<Object?>;
 
     // 1. Chat nuevo: "¿Con quién vas?" → Familia.
-    expect(find.text('¿Con quién vas?'), findsOneWidget);
-    await tester.tap(find.text('Familia'));
-    await tester.pumpAndSettle();
+    expect(spy.data(bridge())['first'], 'type');
+    spy.send!('kind:0:${pack(<String, Object?>{'k': 'family'})}');
+    await spy.wait(tester, () => spy.data(bridge())['kind'] == 'family');
     expect(server.kind, 'family');
-    expect(find.textContaining('Familia · Tú, Mamá · Flyra'), findsOneWidget);
 
-    // 2. Escribir al grupo.
-    await tester.enterText(find.byType(TextField), 'Mañana qué hacemos?');
-    await tester.tap(find.byTooltip('Enviar'));
-    await tester.pumpAndSettle();
-    expect(find.text('Mañana qué hacemos?'), findsOneWidget);
-
-    // 3. Preguntar a Flyra con un atajo (en el idioma de la app).
-    await tester.ensureVisible(find.text('@Flyra plan si llueve'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('@Flyra plan si llueve'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Museo de los Azulejos'), findsOneWidget);
+    // 2. Escribir: le llega a Flyra (con "@Flyra" delante) y contesta.
+    spy.send!('send:0:${pack(<String, Object?>{'t': 'Plan si llueve'})}');
+    await spy.wait(tester, () => msgs().length == 2);
+    expect(server.messages.first['text'], '@Flyra Plan si llueve');
     expect(server.flyraAsked, <String>['es']);
+    expect((msgs().first! as Map<String, Object?>)['text'], 'Plan si llueve');
+    expect(
+      (msgs().last! as Map<String, Object?>)['text'],
+      contains('Museo de los Azulejos'),
+    );
 
-    // 4. Mamá escribe: llega solo, sin tocar nada.
+    // 3. Mamá escribe: llega solo, sin tocar nada.
     server.msg(2, '¡Hola! Ya estoy aquí');
     await tester.pump(const Duration(seconds: 5));
-    await tester.pumpAndSettle();
-    expect(find.text('¡Hola! Ya estoy aquí'), findsOneWidget);
+    await spy.wait(tester, () => msgs().length == 3);
+    expect((msgs().last! as Map<String, Object?>)['name'], 'Mamá');
 
-    // 5. Mi nombre en el chat.
-    await tester.tap(find.byType(PopupMenuButton<String>));
+    // 4. Me gusta a Flyra: se guarda en el móvil.
+    spy.send!('like:1:${pack(<String, Object?>{'id': 2})}');
+    await spy.wait(
+      tester,
+      () => (prefs.readData(LocalData.chatLikes) ?? '').contains('$trip:2'),
+    );
+
+    // 5. Tocando tu cara: tu nombre en el chat.
+    spy.send!('name');
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Tu nombre en el chat'));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField).last, 'Dario');
+    await tester.enterText(find.byType(TextField), 'Dario');
     await tester.pump();
     await tester.tap(find.text('Guardar'));
-    await tester.pumpAndSettle();
-    expect(server.myName, 'Dario');
-
-    // 6. Fin del viaje: resumen y estrellas.
-    await tester.tap(find.byType(PopupMenuButton<String>));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Terminar viaje'));
-    await tester.pumpAndSettle();
-    expect(find.text('VIAJE TERMINADO'), findsOneWidget);
-    expect(find.text('Lisboa, ¡qué viaje!'), findsOneWidget);
-    await tester.tap(find.byTooltip('Valoración: 5 de 5'));
-    await tester.pumpAndSettle();
-    expect(find.text('Valorar en Google Play'), findsOneWidget);
+    await spy.wait(tester, () => server.myName == 'Dario');
   });
 
   testWidgets('el chat apunta tus gustos por palabras clave (sin IA)', (
@@ -237,25 +298,13 @@ void main() {
       sent.add(mine);
       return FakeGateway.json(tripJson());
     };
-    final session = await signedInSession(g);
-    tester.view.physicalSize = const Size(1200, 3000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
     server.msg(2, 'Hola');
-    await pumpApp(
-      tester,
-      locale: 'es',
-      session: session,
-      initialLocation: Routes.groupChat(trip),
-      services: fakeServices(session, gateway: g),
+    final m.PageSpy spy = await open(tester, g);
+    spy.send!(
+      'send:0:${pack(<String, Object?>{'t': 'Esta noche me apetece algo de fado y cenar pescado'})}',
     );
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byType(TextField),
-      'Esta noche me apetece algo de fado y cenar pescado',
-    );
-    await tester.tap(find.byTooltip('Enviar'));
-    await tester.pumpAndSettle();
+    await spy.wait(tester, () => sent.isNotEmpty);
+    await tester.pump();
     expect(sent.single, <String>['late', 'music', 'fish']);
     expect(
       find.text('Apuntado en tus gustos: Música en directo, Pescado'),

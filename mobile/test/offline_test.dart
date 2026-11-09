@@ -3,7 +3,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:eclipta/auth/session.dart';
@@ -17,11 +16,17 @@ import 'package:eclipta/features/map/geo_api.dart';
 import 'package:eclipta/features/offline/city_downloader.dart';
 import 'package:eclipta/features/offline/city_pack.dart';
 import 'package:eclipta/features/offline/offline_auto.dart';
+import 'package:eclipta/features/offline/offline_page.dart';
 import 'package:eclipta/features/offline/offline_platform.dart';
+import 'package:eclipta/features/offline/offline_screen.dart';
 import 'package:eclipta/features/offline/saved_guides.dart';
+import 'package:eclipta/features/route/flight3d.dart'
+    show CountryCodes, WebSceneBuilder;
 import 'package:eclipta/features/route/geo.dart' show LatLon;
+import 'package:eclipta/features/route/world_data.dart';
 
 import 'helpers.dart';
+import 'money_test.dart' as m;
 import 'zones_fixture.dart';
 
 /// Un mapa descargable de mentira: dice cuántos bytes ocupó.
@@ -170,6 +175,42 @@ CityPack packOf(String iata, {String language = 'es', int tiles = 1024}) =>
       ],
       tileBytes: tiles,
       savedAt: DateTime(2026, 10, 24),
+    );
+
+/// Abre la pantalla con la página de mentira y espera a que salga.
+Future<m.PageSpy> pumpOffline(
+  WidgetTester tester,
+  SessionController session,
+  AppServices Function(WebSceneBuilder page) services,
+) async {
+  final m.PageSpy spy = m.PageSpy();
+  // Lo que se carga una vez para toda la app: aquí, fuera del reloj de
+  // mentira (si no, se quedaría colgado en la prueba siguiente).
+  await tester.runAsync(() async {
+    await CountryCodes.load();
+    await WorldData.load();
+  });
+  await pumpApp(
+    tester,
+    locale: 'es',
+    session: session,
+    initialLocation: Routes.offline,
+    services: services(spy.build),
+  );
+  await spy.wait(tester, () => spy.pages.isNotEmpty);
+  // Los aeropuertos y los países ya están.
+  await spy.wait(
+    tester,
+    () => spy.data(OfflineScreen.lastBridge!)['ready'] == true,
+  );
+  return spy;
+}
+
+/// La tarjeta de una ciudad en la página.
+Map<String, Object?> item(Map<String, Object?> d, String id) =>
+    (d['items']! as List<Object?>).cast<Map<String, Object?>>().firstWhere(
+      (Map<String, Object?> i) => i['id'] == id,
+      orElse: () => <String, Object?>{},
     );
 
 void main() {
@@ -495,7 +536,7 @@ void main() {
     });
   });
 
-  testWidgets('pantalla: se descarga una ciudad y luego se borra', (
+  testWidgets('pantalla: se busca, se descarga una ciudad y luego se borra', (
     WidgetTester tester,
   ) async {
     final FakeGateway g = FakeGateway();
@@ -505,16 +546,12 @@ void main() {
     final FakeMaps maps = FakeMaps();
     final StreamController<bool> online = StreamController<bool>.broadcast();
     addTearDown(online.close);
-    tester.view.physicalSize = const Size(1200, 4000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
-    await pumpApp(
+    final m.PageSpy spy = await pumpOffline(
       tester,
-      locale: 'es',
-      session: session,
-      initialLocation: Routes.offline,
-      services: fakeServices(
+      session,
+      (WebSceneBuilder page) => fakeServices(
         session,
+        webScene: page,
         gateway: g,
         prefs: store,
         offlineMaps: maps,
@@ -522,78 +559,105 @@ void main() {
         onlineChanges: () => online.stream,
       ),
     );
-    // Los aeropuertos de verdad (assets/geo) tardan un poco.
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(seconds: 2)),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('Sin conexión'), findsOneWidget);
-    expect(find.textContaining('Todavía no has descargado'), findsOneWidget);
+    Map<String, Object?> data() => spy.data(OfflineScreen.lastBridge!);
+    expect(spy.pages.first, contains('ECLIPTA · Zonas sin conexión'));
     expect(
-      find.text('Aún no hay zonas listas para usar sin internet'),
-      findsOneWidget,
+      data()['subtitle'],
+      'Aún no hay zonas listas para usar sin internet',
     );
+    expect(data()['items'], isEmpty);
+    expect(data()['canAdd'], isFalse);
 
-    // Un código que no existe lo avisa.
-    await tester.enterText(find.byType(TextField), 'ZZZ');
-    await tester.pumpAndSettle();
-    expect(find.text('No conocemos ese aeropuerto.'), findsOneWidget);
-
-    await tester.enterText(find.byType(TextField), 'MAD');
-    await tester.pumpAndSettle();
+    // Se busca por el aeropuerto (o por el nombre) y se elige.
+    spy.send!('q:MAD');
+    await tester.pump();
+    final List<Object?> chips = data()['chips']! as List<Object?>;
+    expect((chips.first! as Map<String, Object?>)['code'], 'MAD');
+    spy.send!('pick:MAD');
+    await tester.pump();
+    expect(data()['zoneLabel'], 'Madrid · ciudad (8 km)');
+    expect(data()['lat'], closeTo(40.47, 0.1));
     // Solo el centro de la ciudad.
-    await tester.tap(find.text('Centro\n2 km'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Descargar'));
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(seconds: 1)),
+    spy.send!('area:0');
+    await tester.pump();
+    expect(data()['addText'], 'Descargar Madrid');
+    spy.send!('add');
+    await spy.wait(
+      tester,
+      () =>
+          (data()['items']! as List<Object?>).isNotEmpty &&
+          item(data(), 'MAD')['st'] == 'done',
     );
-    await tester.pumpAndSettle();
-    expect(find.textContaining('3 audioguías'), findsOneWidget);
-    expect(find.textContaining('MB'), findsWidgets);
+    final Map<String, Object?> mad = item(data(), 'MAD');
+    expect(mad['detail'], startsWith('Descargada · 20 MB · Centro'));
+    expect(mad['feats'], contains('3 audioguías'));
+    expect(data()['burst'], 'MAD');
     expect(store.readData(LocalData.offlineCities), contains('MAD'));
-    expect(find.text('Centro · 2 km'), findsOneWidget);
     expect(maps.asked!.maxLat - maps.asked!.minLat, closeTo(0.04, 1e-9));
     // La leyenda de la barra de espacio: la ciudad y lo que ocupa.
-    await tester.scrollUntilVisible(
-      find.textContaining('Madrid 20'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.textContaining('Madrid 20'), findsOneWidget);
-    expect(
-      find.text('1 zona lista para usar sin internet', skipOffstage: false),
-      findsOneWidget,
-    );
+    expect(data()['legend'], <String>['Madrid 20 MB']);
+    expect(data()['segs'], <double>[100]);
+    expect(data()['subtitle'], '1 zona lista para usar sin internet');
+    // Ya está: no se baja otra vez, y ahora hay tamaño aproximado.
+    expect(data()['addText'], 'Madrid ya está en tus zonas');
+    expect(data()['estTxt'], isNotEmpty);
 
     // Se va internet: qué sigue funcionando.
     online.add(false);
-    await tester.pumpAndSettle();
-    expect(find.text('Funciona sin internet ✓'), findsOneWidget);
-    expect(
-      find.text('Tu zona descargada sigue funcionando', skipOffstage: false),
-      findsOneWidget,
-    );
-    await tester.pumpAndSettle(const Duration(seconds: 5));
+    await spy.wait(tester, () => data()['plane'] == true);
+    expect(item(data(), 'MAD')['detail'], 'Funciona sin internet ✓');
+    expect(data()['planeText'], 'Tu zona descargada sigue funcionando');
+    online.add(true);
+    await spy.wait(tester, () => data()['plane'] == false);
 
     // "Solo con wifi" se recuerda en el móvil.
-    await tester.tap(find.byType(Switch).first);
-    await tester.pumpAndSettle();
+    spy.send!('wifi');
+    await spy.wait(tester, () => data()['wifi'] == false);
     expect(store.readData(LocalData.offlineWifiOnly), '0');
 
-    // Borrar pregunta antes: "Mantener" no borra nada.
-    await tester.tap(find.text('Borrar'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('¿Borrar Madrid?'), findsOneWidget);
-    await tester.tap(find.text('Mantener'));
-    await tester.pumpAndSettle();
-    expect(maps.deleted, isEmpty);
-    await tester.tap(find.text('Borrar'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Borrar').last);
-    await tester.pumpAndSettle();
+    // Borrar (la página pregunta antes).
+    expect(item(data(), 'MAD')['askTxt'], '¿Borrar Madrid? Liberas 20 MB');
+    spy.send!('del:MAD');
+    await spy.wait(tester, () => (data()['items']! as List<Object?>).isEmpty);
     expect(maps.deleted, <String>['MAD']);
-    expect(find.textContaining('Todavía no has descargado'), findsOneWidget);
+  });
+
+  test('buscar: por aeropuerto, por nombre sin acentos, y la barra', () {
+    final Airports all = Airports(<String, Airport>{
+      for (final (String c, String n) in <(String, String)>[
+        ('AGP', 'Málaga'),
+        ('MAD', 'Madrid'),
+        ('MLA', 'Malta'),
+        ('ZAZ', 'Zaragoza'),
+      ])
+        c: Airport(
+          iata: c,
+          position: const LatLon(0, 0),
+          city: n,
+          country: 'Spain',
+          timeZone: 'Europe/Madrid',
+        ),
+    });
+    List<String> codes(String q) => <String>[
+      for (final Airport a in searchAirports(all, q)) a.iata,
+    ];
+    expect(codes('mla'), <String>['MLA']);
+    expect(codes('mala'), <String>['AGP']);
+    expect(codes('ma'), <String>['MAD', 'AGP', 'MLA']);
+    expect(codes('ragoz'), <String>['ZAZ']);
+    expect(codes('z'), isEmpty);
+    expect(spaceShares(<int>[1, 3]), <double>[25, 75]);
+    expect(spaceShares(<int>[0]), isEmpty);
+    expect(
+      offlinePageWith('window.ECL=$offlineMarker;', <String, Object?>{
+        'x': '</script>',
+      }),
+      isNot(contains('</script>')),
+    );
+    expect(
+      offlinePushScript(<String, Object?>{'x': '<b>'}),
+      isNot(contains('<b>')),
+    );
   });
 
   group('lo que faltaba de la maqueta', () {
@@ -786,7 +850,7 @@ void main() {
     });
   });
 
-  testWidgets('pantalla: mapa nuevo, descarga parada y "probar sin internet"', (
+  testWidgets('pantalla: mapa nuevo, descarga parada, avión y Flyra', (
     WidgetTester tester,
   ) async {
     final FakeGateway g = FakeGateway();
@@ -808,63 +872,77 @@ void main() {
         withAudio: true,
       ),
     );
-    tester.view.physicalSize = const Size(1200, 6000);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
-    await pumpApp(
+    await OfflineLibrary(store).pause(
+      const PausedDownload(
+        iata: 'MAD',
+        city: 'Madrid',
+        area: OfflineArea.city,
+        withAudio: true,
+      ),
+    );
+    final FakeNet net = FakeNet(NetKind.mobile);
+    final m.PageSpy spy = await pumpOffline(
       tester,
-      locale: 'es',
-      session: session,
-      initialLocation: Routes.offline,
-      services: fakeServices(
+      session,
+      (WebSceneBuilder page) => fakeServices(
         session,
+        webScene: page,
         gateway: g,
         prefs: store,
         offlineMaps: FakeMaps(),
-        net: FakeNet(NetKind.wifi),
+        net: net,
         mapVersion: FakeVersion('20261025_080012'),
       ),
     );
-    await tester.pumpAndSettle();
+    Map<String, Object?> data() => spy.data(OfflineScreen.lastBridge!);
+    await spy.wait(tester, () => item(data(), 'LIS')['updTxt'] != null);
     // El tamaño aproximado sale de Lisboa.
-    expect(find.textContaining('Ocupará unos'), findsOneWidget);
-    expect(find.text('Barcelona · parada a medias'), findsOneWidget);
-    expect(find.text('Seguir'), findsOneWidget);
-    expect(find.textContaining('Hay un mapa más nuevo'), findsOneWidget);
-    expect(find.text('Funciona sin internet ✓'), findsNothing);
+    expect(data()['note'], contains('Ocupará unos'));
+    expect(item(data(), 'LIS')['updTxt'], contains('Hay un mapa más nuevo'));
+    expect(item(data(), 'LIS')['code'], 'PT');
+    expect(item(data(), 'BCN')['st'], 'paused');
+    expect(item(data(), 'BCN')['btnText'], 'Seguir');
+    // Sin buscar, salen tus ciudades para elegir.
+    expect(<Object?>[
+      for (final Object? c in data()['chips']! as List<Object?>)
+        (c! as Map<String, Object?>)['code'],
+    ], containsAll(<String>['LIS', 'BCN']));
 
-    // "Probar": así se ve sin internet.
-    await tester.scrollUntilVisible(
-      find.text('Probar: me quedo sin internet'),
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.tap(find.text('Probar: me quedo sin internet'));
-    await tester.pumpAndSettle();
+    // El avión: así se ve sin internet.
+    spy.send!('plane');
+    await tester.pump();
+    expect(data()['plane'], isTrue);
+    expect(data()['planeH'], 'Modo avión · sin internet');
+    expect(item(data(), 'LIS')['detail'], 'Funciona sin internet ✓');
+    expect(item(data(), 'BCN')['detail'], 'Necesita internet para seguir');
+    spy.send!('plane');
+    await tester.pump();
+
+    // Borrar una parada: se olvida.
+    expect(item(data(), 'MAD')['askTxt'], '¿Borrar lo bajado de Madrid?');
+    spy.send!('del:MAD');
+    await spy.wait(tester, () => item(data(), 'MAD').isEmpty);
     expect(
-      find.text('Funciona sin internet ✓', skipOffstage: false),
-      findsOneWidget,
+      OfflineLibrary(store).paused().map((PausedDownload p) => p.iata),
+      <String>['BCN'],
     );
 
     // "Actualizar solas" se recuerda.
-    await tester.tap(find.text('Actualizar solas'));
-    await tester.pumpAndSettle();
+    spy.send!('auto');
+    await spy.wait(tester, () => data()['auto'] == true);
     expect(store.readData(LocalData.offlineAutoUpdate), '1');
 
-    // Borrar la parada: se olvida.
-    await tester.scrollUntilVisible(
-      find.text('Seguir'),
-      -300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.tap(
-      find.descendant(
-        of: find.ancestor(of: find.text('Seguir'), matching: find.byType(Card)),
-        matching: find.text('Borrar'),
-      ),
-    );
-    await tester.pumpAndSettle();
+    // "Seguir" con datos del móvil y "solo con wifi": Flyra lo dice, y
+    // "Usar datos" quita "solo con wifi" y vuelve a intentarlo.
+    spy.send!('act:BCN');
+    await spy.wait(tester, () => data()['fly'] != null);
+    final Map<String, Object?> fly = data()['fly']! as Map<String, Object?>;
+    expect(fly['title'], 'Descarga en pausa');
+    expect(fly['main'], 'Usar datos');
+    spy.send!('flyMain');
+    await spy.wait(tester, () => item(data(), 'BCN')['st'] == 'done');
+    expect(store.readData(LocalData.offlineWifiOnly), '0');
+    expect(data()['fly'], isNull);
     expect(OfflineLibrary(store).paused(), isEmpty);
-    expect(find.text('Barcelona · parada a medias'), findsNothing);
   });
 }

@@ -88,6 +88,9 @@ dependencies:
   flutter_svg: ^2.3.2
   # Sin conexión: "actualizar solas" solo cuando el móvil está cargando.
   battery_plus: ^7.1.2
+  google_mlkit_barcode_scanning: ^0.16.1
+  qr_flutter: ^4.1.0
+  flutter_native_contact_picker: ^0.0.13
 
 dev_dependencies:
   flutter_test:
@@ -110,6 +113,39 @@ flutter:
     - assets/geo/fact_names.txt
     # El Vuelo 3D: una página con three.js ya empaquetado (ver tool/flight3d/).
     - assets/flight3d/vuelo.html
+    # Explorar: el globo y el mapa de la maqueta (ver tool/build_explore_page.py).
+    - assets/explore/explorar.html
+    - assets/nearby/cerca.html
+    - assets/stays/hoteles.html
+    - assets/copy_trip/copiar.html
+    - assets/vault/boveda.html
+    - assets/flights/vuelos.html
+    - assets/group/grupo.html
+    - assets/cards/cromos.html
+    - assets/money/bote.html
+    - assets/money/dinero.html
+    - assets/money/divisas.html
+    - assets/plans/planes.html
+    - assets/group_chat/chat.html
+    - assets/events/eventos.html
+    - assets/trip/antes.html
+    - assets/push/avisos.html
+    - assets/drive/coche.html
+    - assets/easy/facil.html
+    - assets/audioguide/audioguia.html
+    - assets/settings/ajustes.html
+    - assets/settings/idioma.html
+    - assets/settings/privacidad.html
+    - assets/radar/radar.html
+    - assets/memories/recuerdos.html
+    - assets/route/ruta.html
+    - assets/offline/sinconexion.html
+    - assets/travel_with/viajocon.html
+    - assets/visa/visado.html
+    - assets/widgets/widgets.html
+    - assets/passport/pasaporte.html
+    - assets/inicio/inicio.html
+    - assets/map/flyra.webp
     # La Bienvenida: vídeo de fondo (720x1280, ~1 MB), logo y la G de Google.
     - assets/video/bienvenida.mp4
     - assets/brand/eclipta_spark.png
@@ -139,3 +175,9 @@ flutter:
     - family: BricolageGrotesque
       fonts:
         - asset: assets/fonts/BricolageGrotesque.ttf
+    # La letra de máquina de los tickets (Apache 2.0, como Courier New).
+    - family: Cousine
+      fonts:
+        - asset: assets/fonts/Cousine-Regular.ttf
+        - asset: assets/fonts/Cousine-Bold.ttf
+          weight: 700

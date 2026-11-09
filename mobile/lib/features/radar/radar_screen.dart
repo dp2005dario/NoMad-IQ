@@ -1,7 +1,9 @@
-// Radar local (maqueta "Radar"): lo que conviene saber AHORA donde estás.
+// Radar local (maqueta "Radar"): la maqueta tal cual (assets/radar/radar.html)
+// con lo que conviene saber AHORA donde estás:
 //
-//   1. ¿Va a llover? La previsión de las próximas horas (MET Norway).
-//   2. Ojo en esta ciudad: timos que han avisado otros viajeros (solo se
+//   1. ¿Va a llover? La previsión de las próximas horas (MET Norway). Si no
+//      se puede cargar, Flyra lo dice en su bocadillo.
+//   2. Ojo en esta zona: timos que han avisado otros viajeros (solo se
 //      enseñan con 3 personas o más; tú también puedes avisar).
 //   3. ¿Me están cobrando de más? Comparas lo que te piden con lo que
 //      pagaron otros viajeros en esa ciudad (con 5 o más precios).
@@ -12,19 +14,21 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/api_client.dart';
 import '../../core/services.dart';
-import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../map/geo.dart';
 import '../map/location.dart';
 import '../money/currency_info.dart';
 import '../route/geo.dart' show LatLon;
+import '../route/web_scene.dart';
 import '../route/world_data.dart';
 import '../sos/where_am_i.dart' show nearestAirport;
 import 'radar_api.dart';
+import 'radar_page.dart';
 
 String scamTitle(AppLocalizations t, ScamCategory c) => switch (c) {
   ScamCategory.streetTouts => t.radarScamTouts,
@@ -61,16 +65,26 @@ class RadarScreen extends StatefulWidget {
 
   final String? iata;
 
+  /// La última conexión con la página (para las pruebas).
+  static WebSceneBridge? lastBridge;
+
   @override
   State<RadarScreen> createState() => _RadarScreenState();
 }
 
 class _RadarScreenState extends State<RadarScreen> {
   late final AppServices _services = ServicesScope.of(context);
+  final WebSceneBridge _bridge = RadarScreen.lastBridge = WebSceneBridge();
+
+  // La página se lee una vez y se guarda (como String, no como Future).
+  static String? _pageCache;
+  String? _html;
+  String? _sent;
 
   GeoPoint? _here;
   String? _city;
   String? _cityName;
+  String? _country;
   bool _locating = true;
 
   RainForecast? _rain;
@@ -80,15 +94,26 @@ class _RadarScreenState extends State<RadarScreen> {
   ApiError? _radarError;
 
   PriceItem _item = PriceItem.coffee;
-  String _currency = 'EUR';
-  double? _asked;
-  bool _sent = false;
+  String? _currency;
+
+  /// Lo último que apuntaste ("coffee:EUR:1.60"), para la marca ✓.
+  String _sentKey = '';
 
   @override
   void initState() {
     super.initState();
     _city = widget.iata?.toUpperCase();
-    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_start()));
+    WidgetsBinding.instance.addPostFrameCallback((_) => unawaited(_open()));
+  }
+
+  Future<void> _open() async {
+    try {
+      _pageCache ??= await rootBundle.loadString(radarPage, cache: false);
+    } on Object {
+      return;
+    }
+    if (mounted) setState(() {});
+    await _start();
   }
 
   Future<void> _start() async {
@@ -114,6 +139,7 @@ class _RadarScreenState extends State<RadarScreen> {
                   80000) {
             _city = a.iata;
             _cityName = a.city;
+            _country = a.country;
           }
         }
       } on Object {
@@ -145,21 +171,34 @@ class _RadarScreenState extends State<RadarScreen> {
       setState(() {
         _radar = r;
         _radarError = null;
-        _pickCurrency();
       });
     } on ApiException catch (e) {
       if (mounted) setState(() => _radarError = e.error);
     }
   }
 
-  /// La moneda de los precios de esa cosa en esa ciudad (si hay).
-  void _pickCurrency() {
-    final PriceRange? r = _rangeFor(_item);
-    if (r != null) _currency = r.currency;
+  /// La moneda: la de los precios de esa cosa en esa ciudad; si no hay,
+  /// la que elegiste, la del país o el euro.
+  String get _cur =>
+      _rangeFor(_item)?.currency ??
+      _currency ??
+      _localCurrency(_country) ??
+      'EUR';
+
+  static String? _localCurrency(String? country) {
+    if (country == null) return null;
+    for (final MapEntry<String, String> e in currencyCountry.entries) {
+      if (e.value == country.toUpperCase()) return e.key;
+    }
+    return null;
   }
 
-  PriceRange? _rangeFor(PriceItem item) =>
-      _radar?.prices.where((PriceRange p) => p.item == item).firstOrNull;
+  PriceRange? _rangeFor(PriceItem item) => _radar?.prices
+      .where(
+        (PriceRange p) =>
+            p.item == item && p.currency == (_currency ?? p.currency),
+      )
+      .firstOrNull;
 
   Future<void> _toggleScam(ScamCategory c) async {
     final String? city = _city;
@@ -181,13 +220,18 @@ class _RadarScreenState extends State<RadarScreen> {
     }
   }
 
-  Future<void> _sendPrice() async {
+  Future<void> _sendPrice(double asked) async {
     final String? city = _city;
-    final double? asked = _asked;
-    if (city == null || asked == null) return;
+    if (city == null) return;
+    final String cur = _cur;
+    final PriceItem item = _item;
     try {
-      await _services.radar.addPrice(city, _item, _currency, asked);
-      if (mounted) setState(() => _sent = true);
+      await _services.radar.addPrice(city, item, cur, asked);
+      if (mounted) {
+        setState(
+          () => _sentKey = '${item.wire}:$cur:${asked.toStringAsFixed(2)}',
+        );
+      }
       _snack((AppLocalizations t) => t.radarPriceThanks);
     } on ApiException catch (e) {
       _snack(
@@ -196,6 +240,43 @@ class _RadarScreenState extends State<RadarScreen> {
             : t.radarSendFailed,
       );
     }
+  }
+
+  /// La lista de monedas (las del conversor), para elegir en cuál te piden.
+  Future<void> _pickCurrency() async {
+    final List<String> all = <String>['EUR', ...currencyCountry.keys];
+    final String? c = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext context) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: <Widget>[
+            for (final String c in all)
+              ListTile(
+                title: Text('${currencyFlag(c)} $c'),
+                selected: c == _cur,
+                onTap: () => Navigator.of(context).pop(c),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (c != null && mounted) setState(() => _currency = c);
+  }
+
+  /// Google Maps busca cafés alrededor (gratis, sin clave).
+  void _shelter() {
+    final GeoPoint? here = _here;
+    if (here == null) return;
+    unawaited(
+      _services.openBooking(
+        Uri.https(
+          'www.google.com',
+          '/maps/search/cafe/@${here.lat.toStringAsFixed(4)},${here.lon.toStringAsFixed(4)},16z',
+        ),
+      ),
+    );
   }
 
   // Recibe una función que elige el texto, para no leer el contexto antes
@@ -209,308 +290,180 @@ class _RadarScreenState extends State<RadarScreen> {
       );
   }
 
+  /// Lo que pide la página.
+  void _onMessage(String m) {
+    final int i = m.indexOf(':');
+    final String what = i < 0 ? m : m.substring(0, i);
+    final String arg = i < 0 ? '' : m.substring(i + 1);
+    switch (what) {
+      case 'back':
+        if (context.canPop()) context.pop();
+      case 'go':
+        _shelter();
+      case 'scam':
+        final ScamCategory? c = ScamCategory.parse(arg);
+        if (c != null) unawaited(_toggleScam(c));
+      case 'item':
+        final PriceItem? item = PriceItem.parse(arg);
+        if (item != null) setState(() => _item = item);
+      case 'cur':
+        unawaited(_pickCurrency());
+      case 'paid':
+        final double? x = double.tryParse(arg);
+        if (x != null && x > 0 && x < 1e7) unawaited(_sendPrice(x));
+    }
+  }
+
+  Map<String, Object?> _data(AppLocalizations t) {
+    final String locale = Localizations.localeOf(context).toLanguageTag();
+    final String? city = _city;
+    final String place = (_cityName ?? city ?? '').toUpperCase();
+
+    // 1. La lluvia.
+    final RainForecast? rain = _rain;
+    final RainHour? first = rain?.firstRain;
+    String rainTxt;
+    if (_locating) {
+      rainTxt = '…';
+    } else if (_here == null) {
+      rainTxt = t.radarNoLocation;
+    } else if (_rainFailed) {
+      rainTxt = t.radarRainFailed;
+    } else if (rain == null) {
+      rainTxt = '…';
+    } else if (first == null) {
+      rainTxt = t.radarNoRain(rain.hours.length);
+    } else {
+      rainTxt = t.radarRainAt(
+        DateFormat.Hm(locale).format(first.time),
+        NumberFormat.decimalPatternDigits(
+          locale: locale,
+          decimalDigits: 1,
+        ).format(first.rainMm),
+      );
+    }
+
+    // 2. Ojo en esta zona.
+    final CityRadar? radar = _radar;
+    final String zone = place.isEmpty
+        ? 'OJO EN ESTA ZONA'
+        : 'OJO EN ESTA ZONA · $place';
+    Map<String, Object?> card(String title, String why, [String by = '']) =>
+        <String, Object?>{'lbl': zone, 'title': title, 'why': why, 'by': by};
+    final List<Map<String, Object?>> scams = <Map<String, Object?>>[
+      if (_locating)
+        card(t.radarScamsTitle, '…')
+      else if (city == null)
+        card(t.radarScamsTitle, t.radarNoCity)
+      else if (_radarError == ApiError.signedOut)
+        card(t.radarScamsTitle, t.radarSignIn)
+      else if (_radarError != null)
+        card(t.radarScamsTitle, t.radarSendFailed)
+      else if (radar == null)
+        card(t.radarScamsTitle, '…')
+      else if (radar.scams.isEmpty)
+        card(t.radarScamsTitle, t.radarNoScams)
+      else
+        for (final MapEntry<ScamCategory, int> e in radar.scams.entries)
+          card(
+            scamTitle(t, e.key),
+            scamAdvice(t, e.key),
+            t.radarReportedBy(e.value),
+          ),
+    ];
+
+    // 3. ¿Me están cobrando de más?
+    final String cur = _cur;
+    final PriceRange? range = _rangeFor(_item);
+    String money(double v) =>
+        NumberFormat.simpleCurrency(locale: locale, name: cur).format(v);
+    final bool showPrice = city != null && radar != null;
+
+    return <String, Object?>{
+      'title': t.radarTitle,
+      'backTxt': MaterialLocalizations.of(context).backButtonTooltip,
+      'sub': city == null ? '' : t.radarNowIn(_cityName ?? city),
+      'rainy': first != null,
+      'rainLbl': first == null
+          ? t.radarRainTitle.toUpperCase()
+          : rainLabel(first, DateTime.now(), locale),
+      'rainTxt': rainTxt,
+      'goTxt': t.radarFindShelter,
+      'attr': rain?.attribution ?? '',
+      'scams': scams,
+      'reportHint': t.radarReportHint,
+      'report': <Object?>[
+        if (radar != null && city != null)
+          for (final ScamCategory c in ScamCategory.values)
+            <String, Object?>{
+              'k': c.wire,
+              'label': scamTitle(t, c),
+              'on': radar.myScams.contains(c),
+            },
+      ],
+      'showPrice': showPrice,
+      'priceH': t.radarPriceTitle,
+      'items': <Object?>[
+        for (final PriceItem i in PriceItem.values)
+          <String, Object?>{'k': i.wire, 'label': priceItemLabel(t, i)},
+      ],
+      'item': _item.wire,
+      'askH': t.radarAsked,
+      'cur': '${currencyFlag(cur)} $cur'.trim(),
+      'curTxt': cur,
+      'range': range == null
+          ? null
+          : <String, Object?>{'low': range.low, 'high': range.high},
+      'loTxt': range == null ? '' : money(range.low * 0.6),
+      'hiTxt': range == null ? '' : money(range.high * 1.8),
+      'rangeTxt': range == null
+          ? ''
+          : '${money(range.low)} – ${money(range.high)}',
+      'v': <String>[
+        t.radarVerdictFine,
+        t.radarVerdictBitHigh,
+        t.radarVerdictOver,
+      ],
+      'noPrices': t.radarNoPrices,
+      'payTxt': t.radarIPaid,
+      'sentKey': _sentKey,
+      'note': t.radarPricesNote,
+      // El bocadillo de Flyra: sin previsión de lluvia para este punto.
+      'flyOn': _rainFailed,
+      'flyTitle': t.radarRainTitle,
+      'flyText': t.radarRainFailed,
+      'flyOk': t.settleOk,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final TextTheme text = Theme.of(context).textTheme;
+    final String? page = _pageCache;
+    if (page == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF0B1217),
+        body: SizedBox.expand(),
+      );
+    }
+    final Map<String, Object?> data = _data(AppLocalizations.of(context));
+    final String push = radarPushScript(data);
+    if (_html == null) {
+      _html = radarPageWith(page, data);
+      _sent = push;
+    } else if (push != _sent) {
+      _sent = push;
+      unawaited(_bridge.run(push));
+    }
+    final String html = _html!;
+    final AppServices services = ServicesScope.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(t.radarTitle)),
-      body: _locating
-          ? const Center(child: CircularProgressIndicator())
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
-              children: <Widget>[
-                if (_city != null)
-                  Text(
-                    t.radarNowIn(_cityName ?? _city!),
-                    style: const TextStyle(color: NomadColors.textMuted),
-                  ),
-                const SizedBox(height: 12),
-                Text(t.radarRainTitle, style: text.titleMedium),
-                const SizedBox(height: 6),
-                _rainCard(t),
-                const SizedBox(height: 20),
-                Text(t.radarScamsTitle, style: text.titleMedium),
-                const SizedBox(height: 6),
-                ..._scams(t),
-                const SizedBox(height: 20),
-                Text(t.radarPriceTitle, style: text.titleMedium),
-                const SizedBox(height: 6),
-                ..._prices(t),
-              ],
-            ),
-    );
-  }
-
-  Widget _rainCard(AppLocalizations t) {
-    final RainForecast? rain = _rain;
-    final String locale = Localizations.localeOf(context).toLanguageTag();
-    if (_here == null) return Text(t.radarNoLocation);
-    if (_rainFailed) return Text(t.radarRainFailed);
-    if (rain == null) return const LinearProgressIndicator();
-    final RainHour? first = rain.firstRain;
-    final NumberFormat mm = NumberFormat.decimalPatternDigits(
-      locale: locale,
-      decimalDigits: 1,
-    );
-    final GeoPoint here = _here!;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              first == null
-                  ? t.radarNoRain(rain.hours.length)
-                  : t.radarRainAt(
-                      DateFormat.Hm(locale).format(first.time),
-                      mm.format(first.rainMm),
-                    ),
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: first == null ? NomadColors.mint : NomadColors.flights,
-              ),
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 70,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: <Widget>[
-                  for (final RainHour h in rain.hours)
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: <Widget>[
-                          Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 3),
-                            height: 4 + (h.rainMm.clamp(0, 6) * 7),
-                            decoration: BoxDecoration(
-                              color: h.rainMm >= 0.2
-                                  ? NomadColors.flights
-                                  : NomadColors.outline,
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            DateFormat.H(locale).format(h.time),
-                            style: const TextStyle(fontSize: 11),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            if (first != null)
-              TextButton.icon(
-                icon: const Icon(Icons.local_cafe_rounded),
-                label: Text(t.radarFindShelter),
-                // Google Maps busca cafés alrededor (gratis, sin clave).
-                onPressed: () => unawaited(
-                  _services.openBooking(
-                    Uri.https(
-                      'www.google.com',
-                      '/maps/search/cafe/@${here.lat.toStringAsFixed(4)},${here.lon.toStringAsFixed(4)},16z',
-                    ),
-                  ),
-                ),
-              ),
-            Text(
-              rain.attribution,
-              style: const TextStyle(
-                fontSize: 11,
-                color: NomadColors.textMuted,
-              ),
-            ),
-          ],
-        ),
+      backgroundColor: const Color(0xFF0B1217),
+      body: SafeArea(
+        bottom: false,
+        child:
+            services.webScene?.call(html, _onMessage) ??
+            WebScene(html: html, onMessage: _onMessage, bridge: _bridge),
       ),
     );
-  }
-
-  List<Widget> _scams(AppLocalizations t) {
-    if (_city == null) return <Widget>[Text(t.radarNoCity)];
-    if (_radarError == ApiError.signedOut) {
-      return <Widget>[Text(t.radarSignIn)];
-    }
-    if (_radarError != null) return <Widget>[Text(t.radarSendFailed)];
-    final CityRadar? radar = _radar;
-    if (radar == null) return <Widget>[const LinearProgressIndicator()];
-    return <Widget>[
-      if (radar.scams.isEmpty)
-        Text(
-          t.radarNoScams,
-          style: const TextStyle(color: NomadColors.textMuted),
-        ),
-      for (final MapEntry<ScamCategory, int> e in radar.scams.entries)
-        Card(
-          color: const Color(0xFF2A1A16),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  scamTitle(t, e.key),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: NomadColors.safety,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(scamAdvice(t, e.key)),
-                const SizedBox(height: 4),
-                Text(
-                  t.radarReportedBy(e.value),
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: NomadColors.textMuted,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      const SizedBox(height: 8),
-      Text(
-        t.radarReportHint,
-        style: const TextStyle(color: NomadColors.textMuted),
-      ),
-      const SizedBox(height: 6),
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: <Widget>[
-          for (final ScamCategory c in ScamCategory.values)
-            FilterChip(
-              label: Text(scamTitle(t, c)),
-              selected: radar.myScams.contains(c),
-              onSelected: (_) => unawaited(_toggleScam(c)),
-            ),
-        ],
-      ),
-    ];
-  }
-
-  List<Widget> _prices(AppLocalizations t) {
-    if (_city == null || _radarError != null || _radar == null) {
-      return <Widget>[];
-    }
-    final String locale = Localizations.localeOf(context).toLanguageTag();
-    final PriceRange? range = _rangeFor(_item);
-    final bool sameCurrency = range != null && range.currency == _currency;
-    final double? asked = _asked;
-    String money(double v) =>
-        NumberFormat.simpleCurrency(locale: locale, name: _currency).format(v);
-    final List<String> currencies = <String>['EUR', ...currencyCountry.keys];
-    return <Widget>[
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: <Widget>[
-          for (final PriceItem i in PriceItem.values)
-            ChoiceChip(
-              label: Text(priceItemLabel(t, i)),
-              selected: _item == i,
-              onSelected: (_) => setState(() {
-                _item = i;
-                _sent = false;
-                _pickCurrency();
-              }),
-            ),
-        ],
-      ),
-      const SizedBox(height: 8),
-      Row(
-        children: <Widget>[
-          Expanded(
-            child: TextField(
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: <TextInputFormatter>[
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-              ],
-              decoration: InputDecoration(labelText: t.radarAsked),
-              onChanged: (String v) {
-                final double? x = double.tryParse(v.replaceAll(',', '.'));
-                setState(() {
-                  _asked = x != null && x > 0 && x < 1e7 ? x : null;
-                  _sent = false;
-                });
-              },
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 130,
-            child: DropdownButtonFormField<String>(
-              initialValue: _currency,
-              isExpanded: true,
-              items: <DropdownMenuItem<String>>[
-                for (final String c in currencies)
-                  DropdownMenuItem<String>(
-                    value: c,
-                    child: Text('${currencyFlag(c)} $c'),
-                  ),
-              ],
-              onChanged: (String? c) {
-                if (c != null) setState(() => _currency = c);
-              },
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 10),
-      if (!sameCurrency)
-        Text(
-          t.radarNoPrices,
-          style: const TextStyle(color: NomadColors.textMuted),
-        )
-      else ...<Widget>[
-        Text(
-          t.radarNormalRange(
-            money(range.low),
-            money(range.high),
-            range.reporters,
-          ),
-        ),
-        if (asked != null) ...<Widget>[
-          const SizedBox(height: 6),
-          Text(
-            switch (verdictFor(asked, range)) {
-              PriceVerdict.fine => t.radarVerdictFine,
-              PriceVerdict.bitHigh => t.radarVerdictBitHigh,
-              PriceVerdict.overcharged => t.radarVerdictOver,
-            },
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: switch (verdictFor(asked, range)) {
-                PriceVerdict.fine => NomadColors.mint,
-                PriceVerdict.bitHigh => NomadColors.money,
-                PriceVerdict.overcharged => NomadColors.safety,
-              },
-            ),
-          ),
-        ],
-      ],
-      const SizedBox(height: 8),
-      OutlinedButton.icon(
-        icon: Icon(_sent ? Icons.check_rounded : Icons.add_task_rounded),
-        label: Text(t.radarIPaid),
-        onPressed: asked == null || _sent
-            ? null
-            : () => unawaited(_sendPrice()),
-      ),
-      const SizedBox(height: 6),
-      Text(
-        t.radarPricesNote,
-        style: const TextStyle(fontSize: 12, color: NomadColors.textMuted),
-      ),
-    ];
   }
 }

@@ -34,6 +34,7 @@ import '../features/memories/memories_screen.dart';
 import '../features/memories/travel_camera_screen.dart';
 import '../features/airport/airport_screen.dart';
 import '../features/widgets/widgets_screen.dart';
+import '../features/copy_trip/copy_feed_screen.dart';
 import '../features/copy_trip/copy_trip_screen.dart';
 import '../features/copy_trip/share_trip_screen.dart';
 import '../features/help/help_screen.dart';
@@ -82,6 +83,9 @@ abstract final class Routes {
   static const String travelWith = '/travel-with';
   static const String help = '/help';
   static const String shareTrip = '/copy-trip/share';
+
+  /// Abrir un viaje con su código (y ver tus copiados y compartidos).
+  static const String copyCode = '/copy-trip/code';
   static const String cards = '/cards';
   static const String memories = '/memories';
   static const String travelCamera = '/memories/camera';
@@ -121,11 +125,8 @@ abstract final class Routes {
     queryParameters: code == null ? null : <String, String>{'code': code},
   ).toString();
 
-  /// Explorar: precio por meses y clima. `from` = aeropuerto de salida.
-  static String explore({String? origin}) => Uri(
-    path: '/explore',
-    queryParameters: origin == null ? null : <String, String>{'from': origin},
-  ).toString();
+  /// Explorar: cuándo conviene viajar a cada país del mundo.
+  static String explore() => '/explore';
   static const String privacy = '/settings/privacy';
 
   /// La audioguía de una zona. El nombre va en la dirección para poder
@@ -158,12 +159,16 @@ abstract final class Routes {
     String? destination,
     String? departure,
     String? returnDate,
+    int? adults,
+    bool search = false,
   }) {
     final Map<String, String> q = <String, String>{
       'from': ?origin,
       'to': ?destination,
       'dep': ?departure,
       'ret': ?returnDate,
+      if (adults != null) 'ad': '$adults',
+      if (search) 'go': '1',
     };
     return Uri(
       path: '/fares/search',
@@ -205,9 +210,10 @@ abstract final class Routes {
       '/group/trip/${Uri.encodeComponent(id)}/chat';
 
   /// Elegid planes del viaje [id]; [city] es el destino elegido ("Lisboa").
-  static String groupPlans(String id, {String? city}) => Uri(
+  /// [iata] es su aeropuerto (para las ideas de la ciudad).
+  static String groupPlans(String id, {String? city, String? iata}) => Uri(
     path: '/group/trip/${Uri.encodeComponent(id)}/plans',
-    queryParameters: <String, String>{'city': ?city},
+    queryParameters: <String, String>{'city': ?city, 'iata': ?iata},
   ).toString();
 
   /// El chat con Flyra. Con `question`, la escribe ya en la caja.
@@ -323,6 +329,8 @@ GoRouter buildRouter({
             destination: state.uri.queryParameters['to'],
             departure: _day(state.uri.queryParameters['dep']),
             returnDate: _day(state.uri.queryParameters['ret']),
+            adults: int.tryParse(state.uri.queryParameters['ad'] ?? ''),
+            autoSearch: state.uri.queryParameters['go'] == '1',
           ),
     ),
     GoRoute(
@@ -371,6 +379,7 @@ GoRouter buildRouter({
       builder: (BuildContext context, GoRouterState state) => PlansScreen(
         tripId: state.pathParameters['id'] ?? '',
         city: state.uri.queryParameters['city'],
+        iata: state.uri.queryParameters['iata'],
       ),
     ),
     GoRoute(
@@ -386,7 +395,7 @@ GoRouter buildRouter({
     GoRoute(
       path: '/explore',
       builder: (BuildContext context, GoRouterState state) =>
-          ExploreScreen(origin: state.uri.queryParameters['from'] ?? ''),
+          const ExploreScreen(),
     ),
     GoRoute(
       path: Routes.before,
@@ -501,8 +510,18 @@ GoRouter buildRouter({
     ),
     GoRoute(
       path: '/copy-trip',
+      // Con código (un enlace) se abre ese viaje; sin código, el muro.
+      builder: (BuildContext context, GoRouterState state) {
+        final String? code = state.uri.queryParameters['code'];
+        return code == null
+            ? const CopyFeedScreen()
+            : CopyCodeScreen(code: code);
+      },
+    ),
+    GoRoute(
+      path: Routes.copyCode,
       builder: (BuildContext context, GoRouterState state) =>
-          CopyTripScreen(code: state.uri.queryParameters['code']),
+          const CopyCodeScreen(),
     ),
     GoRoute(
       path: Routes.shareTrip,

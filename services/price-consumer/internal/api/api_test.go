@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -478,6 +479,76 @@ func TestMonthsValidatesAndDegrades(t *testing.T) {
 	}
 	// Un buscador sin precios por meses: 503.
 	if rec := get(newSearchAPI(&fakeSearcher{}), "/v1/fares/months?origin=MAD&destination=NRT"); rec.Code != http.StatusServiceUnavailable {
+		t.Errorf("sin soporte: %d", rec.Code)
+	}
+}
+
+// dailySearcher también sabe dar precios por días.
+type dailySearcher struct {
+	fakeSearcher
+	asked string
+	err   error
+}
+
+func (d *dailySearcher) Daily(_ context.Context, origin, destination string, year int, month time.Month, oneWay bool) (domain.DailyResult, error) {
+	d.asked = fmt.Sprintf("%s-%s %04d-%02d %t", origin, destination, year, int(month), oneWay)
+	if d.err != nil {
+		return domain.DailyResult{}, d.err
+	}
+	eur := domain.Money{Currency: "EUR", AmountMinor: 38900}
+	day := func(n int) time.Time { return time.Date(year, month, n, 0, 0, 0, 0, time.UTC) }
+	return domain.DailyResult{
+		Provider:   "travelpayouts",
+		ObservedAt: today,
+		Days: []domain.DayFare{
+			{Date: day(12), PricePerAdult: eur, CarrierIATA: "TK", DepartureAt: "2027-03-12", Transfers: 1,
+				DeepLink: "https://www.aviasales.com/search/MAD1203HND1?marker=1"},
+			{Date: day(13), PricePerAdult: eur, DeepLink: "http://insecure.example"},
+			{Date: time.Date(year, month+1, 1, 0, 0, 0, 0, time.UTC), PricePerAdult: eur, DeepLink: "https://www.aviasales.com/x"},
+		},
+	}, nil
+}
+
+func TestDaysIsPublicAndKeepsOnlyThatMonth(t *testing.T) {
+	d := &dailySearcher{}
+	rec := get(newSearchAPI(d), "/v1/fares/days?origin=mad&destination=HND&month=2027-03&one_way=true")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("código %d: %s", rec.Code, rec.Body)
+	}
+	if d.asked != "MAD-HND 2027-03 true" {
+		t.Errorf("pregunta: %s", d.asked)
+	}
+	body := decode(t, rec)
+	days := body["days"].([]any)
+	if len(days) != 1 || body["one_way"] != true || body["month"] != "2027-03" {
+		t.Fatalf("respuesta: %v", body)
+	}
+	first := days[0].(map[string]any)
+	if first["date"] != "2027-03-12" || first["carrier"] != "TK" {
+		t.Errorf("día: %v", first)
+	}
+}
+
+func TestDaysValidatesAndDegrades(t *testing.T) {
+	d := &dailySearcher{}
+	h := newSearchAPI(d)
+	for _, path := range []string{
+		"/v1/fares/days?origin=MAD&destination=MAD&month=2027-03",
+		"/v1/fares/days?origin=MAD&destination=HND",
+		"/v1/fares/days?origin=MAD&destination=HND&month=marzo",
+	} {
+		if rec := get(h, path); rec.Code != http.StatusBadRequest {
+			t.Errorf("%s: %d", path, rec.Code)
+		}
+	}
+	if d.asked != "" {
+		t.Error("con datos malos no se pregunta al proveedor")
+	}
+	busy := get(newSearchAPI(&dailySearcher{err: domain.ErrSearchBusy}), "/v1/fares/days?origin=MAD&destination=HND&month=2027-03")
+	if busy.Code != http.StatusTooManyRequests {
+		t.Errorf("ocupado: %d", busy.Code)
+	}
+	if rec := get(newSearchAPI(&fakeSearcher{}), "/v1/fares/days?origin=MAD&destination=HND&month=2027-03"); rec.Code != http.StatusServiceUnavailable {
 		t.Errorf("sin soporte: %d", rec.Code)
 	}
 }
