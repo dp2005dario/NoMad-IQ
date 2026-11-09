@@ -228,6 +228,8 @@ class _FlightsScreenState extends State<FlightsScreen> {
           _ => null,
         };
         if (to != null) unawaited(context.push(to));
+      case 'share':
+        unawaited(_shareTrip());
       case 'settings':
         unawaited(context.push(Routes.settings));
       case 'retry':
@@ -241,6 +243,13 @@ class _FlightsScreenState extends State<FlightsScreen> {
       case 'alerts':
         unawaited(context.push(Routes.fareAlerts));
     }
+  }
+
+  /// "Compartir mi viaje": lo publicas y luego ves el muro de Copiar viaje,
+  /// donde ya sale el tuyo.
+  Future<void> _shareTrip() async {
+    final Object? shared = await context.push<Object?>(Routes.shareTrip);
+    if (shared != null && mounted) unawaited(context.push(Routes.copyTrip()));
   }
 
   static final RegExp _iata = RegExp(r'^[A-Z]{3}$');

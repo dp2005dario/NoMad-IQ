@@ -329,6 +329,34 @@ rep_re(r'<span style="font-size: 10.5px; color: #8FA3AD; text-align: center">Dat
 rep_re(r'<button type="button" onClick="\{\{flyShow\}\}".*?PROBAR AVISO</button>', '', flags=re.S)
 rep_re(r'onClick="\{\{flyHide\}\}"([^>]*>Reintentar)', r'onClick="{{flyRetry}}"\1')
 
+# --- 14. "Compartir mi viaje" (decisión de DARIO: va aquí, en Vuelos). Una
+# fila debajo de "Planea tu viaje", con el mismo estilo que sus botones (el
+# morado de "Copiar viaje", el brillo que pasa y la entrada "pop").
+a = s.find('class="q-grid"')
+a = s.rfind('<', 0, a)
+b = element_end(s, a)
+share = (
+    '<a class="q-chip" onClick="{{shareTrip}}" style="--c: #9B7BFF; --d: 4.2s; animation-delay: 0.46s; '
+    'margin-top: -2px; display: flex; align-items: center; gap: 12px; border-radius: 22px; '
+    'background: radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, #9B7BFF 30%, transparent), transparent 60%), '
+    'linear-gradient(160deg, #1c2b36, #0f1a22); border: 1px solid color-mix(in srgb, #9B7BFF 35%, #2a3b47); '
+    'box-shadow: 0 14px 22px -12px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.13); padding: 12px 14px; '
+    'text-decoration: none; color: #E8F1EE; cursor: pointer">'
+    '<span class="q-ico" style="width: 40px; height: 40px; border-radius: 13px; flex-shrink: 0; display: flex; '
+    'align-items: center; justify-content: center; background: radial-gradient(120% 100% at 30% 20%, #B69CFF 0%, '
+    '#2A1A5A 100%); box-shadow: inset 0 1px 0 #ffffff55, 0 4px 10px -4px #9B7BFF">'
+    '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" '
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle>'
+    '<circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle>'
+    '<path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"></path></svg></span>'
+    '<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0">'
+    '<span style="font-size: 14px; font-weight: 800">Compartir mi viaje</span>'
+    '<span style="font-size: 12px; font-weight: 600; color: #B7C5CC">Publícalo para que otros lo copien</span></span>'
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B69CFF" stroke-width="2.4" '
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></a>'
+)
+s = s[:b] + share + s[b:]
+
 # --- 13. La lógica: la de la maqueta, pero con tus datos (logic.js).
 a = s.find('class Component extends DCLogic {')
 b = s.find('</script>', a)

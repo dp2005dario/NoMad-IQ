@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
+import 'package:eclipta/features/copy_trip/share_trip_screen.dart';
 import 'package:eclipta/features/flights/fares_api.dart';
 import 'package:eclipta/features/flights/flight_format.dart';
 import 'package:eclipta/features/flights/flights_screen.dart';
@@ -456,6 +457,19 @@ void main() {
     page.send!('retry');
     await page.wait(tester, () => b.origins.length == 2);
   });
+
+  testWidgets(
+    '"Compartir mi viaje" (en Vuelos) abre la pantalla de compartir',
+    (WidgetTester tester) async {
+      final PageSpy page = PageSpy();
+      await pumpFlights(tester, page: page);
+      await page.wait(tester, () => page.pages.isNotEmpty);
+      expect(page.pages.last, contains('Compartir mi viaje'));
+      page.send!('share');
+      await tester.pumpAndSettle();
+      expect(find.byType(ShareTripScreen), findsOneWidget);
+    },
+  );
 
   testWidgets('avisar si baja: con precio objetivo', (
     WidgetTester tester,
