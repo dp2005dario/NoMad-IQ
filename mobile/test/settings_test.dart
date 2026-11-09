@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
@@ -16,6 +17,8 @@ import 'package:eclipta/features/settings/profile_photo.dart';
 import 'package:eclipta/features/settings/settings_screen.dart';
 import 'package:eclipta/features/vault/vault.dart';
 import 'package:eclipta/features/vault/vault_store.dart';
+
+import 'package:eclipta/features/settings/privacy_screen.dart';
 
 import 'helpers.dart';
 import 'money_test.dart' as m;
@@ -369,9 +372,18 @@ void main() {
       final (_, _, m.PageSpy spy, _) = await open(tester);
       await send(tester, spy, 'privacy');
       await tester.pumpAndSettle();
-      expect(find.text('Este teléfono está protegido'), findsOneWidget);
-      Navigator.of(tester.element(find.text('Este teléfono está protegido')))
-          .pop();
+      await spy.wait(
+        tester,
+        () => spy.pages.any((String h) => h.contains('ECLIPTA · Privacidad')),
+      );
+      expect(
+        spy.data(
+          PrivacyScreen.lastBridge!,
+          title: 'ECLIPTA · Privacidad',
+        )['prot'],
+        'Este teléfono está protegido',
+      );
+      GoRouter.of(tester.element(find.byType(PrivacyScreen))).pop();
       await tester.pumpAndSettle();
       // "Letra grande y modo fácil": Inicio pasa al Modo fácil.
       await send(tester, spy, 'easy');
@@ -453,28 +465,37 @@ void main() {
     final FakeGateway g = FakeGateway();
     final SessionController session = await signedInSession(g);
     final MemorySettingsStore prefs = MemorySettingsStore();
-    tester.view.physicalSize = const Size(1200, 3800);
-    tester.view.devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
+    final m.PageSpy spy = m.PageSpy();
     await pumpApp(
       tester,
       locale: 'es',
       session: session,
       initialLocation: Routes.privacy,
-      services: fakeServices(session, gateway: g, prefs: prefs),
+      services: fakeServices(
+        session,
+        gateway: g,
+        prefs: prefs,
+        webScene: spy.build,
+      ),
     );
-    expect(find.text('Este teléfono está protegido'), findsOneWidget);
-    expect(find.text('Qué sabemos de ti'), findsOneWidget);
-    await tester.tap(find.text('Chollos de vuelos'));
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    Map<String, Object?> data() => spy.data(PrivacyScreen.lastBridge!);
+    Map<String, Object?> toggle(String key) =>
+        (data()['toggles']! as List<Object?>).firstWhere(
+              (Object? t) => (t! as Map<String, Object?>)['key'] == key,
+            )!
+            as Map<String, Object?>;
+    expect(data()['prot'], 'Este teléfono está protegido');
+    expect(data()['knowH'], 'Qué sabemos de ti');
+    expect(data()['offCount'], 'Ninguna');
+    expect(toggle('flights')['on'], isTrue);
+    spy.send!('t:flights:0');
     await tester.pumpAndSettle();
     expect(mutedKinds(prefs), <PushKind>{PushKind.fareAlert});
-    final SwitchListTile safety = tester.widget(
-      find.widgetWithText(SwitchListTile, 'Avisos de seguridad'),
-    );
-    expect(safety.value, isTrue);
-    expect(safety.onChanged, isNull);
+    expect(toggle('flights')['on'], isFalse);
+    expect(toggle('safety')['locked'], isTrue);
     // Sin Firebase (tests) no hay "Olvidar este teléfono".
-    expect(find.text('Olvidar este teléfono'), findsNothing);
+    expect(data()['push'], isFalse);
   });
 
   testWidgets('Privacidad: cambiar la contraseña: bien y mal', (
@@ -482,6 +503,7 @@ void main() {
   ) async {
     final FakeGateway g = FakeGateway();
     final SessionController session = await signedInSession(g);
+    final m.PageSpy spy = m.PageSpy();
     tester.view.physicalSize = const Size(1200, 3800);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -490,11 +512,12 @@ void main() {
       locale: 'es',
       session: session,
       initialLocation: Routes.privacy,
-      services: fakeServices(session, gateway: g),
+      services: fakeServices(session, gateway: g, webScene: spy.build),
     );
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    expect(spy.data(PrivacyScreen.lastBridge!)['pwdTxt'], 'Cambiar contraseña');
     Future<void> change(String current, String next) async {
-      await tester.scrollUntilVisible(find.text('Cambiar contraseña'), 300);
-      await tester.tap(find.text('Cambiar contraseña'));
+      spy.send!('password');
       await tester.pumpAndSettle();
       await tester.enterText(
         find.widgetWithText(TextField, 'Contraseña actual'),
