@@ -141,6 +141,7 @@ flutter:
     - assets/offline/sinconexion.html
     - assets/travel_with/viajocon.html
     - assets/visa/visado.html
+    - assets/widgets/widgets.html
     - assets/passport/pasaporte.html
     - assets/inicio/inicio.html
     - assets/map/flyra.webp

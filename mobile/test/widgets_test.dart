@@ -15,7 +15,11 @@ import 'package:eclipta/features/widgets/widget_sync.dart';
 import 'package:eclipta/l10n/generated/app_localizations.dart';
 
 import 'flights_test.dart' show fare;
+
+import 'package:eclipta/features/widgets/widgets_screen.dart';
+
 import 'helpers.dart';
+import 'money_test.dart' as m;
 import 'money_test.dart' show groupId, groupJson;
 
 final AppLocalizations es = lookupAppLocalizations(const Locale('es'));
@@ -209,33 +213,43 @@ void main() {
       );
       final MemoryHomeWidgets widgets = MemoryHomeWidgets();
       final session = newSession()..continueAsGuest();
-      tester.view.physicalSize = const Size(1200, 5000);
-      tester.view.devicePixelRatio = 3;
-      addTearDown(tester.view.reset);
+      final m.PageSpy spy = m.PageSpy();
       await pumpApp(
         tester,
         locale: 'es',
         session: session,
         initialLocation: Routes.widgets,
-        services: fakeServices(session, prefs: store, homeWidgets: widgets),
+        services: fakeServices(
+          session,
+          prefs: store,
+          homeWidgets: widgets,
+          webScene: spy.build,
+        ),
       );
-      await tester.pumpAndSettle();
-      expect(find.textContaining('Madrid → Tokio ·'), findsOneWidget);
-      expect(find.text('EMBARQUE EN 80 MIN'), findsOneWidget);
-      expect(find.text('Embarcando · puerta K42'), findsNothing);
+      Map<String, Object?> data() => spy.data(WidgetsScreen.lastBridge!);
+      List<Map<String, Object?>> phases() =>
+          (data()['phases']! as List<Object?>).cast<Map<String, Object?>>();
+      await spy.wait(tester, () => spy.pages.isNotEmpty);
+      expect(data()['route'], 'Madrid → Tokio');
+      expect(data()['fromCode'], 'MAD');
+      expect(phases()[0]['tag'], 'EMBARQUE EN 80 MIN');
+      expect(phases()[0]['title'], isNot('Embarcando · puerta K42'));
+      expect(phases()[1]['tag'], startsWith('EN VUELO ·'));
+      expect(phases()[1]['title'], 'En vuelo · Madrid → Tokio');
+      expect(phases()[2]['tag'], 'HAS LLEGADO A TOKIO');
+      expect((phases()[0]['facts']! as List<Object?>).last, <Object?>[
+        'PUERTA',
+        'K42',
+      ]);
 
-      await tester.tap(find.text('En vuelo'));
-      await tester.pumpAndSettle();
-      expect(find.textContaining('EN VUELO ·'), findsOneWidget);
-      expect(find.text('En vuelo · Madrid → Tokio'), findsOneWidget);
-
-      await tester.tap(find.text('Aterrizado'));
-      await tester.pumpAndSettle();
-      expect(find.text('HAS LLEGADO A TOKIO'), findsOneWidget);
-
-      await tester.tap(find.text('Añadir al escritorio').first);
-      await tester.pumpAndSettle();
+      spy.send!('pin:flight');
+      await tester.pump();
       expect(widgets.pinned, <HomeWidgetKind>[HomeWidgetKind.flight]);
+
+      // El aviso en directo se apaga y se recuerda.
+      spy.send!('live');
+      await spy.wait(tester, () => data()['live'] == false);
+      expect(liveFlightOn(store), isFalse);
     },
   );
 }
