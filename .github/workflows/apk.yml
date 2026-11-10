@@ -8,8 +8,12 @@
 # Se hace sola al cambiar la app en main. Para hacerla a mano (o con otra
 # dirección de servidor): "Actions" → "APK para el móvil" → "Run workflow".
 #
-# Va firmada con la llave de PRUEBAS mientras no exista android/key.properties:
-# sirve para instalarla en tu móvil, pero Google Play no la aceptará.
+# Firma: con tu llave de subida si están los secretos de GitHub
+# ANDROID_KEYSTORE_BASE64 (el .jks en base64) y ANDROID_KEYSTORE_PASSWORD
+# (Settings → Secrets and variables → Actions). Así todas las APK llevan la
+# misma firma: se actualizan sin desinstalar y la huella SHA-1 de "Continuar
+# con Google" no cambia. Sin esos secretos se firma con una llave de pruebas
+# distinta en cada ejecución.
 name: APK para el móvil
 
 on:
@@ -58,6 +62,22 @@ jobs:
           cache: true
       - name: Dependencias
         run: flutter pub get --enforce-lockfile
+      - name: Llave de firma (si está en los secretos)
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$KEYSTORE_PASS" ]; then
+            echo "::warning::Sin secretos de firma: APK firmada con una llave de pruebas temporal."
+            exit 0
+          fi
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          {
+            echo "storeFile=$RUNNER_TEMP/upload.jks"
+            echo "storePassword=$KEYSTORE_PASS"
+            echo "keyAlias=upload"
+            echo "keyPassword=$KEYSTORE_PASS"
+          } > android/key.properties
       - name: Compilar APK
         env:
           API_URL: ${{ inputs.api_url }}
