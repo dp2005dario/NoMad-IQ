@@ -52,6 +52,25 @@ spec:
         runAsGroup: 65532
         fsGroup: 65532
         seccompProfile: {type: RuntimeDefault}
+        # Solo cambia permisos del disco si hace falta (no en cada arranque).
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        # Traefik se niega a usar acme.json (el certificado de Let's Encrypt)
+        # si otros pueden leerlo: exige permisos 600. Al montar el disco,
+        # Kubernetes le pone 660 por el fsGroup, y entonces NO hay https
+        # válido (la app da "HandshakeException"). Esto lo deja en 600.
+        - name: acme-permisos
+          image: mirror.gcr.io/library/traefik:v3.7.16
+          command: ["sh", "-c", "touch /acme/acme.json && chmod 600 /acme/acme.json"]
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 32Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: acme, mountPath: /acme}
       containers:
         - name: traefik
           image: mirror.gcr.io/library/traefik:v3.7.16
