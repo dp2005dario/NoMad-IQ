@@ -2319,5 +2319,6 @@
   "nbShop": "دکان",
   "nbClothes": "کپڑے",
   "nbOpenNow": "کھلا",
-  "nbClosedNow": "بند"
+  "nbClosedNow": "بند",
+  "sosMessageNoLocation": "مجھے مدد چاہیے! (میرا فون میرا مقام معلوم نہیں کر سکا۔)"
 }

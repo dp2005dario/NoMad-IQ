@@ -2319,5 +2319,6 @@
   "nbShop": "দোকান",
   "nbClothes": "পোশাক",
   "nbOpenNow": "খোলা",
-  "nbClosedNow": "বন্ধ"
+  "nbClosedNow": "বন্ধ",
+  "sosMessageNoLocation": "আমার সাহায্য দরকার! (আমার ফোন আমার অবস্থান খুঁজে পায়নি।)"
 }

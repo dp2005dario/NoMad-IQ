@@ -2319,5 +2319,6 @@
   "nbShop": "商店",
   "nbClothes": "服装",
   "nbOpenNow": "营业中",
-  "nbClosedNow": "已关门"
+  "nbClosedNow": "已关门",
+  "sosMessageNoLocation": "我需要帮助！（手机无法获取我的位置。）"
 }

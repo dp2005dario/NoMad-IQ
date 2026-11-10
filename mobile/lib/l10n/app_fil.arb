@@ -2319,5 +2319,6 @@
   "nbShop": "Tindahan",
   "nbClothes": "Damit",
   "nbOpenNow": "Bukas",
-  "nbClosedNow": "Sarado"
+  "nbClosedNow": "Sarado",
+  "sosMessageNoLocation": "Kailangan ko ng tulong! (Hindi makuha ng phone ko ang lokasyon ko.)"
 }

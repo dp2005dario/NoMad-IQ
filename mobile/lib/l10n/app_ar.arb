@@ -2319,5 +2319,6 @@
   "nbShop": "متجر",
   "nbClothes": "ملابس",
   "nbOpenNow": "مفتوح",
-  "nbClosedNow": "مغلق"
+  "nbClosedNow": "مغلق",
+  "sosMessageNoLocation": "أحتاج إلى مساعدة! (لم يتمكن هاتفي من تحديد موقعي.)"
 }

@@ -2319,5 +2319,6 @@
   "nbShop": "Cửa hàng",
   "nbClothes": "Quần áo",
   "nbOpenNow": "Đang mở",
-  "nbClosedNow": "Đã đóng"
+  "nbClosedNow": "Đã đóng",
+  "sosMessageNoLocation": "Tôi cần giúp đỡ! (Điện thoại không xác định được vị trí của tôi.)"
 }

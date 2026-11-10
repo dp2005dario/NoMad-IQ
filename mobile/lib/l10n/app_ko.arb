@@ -2319,5 +2319,6 @@
   "nbShop": "가게",
   "nbClothes": "옷",
   "nbOpenNow": "영업 중",
-  "nbClosedNow": "영업 종료"
+  "nbClosedNow": "영업 종료",
+  "sosMessageNoLocation": "도와주세요! (휴대폰이 제 위치를 찾지 못했어요.)"
 }

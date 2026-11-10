@@ -2319,5 +2319,6 @@
   "nbShop": "فروشگاه",
   "nbClothes": "پوشاک",
   "nbOpenNow": "باز",
-  "nbClosedNow": "بسته"
+  "nbClosedNow": "بسته",
+  "sosMessageNoLocation": "به کمک نیاز دارم! (گوشی‌ام نتوانست موقعیتم را پیدا کند.)"
 }

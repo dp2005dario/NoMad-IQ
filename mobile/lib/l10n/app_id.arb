@@ -2319,5 +2319,6 @@
   "nbShop": "Toko",
   "nbClothes": "Pakaian",
   "nbOpenNow": "Buka",
-  "nbClosedNow": "Tutup"
+  "nbClosedNow": "Tutup",
+  "sosMessageNoLocation": "Saya butuh bantuan! (Ponsel saya tidak bisa menemukan lokasi saya.)"
 }

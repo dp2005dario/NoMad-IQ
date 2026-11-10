@@ -314,23 +314,39 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Al empezar la cuenta atrás del SOS: dónde estás (para el mensaje y el
   /// número de emergencias de ese país).
-  Future<void> _locate() async {
-    if (_locating) return;
+  Future<void> _locate() {
+    final Future<void>? running = _locatingNow;
+    if (running != null) return running;
+    return _locatingNow = _doLocate().whenComplete(() => _locatingNow = null);
+  }
+
+  Future<void>? _locatingNow;
+
+  Future<void> _doLocate() async {
     setState(() => _locating = true);
     final LocationSource gps = _services.location;
     try {
       LocationAccess access = await gps.check();
       if (access == LocationAccess.denied) access = await gps.request();
       if (access == LocationAccess.granted) {
-        final PositionFix fix = await gps.watch().first.timeout(
-          const Duration(seconds: 15),
-        );
-        final Whereabouts where = await whereabouts(fix.point);
+        // Primero la posición que ya sepa el móvil (al momento); si no,
+        // la primera que dé el GPS.
+        final PositionFix fix =
+            await gps.current().timeout(
+              const Duration(seconds: 5),
+              onTimeout: () => null,
+            ) ??
+            await gps.watch().first.timeout(const Duration(seconds: 8));
         if (mounted) {
-          setState(() {
-            _here = fix.point;
-            _where = where;
-          });
+          // La posición se guarda YA: aunque luego falle saber la ciudad
+          // (sin internet), el mensaje lleva tu ubicación.
+          setState(() => _here = fix.point);
+          try {
+            final Whereabouts where = await whereabouts(fix.point);
+            if (mounted) setState(() => _where = where);
+          } on Object {
+            // Sin ciudad: el mensaje va igual con las coordenadas.
+          }
         }
       }
     } on Object {
@@ -339,8 +355,22 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) setState(() => _locating = false);
   }
 
-  String _sosText() =>
-      sosMessage(AppLocalizations.of(context).sosMessage, _here);
+  /// WhatsApp o SMS a un contacto: si aún no se sabe dónde estás, se
+  /// espera a saberlo (un momento) para que el mensaje lleve tu ubicación.
+  Future<void> _sendSos(SosContact who, {required bool whatsapp}) async {
+    if (_here == null) await _locate();
+    if (!mounted) return;
+    final String text = _sosText();
+    await _services.openLink(
+      whatsapp ? whatsappUri(who, text) : smsUri(<SosContact>[who], text),
+    );
+  }
+
+  String _sosText() => sosMessage(
+    AppLocalizations.of(context).sosMessage,
+    _here,
+    noLocation: AppLocalizations.of(context).sosMessageNoLocation,
+  );
 
   /// "Cambiar" o "Añadir" un contacto de emergencia (hueco [i]).
   Future<void> _pick(int i) async {
@@ -390,9 +420,9 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'sos':
         unawaited(_locate());
       case 'wa' when who != null:
-        unawaited(_services.openLink(whatsappUri(who, _sosText())));
+        unawaited(_sendSos(who, whatsapp: true));
       case 'sms' when who != null:
-        unawaited(_services.openLink(smsUri(<SosContact>[who], _sosText())));
+        unawaited(_sendSos(who, whatsapp: false));
       case 'call':
         unawaited(
           _services.openLink(telUri(numbersFor(_where.country).general)),

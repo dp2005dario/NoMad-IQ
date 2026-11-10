@@ -2319,5 +2319,6 @@
   "nbShop": "Mağaza",
   "nbClothes": "Giyim",
   "nbOpenNow": "Açık",
-  "nbClosedNow": "Kapalı"
+  "nbClosedNow": "Kapalı",
+  "sosMessageNoLocation": "Yardıma ihtiyacım var! (Telefonum konumumu bulamadı.)"
 }

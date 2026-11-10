@@ -2319,5 +2319,6 @@
   "nbShop": "Winkel",
   "nbClothes": "Kleding",
   "nbOpenNow": "Open",
-  "nbClosedNow": "Gesloten"
+  "nbClosedNow": "Gesloten",
+  "sosMessageNoLocation": "Ik heb hulp nodig! (Mijn telefoon kon mijn locatie niet bepalen.)"
 }

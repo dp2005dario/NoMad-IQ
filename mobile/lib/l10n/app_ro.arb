@@ -2319,5 +2319,6 @@
   "nbShop": "Magazin",
   "nbClothes": "Haine",
   "nbOpenNow": "Deschis",
-  "nbClosedNow": "Închis"
+  "nbClosedNow": "Închis",
+  "sosMessageNoLocation": "Am nevoie de ajutor! (Telefonul meu nu mi-a putut afla locația.)"
 }

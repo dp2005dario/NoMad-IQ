@@ -2319,5 +2319,6 @@
   "nbShop": "Sklep",
   "nbClothes": "Odzież",
   "nbOpenNow": "Otwarte",
-  "nbClosedNow": "Zamknięte"
+  "nbClosedNow": "Zamknięte",
+  "sosMessageNoLocation": "Potrzebuję pomocy! (Mój telefon nie mógł ustalić mojej lokalizacji.)"
 }
