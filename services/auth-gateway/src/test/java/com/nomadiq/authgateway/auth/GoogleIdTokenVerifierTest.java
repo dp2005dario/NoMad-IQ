@@ -88,4 +88,11 @@ class GoogleIdTokenVerifierTest {
         assertThat(off.isConfigured()).isFalse();
         assertThatThrownBy(() -> off.verify("lo-que-sea")).isInstanceOf(GoogleNotConfiguredException.class);
     }
+
+    @org.junit.jupiter.api.Test
+    void clienteDeGoogleUsaLaListaPublicaDeJava() {
+        // Aunque el servidor cambie la lista de confianza por la interna,
+        // el cliente para Google se crea con la pública (cacerts).
+        org.junit.jupiter.api.Assertions.assertNotNull(GoogleIdTokenVerifier.publicInternetClient());
+    }
 }

@@ -1,6 +1,13 @@
 package com.nomadiq.authgateway.auth;
 
+import java.net.http.HttpClient;
+import java.nio.file.Path;
+import java.security.KeyStore;
+import java.time.Duration;
 import java.util.List;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +20,9 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 import com.nomadiq.authgateway.auth.AuthExceptions.GoogleNotConfiguredException;
 import com.nomadiq.authgateway.auth.AuthExceptions.InvalidCredentialsException;
@@ -80,9 +89,39 @@ public class GoogleIdTokenVerifier {
     }
 
     static JwtDecoder buildDecoder(String clientId) {
-        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(JWKS_URI).build();
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(JWKS_URI)
+                .restOperations(publicInternetClient())
+                .build();
         decoder.setJwtValidator(validator(clientId));
         return decoder;
+    }
+
+    /**
+     * Cliente web para hablar con Google. En el servidor, la "lista de
+     * confianza" por defecto de Java (-Djavax.net.ssl.trustStore) solo lleva
+     * NUESTRA autoridad interna (la del mTLS entre servicios), así que Java no
+     * se fiaba del certificado de Google ("PKIX path building failed") y todo
+     * "Continuar con Google" fallaba. Aquí usamos SIEMPRE la lista pública que
+     * trae Java (cacerts), sin tocar la de los servicios internos.
+     */
+    static RestTemplate publicInternetClient() {
+        try {
+            Path cacerts = Path.of(System.getProperty("java.home"), "lib", "security", "cacerts");
+            KeyStore store = KeyStore.getInstance(cacerts.toFile(), "changeit".toCharArray());
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init(store);
+            SSLContext ssl = SSLContext.getInstance("TLS");
+            ssl.init(null, tmf.getTrustManagers(), null);
+            HttpClient http = HttpClient.newBuilder()
+                    .sslContext(ssl)
+                    .connectTimeout(Duration.ofSeconds(5))
+                    .build();
+            JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(http);
+            factory.setReadTimeout(Duration.ofSeconds(5));
+            return new RestTemplate(factory);
+        } catch (Exception e) {
+            throw new IllegalStateException("No se pudo cargar la lista pública de certificados de Java", e);
+        }
     }
 
     /** Fecha de caducidad + emisor de Google + destinatario = nuestro client id. */
