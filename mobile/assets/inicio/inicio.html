@@ -26,7 +26,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 background:radial-gradient(60% 42% at 50% 38%,#3DDC9733,transparent 70%),radial-gradient(55% 40% at 78% 30%,#9B7BFF40,transparent 70%),radial-gradient(50% 35% at 18% 52%,#5A5BD930,transparent 70%),
 radial-gradient(1.5px 1.5px at 12% 14%,#fff9,transparent),radial-gradient(1px 1px at 30% 8%,#fff8,transparent),radial-gradient(1.5px 1.5px at 62% 12%,#fffa,transparent),radial-gradient(1px 1px at 88% 20%,#fff8,transparent),radial-gradient(1px 1px at 8% 44%,#fff7,transparent),radial-gradient(1.5px 1.5px at 94% 56%,#fff9,transparent),radial-gradient(1px 1px at 22% 70%,#fff7,transparent),radial-gradient(1px 1px at 80% 78%,#fff7,transparent);
 -webkit-mask:linear-gradient(#000 65%,transparent);mask:linear-gradient(#000 65%,transparent);animation:aur 12s ease-in-out infinite alternate}
-.hero::after{content:"";position:absolute;z-index:-1;left:50%;width:440px;margin-left:-220px;top:-10px;height:440px;border-radius:50%;-webkit-mask:radial-gradient(closest-side,#000 55%,transparent 100%);mask:radial-gradient(closest-side,#000 55%,transparent 100%);pointer-events:none;background:conic-gradient(from 200deg at 50% 50%,transparent,#3DDC9722,#9B7BFF26,transparent 60%);filter:blur(36px);animation:spin 40s linear infinite}
+.hero::after{content:"";position:absolute;z-index:-1;left:50%;width:440px;margin-left:-220px;top:-10px;height:440px;border-radius:50%;-webkit-mask:radial-gradient(closest-side,#000 55%,transparent 100%);mask:radial-gradient(closest-side,#000 55%,transparent 100%);pointer-events:none;background:conic-gradient(from 200deg at 50% 50%,transparent,#3DDC9722,#9B7BFF26,transparent 60%);animation:spin 40s linear infinite;will-change:transform}
 @keyframes aur{to{transform:translateY(10px) scale(1.04);opacity:.85}}
 .top{width:100%;display:flex;justify-content:space-between;align-items:center}
 .chip,.friends div,.tile b,.tile small,dd{min-width:0;overflow-wrap:anywhere}.chip{max-width:60%}.brand{font:800 15px var(--d);letter-spacing:.2em}
@@ -46,7 +46,7 @@ box-shadow:0 0 60px #3DDC9755,0 0 120px #9B7BFF33,inset 0 -14px 30px #2a1f7a66;a
 .orb.on .core{box-shadow:0 0 80px #3DDC97aa,0 0 140px #9B7BFF77}
 .bars{position:absolute;bottom:34px;display:flex;gap:4px;align-items:flex-end;height:22px;opacity:0;transition:.2s}
 .orb.on .bars{opacity:1}
-.bars i{width:4px;border-radius:2px;background:#fff;height:6px;animation:bar .5s ease-in-out infinite alternate}
+.bars i{width:4px;border-radius:2px;background:#fff;height:6px;animation:bar .5s ease-in-out infinite alternate}.orb:not(.on) .bars i{animation:none}
 .bars i:nth-child(2n){animation-delay:.15s}.bars i:nth-child(3n){animation-delay:.3s}
 @keyframes bar{to{height:22px}}
 .hint{font:700 15px var(--d);height:22px;color:var(--fg)}
