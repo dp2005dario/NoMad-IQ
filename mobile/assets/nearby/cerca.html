@@ -145,7 +145,12 @@ var KIND={
  wifi:{c:['#d6c8ff','#8B7CF6'],g:'M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0M12 19.5h.01',n:''},
  plug:{c:['#ffe9a0','#e0a92a'],g:'M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4',n:''},
  monument:{c:['#ffc9a8','#d9774a'],g:'M12 2l2 4v13h-4V6zM7 21h10M8 19h8',n:''},
- castle:{c:['#e0d0b8','#9a7b55'],g:'M4 21V8h3v3h3V8h4v3h3V8h3v13zM10 21v-5h4v5',n:''}};
+ castle:{c:['#e0d0b8','#9a7b55'],g:'M4 21V8h3v3h3V8h4v3h3V8h3v13zM10 21v-5h4v5',n:''},
+ pharmacy:{c:['#9ff0b0','#1f9e57'],g:'M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z',n:'Farmacia'},
+ money:{c:['#c8f5a0','#5fa832'],g:'M3 6h18v12H3zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 9v6M18 9v6',n:'Cajero'},
+ cafe:{c:['#e8c7a3','#9a6339'],g:'M4 9h12v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM16 10h2a2 2 0 0 1 0 4h-2M8 3c0 2 2 2 2 4M12 3c0 2 2 2 2 4',n:'Cafetería'},
+ shop:{c:['#ffb3d9','#d6458f'],g:'M5 8h14l-1 13H6zM9 8V6a3 3 0 0 1 6 0v2',n:'Tienda'},
+ fun:{c:['#b9c4ff','#5566e0'],g:'M3 7h18v12H3zM8 3l4 4 4-4M10 11l4 2-4 2z',n:'Ocio'}};
 /* Todo lo que viene de OpenStreetMap se escapa antes de pintarlo. */
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function glyph(k,col){return '<svg viewBox="0 0 24 24" fill="none" stroke="'+(col||'#fff')+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="'+KIND[k].g+'"/></svg>'}
@@ -165,7 +170,7 @@ function facade(k,i,initials){var c=KIND[k].c,id='f'+i,wall=['#30434b','#3a3f55'
  s+='<rect y="114" width="96" height="4" fill="#0b1417"/></svg>';return s}
 
 /* ---------- datos reales (los pone la app) ----------
-   offers: ofertas (aún no hay fuente fiable: vacío = "Sin datos")
+   offers: tiendas y sitios cerca (súper, cafeterías, farmacias, cajeros...)
    free: sitios gratis cerca (OpenStreetMap) · plans: planes de hasta 2 h
    d = metros, a = ángulo (0 = este, hacia abajo = sur) */
 var ECL=/*ECLIPTA*/{"lang":"es","t":{},"offers":[],"free":[],"plans":[],"tab":1,"place":"","attr":"","msg":"","retry":false};
@@ -378,7 +383,7 @@ function clock(add){var d0=new Date(),t=d0.getHours()*60+d0.getMinutes()+add;ret
 var WALK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4.5" r="1.8"/><path d="M9 21l2-6-2-3 1-5 3 1 2 3 3 1M11 15l-2 6M13 8l-3 1-1 3"/></svg>';
 function items(){var L=TABS[tab].slice();if(tab===2)L.sort(function(a,b){return sortBy==='dur'?a.dur-b.dur:sortBy==='walk'?a.walk-b.walk:(a.pr==null?1e9:a.pr)-(b.pr==null?1e9:b.pr)});return L}
 function remain(o){return Math.max(1,o.end-Math.floor((Date.now()-now0)/60000))}
-function left(o){return (tab===1?tx('closesIn'):tx('endsIn')).replace('{time}',hm(remain(o)))}
+function left(o){return (tab!==2?tx('closesIn'):tx('endsIn')).replace('{time}',hm(remain(o)))}
 function render(){
  var L=items(),h='';
  if(tab===2&&L.length)h+='<div class="tools"><span>'+esc(tx('fit'))+'</span><div class="seg" id="seg"><button data-s="dur" aria-pressed="'+(sortBy==='dur')+'">'+esc(tx('sortDur'))+'</button><button data-s="walk" aria-pressed="'+(sortBy==='walk')+'">'+esc(tx('sortWalk'))+'</button><button data-s="pr" aria-pressed="'+(sortBy==='pr')+'">'+esc(tx('sortPrice'))+'</button></div></div>';

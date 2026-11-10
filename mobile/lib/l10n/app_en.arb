@@ -3304,7 +3304,7 @@
   "@exwLoadFail": {
     "description": "The globe could not be drawn"
   },
-  "nbOffers": "Deals now",
+  "nbOffers": "Shops & places",
   "@nbOffers": {
     "description": "Nearby tab: deals right now"
   },
@@ -3341,7 +3341,7 @@
   "@nbCredit": {
     "description": "Note on the map: it is an illustration"
   },
-  "nbInfoOffers": "Active deals",
+  "nbInfoOffers": "shops and places nearby",
   "@nbInfoOffers": {
     "description": "Map badge: active deals"
   },
@@ -3521,7 +3521,7 @@
   "@nbYou": {
     "description": "Map marker: you"
   },
-  "nbNoOffers": "No deal data near you",
+  "nbNoOffers": "No shops or places found near you",
   "@nbNoOffers": {
     "description": "Empty deals tab"
   },
@@ -11066,5 +11066,85 @@
   "appLockReason": "Open ECLIPTA",
   "@appLockReason": {
     "description": "Text inside the system fingerprint dialog when opening the app"
+  },
+  "nbSupermarket": "Supermarket",
+  "@nbSupermarket": {
+    "description": "Nearby shop type"
+  },
+  "nbCafe": "Café",
+  "@nbCafe": {
+    "description": "Nearby shops and places: Cafe"
+  },
+  "nbRestaurant": "Restaurant",
+  "@nbRestaurant": {
+    "description": "Nearby shops and places: Restaurant"
+  },
+  "nbBar": "Bar",
+  "@nbBar": {
+    "description": "Nearby shops and places: Bar"
+  },
+  "nbFastFood": "Fast food",
+  "@nbFastFood": {
+    "description": "Nearby shops and places: FastFood"
+  },
+  "nbIceCream": "Ice cream",
+  "@nbIceCream": {
+    "description": "Nearby shops and places: IceCream"
+  },
+  "nbBakery": "Bakery",
+  "@nbBakery": {
+    "description": "Nearby shops and places: Bakery"
+  },
+  "nbPharmacy": "Pharmacy",
+  "@nbPharmacy": {
+    "description": "Nearby shops and places: Pharmacy"
+  },
+  "nbAtm": "ATM",
+  "@nbAtm": {
+    "description": "Nearby shops and places: Atm"
+  },
+  "nbBank": "Bank",
+  "@nbBank": {
+    "description": "Nearby shops and places: Bank"
+  },
+  "nbExchange": "Currency exchange",
+  "@nbExchange": {
+    "description": "Nearby shops and places: Exchange"
+  },
+  "nbCinema": "Cinema",
+  "@nbCinema": {
+    "description": "Nearby shops and places: Cinema"
+  },
+  "nbTheatre": "Theatre",
+  "@nbTheatre": {
+    "description": "Nearby shops and places: Theatre"
+  },
+  "nbLibrary": "Library",
+  "@nbLibrary": {
+    "description": "Nearby shops and places: Library"
+  },
+  "nbMarket": "Market",
+  "@nbMarket": {
+    "description": "Nearby shops and places: Market"
+  },
+  "nbPostOffice": "Post office",
+  "@nbPostOffice": {
+    "description": "Nearby shops and places: PostOffice"
+  },
+  "nbShop": "Shop",
+  "@nbShop": {
+    "description": "Nearby shops and places: Shop"
+  },
+  "nbClothes": "Clothes",
+  "@nbClothes": {
+    "description": "Nearby shops and places: Clothes"
+  },
+  "nbOpenNow": "Open",
+  "@nbOpenNow": {
+    "description": "Nearby shop badge: open right now"
+  },
+  "nbClosedNow": "Closed",
+  "@nbClosedNow": {
+    "description": "Nearby shop badge: closed right now"
   }
 }

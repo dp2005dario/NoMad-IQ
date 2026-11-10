@@ -25,6 +25,10 @@ enum NearbyKind {
   dogPark,
   petStay,
 
+  /// Tiendas y sitios del día a día (súper, cafetería, farmacia, cajero,
+  /// cine...). Qué es exactamente va en [NearbySpot.sub] ("supermarket").
+  shop,
+
   /// No es un sitio: la ciudad, el distrito o el barrio donde estás (su
   /// nombre, para la cabecera "Madrid · Embajadores").
   place;
@@ -79,6 +83,7 @@ class NearbySpot {
   final bool reservationRequired;
 
   /// Sitios que ver: museum, viewpoint, park, worship, monument...
+  /// Tiendas ([NearbyKind.shop]): supermarket, cafe, atm, clothes...
   /// Zonas ([NearbyKind.place]): "8" ciudad, "9" distrito, "10" barrio.
   final String? sub;
 
@@ -156,7 +161,7 @@ class NearbyList {
     }
     return NearbyList(
       spots: <NearbySpot>[
-        for (final Object? s in spots.take(400)) ?NearbySpot.parse(s),
+        for (final Object? s in spots.take(700)) ?NearbySpot.parse(s),
       ],
       attribution: attribution,
     );

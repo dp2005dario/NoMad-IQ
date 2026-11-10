@@ -120,7 +120,7 @@ def test_parse_restaurant_with_reservation() -> None:
     # Sin reserva, sin forma de reservar o con enlaces raros: fuera.
     # Sin reserva ya no es "mesa", pero sí sale como sitio para comer.
     plain = parse_spot(node(8, amenity="restaurant", name="X", website="https://x.es"))
-    assert plain is not None and (plain.kind, plain.sub) == ("shop", "food")
+    assert plain is not None and (plain.kind, plain.sub) == ("shop", "restaurant")
     no_book = parse_spot(node(8, amenity="restaurant", reservation="no", name="X", phone="+3491"))
     assert no_book is not None and no_book.kind == "shop"
     assert (
@@ -214,10 +214,11 @@ def test_sight_types_and_place_names() -> None:
 
 def test_parse_shops_like_a_normal_map() -> None:
     """Tiendas, súper, farmacias y cajeros salen como "shop" con su grupo."""
-    assert parse_spot(node(20, shop="clothes", name="Zara")).sub == "shop"
-    assert parse_spot(node(21, shop="supermarket", name="Día")).sub == "grocery"
+    assert parse_spot(node(20, shop="clothes", name="Zara")).sub == "clothes"
+    assert parse_spot(node(21, shop="supermarket", name="Día")).sub == "supermarket"
     assert parse_spot(node(22, amenity="pharmacy", name="Farmacia Sol")).sub == "pharmacy"
-    assert parse_spot(node(23, amenity="cafe", name="Café Central")).sub == "food"
+    assert parse_spot(node(24, shop="Ropa rara!", name="X")).sub == "shop"
+    assert parse_spot(node(23, amenity="cafe", name="Café Central")).sub == "cafe"
     # Un cajero sin nombre vale (se ve el banco si lo pone); una tienda no.
     assert parse_spot(node(24, amenity="atm", operator="Santander")).name == "Santander"
     assert parse_spot(node(25, shop="clothes")) is None

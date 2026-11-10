@@ -29,6 +29,7 @@ _RESERVATION = ("yes", "required", "recommended")
 # Comer y beber, para la clase "food" de las tiendas.
 _FOOD = ("restaurant", "cafe", "fast_food", "bar", "pub", "ice_cream", "food_court", "biergarten")
 _MONEY = ("atm", "bank", "bureau_de_change")
+_SUB = re.compile(r"^[a-z][a-z_0-9]{0,23}$")
 # Tipos de alojamiento que buscamos para "Viajo con mi perro".
 _STAYS = ("hotel", "apartment", "guest_house", "hostel", "motel")
 # Qué tipo de sitio que ver es (para el icono de la app).
@@ -99,18 +100,15 @@ def _shop_lines(south: float, west: float, north: float, east: float) -> str:
 
 
 def _shop_sub(tags: dict[str, Any]) -> str:
-    """food, grocery, pharmacy, money, fun o shop: el grupo (para el icono)."""
+    """Qué es exactamente ("supermarket", "cafe", "atm", "clothes"...).
+
+    La app lo agrupa para el icono y lo traduce para la tarjeta. Solo letras
+    minúsculas, números y "_" (como mucho 24): nada de texto raro.
+    """
     amenity, shop = tags.get("amenity"), tags.get("shop")
-    if amenity in _FOOD or shop in ("bakery", "pastry", "deli", "confectionery"):
-        return "food"
-    if shop in ("supermarket", "convenience", "greengrocer", "butcher", "general"):
-        return "grocery"
-    if amenity == "pharmacy" or shop in ("chemist", "medical_supply"):
-        return "pharmacy"
-    if amenity in _MONEY:
-        return "money"
-    if amenity in ("cinema", "theatre", "library", "marketplace", "post_office"):
-        return "fun"
+    raw = amenity if isinstance(amenity, str) and amenity and shop is None else shop
+    if isinstance(raw, str) and _SUB.match(raw):
+        return raw
     return "shop"
 
 

@@ -3,8 +3,9 @@
 // OpenStreetMap ya colocados alrededor de ti (metros y dirección).
 //
 // Todo es Dart puro: así se prueba sin WebView.
-//   - Ofertas ya: no hay una fuente libre y fiable de ofertas de locales.
-//     La lista va vacía y la página dice "Sin datos" (nada inventado).
+//   - Tiendas y sitios (la primera pestaña, antes "Ofertas ya"): lo que hay
+//     a tu alrededor como en un mapa normal (súper, cafeterías, farmacias,
+//     cajeros, cines...), del más cercano al más lejano, con si está abierto.
 //   - Gratis: agua, baños, wifi, enchufes y sitios que ver gratis (los que
 //     OSM marca sin entrada, y miradores, parques, templos y monumentos).
 //   - Tengo 2 horas: planes de 1 a 3 sitios que ver que caben en 2 horas.
@@ -29,6 +30,10 @@ const int planMinutes = 120;
 
 /// Hasta dónde se buscan sitios gratis (metros).
 const double freeRadius = 2000;
+
+/// Cuántas tiendas y sitios salen como mucho (la página numera las tarjetas
+/// de cada pestaña de 100 en 100).
+const int maxShops = 60;
 
 /// Los textos de la página (las claves que usa la página).
 Map<String, String> nearbyTexts(AppLocalizations t) {
@@ -116,6 +121,40 @@ class NearbyPageData {
       _ => ('monument', (AppLocalizations t) => t.nbSight),
     };
 
+/// Dibujo de la página y nombre de cada tienda o sitio según lo que es
+/// exactamente ("supermarket", "cafe"...).
+(String, String) shopLook(AppLocalizations t, String? sub) => switch (sub) {
+  'supermarket' ||
+  'convenience' ||
+  'greengrocer' ||
+  'butcher' ||
+  'general' => ('market', t.nbSupermarket),
+  'cafe' => ('cafe', t.nbCafe),
+  'ice_cream' => ('cafe', t.nbIceCream),
+  'restaurant' || 'food_court' => ('menu', t.nbRestaurant),
+  'fast_food' => ('menu', t.nbFastFood),
+  'bar' || 'pub' || 'biergarten' => ('beer', t.nbBar),
+  'bakery' || 'pastry' || 'confectionery' || 'deli' => ('bakery', t.nbBakery),
+  'pharmacy' || 'chemist' => ('pharmacy', t.nbPharmacy),
+  'atm' => ('money', t.nbAtm),
+  'bank' => ('money', t.nbBank),
+  'bureau_de_change' => ('money', t.nbExchange),
+  'cinema' => ('fun', t.nbCinema),
+  'theatre' => ('fun', t.nbTheatre),
+  'library' => ('fun', t.nbLibrary),
+  'marketplace' => ('market', t.nbMarket),
+  'post_office' => ('fun', t.nbPostOffice),
+  'clothes' || 'shoes' || 'fashion' => ('shop', t.nbClothes),
+  _ => ('shop', t.nbShop),
+};
+
+/// "23:00": la hora a la que cierra, contando desde [now].
+String _clock(DateTime now, int minutesLeft) {
+  final DateTime at = now.add(Duration(minutes: minutesLeft));
+  return '${at.hour.toString().padLeft(2, '0')}:'
+      '${at.minute.toString().padLeft(2, '0')}';
+}
+
 /// Sitios que ver que se visitan gratis aunque OSM no lo diga.
 const Set<String> _freeByNature = <String>{
   'viewpoint',
@@ -140,6 +179,19 @@ const Map<String, String> _chapa = <String, String>{
   'wc': '#c9f0ff',
   'wifi': '#d6c8ff',
   'plug': '#ffe9a0',
+};
+
+/// El color de la chapa de cada tienda (el claro de su dibujo en la página).
+const Map<String, String> _chapaShop = <String, String>{
+  'market': '#8ec3ff',
+  'cafe': '#e8c7a3',
+  'menu': '#6df0b6',
+  'beer': '#ffd37a',
+  'bakery': '#ffd9a0',
+  'pharmacy': '#9ff0b0',
+  'money': '#c8f5a0',
+  'fun': '#b9c4ff',
+  'shop': '#ffb3d9',
 };
 
 /// Dibujo y nombre de un sitio de "Gratis".
@@ -222,9 +274,64 @@ NearbyPageData nearbyPageData({
   bool retry = false,
 }) {
   final Map<int, Uri> routes = <int, Uri>{};
+  final List<Map<String, Object?>> shops = <Map<String, Object?>>[];
   final List<Map<String, Object?>> free = <Map<String, Object?>>[];
   final List<Map<String, Object?>> plans = <Map<String, Object?>>[];
   if (me != null && found != null) {
+    // --- Tiendas y sitios: los más cercanos. Primero los abiertos ahora (o
+    // sin horario conocido); los cerrados, al final.
+    final List<(NearbySpot, OpenNow)> near = <(NearbySpot, OpenNow)>[
+      for (final NearbySpot s in found.of(NearbyKind.shop, me))
+        (s, openNow(s.openingHours, now)),
+    ];
+    near.sort(
+      ((NearbySpot, OpenNow) a, (NearbySpot, OpenNow) b) =>
+          (a.$2.state == OpenState.closed ? 1 : 0).compareTo(
+            b.$2.state == OpenState.closed ? 1 : 0,
+          ),
+    );
+    for (final (NearbySpot s, OpenNow open) in near.take(maxShops)) {
+      final (String k, String label) = shopLook(t, s.sub);
+      final (int d, double a) = placeOnMap(me, s.point);
+      final String name = s.name ?? label;
+      final String raw = s.openingHours ?? '';
+      routes[shops.length] = _mapsTo(me, <GeoPoint>[s.point]);
+      final String color = switch (open.state) {
+        OpenState.closed => '#ff8a8a',
+        _ => _chapaShop[k] ?? '#ffffff',
+      };
+      shops.add(<String, Object?>{
+        'k': k,
+        'ini': initials(name),
+        't': name,
+        'v': label,
+        'dest': name,
+        'd': d,
+        'a': a,
+        // La chapa: "ABIERTO hasta 23:00", "24 H", "CERRADO" o qué es.
+        'cp': <String>[
+          switch (open.state) {
+            OpenState.open => t.nbOpenNow,
+            OpenState.always => '24 H',
+            OpenState.closed => t.nbClosedNow,
+            OpenState.unknown => label,
+          },
+          switch (open.state) {
+            OpenState.open => '→ ${_clock(now, open.left)}',
+            OpenState.always => t.nbOpen24,
+            _ => label,
+          }.toUpperCase(),
+          color,
+        ],
+        'end': open.state == OpenState.open ? open.left : null,
+        'tot': open.state == OpenState.open ? open.total : null,
+        'hrs': switch (open.state) {
+          OpenState.always => t.nbOpen24,
+          OpenState.open => '',
+          _ => raw.length > 48 ? '${raw.substring(0, 47)}…' : raw,
+        },
+      });
+    }
     // --- Gratis: los más cercanos, como mucho 6 de cada clase y 24 en total.
     final List<NearbySpot> spots =
         found.spots.where((NearbySpot s) {
@@ -335,11 +442,10 @@ NearbyPageData nearbyPageData({
     json: <String, Object?>{
       'lang': language,
       't': nearbyTexts(t),
-      // Aún no hay ofertas de verdad: vacío ("Sin datos").
-      'offers': const <Object?>[],
+      'offers': shops,
       'free': free,
       'plans': plans,
-      'tab': 1,
+      'tab': 0,
       'place': found == null ? '' : placeName(found),
       'attr': found?.attribution ?? '',
       'msg': message ?? '',

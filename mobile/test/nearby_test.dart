@@ -162,7 +162,7 @@ void main() {
   });
 
   test(
-    'la página: gratis, planes de 2 h, barrio y nada de ofertas inventadas',
+    'la página: gratis, planes de 2 h y barrio (sin tiendas en la zona)',
     () {
       final AppLocalizations t = lookupAppLocalizations(const Locale('es'));
       final NearbyList found = NearbyList.parse(nearbyJson);
@@ -222,6 +222,56 @@ void main() {
       expect(html, contains(r'Mirador \u003cde> Sol'));
     },
   );
+
+  test('Tiendas y sitios: lo cercano primero, abierto o cerrado y su ruta', () {
+    final AppLocalizations t = lookupAppLocalizations(const Locale('es'));
+    NearbySpot shop(String id, double lat, String? sub, String? hours) =>
+        NearbySpot(
+          id: id,
+          kind: NearbyKind.shop,
+          point: GeoPoint(lat, -3.7035),
+          name: 'Sitio $id',
+          sub: sub,
+          openingHours: hours,
+        );
+    final NearbyPageData data = nearbyPageData(
+      t: t,
+      language: 'es',
+      // Miércoles 18:20.
+      now: DateTime(2026, 11, 4, 18, 20),
+      me: sol,
+      found: NearbyList(
+        spots: <NearbySpot>[
+          shop('n1', 40.4171, 'cafe', 'Mo-Su 08:00-23:00'),
+          shop('n2', 40.4172, 'supermarket', 'Mo-Su 09:00-12:00'),
+          shop('n3', 40.4175, 'pharmacy', '24/7'),
+          shop('n4', 40.4180, 'atm', null),
+          shop('n5', 40.4185, 'Ropa rara', null),
+        ],
+        attribution: '© OpenStreetMap contributors (ODbL)',
+      ),
+    );
+    final List<Map<String, Object?>> shops =
+        (data.json['offers']! as List<Object?>).cast<Map<String, Object?>>();
+    expect(data.json['tab'], 0);
+    // El súper cerrado se va al final aunque esté más cerca.
+    expect(shops.map((Map<String, Object?> s) => s['t']), <String>[
+      'Sitio n1',
+      'Sitio n3',
+      'Sitio n4',
+      'Sitio n5',
+      'Sitio n2',
+    ]);
+    expect(shops[0]['k'], 'cafe');
+    expect(shops[0]['v'], 'Cafetería');
+    expect(shops[0]['cp'], <String>['Abierto', '→ 23:00', '#e8c7a3']);
+    expect(shops[0]['end'], 280);
+    expect(shops[1]['cp'], <String>['24 H', 'ABIERTO 24 H', '#9ff0b0']);
+    expect(shops[2]['v'], 'Cajero');
+    expect(shops[3]['k'], 'shop'); // lo que no conocemos: "Tienda"
+    expect((shops[4]['cp']! as List<String>).first, 'Cerrado');
+    expect(data.routes[0]!.queryParameters['destination'], '40.41710,-3.70350');
+  });
 
   testWidgets('abre la maqueta con los sitios reales; Ruta y Volver', (
     WidgetTester tester,
