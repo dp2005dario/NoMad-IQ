@@ -89,7 +89,9 @@ Future<void> main() async {
     api: ApiClient(baseUrl: AppConfig.apiBaseUrl, session: session),
     location: const DeviceLocationSource(),
     mapSurface: (MapSurfaceSpec spec) => MapLibreSurface(spec: spec),
-    webScene: (String html, void Function(String) onMessage) =>
+    // El Vuelo 3D. Las demás pantallas crean su WebScene ellas mismas (con
+    // su puente para actualizarse sin recargar).
+    scene3d: (String html, void Function(String) onMessage) =>
         WebScene(html: html, onMessage: onMessage),
     newPlayer: JustAudioGuidePlayer.new,
     newWelcomeVideo: AssetWelcomeVideo.new,

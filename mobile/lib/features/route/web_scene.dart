@@ -111,6 +111,7 @@ class _WebSceneState extends State<WebScene> {
     ..setBackgroundColor(const Color(0xFF050A14))
     ..setNavigationDelegate(
       NavigationDelegate(
+        onPageFinished: (_) => _loaded(),
         onNavigationRequest: (NavigationRequest r) =>
             r.url == 'about:blank' || r.url.startsWith('data:')
             ? NavigationDecision.navigate
@@ -127,6 +128,29 @@ class _WebSceneState extends State<WebScene> {
 
   /// ¿Se está viendo? (pestaña activa y sin otra pantalla encima).
   bool _visible = true;
+
+  /// Lo que la app manda antes de que la página termine de cargar se
+  /// guarda y se manda en cuanto carga (si no, se perdería).
+  bool _ready = false;
+  final List<String> _pending = <String>[];
+
+  void _loaded() {
+    if (_ready) return;
+    _ready = true;
+    final List<String> todo = List<String>.of(_pending);
+    _pending.clear();
+    for (final String js in todo) {
+      _controller.runJavaScript(js).catchError((Object _) {});
+    }
+  }
+
+  Future<void> _run(String js) async {
+    if (!_ready) {
+      _pending.add(js);
+      return;
+    }
+    await _controller.runJavaScript(js);
+  }
 
   @override
   void didChangeDependencies() {
@@ -146,12 +170,12 @@ class _WebSceneState extends State<WebScene> {
   @override
   void initState() {
     super.initState();
-    widget.bridge?._run = _controller.runJavaScript;
+    widget.bridge?._run = _run;
   }
 
   @override
   void dispose() {
-    if (widget.bridge?._run == _controller.runJavaScript) {
+    if (widget.bridge?._run == _run) {
       widget.bridge?._run = null;
     }
     super.dispose();
