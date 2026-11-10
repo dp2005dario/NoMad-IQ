@@ -95,6 +95,7 @@ from ai_orchestrator.landmarks.wikidata import LandmarkSource
 from ai_orchestrator.leagues.api import league_router
 from ai_orchestrator.leagues.store import PostgresLeagues
 from ai_orchestrator.llm.client import LLMClient, OllamaClient
+from ai_orchestrator.llm.gemini import GeminiClient
 from ai_orchestrator.logs import setup_logging
 from ai_orchestrator.meetups.api import meetup_router
 from ai_orchestrator.meetups.store import PostgresMeetups
@@ -232,6 +233,22 @@ def _ollama(settings: Settings, stack: AsyncExitStack) -> OllamaClient:
         embed_model=settings.ollama_embed_model,
         num_ctx=settings.ollama_num_ctx,
         max_concurrency=settings.ollama_max_concurrency,
+    )
+
+
+def _gemini(settings: Settings, stack: AsyncExitStack) -> GeminiClient:
+    """Gemini (Google): la IA para servidores donde no cabe Ollama."""
+    assert settings.gemini_api_key is not None  # noqa: S101 (solo se llama si hay clave)
+    gemini_http = httpx.AsyncClient(
+        base_url=settings.gemini_url,
+        timeout=httpx.Timeout(settings.gemini_timeout_seconds, connect=5.0),
+    )
+    stack.push_async_callback(gemini_http.aclose)
+    return GeminiClient(
+        gemini_http,
+        api_key=settings.gemini_api_key.get_secret_value(),
+        model=settings.gemini_model,
+        max_concurrency=settings.gemini_max_concurrency,
     )
 
 
@@ -623,8 +640,14 @@ async def run(settings: Settings) -> int:
                 )
                 stack.push_async_callback(qdrant_http.aclose)
                 knowledge = QdrantKnowledge(qdrant_http, ollama, collection=settings.qdrant_collection)
-        else:
-            log.warning("LLM_ENABLED=false: todas las recomendaciones saldrán de reglas")
+        if settings.gemini_api_key is not None:
+            # Con clave de Gemini, la IA es Gemini (Flyra, cartas, copiar viaje...).
+            llm = _gemini(settings, stack)
+            log.info("IA: Gemini", extra={"model": settings.gemini_model})
+        elif not settings.llm_enabled:
+            log.warning(
+                "sin IA (ni GEMINI_API_KEY ni LLM_ENABLED): Flyra apagada y recomendaciones por reglas"
+            )
 
         recommender = FareRecommender(
             llm=llm,

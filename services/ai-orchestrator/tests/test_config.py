@@ -149,6 +149,23 @@ def test_google_places_key_is_optional_checked_and_never_echoed() -> None:
     assert "mi clave rara" not in str(err.value)
 
 
+def test_gemini_key_is_optional_checked_and_never_echoed() -> None:
+    # Sin clave: Ollama (si LLM_ENABLED) o nada. Con clave: hay IA aunque
+    # LLM_ENABLED=false (el servidor de 8 GB).
+    assert settings(**DEV).gemini_api_key is None
+    assert settings(**DEV, gemini_api_key="").gemini_api_key is None
+    assert not settings(**DEV, llm_enabled=False).has_llm
+    on = settings(**DEV, llm_enabled=False, gemini_api_key="AIzaSyA-0123456789abcdefXYZ")
+    assert on.has_llm
+    assert on.gemini_model == "gemini-flash-latest"
+    with pytest.raises(ValidationError) as err:
+        settings(**DEV, gemini_api_key="mi clave rara!")
+    assert "GEMINI_API_KEY" in str(err.value)
+    assert "mi clave rara" not in str(err.value)
+    with pytest.raises(ValidationError, match="GEMINI_MODEL"):
+        settings(**DEV, gemini_model="../otra cosa")
+
+
 def test_mapillary_token_is_optional_checked_and_never_echoed() -> None:
     # Sin token, el botón "Ver la calle de verdad" no existe y nada falla.
     assert settings(**DEV).mapillary_token is None
