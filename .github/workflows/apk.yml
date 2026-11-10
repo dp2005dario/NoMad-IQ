@@ -78,6 +78,12 @@ jobs:
             echo "keyAlias=upload"
             echo "keyPassword=$KEYSTORE_PASS"
           } > android/key.properties
+          # Huella de la llave (no es secreta): debe coincidir con la de
+          # Google Cloud (ID de cliente Android). Si la copia del secreto se
+          # cortó, aquí falla y lo dice.
+          keytool -list -v -keystore "$RUNNER_TEMP/upload.jks" -alias upload \
+            -storepass "$KEYSTORE_PASS" | grep -E 'SHA1:' \
+            || { echo "::error::La llave del secreto no se puede abrir (¿copia cortada o contraseña mal?)"; exit 1; }
       - name: Compilar APK
         env:
           API_URL: ${{ inputs.api_url }}
