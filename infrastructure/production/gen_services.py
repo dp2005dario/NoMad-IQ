@@ -270,6 +270,9 @@ spec:
         prometheus.io/scrape: "false"
     spec:
       automountServiceAccountToken: false
+      # Sin las variables automáticas de Kubernetes (REDIS_PORT=tcp://...),
+      # que pisan nuestra configuración y no dejaban arrancar los servicios.
+      enableServiceLinks: false
       securityContext:
         runAsNonRoot: true
         runAsUser: {s['uid']}
