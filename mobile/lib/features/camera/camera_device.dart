@@ -2,6 +2,7 @@
 // en la app se conecta la cámara de verdad (paquete camera) y en los tests
 // una falsa que no necesita hardware.
 import 'dart:async';
+import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/services.dart';
@@ -36,6 +37,12 @@ typedef CameraFactory = CameraDevice Function();
 /// La cámara de verdad: la trasera, a resolución media (480p). Es de sobra
 /// para reconocer un edificio y la foto pesa poco (menos datos y batería).
 class DeviceCamera implements CameraDevice {
+  DeviceCamera({this.preset = ResolutionPreset.medium});
+
+  /// La calidad: media para monumentos; muy alta para leer documentos (las
+  /// letras pequeñas del pasaporte necesitan muchos píxeles).
+  final ResolutionPreset preset;
+
   CameraController? _controller;
 
   @override
@@ -49,7 +56,7 @@ class DeviceCamera implements CameraDevice {
       );
       final CameraController controller = CameraController(
         back,
-        ResolutionPreset.medium,
+        preset,
         enableAudio: false, // solo fotos: nunca pedimos el micrófono
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
@@ -89,7 +96,17 @@ class DeviceCamera implements CameraDevice {
     final CameraController? c = _controller;
     if (c == null) throw StateError('la cámara no está encendida');
     final XFile file = await c.takePicture();
-    return file.readAsBytes();
+    try {
+      return await file.readAsBytes();
+    } finally {
+      // La foto queda en una carpeta temporal: se borra ya (puede ser un
+      // pasaporte).
+      try {
+        await File(file.path).delete();
+      } on Object {
+        // Si no se puede borrar, el sistema limpia esa carpeta solo.
+      }
+    }
   }
 
   @override

@@ -85,6 +85,7 @@ class AppServices {
     this.webScene,
     this.scene3d,
     this.newCamera,
+    this.newDocCamera,
     this.speaker = const SilentSpeaker(),
     this.translator = const NoTranslator(),
     this.speechInput = const NoSpeechInput(),
@@ -182,6 +183,10 @@ class AppServices {
 
   /// Enciende la cámara (null = este aparato no tiene: la pestaña lo dice).
   final CameraFactory? newCamera;
+
+  /// La cámara para escanear documentos (más resolución). null = se usa la
+  /// cámara del sistema para hacer la foto.
+  final CameraFactory? newDocCamera;
 
   /// La voz del móvil para "Escuchar" la ficha de un monumento.
   final Speaker speaker;

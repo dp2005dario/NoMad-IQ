@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:camera/camera.dart' show ResolutionPreset;
 import 'package:flutter/material.dart';
 import 'package:maplibre_gl/maplibre_gl.dart' show MapLibreMap;
 import 'package:just_audio_background/just_audio_background.dart';
@@ -104,6 +105,7 @@ Future<void> main() async {
         ? null
         : PluginGoogleIdTokenSource(AppConfig.googleClientId),
     newCamera: DeviceCamera.new,
+    newDocCamera: () => DeviceCamera(preset: ResolutionPreset.veryHigh),
     newTravelCamera: DeviceTravelCamera.new,
     memoryFiles: AppMemoryFiles(),
     homeWidgets: DeviceHomeWidgets(),
