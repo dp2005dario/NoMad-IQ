@@ -28,6 +28,7 @@ import '../../core/router.dart';
 import '../../core/services.dart';
 import '../home/home_screen.dart' show displayName;
 import '../route/flight3d.dart' show CountryCodes;
+import '../route/open_flight3d.dart';
 import '../route/places_api.dart';
 import '../route/web_scene.dart';
 import '../map/geo.dart';
@@ -266,10 +267,11 @@ class _FlightsScreenState extends State<FlightsScreen> {
         unawaited(_book(_deals[n], int.tryParse(p[2]) ?? 0));
       case 'watch' when n >= 0 && n < _deals.length:
         unawaited(_watch(_deals[n]));
-      case 'fly3d' when _deals.isNotEmpty:
-        final FareRoute r = _deals[_hunt].fare.route;
+      case 'fly3d':
+        // El vuelo 3D de tu viaje (o, si no tienes, el del chollo de arriba).
+        final FareRoute? r = _deals.isEmpty ? null : _deals[_hunt].fare.route;
         unawaited(
-          context.push(Routes.flightRoute(from: r.origin, to: r.destination)),
+          openFlight3d(context, from: r?.origin ?? _origin, to: r?.destination),
         );
       case 'tile':
         final String? to = switch (n) {

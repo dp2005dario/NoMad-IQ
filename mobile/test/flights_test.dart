@@ -19,6 +19,7 @@ import 'package:eclipta/features/flights/flights_screen.dart';
 import 'package:eclipta/features/flights/price_chart.dart';
 import 'package:eclipta/features/flights/flights_page.dart';
 import 'package:eclipta/features/route/geo.dart';
+import 'package:eclipta/features/route/flight3d.dart' show Flight3dScreen;
 import 'package:eclipta/features/route/web_scene.dart';
 import 'package:eclipta/features/route/world_data.dart';
 
@@ -537,6 +538,23 @@ void main() {
       expect(find.byType(ShareTripScreen), findsOneWidget);
     },
   );
+
+  testWidgets('"Vuelo 3D" abre el vuelo en 3D del chollo de arriba', (
+    WidgetTester tester,
+  ) async {
+    final PageSpy page = PageSpy();
+    await pumpFlights(tester, page: page);
+    await page.wait(tester, () => page.pages.isNotEmpty);
+    page.send!('fly3d');
+    // Los aeropuertos se leen de verdad (fuera del reloj falso).
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(seconds: 2)),
+    );
+    // (La escena gira cargando: no se espera a que "se calme".)
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(Flight3dScreen), findsOneWidget);
+  });
 
   testWidgets('avisar si baja: con precio objetivo', (
     WidgetTester tester,
