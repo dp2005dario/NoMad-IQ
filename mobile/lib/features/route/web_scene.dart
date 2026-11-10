@@ -59,13 +59,27 @@ String withPrelude(String html) {
   return '${html.substring(0, end)}$webScenePrelude${html.substring(end)}';
 }
 
-/// Los únicos avisos que pasan: una palabra en minúsculas y, si acaso, uno
-/// o dos números separados por ":" ("night:2:9000"). O una palabra, un
-/// número y datos en base64url ("save:5:WyJ..." de la Bóveda), que solo
-/// llevan letras, números, "-" y "_".
+/// Los únicos avisos que pasan: una palabra en minúsculas y, si acaso, hasta
+/// tres trozos separados por ":" con letras, números, ".", "_", "-", "~" o
+/// "%" ("lang:en", "pick:USD", "paid:12.50", "spot:3:call", "name:Ra%C3%BAl").
+/// O una palabra, un número y datos en base64url ("save:5:WyJ..." de la
+/// Bóveda). Nada de espacios, comillas ni "<": nada que pueda colarse.
+///
+/// (Antes solo pasaban números y en la app de verdad se perdían en silencio
+/// muchos toques: el idioma, la moneda, los timos del Radar, "Llamar"...)
 final RegExp webSceneMessage = RegExp(
-  r'^([a-z]{1,12}(:[0-9]{1,8}){0,2}|[a-z]{1,12}:[0-9]{1,8}:[A-Za-z0-9_-]{1,4000})$',
+  r'^([a-z]{1,12}(:[A-Za-z0-9._~%-]{1,64}){0,3}|[a-z]{1,12}:[0-9]{1,8}:[A-Za-z0-9_-]{1,4000})$',
 );
+
+/// Un trozo de aviso que la página mandó con encodeURIComponent (textos que
+/// escribes: un nombre, una búsqueda). Si viene roto, se deja tal cual.
+String webSceneText(String raw) {
+  try {
+    return Uri.decodeComponent(raw);
+  } on ArgumentError {
+    return raw;
+  }
+}
 
 /// Para mandarle a la página JavaScript cuando ya está abierta. Sin página
 /// (o en los tests), lo mandado se queda apuntado en [sent].

@@ -34,4 +34,36 @@ void main() {
       expect(bridge.sent, <String>['window.x=1']);
     },
   );
+
+  test(
+    'los avisos de las páginas pasan el filtro (idioma, moneda, timos...)',
+    () {
+      for (final String ok in <String>[
+        'back',
+        'lang:en',
+        'lang:system',
+        'pick:USD',
+        'paid:12.50',
+        'scam:taxi',
+        'spot:3:call',
+        'rate:abc-123:4',
+        'name:Ra%C3%BAl%20Gil',
+        'save:5:WyJhIl0',
+        'photo:12',
+      ]) {
+        expect(webSceneMessage.hasMatch(ok), isTrue, reason: ok);
+      }
+      for (final String bad in <String>[
+        'Back',
+        'name:<script>',
+        'q:hola mundo',
+        'a:b:c:d:e',
+        "lang:en'",
+      ]) {
+        expect(webSceneMessage.hasMatch(bad), isFalse, reason: bad);
+      }
+      expect(webSceneText('Ra%C3%BAl%20Gil'), 'Raúl Gil');
+      expect(webSceneText('%E0%A4%A'), '%E0%A4%A');
+    },
+  );
 }
