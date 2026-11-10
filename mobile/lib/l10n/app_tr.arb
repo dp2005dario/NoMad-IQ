@@ -2326,5 +2326,13 @@
   "searchPlaceMissing": "Kalkış ve varış şehrini veya havalimanını yaz.",
   "searchNearbyDays": "Tarihine yakın günlerin fiyatı",
   "searchNoExactDay": "O gün için henüz fiyat yok. Yakındaki bu günlerde var: birine dokun.",
-  "searchCheapest": "En ucuz"
+  "searchCheapest": "En ucuz",
+  "flyraTraitLanguage": "Senin dilini konuşur",
+  "flyraTraitPrivate": "Sohbetin telefonunda kalır",
+  "flyraTraitFree": "Her gün ücretsiz sorular",
+  "flyraAbout": "Flyra hakkında",
+  "flyraBackToChat": "Sohbete dön",
+  "flyraIdeas": "Başlamak için fikirler",
+  "flyraToday": "Bugün",
+  "flyraOnlineNow": "Çevrimiçi"
 }

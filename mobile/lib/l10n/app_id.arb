@@ -2326,5 +2326,13 @@
   "searchPlaceMissing": "Tulis kota atau bandara asal dan tujuan.",
   "searchNearbyDays": "Harga per hari di sekitar tanggalmu",
   "searchNoExactDay": "Hari itu belum ada harga. Hari-hari terdekat ini ada: ketuk salah satu.",
-  "searchCheapest": "Termurah"
+  "searchCheapest": "Termurah",
+  "flyraTraitLanguage": "Bicara dalam bahasamu",
+  "flyraTraitPrivate": "Obrolanmu tetap di ponselmu",
+  "flyraTraitFree": "Pertanyaan gratis setiap hari",
+  "flyraAbout": "Tentang Flyra",
+  "flyraBackToChat": "Kembali ke obrolan",
+  "flyraIdeas": "Ide untuk memulai",
+  "flyraToday": "Hari ini",
+  "flyraOnlineNow": "Online"
 }

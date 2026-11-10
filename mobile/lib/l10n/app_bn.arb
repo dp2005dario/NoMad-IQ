@@ -2326,5 +2326,13 @@
   "searchPlaceMissing": "যাত্রা শুরুর ও গন্তব্যের শহর বা বিমানবন্দর লেখো।",
   "searchNearbyDays": "তোমার তারিখের কাছাকাছি প্রতিদিনের দাম",
   "searchNoExactDay": "ওই দিনের দাম এখনও নেই। কাছের এই দিনগুলোর আছে: একটিতে চাপো।",
-  "searchCheapest": "সবচেয়ে সস্তা"
+  "searchCheapest": "সবচেয়ে সস্তা",
+  "flyraTraitLanguage": "তোমার ভাষায় কথা বলে",
+  "flyraTraitPrivate": "তোমার চ্যাট তোমার ফোনেই থাকে",
+  "flyraTraitFree": "প্রতিদিন বিনামূল্যে প্রশ্ন",
+  "flyraAbout": "Flyra সম্পর্কে",
+  "flyraBackToChat": "চ্যাটে ফিরে যাও",
+  "flyraIdeas": "শুরু করার আইডিয়া",
+  "flyraToday": "আজ",
+  "flyraOnlineNow": "অনলাইন"
 }

@@ -2326,5 +2326,13 @@
   "searchPlaceMissing": "출발지와 도착지의 도시나 공항을 입력하세요.",
   "searchNearbyDays": "선택한 날짜 주변의 날짜별 가격",
   "searchNoExactDay": "그날은 아직 가격이 없어요. 가까운 이 날짜들은 있어요. 하나를 누르세요.",
-  "searchCheapest": "최저가"
+  "searchCheapest": "최저가",
+  "flyraTraitLanguage": "당신의 언어로 말해요",
+  "flyraTraitPrivate": "대화는 내 휴대폰에만 저장돼요",
+  "flyraTraitFree": "매일 무료 질문",
+  "flyraAbout": "Flyra 소개",
+  "flyraBackToChat": "대화로 돌아가기",
+  "flyraIdeas": "시작 아이디어",
+  "flyraToday": "오늘",
+  "flyraOnlineNow": "온라인"
 }

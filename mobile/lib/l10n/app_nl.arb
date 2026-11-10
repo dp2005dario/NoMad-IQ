@@ -2326,5 +2326,13 @@
   "searchPlaceMissing": "Typ de stad of luchthaven van vertrek en bestemming.",
   "searchNearbyDays": "Prijs per dag rond je datum",
   "searchNoExactDay": "Voor die dag is nog geen prijs. Deze dagen ernaast wel: tik er een aan.",
-  "searchCheapest": "Goedkoopst"
+  "searchCheapest": "Goedkoopst",
+  "flyraTraitLanguage": "Spreekt jouw taal",
+  "flyraTraitPrivate": "Je chat blijft op je telefoon",
+  "flyraTraitFree": "Elke dag gratis vragen",
+  "flyraAbout": "Over Flyra",
+  "flyraBackToChat": "Terug naar de chat",
+  "flyraIdeas": "Ideeën om te beginnen",
+  "flyraToday": "Vandaag",
+  "flyraOnlineNow": "Online"
 }

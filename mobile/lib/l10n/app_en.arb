@@ -11174,5 +11174,37 @@
   "searchCheapest": "Cheapest",
   "@searchCheapest": {
     "description": "Badge on the cheapest day"
+  },
+  "flyraTraitLanguage": "Speaks your language",
+  "@flyraTraitLanguage": {
+    "description": "Chip on Flyra's profile"
+  },
+  "flyraTraitPrivate": "Your chat stays on your phone",
+  "@flyraTraitPrivate": {
+    "description": "Chip on Flyra's profile: the chat history is only stored on the phone"
+  },
+  "flyraTraitFree": "Free questions every day",
+  "@flyraTraitFree": {
+    "description": "Chip on Flyra's profile"
+  },
+  "flyraAbout": "About Flyra",
+  "@flyraAbout": {
+    "description": "Tooltip/button that opens Flyra's profile card"
+  },
+  "flyraBackToChat": "Back to chat",
+  "@flyraBackToChat": {
+    "description": "Button that closes Flyra's profile card"
+  },
+  "flyraIdeas": "Ideas to start",
+  "@flyraIdeas": {
+    "description": "Title above suggested first questions"
+  },
+  "flyraToday": "Today",
+  "@flyraToday": {
+    "description": "Day separator in the chat"
+  },
+  "flyraOnlineNow": "Online",
+  "@flyraOnlineNow": {
+    "description": "Status under Flyra's name"
   }
 }

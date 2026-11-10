@@ -2326,5 +2326,13 @@
   "searchPlaceMissing": "اكتب مدينة أو مطار المغادرة والوجهة.",
   "searchNearbyDays": "السعر لكل يوم قرب تاريخك",
   "searchNoExactDay": "لا يوجد سعر لذلك اليوم بعد. هذه الأيام القريبة لها سعر: اضغط على أحدها.",
-  "searchCheapest": "الأرخص"
+  "searchCheapest": "الأرخص",
+  "flyraTraitLanguage": "تتحدث لغتك",
+  "flyraTraitPrivate": "تبقى محادثتك على هاتفك",
+  "flyraTraitFree": "أسئلة مجانية كل يوم",
+  "flyraAbout": "عن فلايرا",
+  "flyraBackToChat": "العودة إلى المحادثة",
+  "flyraIdeas": "أفكار للبدء",
+  "flyraToday": "اليوم",
+  "flyraOnlineNow": "متصلة"
 }

@@ -2326,5 +2326,13 @@
   "searchPlaceMissing": "Укажи город или аэропорт вылета и назначения.",
   "searchNearbyDays": "Цена по дням рядом с твоей датой",
   "searchNoExactDay": "На этот день цены пока нет. На соседние дни есть — нажми на любой.",
-  "searchCheapest": "Дешевле всего"
+  "searchCheapest": "Дешевле всего",
+  "flyraTraitLanguage": "Говорит на твоём языке",
+  "flyraTraitPrivate": "Чат остаётся в твоём телефоне",
+  "flyraTraitFree": "Бесплатные вопросы каждый день",
+  "flyraAbout": "О Флайре",
+  "flyraBackToChat": "Назад в чат",
+  "flyraIdeas": "Идеи для начала",
+  "flyraToday": "Сегодня",
+  "flyraOnlineNow": "В сети"
 }

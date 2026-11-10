@@ -16,6 +16,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../auth/session.dart';
@@ -26,6 +27,7 @@ import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
+import '../home/home_screen.dart' show displayName;
 import 'flyra_api.dart';
 
 class FlyraChatScreen extends StatefulWidget {
@@ -184,38 +186,104 @@ class _FlyraChatScreenState extends State<FlyraChatScreen> {
     await _save();
   }
 
+  /// La ficha de Flyra (como en la maqueta): su foto grande, qué sabe
+  /// hacer y el aviso de que puede equivocarse.
+  Future<void> _about() => showModalBottomSheet<void>(
+    context: context,
+    useRootNavigator: true,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (BuildContext context) {
+      final AppLocalizations t = AppLocalizations.of(context);
+      return _AboutFlyra(t: t);
+    },
+  );
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
     final bool guest =
         SessionScope.of(context).status != SessionStatus.signedIn;
+    final String? name = displayName(SessionScope.of(context).user?.email);
+    final String initial = name == null || name.isEmpty
+        ? ''
+        : String.fromCharCodes(name.runes.take(1)).toUpperCase();
     final List<ChatTurn> turns = _history;
+    final List<String> ideas = <String>[
+      t.flyraSuggestion1,
+      t.flyraSuggestion2,
+      t.flyraSuggestion3,
+      t.flyraSuggestion4,
+    ];
     return Scaffold(
+      backgroundColor: NomadColors.background,
       appBar: AppBar(
-        titleSpacing: 0,
-        title: Row(
-          children: <Widget>[
-            const FlyraAvatar(size: 36),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        backgroundColor: NomadColors.background,
+        // Sin flecha de volver (pestaña): un poco de aire a la izquierda.
+        titleSpacing: Navigator.of(context).canPop() ? 0 : 16,
+        title: Semantics(
+          button: true,
+          label: t.flyraAbout,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: _about,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
                 children: <Widget>[
-                  const Text('Flyra'),
-                  Text(
-                    t.flyraSubtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: NomadColors.textMuted,
+                  const _GlowAvatar(size: 40),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        const Text(
+                          'Flyra',
+                          style: TextStyle(
+                            fontFamily: NomadFonts.display,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 20,
+                          ),
+                        ),
+                        Row(
+                          children: <Widget>[
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: NomadColors.mint,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
+                                _waiting
+                                    ? t.flyraThinking
+                                    : '${t.flyraOnlineNow} · ${t.flyraSubtitle}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: NomadColors.textMuted,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
-          ],
+          ),
         ),
         actions: <Widget>[
+          IconButton(
+            tooltip: t.flyraAbout,
+            onPressed: _about,
+            icon: const Icon(Icons.info_outline_rounded),
+          ),
           if (turns.isNotEmpty)
             IconButton(
               tooltip: t.flyraClear,
@@ -224,85 +292,324 @@ class _FlyraChatScreenState extends State<FlyraChatScreen> {
             ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: <Widget>[
-            Expanded(
-              child: ListView(
-                controller: _scroll,
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                children: <Widget>[
-                  _Bubble(turn: ChatTurn(ChatRole.flyra, t.flyraWelcome)),
-                  if (turns.isEmpty && !guest)
-                    _Suggestions(
-                      items: <String>[
-                        t.flyraSuggestion1,
-                        t.flyraSuggestion2,
-                        t.flyraSuggestion3,
-                        t.flyraSuggestion4,
-                      ],
-                      onPick: _send,
-                    ),
-                  for (int i = 0; i < turns.length; i++)
-                    _Bubble(
-                      // La clave hace que cada bocadillo sea "el mismo" al
-                      // redibujar (y no repita su animación de entrada).
-                      key: ValueKey<String>('turn-$i'),
-                      turn: turns[i],
-                      typing: i == _typing,
-                      listenLabel: t.cameraListen,
-                      onListen: () => _listen(turns[i].text),
-                      onTyped: _typed,
-                    ),
-                  if (_waiting) _Thinking(label: t.flyraThinking),
-                ],
-              ),
-            ),
-            if (guest)
-              _SignIn(text: t.flyraSignIn, button: t.signInFromGuest)
-            else ...<Widget>[
-              if (_problem case final _Problem p)
-                _Notice(
-                  text: switch (p) {
-                    _Problem.busy => t.flyraBusy,
-                    _Problem.outOfQuestions => t.flyraOutOfQuestions,
-                    _Problem.network => t.errorNetwork,
-                    _Problem.off => t.errorFeatureOff,
-                  },
+      body: DecoratedBox(
+        // Un brillo suave de Flyra (menta y violeta) arriba del todo.
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(-0.8, -1.1),
+            radius: 1.2,
+            colors: <Color>[Color(0x223DDC97), Color(0x00000000)],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: <Widget>[
+              Expanded(
+                child: ListView(
+                  controller: _scroll,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  children: <Widget>[
+                    if (turns.isEmpty)
+                      _Hero(t: t)
+                    else
+                      _DayPill(label: t.flyraToday),
+                    _Bubble(turn: ChatTurn(ChatRole.flyra, t.flyraWelcome)),
+                    if (turns.isEmpty && !guest)
+                      _Suggestions(
+                        title: t.flyraIdeas,
+                        items: ideas,
+                        onPick: _send,
+                      ),
+                    for (int i = 0; i < turns.length; i++)
+                      _Bubble(
+                        // La clave hace que cada bocadillo sea "el mismo" al
+                        // redibujar (y no repita su animación de entrada).
+                        key: ValueKey<String>('turn-$i'),
+                        turn: turns[i],
+                        initial: initial,
+                        typing: i == _typing,
+                        listenLabel: t.cameraListen,
+                        copyLabel: t.visaCopy,
+                        copiedLabel: t.settleCopied,
+                        onListen: () => _listen(turns[i].text),
+                        onTyped: _typed,
+                      ),
+                    if (_waiting) _Thinking(label: t.flyraThinking),
+                  ],
                 ),
-              _Composer(
-                controller: _input,
-                hint: t.flyraInputHint,
-                sendLabel: t.flyraSend,
-                micLabel: t.assistantSpeak,
-                listening: _listening,
-                enabled: !_waiting && _remaining != 0,
-                onSend: _send,
-                onMic: _dictate,
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Text(
-                  _remaining == null
-                      ? t.flyraDisclaimer
-                      : '${t.flyraRemaining(_remaining!)} · ${t.flyraDisclaimer}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: NomadColors.textMuted,
+              if (guest)
+                _SignIn(text: t.flyraSignIn, button: t.signInFromGuest)
+              else ...<Widget>[
+                if (_problem case final _Problem p)
+                  _Notice(
+                    text: switch (p) {
+                      _Problem.busy => t.flyraBusy,
+                      _Problem.outOfQuestions => t.flyraOutOfQuestions,
+                      _Problem.network => t.errorNetwork,
+                      _Problem.off => t.errorFeatureOff,
+                    },
+                  ),
+                // Con conversación: ideas rápidas encima de la caja (como los
+                // "@Flyra ¿dónde cenamos?" de la maqueta).
+                if (turns.isNotEmpty && !_waiting && _remaining != 0)
+                  _QuickIdeas(items: ideas, onPick: _send),
+                _Composer(
+                  controller: _input,
+                  hint: t.flyraInputHint,
+                  sendLabel: t.flyraSend,
+                  micLabel: t.assistantSpeak,
+                  listening: _listening,
+                  enabled: !_waiting && _remaining != 0,
+                  onSend: _send,
+                  onMic: _dictate,
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: Text(
+                    _remaining == null
+                        ? t.flyraDisclaimer
+                        : '${t.flyraRemaining(_remaining!)} · ${t.flyraDisclaimer}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: NomadColors.textMuted,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Un bocadillo: los de Flyra a un lado (con su foto), los tuyos al otro.
-/// "start"/"end" en vez de izquierda/derecha: en árabe se da la vuelta solo.
+/// La foto de Flyra con un halo que respira (menta → violeta).
+class _GlowAvatar extends StatelessWidget {
+  const _GlowAvatar({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      boxShadow: <BoxShadow>[
+        BoxShadow(
+          color: NomadColors.mint.withValues(alpha: 0.35),
+          blurRadius: size * 0.45,
+        ),
+        BoxShadow(
+          color: NomadColors.group.withValues(alpha: 0.18),
+          blurRadius: size * 0.8,
+          spreadRadius: size * 0.02,
+        ),
+      ],
+    ),
+    child: FlyraAvatar(size: size),
+  );
+}
+
+/// La portada del chat vacío: Flyra grande y lo que sabe hacer.
+class _Hero extends StatelessWidget {
+  const _Hero({required this.t});
+
+  final AppLocalizations t;
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: Tween<double>(begin: 0, end: 1),
+    duration: MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : const Duration(milliseconds: 700),
+    curve: Curves.easeOutBack,
+    builder: (BuildContext context, double v, Widget? child) => Opacity(
+      opacity: v.clamp(0, 1),
+      child: Transform.scale(scale: 0.85 + 0.15 * v, child: child),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 16),
+      child: Column(
+        children: <Widget>[
+          const _GlowAvatar(size: 76),
+          const SizedBox(height: 10),
+          const Text(
+            'Flyra',
+            style: TextStyle(
+              fontFamily: NomadFonts.display,
+              fontWeight: FontWeight.w800,
+              fontSize: 30,
+              color: NomadColors.text,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            t.flyraSubtitle,
+            style: const TextStyle(color: NomadColors.textMuted),
+          ),
+          const SizedBox(height: 14),
+          _Traits(t: t),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Las tres "insignias" de Flyra (idioma, privacidad, gratis).
+class _Traits extends StatelessWidget {
+  const _Traits({required this.t});
+
+  final AppLocalizations t;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget chip(String text, Color color, IconData icon) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.55)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Icon(icon, size: 15, color: color),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w800,
+                fontSize: 12.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 8,
+      runSpacing: 8,
+      children: <Widget>[
+        chip(t.flyraTraitLanguage, NomadColors.mint, Icons.translate_rounded),
+        chip(t.flyraTraitPrivate, NomadColors.flights, Icons.lock_rounded),
+        chip(t.flyraTraitFree, NomadColors.group, Icons.bolt_rounded),
+      ],
+    );
+  }
+}
+
+/// La ficha de Flyra (se abre tocando su nombre).
+class _AboutFlyra extends StatelessWidget {
+  const _AboutFlyra({required this.t});
+
+  final AppLocalizations t;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.all(10),
+    padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(28),
+      border: Border.all(color: NomadColors.outline),
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: <Color>[Color(0xFF15302A), NomadColors.surface],
+      ),
+    ),
+    child: SafeArea(
+      top: false,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            const _GlowAvatar(size: 120),
+            const SizedBox(height: 16),
+            const Text(
+              'Flyra',
+              style: TextStyle(
+                fontFamily: NomadFonts.display,
+                fontWeight: FontWeight.w800,
+                fontSize: 32,
+                color: NomadColors.text,
+              ),
+            ),
+            Text(
+              t.flyraSubtitle,
+              style: const TextStyle(color: NomadColors.textMuted),
+            ),
+            const SizedBox(height: 16),
+            _Traits(t: t),
+            const SizedBox(height: 16),
+            Text(
+              t.flyraDisclaimer,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: NomadColors.textMuted, height: 1.4),
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: NomadColors.mint,
+                  foregroundColor: NomadColors.background,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text(
+                  t.flyraBackToChat,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+/// "Hoy", en una pastilla en medio (como "Día 3 · jueves" en la maqueta).
+class _DayPill extends StatelessWidget {
+  const _DayPill({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 12, top: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: NomadColors.surface,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 11.5,
+          fontWeight: FontWeight.w700,
+          color: NomadColors.textMuted,
+        ),
+      ),
+    ),
+  );
+}
+
+/// Un bocadillo: los de Flyra a un lado (con su foto y su nombre en menta),
+/// los tuyos al otro (con tu inicial). "start"/"end" en vez de
+/// izquierda/derecha: en árabe se da la vuelta solo.
 ///
 /// Entra con un pequeño deslizamiento. Si [typing] es true (la respuesta que
 /// acaba de llegar), el texto aparece letra a letra; tocarlo lo enseña entero.
@@ -310,17 +617,25 @@ class _Bubble extends StatefulWidget {
   const _Bubble({
     super.key,
     required this.turn,
+    this.initial = '',
     this.typing = false,
     this.listenLabel,
+    this.copyLabel,
+    this.copiedLabel,
     this.onListen,
     this.onTyped,
   });
 
   final ChatTurn turn;
+
+  /// Tu inicial (en el circulito de tus mensajes).
+  final String initial;
   final bool typing;
 
-  /// Texto del botón de altavoz ("Escuchar"); sin él, no hay botón.
+  /// Texto del botón de altavoz ("Escuchar"); sin él, no hay botones.
   final String? listenLabel;
+  final String? copyLabel;
+  final String? copiedLabel;
   final VoidCallback? onListen;
 
   /// Se llama al acabar de "teclear" (para bajar hasta el final).
@@ -374,48 +689,96 @@ class _BubbleState extends State<_Bubble> with TickerProviderStateMixin {
     super.dispose();
   }
 
+  Future<void> _copy() async {
+    await Clipboard.setData(ClipboardData(text: widget.turn.text));
+    final String? done = widget.copiedLabel;
+    if (!mounted || done == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(done), duration: const Duration(seconds: 2)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool mine = widget.turn.role == ChatRole.user;
     final String text = widget.turn.text;
+    final String? listenLabel = widget.listenLabel;
+    final String? copyLabel = widget.copyLabel;
     final Widget bubble = Flexible(
       child: GestureDetector(
         // Tocar mientras teclea: sale entero ya.
         onTap: _type.isAnimating ? () => _type.value = 1 : null,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
           decoration: BoxDecoration(
-            color: mine ? NomadColors.mint : const Color(0xFF1A1530),
+            color: mine ? const Color(0xFF22394A) : const Color(0xFF10261F),
             borderRadius: BorderRadiusDirectional.only(
               topStart: const Radius.circular(18),
               topEnd: const Radius.circular(18),
               bottomStart: Radius.circular(mine ? 18 : 4),
               bottomEnd: Radius.circular(mine ? 4 : 18),
             ).resolve(Directionality.of(context)),
-            border: mine ? null : Border.all(color: const Color(0xFF3E3163)),
+            border: Border.all(
+              color: mine ? const Color(0xFF2E4A5E) : const Color(0xFF1F4D3D),
+            ),
           ),
-          child: AnimatedBuilder(
-            animation: _type,
-            builder: (BuildContext context, Widget? _) {
-              final int shown = (text.length * _type.value).round();
-              // Se puede seleccionar y copiar (una dirección, una frase...).
-              return SelectableText(
-                shown >= text.length ? text : text.substring(0, shown),
-                // El lector de pantalla lee siempre el texto completo.
-                semanticsLabel: text,
-                style: TextStyle(
-                  color: mine
-                      ? NomadColors.background
-                      : const Color(0xFFDCD3F7),
-                  height: 1.4,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              if (!mine)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 3),
+                  child: Text(
+                    'Flyra',
+                    style: TextStyle(
+                      color: NomadColors.mint,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
+                  ),
                 ),
-              );
-            },
+              AnimatedBuilder(
+                animation: _type,
+                builder: (BuildContext context, Widget? _) {
+                  final int shown = (text.length * _type.value).round();
+                  // Se puede seleccionar y copiar (una dirección, una frase...).
+                  return SelectableText(
+                    shown >= text.length ? text : text.substring(0, shown),
+                    // El lector de pantalla lee siempre el texto completo.
+                    semanticsLabel: text,
+                    style: const TextStyle(
+                      color: Color(0xFFEAF2EF),
+                      height: 1.42,
+                      fontSize: 15,
+                    ),
+                  );
+                },
+              ),
+              if (!mine && listenLabel != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      _MiniAction(
+                        tooltip: listenLabel,
+                        icon: Icons.volume_up_rounded,
+                        onTap: widget.onListen,
+                      ),
+                      if (copyLabel != null)
+                        _MiniAction(
+                          tooltip: copyLabel,
+                          icon: Icons.copy_rounded,
+                          onTap: _copy,
+                        ),
+                    ],
+                  ),
+                ),
+            ],
           ),
         ),
       ),
     );
-    final String? listenLabel = widget.listenLabel;
     return FadeTransition(
       opacity: _enter,
       child: SlideTransition(
@@ -432,22 +795,16 @@ class _BubbleState extends State<_Bubble> with TickerProviderStateMixin {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
               if (!mine) ...<Widget>[
-                const FlyraAvatar(size: 28),
+                const FlyraAvatar(size: 30),
                 const SizedBox(width: 8),
-              ],
+              ] else
+                const SizedBox(width: 38),
               bubble,
-              if (!mine && listenLabel != null)
-                IconButton(
-                  tooltip: listenLabel,
-                  visualDensity: VisualDensity.compact,
-                  onPressed: widget.onListen,
-                  icon: const Icon(
-                    Icons.volume_up_rounded,
-                    size: 20,
-                    color: NomadColors.textMuted,
-                  ),
-                ),
-              if (mine) const SizedBox(width: 36),
+              if (mine) ...<Widget>[
+                const SizedBox(width: 8),
+                _MeDot(initial: widget.initial),
+              ] else
+                const SizedBox(width: 24),
             ],
           ),
         ),
@@ -456,23 +813,219 @@ class _BubbleState extends State<_Bubble> with TickerProviderStateMixin {
   }
 }
 
-/// Ideas para la primera pregunta (se envían al tocarlas).
+/// Un botoncito dentro del bocadillo de Flyra (escuchar, copiar).
+class _MiniAction extends StatelessWidget {
+  const _MiniAction({required this.tooltip, required this.icon, this.onTap});
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: tooltip,
+    child: InkResponse(
+      onTap: onTap,
+      radius: 20,
+      child: Padding(
+        padding: const EdgeInsetsDirectional.only(end: 12, top: 2, bottom: 2),
+        child: Icon(icon, size: 18, color: const Color(0xFF7FB8A3)),
+      ),
+    ),
+  );
+}
+
+/// Tu circulito con la inicial (menta, el color de "tú").
+class _MeDot extends StatelessWidget {
+  const _MeDot({required this.initial});
+
+  final String initial;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 30,
+    height: 30,
+    alignment: Alignment.center,
+    decoration: const BoxDecoration(
+      color: NomadColors.mint,
+      shape: BoxShape.circle,
+    ),
+    child: initial.isEmpty
+        ? const Icon(
+            Icons.person_rounded,
+            size: 18,
+            color: NomadColors.background,
+          )
+        : Text(
+            initial,
+            style: const TextStyle(
+              color: NomadColors.background,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+  );
+}
+
+/// Ideas para la primera pregunta: tarjetas con icono (se envían al tocarlas).
 class _Suggestions extends StatelessWidget {
-  const _Suggestions({required this.items, required this.onPick});
+  const _Suggestions({
+    required this.title,
+    required this.items,
+    required this.onPick,
+  });
+
+  final String title;
+  final List<String> items;
+  final ValueChanged<String> onPick;
+
+  static const List<(IconData, Color)> _looks = <(IconData, Color)>[
+    (Icons.explore_rounded, NomadColors.mint),
+    (Icons.luggage_rounded, NomadColors.flights),
+    (Icons.directions_bus_rounded, NomadColors.money),
+    (Icons.translate_rounded, NomadColors.group),
+  ];
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 6, bottom: 12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Padding(
+          padding: const EdgeInsetsDirectional.only(start: 4, bottom: 8),
+          child: Text(
+            title.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+              color: NomadColors.textMuted,
+            ),
+          ),
+        ),
+        LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints c) {
+            final double w = (c.maxWidth - 10) / 2;
+            return Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: <Widget>[
+                for (int i = 0; i < items.length; i++)
+                  SizedBox(
+                    width: w,
+                    child: _IdeaCard(
+                      text: items[i],
+                      icon: _looks[i % _looks.length].$1,
+                      color: _looks[i % _looks.length].$2,
+                      delay: i,
+                      onTap: () => onPick(items[i]),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ],
+    ),
+  );
+}
+
+class _IdeaCard extends StatelessWidget {
+  const _IdeaCard({
+    required this.text,
+    required this.icon,
+    required this.color,
+    required this.delay,
+    required this.onTap,
+  });
+
+  final String text;
+  final IconData icon;
+  final Color color;
+  final int delay;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => TweenAnimationBuilder<double>(
+    tween: Tween<double>(begin: 0, end: 1),
+    duration: MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : Duration(milliseconds: 450 + delay * 120),
+    curve: Curves.easeOutCubic,
+    builder: (BuildContext context, double v, Widget? child) => Opacity(
+      opacity: v,
+      child: Transform.translate(offset: Offset(0, 14 * (1 - v)), child: child),
+    ),
+    child: Material(
+      color: NomadColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: NomadColors.outline),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(icon, color: color, size: 19),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                text,
+                style: const TextStyle(
+                  color: NomadColors.text,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13.5,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// Ideas rápidas encima de la caja, en una fila que se desliza.
+class _QuickIdeas extends StatelessWidget {
+  const _QuickIdeas({required this.items, required this.onPick});
 
   final List<String> items;
   final ValueChanged<String> onPick;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsetsDirectional.only(start: 36, bottom: 12),
-    child: Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: <Widget>[
-        for (final String item in items)
-          ActionChip(label: Text(item), onPressed: () => onPick(item)),
-      ],
+  Widget build(BuildContext context) => SizedBox(
+    height: 40,
+    child: ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      scrollDirection: Axis.horizontal,
+      itemCount: items.length,
+      separatorBuilder: (_, _) => const SizedBox(width: 8),
+      itemBuilder: (BuildContext context, int i) => ActionChip(
+        backgroundColor: const Color(0xFF10261F),
+        side: const BorderSide(color: Color(0xFF1F4D3D)),
+        shape: const StadiumBorder(),
+        label: Text(
+          items[i],
+          style: const TextStyle(
+            color: NomadColors.text,
+            fontWeight: FontWeight.w700,
+            fontSize: 12.5,
+          ),
+        ),
+        onPressed: () => onPick(items[i]),
+      ),
     ),
   );
 }
@@ -608,57 +1161,75 @@ class _Composer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: <Widget>[
-        Expanded(
-          child: TextField(
-            controller: controller,
-            enabled: enabled,
-            minLines: 1,
-            maxLines: 5,
-            maxLength: maxQuestionChars,
-            // Sin el contador "0/2000" debajo: solo estorba.
-            buildCounter: (
-              BuildContext context, {
-              required int currentLength,
-              required bool isFocused,
-              required int? maxLength,
-            }) => null,
-            textInputAction: TextInputAction.send,
-            onSubmitted: (_) => onSend(),
-            decoration: InputDecoration(
-              hintText: hint,
-              filled: true,
-              fillColor: NomadColors.surfaceHigh,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 12,
+    padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+    child: Container(
+      padding: const EdgeInsetsDirectional.fromSTEB(6, 4, 4, 4),
+      decoration: BoxDecoration(
+        color: NomadColors.surface,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(
+          color: listening ? NomadColors.mint : NomadColors.outline,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: <Widget>[
+          // El micro: mientras escucha se pone del color de Flyra.
+          IconButton(
+            tooltip: micLabel,
+            isSelected: listening,
+            onPressed: enabled ? onMic : null,
+            icon: const Icon(Icons.mic_none_rounded),
+            selectedIcon: const Icon(
+              Icons.mic_rounded,
+              color: NomadColors.mint,
+            ),
+          ),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              enabled: enabled,
+              minLines: 1,
+              maxLines: 5,
+              maxLength: maxQuestionChars,
+              // Sin el contador "0/2000" debajo: solo estorba.
+              buildCounter: (
+                BuildContext context, {
+                required int currentLength,
+                required bool isFocused,
+                required int? maxLength,
+              }) => null,
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => onSend(),
+              style: const TextStyle(fontSize: 15),
+              decoration: InputDecoration(
+                hintText: hint,
+                filled: false,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 4,
+                  vertical: 12,
+                ),
               ),
             ),
           ),
-        ),
-        const SizedBox(width: 4),
-        // El micro: mientras escucha se pone del color de Flyra.
-        IconButton(
-          tooltip: micLabel,
-          isSelected: listening,
-          onPressed: enabled ? onMic : null,
-          icon: const Icon(Icons.mic_none_rounded),
-          selectedIcon: const Icon(Icons.mic_rounded, color: NomadColors.mint),
-        ),
-        IconButton.filled(
-          tooltip: sendLabel,
-          onPressed: enabled ? () => onSend() : null,
-          // En árabe la flecha apunta al otro lado (la app se da la vuelta).
-          icon: const Icon(Icons.send_rounded),
-        ),
-      ],
+          const SizedBox(width: 4),
+          IconButton.filled(
+            tooltip: sendLabel,
+            style: IconButton.styleFrom(
+              backgroundColor: NomadColors.mint,
+              foregroundColor: NomadColors.background,
+              disabledBackgroundColor: NomadColors.surfaceHigh,
+            ),
+            onPressed: enabled ? () => onSend() : null,
+            // En árabe la flecha apunta al otro lado (la app se da la vuelta).
+            icon: const Icon(Icons.arrow_upward_rounded),
+          ),
+        ],
+      ),
     ),
   );
 }

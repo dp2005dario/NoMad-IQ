@@ -2326,5 +2326,13 @@
   "searchPlaceMissing": "Taip bandar atau lapangan terbang asal dan destinasi.",
   "searchNearbyDays": "Harga sehari sekitar tarikh anda",
   "searchNoExactDay": "Hari itu belum ada harga. Hari berdekatan ini ada: ketik satu.",
-  "searchCheapest": "Paling murah"
+  "searchCheapest": "Paling murah",
+  "flyraTraitLanguage": "Bercakap dalam bahasa anda",
+  "flyraTraitPrivate": "Sembang anda kekal dalam telefon anda",
+  "flyraTraitFree": "Soalan percuma setiap hari",
+  "flyraAbout": "Mengenai Flyra",
+  "flyraBackToChat": "Kembali ke sembang",
+  "flyraIdeas": "Idea untuk bermula",
+  "flyraToday": "Hari ini",
+  "flyraOnlineNow": "Dalam talian"
 }

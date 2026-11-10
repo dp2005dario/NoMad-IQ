@@ -2326,5 +2326,13 @@
   "searchPlaceMissing": "شهر یا فرودگاه مبدأ و مقصد را بنویس.",
   "searchNearbyDays": "قیمت هر روز، نزدیک تاریخ تو",
   "searchNoExactDay": "آن روز هنوز قیمت ندارد. این روزهای نزدیک دارند: یکی را بزن.",
-  "searchCheapest": "ارزان‌ترین"
+  "searchCheapest": "ارزان‌ترین",
+  "flyraTraitLanguage": "به زبان تو حرف می‌زند",
+  "flyraTraitPrivate": "گفت‌وگویت در گوشی خودت می‌ماند",
+  "flyraTraitFree": "هر روز سؤال رایگان",
+  "flyraAbout": "دربارهٔ فلایرا",
+  "flyraBackToChat": "بازگشت به گفت‌وگو",
+  "flyraIdeas": "ایده‌هایی برای شروع",
+  "flyraToday": "امروز",
+  "flyraOnlineNow": "آنلاین"
 }

@@ -2326,5 +2326,13 @@
   "searchPlaceMissing": "Écris la ville ou l'aéroport de départ et de destination.",
   "searchNearbyDays": "Prix par jour, autour de ta date",
   "searchNoExactDay": "Pas encore de prix ce jour-là. Ces jours proches en ont : touches-en un.",
-  "searchCheapest": "Le moins cher"
+  "searchCheapest": "Le moins cher",
+  "flyraTraitLanguage": "Parle ta langue",
+  "flyraTraitPrivate": "Ta conversation reste sur ton téléphone",
+  "flyraTraitFree": "Questions gratuites chaque jour",
+  "flyraAbout": "À propos de Flyra",
+  "flyraBackToChat": "Retour au chat",
+  "flyraIdeas": "Idées pour commencer",
+  "flyraToday": "Aujourd'hui",
+  "flyraOnlineNow": "En ligne"
 }

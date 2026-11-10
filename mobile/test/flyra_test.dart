@@ -208,6 +208,11 @@ void main() {
     WidgetTester tester,
   ) async {
     final FlyraBackend b = await pumpFlyra(tester);
+    // Las ideas van debajo de la portada de Flyra: se baja hasta ellas.
+    await tester.ensureVisible(
+      find.text('¿Qué puedo ver en 2 días en Lisboa?'),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('¿Qué puedo ver en 2 días en Lisboa?'));
     await tester.pumpAndSettle();
     expect(b.sent, hasLength(1));
