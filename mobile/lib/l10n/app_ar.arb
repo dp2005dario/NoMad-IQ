@@ -2334,5 +2334,10 @@
   "flyraBackToChat": "العودة إلى المحادثة",
   "flyraIdeas": "أفكار للبدء",
   "flyraToday": "اليوم",
-  "flyraOnlineNow": "متصلة"
+  "flyraOnlineNow": "متصلة",
+  "groupStepTrip": "الرحلة",
+  "groupStepOptions": "الخيارات",
+  "groupStepVote": "الوكلاء يتفاوضون",
+  "groupPreviewTitle": "هكذا ستراها مجموعتك",
+  "groupPreviewEmpty": "اكتب الخيارات وستراها هنا"
 }

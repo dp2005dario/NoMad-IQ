@@ -2334,5 +2334,10 @@
   "flyraBackToChat": "चैट पर वापस",
   "flyraIdeas": "शुरू करने के आइडिया",
   "flyraToday": "आज",
-  "flyraOnlineNow": "ऑनलाइन"
+  "flyraOnlineNow": "ऑनलाइन",
+  "groupStepTrip": "यात्रा",
+  "groupStepOptions": "विकल्प",
+  "groupStepVote": "एजेंट मोलभाव करते हैं",
+  "groupPreviewTitle": "आपका ग्रुप इसे ऐसे देखेगा",
+  "groupPreviewEmpty": "विकल्प लिखें, यहाँ दिखेंगे"
 }

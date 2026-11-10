@@ -2334,5 +2334,10 @@
   "flyraBackToChat": "대화로 돌아가기",
   "flyraIdeas": "시작 아이디어",
   "flyraToday": "오늘",
-  "flyraOnlineNow": "온라인"
+  "flyraOnlineNow": "온라인",
+  "groupStepTrip": "여행",
+  "groupStepOptions": "선택지",
+  "groupStepVote": "에이전트가 협상해요",
+  "groupPreviewTitle": "그룹에는 이렇게 보여요",
+  "groupPreviewEmpty": "선택지를 쓰면 여기에 보여요"
 }

@@ -2334,5 +2334,10 @@
   "flyraBackToChat": "চ্যাটে ফিরে যাও",
   "flyraIdeas": "শুরু করার আইডিয়া",
   "flyraToday": "আজ",
-  "flyraOnlineNow": "অনলাইন"
+  "flyraOnlineNow": "অনলাইন",
+  "groupStepTrip": "ভ্রমণ",
+  "groupStepOptions": "বিকল্পগুলো",
+  "groupStepVote": "এজেন্টরা আলোচনা করে",
+  "groupPreviewTitle": "তোমার গ্রুপ এভাবে দেখবে",
+  "groupPreviewEmpty": "বিকল্প লেখো, এখানে দেখতে পাবে"
 }

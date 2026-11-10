@@ -2334,5 +2334,10 @@
   "flyraBackToChat": "بازگشت به گفت‌وگو",
   "flyraIdeas": "ایده‌هایی برای شروع",
   "flyraToday": "امروز",
-  "flyraOnlineNow": "آنلاین"
+  "flyraOnlineNow": "آنلاین",
+  "groupStepTrip": "سفر",
+  "groupStepOptions": "گزینه‌ها",
+  "groupStepVote": "عامل‌ها مذاکره می‌کنند",
+  "groupPreviewTitle": "گروهت این‌طور می‌بیند",
+  "groupPreviewEmpty": "گزینه‌ها را بنویس تا این‌جا ببینی"
 }

@@ -11206,5 +11206,25 @@
   "flyraOnlineNow": "Online",
   "@flyraOnlineNow": {
     "description": "Status under Flyra's name"
+  },
+  "groupStepTrip": "The trip",
+  "@groupStepTrip": {
+    "description": "Step 1 of creating a group trip"
+  },
+  "groupStepOptions": "The options",
+  "@groupStepOptions": {
+    "description": "Step 2"
+  },
+  "groupStepVote": "Agents negotiate",
+  "@groupStepVote": {
+    "description": "Step 3 (AI agents negotiate)"
+  },
+  "groupPreviewTitle": "How your group will see it",
+  "@groupPreviewTitle": {
+    "description": "Title of the live preview of the options"
+  },
+  "groupPreviewEmpty": "Write the options and you'll see them here",
+  "@groupPreviewEmpty": {
+    "description": "Empty live preview"
   }
 }

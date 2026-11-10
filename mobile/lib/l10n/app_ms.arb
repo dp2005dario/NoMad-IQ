@@ -2334,5 +2334,10 @@
   "flyraBackToChat": "Kembali ke sembang",
   "flyraIdeas": "Idea untuk bermula",
   "flyraToday": "Hari ini",
-  "flyraOnlineNow": "Dalam talian"
+  "flyraOnlineNow": "Dalam talian",
+  "groupStepTrip": "Perjalanan",
+  "groupStepOptions": "Pilihan",
+  "groupStepVote": "Ejen berunding",
+  "groupPreviewTitle": "Beginilah kumpulan anda akan melihatnya",
+  "groupPreviewEmpty": "Tulis pilihan dan lihat di sini"
 }

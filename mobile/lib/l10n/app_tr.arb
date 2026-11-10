@@ -2334,5 +2334,10 @@
   "flyraBackToChat": "Sohbete dön",
   "flyraIdeas": "Başlamak için fikirler",
   "flyraToday": "Bugün",
-  "flyraOnlineNow": "Çevrimiçi"
+  "flyraOnlineNow": "Çevrimiçi",
+  "groupStepTrip": "Seyahat",
+  "groupStepOptions": "Seçenekler",
+  "groupStepVote": "Ajanlar pazarlık eder",
+  "groupPreviewTitle": "Grubun böyle görecek",
+  "groupPreviewEmpty": "Seçenekleri yaz, burada görürsün"
 }

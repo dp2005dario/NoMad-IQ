@@ -2334,5 +2334,10 @@
   "flyraBackToChat": "Înapoi la chat",
   "flyraIdeas": "Idei de început",
   "flyraToday": "Azi",
-  "flyraOnlineNow": "Online"
+  "flyraOnlineNow": "Online",
+  "groupStepTrip": "Călătoria",
+  "groupStepOptions": "Opțiunile",
+  "groupStepVote": "Agenții negociază",
+  "groupPreviewTitle": "Așa îl va vedea grupul tău",
+  "groupPreviewEmpty": "Scrie opțiunile și le vei vedea aici"
 }

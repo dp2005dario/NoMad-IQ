@@ -2334,5 +2334,10 @@
   "flyraBackToChat": "Bumalik sa chat",
   "flyraIdeas": "Mga ideya para magsimula",
   "flyraToday": "Ngayon",
-  "flyraOnlineNow": "Online"
+  "flyraOnlineNow": "Online",
+  "groupStepTrip": "Ang biyahe",
+  "groupStepOptions": "Mga opsyon",
+  "groupStepVote": "Nag-uusap ang mga agent",
+  "groupPreviewTitle": "Ganito ito makikita ng grupo mo",
+  "groupPreviewEmpty": "Isulat ang mga opsyon at makikita mo rito"
 }

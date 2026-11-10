@@ -2334,5 +2334,10 @@
   "flyraBackToChat": "返回聊天",
   "flyraIdeas": "开始的灵感",
   "flyraToday": "今天",
-  "flyraOnlineNow": "在线"
+  "flyraOnlineNow": "在线",
+  "groupStepTrip": "旅行",
+  "groupStepOptions": "选项",
+  "groupStepVote": "智能体协商",
+  "groupPreviewTitle": "你的小组会看到这样",
+  "groupPreviewEmpty": "写下选项，就会显示在这里"
 }

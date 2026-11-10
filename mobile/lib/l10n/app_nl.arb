@@ -2334,5 +2334,10 @@
   "flyraBackToChat": "Terug naar de chat",
   "flyraIdeas": "Ideeën om te beginnen",
   "flyraToday": "Vandaag",
-  "flyraOnlineNow": "Online"
+  "flyraOnlineNow": "Online",
+  "groupStepTrip": "De reis",
+  "groupStepOptions": "De opties",
+  "groupStepVote": "De agenten onderhandelen",
+  "groupPreviewTitle": "Zo ziet je groep het",
+  "groupPreviewEmpty": "Schrijf de opties en je ziet ze hier"
 }

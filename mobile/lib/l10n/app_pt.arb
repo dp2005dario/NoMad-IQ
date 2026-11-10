@@ -2334,5 +2334,10 @@
   "flyraBackToChat": "Voltar à conversa",
   "flyraIdeas": "Ideias para começar",
   "flyraToday": "Hoje",
-  "flyraOnlineNow": "Online"
+  "flyraOnlineNow": "Online",
+  "groupStepTrip": "A viagem",
+  "groupStepOptions": "As opções",
+  "groupStepVote": "Os agentes negociam",
+  "groupPreviewTitle": "Assim o verá o teu grupo",
+  "groupPreviewEmpty": "Escreve as opções e vê-las-ás aqui"
 }

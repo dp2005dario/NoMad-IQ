@@ -2334,5 +2334,10 @@
   "flyraBackToChat": "Назад в чат",
   "flyraIdeas": "Идеи для начала",
   "flyraToday": "Сегодня",
-  "flyraOnlineNow": "В сети"
+  "flyraOnlineNow": "В сети",
+  "groupStepTrip": "Поездка",
+  "groupStepOptions": "Варианты",
+  "groupStepVote": "Агенты договариваются",
+  "groupPreviewTitle": "Так это увидит твоя группа",
+  "groupPreviewEmpty": "Напиши варианты — и увидишь их здесь"
 }

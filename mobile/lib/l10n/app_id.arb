@@ -2334,5 +2334,10 @@
   "flyraBackToChat": "Kembali ke obrolan",
   "flyraIdeas": "Ide untuk memulai",
   "flyraToday": "Hari ini",
-  "flyraOnlineNow": "Online"
+  "flyraOnlineNow": "Online",
+  "groupStepTrip": "Perjalanan",
+  "groupStepOptions": "Pilihan",
+  "groupStepVote": "Agen bernegosiasi",
+  "groupPreviewTitle": "Begini grupmu akan melihatnya",
+  "groupPreviewEmpty": "Tulis pilihannya dan lihat di sini"
 }

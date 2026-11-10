@@ -2334,5 +2334,10 @@
   "flyraBackToChat": "チャットに戻る",
   "flyraIdeas": "はじめのアイデア",
   "flyraToday": "今日",
-  "flyraOnlineNow": "オンライン"
+  "flyraOnlineNow": "オンライン",
+  "groupStepTrip": "旅行",
+  "groupStepOptions": "候補",
+  "groupStepVote": "エージェントが交渉",
+  "groupPreviewTitle": "グループにはこう見えます",
+  "groupPreviewEmpty": "候補を書くとここに表示されます"
 }

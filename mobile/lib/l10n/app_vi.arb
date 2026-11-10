@@ -2334,5 +2334,10 @@
   "flyraBackToChat": "Quay lại trò chuyện",
   "flyraIdeas": "Gợi ý để bắt đầu",
   "flyraToday": "Hôm nay",
-  "flyraOnlineNow": "Trực tuyến"
+  "flyraOnlineNow": "Trực tuyến",
+  "groupStepTrip": "Chuyến đi",
+  "groupStepOptions": "Các lựa chọn",
+  "groupStepVote": "Các trợ lý thương lượng",
+  "groupPreviewTitle": "Nhóm của bạn sẽ thấy thế này",
+  "groupPreviewEmpty": "Viết các lựa chọn và bạn sẽ thấy ở đây"
 }

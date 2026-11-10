@@ -2334,5 +2334,10 @@
   "flyraBackToChat": "چیٹ پر واپس",
   "flyraIdeas": "شروع کرنے کے خیالات",
   "flyraToday": "آج",
-  "flyraOnlineNow": "آن لائن"
+  "flyraOnlineNow": "آن لائن",
+  "groupStepTrip": "سفر",
+  "groupStepOptions": "اختیارات",
+  "groupStepVote": "ایجنٹ بات چیت کرتے ہیں",
+  "groupPreviewTitle": "آپ کا گروپ اسے ایسے دیکھے گا",
+  "groupPreviewEmpty": "اختیارات لکھیں، یہاں نظر آئیں گے"
 }
