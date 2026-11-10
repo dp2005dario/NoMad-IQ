@@ -156,6 +156,15 @@ class NearbyPageData {
   _ => ('shop', t.nbShop),
 };
 
+/// Qué es un sitio de Cerca de ti, en tu idioma ("Supermercado", "Museo"...)
+/// y su dibujo de la página. null si no es ni tienda ni sitio que ver.
+(String, String)? spotLook(AppLocalizations t, NearbySpot s) =>
+    switch (s.kind) {
+      NearbyKind.shop => shopLook(t, s.sub),
+      NearbyKind.sight => (_sightLook(s.sub).$1, _sightLook(s.sub).$2(t)),
+      _ => null,
+    };
+
 /// "23:00": la hora a la que cierra, contando desde [now].
 String _clock(DateTime now, int minutesLeft) {
   final DateTime at = now.add(Duration(minutes: minutesLeft));

@@ -39,6 +39,8 @@ import 'map_model.dart';
 import 'map_style.dart';
 import 'map_surface.dart';
 import 'me_marker.dart';
+import '../nearby/nearby_api.dart';
+import '../nearby/nearby_page.dart' show spotLook;
 import 'weather_overlay.dart';
 
 class MapScreen extends StatefulWidget {
@@ -107,6 +109,12 @@ class _MapScreenState extends State<MapScreen> {
   /// Adónde había que llevar la cámara antes de que el mapa estuviera listo
   /// (p. ej. tu posición, si el GPS te encontró mientras cargaba).
   (GeoPoint, double?)? _pendingFocus;
+
+  /// Lo que hay cerca de ti (tiendas y sitios), para el panel de abajo
+  /// cuando no estás en ninguna zona: así siempre hay algo que ver.
+  List<_Around> _around = const <_Around>[];
+  GeoPoint? _aroundFor;
+  bool _aroundLoading = false;
 
   /// ¿Ya se llevó la cámara a tu posición alguna vez?
   bool _centeredOnMe = false;
@@ -235,6 +243,7 @@ class _MapScreenState extends State<MapScreen> {
     }
     _lastEntered = entered;
     _syncMap();
+    _loadAround();
     if (mounted) setState(() {});
   }
 
@@ -429,6 +438,38 @@ class _MapScreenState extends State<MapScreen> {
       _places = found;
       _searching = false;
     });
+  }
+
+  /// Busca lo que hay cerca de ti (una vez, y otra si te mueves ~400 m).
+  void _loadAround() {
+    final GeoPoint? me = _m.me;
+    final GeoPoint? last = _aroundFor;
+    if (me == null || _aroundLoading) return;
+    if (last != null && last.distanceTo(me) < 400) return;
+    _aroundLoading = true;
+    _aroundFor = me;
+    unawaited(() async {
+      try {
+        final NearbyList found = await _services.nearby.near(me);
+        if (!mounted) return;
+        final AppLocalizations t = AppLocalizations.of(context);
+        final List<_Around> list = <_Around>[
+          for (final NearbySpot s in found.spots)
+            if (s.name != null && spotLook(t, s) != null)
+              _Around(
+                name: s.name!,
+                label: spotLook(t, s)!.$2,
+                meters: me.distanceTo(s.point).round(),
+                point: s.point,
+              ),
+        ]..sort((_Around a, _Around b) => a.meters.compareTo(b.meters));
+        setState(() => _around = list.take(12).toList());
+      } on Object {
+        // Sin red o servidor ocupado: se vuelve a probar cuando te muevas.
+      } finally {
+        _aroundLoading = false;
+      }
+    }());
   }
 
   /// Lleva el mapa al sitio elegido y le pone una chincheta, como Google
@@ -789,6 +830,10 @@ class _MapScreenState extends State<MapScreen> {
                   status: _m.status,
                   onListen: _openGuide,
                   onEnable: () => unawaited(_enableLocation()),
+                  around: _around,
+                  onAround: (_Around a) => _showPlace(
+                    GeoPlace(name: a.name, address: a.label, point: a.point),
+                  ),
                 ),
               ],
             ),
@@ -1578,9 +1623,15 @@ class _ZonePanel extends StatelessWidget {
     required this.status,
     required this.onListen,
     required this.onEnable,
+    this.around = const <_Around>[],
+    this.onAround,
   });
 
   final Zone? zone;
+
+  /// Lo más cercano (tiendas y sitios) cuando no estás en ninguna zona.
+  final List<_Around> around;
+  final ValueChanged<_Around>? onAround;
 
   /// true si estás dentro de esta zona ahora mismo.
   final bool here;
@@ -1616,6 +1667,14 @@ class _ZonePanel extends StatelessWidget {
           ? t.mapZonesGuest
           : t.mapLocationWhy;
       action = onEnable;
+      icon = 'M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11zM12 8a2 2 0 1 0 0.01 0';
+    } else if (around.isNotEmpty) {
+      // Sin zona aquí: lo que tienes alrededor, como en un mapa normal.
+      color = NomadColors.mint;
+      kicker = 'Cerca de ti';
+      title = around.first.name;
+      sub = '${around.first.label} · a ${_meters(around.first.meters)}';
+      action = () => onAround?.call(around.first);
       icon = 'M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11zM12 8a2 2 0 1 0 0.01 0';
     } else {
       color = NomadColors.mint;
@@ -1726,6 +1785,35 @@ class _ZonePanel extends StatelessWidget {
               ],
             ),
           ),
+          if (z == null && around.length > 1) ...<Widget>[
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 34,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: around.length - 1,
+                separatorBuilder: (_, _) => const SizedBox(width: 6),
+                itemBuilder: (BuildContext context, int i) {
+                  final _Around a = around[i + 1];
+                  return ActionChip(
+                    onPressed: () => onAround?.call(a),
+                    backgroundColor: const Color(0xFF1B2830),
+                    side: const BorderSide(color: Color(0xFF26363F)),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    label: Text(
+                      '${a.name} · ${_meters(a.meters)}',
+                      style: const TextStyle(
+                        fontFamily: 'Manrope',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFF2F5F3),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           const Row(
             children: <Widget>[
@@ -1756,6 +1844,26 @@ class _ZonePanel extends StatelessWidget {
     );
   }
 }
+
+/// Un sitio de alrededor para el panel del mapa.
+class _Around {
+  const _Around({
+    required this.name,
+    required this.label,
+    required this.meters,
+    required this.point,
+  });
+
+  final String name;
+  final String label;
+  final int meters;
+  final GeoPoint point;
+}
+
+/// "120 m" o "1,2 km".
+String _meters(int m) => m < 1000
+    ? '${(m / 10).round() * 10} m'
+    : '${(m / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
 
 /// Un atajo del panel (Cerca de ti, Radar o Asistente).
 class _Shortcut extends StatelessWidget {
