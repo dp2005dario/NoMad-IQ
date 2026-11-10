@@ -1,0 +1,75 @@
+# APK de ECLIPTA apuntando al servidor de verdad (Azure), lista para instalar
+# en un móvil Android.
+#
+# Cómo bajarla: GitHub → pestaña "Actions" → "APK para el móvil" → la última
+# ejecución en verde → abajo, en "Artifacts", "eclipta-apk". Es un .zip con
+# el .apk dentro.
+#
+# Se hace sola al cambiar la app en main. Para hacerla a mano (o con otra
+# dirección de servidor): "Actions" → "APK para el móvil" → "Run workflow".
+#
+# Va firmada con la llave de PRUEBAS mientras no exista android/key.properties:
+# sirve para instalarla en tu móvil, pero Google Play no la aceptará.
+name: APK para el móvil
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: "Dirección del servidor (https://...)"
+        required: false
+        default: ""
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/apk.yml"
+  pull_request:
+    paths:
+      - ".github/workflows/apk.yml"
+
+permissions:
+  contents: read
+
+env:
+  # La dirección del servidor de Azure (no es un secreto: es pública).
+  SERVIDOR: https://eclipta-qlk7qx.denmarkeast.cloudapp.azure.com
+
+jobs:
+  apk:
+    name: compilar APK (release)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.7"
+          channel: stable
+          cache: true
+      - name: Dependencias
+        run: flutter pub get --enforce-lockfile
+      - name: Compilar APK
+        env:
+          API_URL: ${{ inputs.api_url }}
+        run: |
+          URL="${API_URL:-$SERVIDOR}"
+          case "$URL" in
+            https://*) ;;
+            *) echo "La dirección tiene que empezar por https://" >&2; exit 1 ;;
+          esac
+          echo "Servidor: $URL"
+          flutter build apk --release --dart-define=NOMADIQ_API_URL="$URL"
+      - name: Subir APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: eclipta-apk
+          path: mobile/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 30
