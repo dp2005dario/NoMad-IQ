@@ -474,25 +474,34 @@ class _AssistantScreenState extends State<AssistantScreen>
               alignment: Alignment.topCenter,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    _Round(
-                      tooltip: MaterialLocalizations.of(context)
-                          .closeButtonTooltip,
-                      onTap: () => Navigator.of(context).maybePop(),
-                    ),
-                    Expanded(
-                      child: Center(
-                        child: _Tabs(
-                          labels: <String>[t.assistantAsk, 'Intérprete'],
-                          selected: _tab.index,
-                          onPick: (int i) => _pick(_Tab.values[i]),
+                // Alto fijo: sin él, el Center de las pestañas ocupaba toda
+                // la pantalla y "Pregunta | Intérprete" salía en medio,
+                // tapando lo de debajo.
+                child: SizedBox(
+                  height: 44,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      _Round(
+                        tooltip: MaterialLocalizations.of(context)
+                            .closeButtonTooltip,
+                        onTap: () => Navigator.of(context).maybePop(),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: Center(
+                            child: _Tabs(
+                              labels: <String>[t.assistantAsk, 'Intérprete'],
+                              selected: _tab.index,
+                              onPick: (int i) => _pick(_Tab.values[i]),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 44),
-                  ],
+                      const SizedBox(width: 44),
+                    ],
+                  ),
                 ),
               ),
             ),
