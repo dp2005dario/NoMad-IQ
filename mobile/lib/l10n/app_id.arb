@@ -2320,5 +2320,11 @@
   "nbClothes": "Pakaian",
   "nbOpenNow": "Buka",
   "nbClosedNow": "Tutup",
-  "sosMessageNoLocation": "Saya butuh bantuan! (Ponsel saya tidak bisa menemukan lokasi saya.)"
+  "sosMessageNoLocation": "Saya butuh bantuan! (Ponsel saya tidak bisa menemukan lokasi saya.)",
+  "searchKicker": "CARI PENERBANGANMU",
+  "searchCityHint": "Kota atau bandara, mis. Jakarta",
+  "searchPlaceMissing": "Tulis kota atau bandara asal dan tujuan.",
+  "searchNearbyDays": "Harga per hari di sekitar tanggalmu",
+  "searchNoExactDay": "Hari itu belum ada harga. Hari-hari terdekat ini ada: ketuk salah satu.",
+  "searchCheapest": "Termurah"
 }

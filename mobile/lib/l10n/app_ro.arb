@@ -2320,5 +2320,11 @@
   "nbClothes": "Haine",
   "nbOpenNow": "Deschis",
   "nbClosedNow": "Închis",
-  "sosMessageNoLocation": "Am nevoie de ajutor! (Telefonul meu nu mi-a putut afla locația.)"
+  "sosMessageNoLocation": "Am nevoie de ajutor! (Telefonul meu nu mi-a putut afla locația.)",
+  "searchKicker": "GĂSEȘTE-ȚI ZBORUL",
+  "searchCityHint": "Oraș sau aeroport, ex. București",
+  "searchPlaceMissing": "Scrie orașul sau aeroportul de plecare și de destinație.",
+  "searchNearbyDays": "Preț pe zi, în jurul datei tale",
+  "searchNoExactDay": "Ziua aceea nu are încă preț. Zilele acestea apropiate au: atinge una.",
+  "searchCheapest": "Cel mai ieftin"
 }

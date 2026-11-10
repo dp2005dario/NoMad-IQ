@@ -2320,5 +2320,11 @@
   "nbClothes": "Pakaian",
   "nbOpenNow": "Buka",
   "nbClosedNow": "Tutup",
-  "sosMessageNoLocation": "Saya perlukan bantuan! (Telefon saya tidak dapat mengesan lokasi saya.)"
+  "sosMessageNoLocation": "Saya perlukan bantuan! (Telefon saya tidak dapat mengesan lokasi saya.)",
+  "searchKicker": "CARI PENERBANGAN ANDA",
+  "searchCityHint": "Bandar atau lapangan terbang, cth. Kuala Lumpur",
+  "searchPlaceMissing": "Taip bandar atau lapangan terbang asal dan destinasi.",
+  "searchNearbyDays": "Harga sehari sekitar tarikh anda",
+  "searchNoExactDay": "Hari itu belum ada harga. Hari berdekatan ini ada: ketik satu.",
+  "searchCheapest": "Paling murah"
 }

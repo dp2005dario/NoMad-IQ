@@ -2320,5 +2320,11 @@
   "nbClothes": "Quần áo",
   "nbOpenNow": "Đang mở",
   "nbClosedNow": "Đã đóng",
-  "sosMessageNoLocation": "Tôi cần giúp đỡ! (Điện thoại không xác định được vị trí của tôi.)"
+  "sosMessageNoLocation": "Tôi cần giúp đỡ! (Điện thoại không xác định được vị trí của tôi.)",
+  "searchKicker": "TÌM CHUYẾN BAY",
+  "searchCityHint": "Thành phố hoặc sân bay, vd. Hà Nội",
+  "searchPlaceMissing": "Nhập thành phố hoặc sân bay đi và đến.",
+  "searchNearbyDays": "Giá theo ngày quanh ngày bạn chọn",
+  "searchNoExactDay": "Ngày đó chưa có giá. Những ngày gần đây có: chạm vào một ngày.",
+  "searchCheapest": "Rẻ nhất"
 }

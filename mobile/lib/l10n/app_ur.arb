@@ -2320,5 +2320,11 @@
   "nbClothes": "کپڑے",
   "nbOpenNow": "کھلا",
   "nbClosedNow": "بند",
-  "sosMessageNoLocation": "مجھے مدد چاہیے! (میرا فون میرا مقام معلوم نہیں کر سکا۔)"
+  "sosMessageNoLocation": "مجھے مدد چاہیے! (میرا فون میرا مقام معلوم نہیں کر سکا۔)",
+  "searchKicker": "اپنی پرواز تلاش کریں",
+  "searchCityHint": "شہر یا ہوائی اڈا، جیسے کراچی",
+  "searchPlaceMissing": "روانگی اور منزل کا شہر یا ہوائی اڈا لکھیں۔",
+  "searchNearbyDays": "آپ کی تاریخ کے قریب ہر دن کی قیمت",
+  "searchNoExactDay": "اُس دن کی ابھی قیمت نہیں۔ یہ قریبی دن ہیں: کسی ایک پر ٹیپ کریں۔",
+  "searchCheapest": "سب سے سستا"
 }

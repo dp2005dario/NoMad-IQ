@@ -2320,5 +2320,11 @@
   "nbClothes": "پوشاک",
   "nbOpenNow": "باز",
   "nbClosedNow": "بسته",
-  "sosMessageNoLocation": "به کمک نیاز دارم! (گوشی‌ام نتوانست موقعیتم را پیدا کند.)"
+  "sosMessageNoLocation": "به کمک نیاز دارم! (گوشی‌ام نتوانست موقعیتم را پیدا کند.)",
+  "searchKicker": "پروازت را پیدا کن",
+  "searchCityHint": "شهر یا فرودگاه، مثلاً تهران",
+  "searchPlaceMissing": "شهر یا فرودگاه مبدأ و مقصد را بنویس.",
+  "searchNearbyDays": "قیمت هر روز، نزدیک تاریخ تو",
+  "searchNoExactDay": "آن روز هنوز قیمت ندارد. این روزهای نزدیک دارند: یکی را بزن.",
+  "searchCheapest": "ارزان‌ترین"
 }

@@ -13,6 +13,7 @@
 // Los botones que llevan a otra pantalla (buscar, reservar, avisar, Vuelo
 // 3D, los cuadrados de "Planea tu viaje"...) los abre la app.
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -29,7 +30,11 @@ import '../home/home_screen.dart' show displayName;
 import '../route/flight3d.dart' show CountryCodes;
 import '../route/places_api.dart';
 import '../route/web_scene.dart';
+import '../map/geo.dart';
+import '../map/location.dart';
+import '../route/geo.dart';
 import '../route/world_data.dart';
+import 'airport_names.dart';
 import 'fares_api.dart';
 import 'flight_format.dart' show localeOf;
 import 'flights_page.dart';
@@ -41,6 +46,24 @@ const String defaultOrigin = 'MAD';
 /// Cuántos chollos van a la página (para la ganga a medida).
 const int maxDeals = 20;
 
+/// Primero lo que más ha bajado; a igual bajada, lo más barato. Y los cinco
+/// mejores se barajan cada vez: así el de arriba no es SIEMPRE el mismo
+/// (antes salía todos los días "Lisboa 27 €").
+List<Deal> sortDeals(List<Deal> deals, {bool shuffle = true, Random? random}) {
+  final List<Deal> out = List<Deal>.of(deals)
+    ..sort((Deal a, Deal b) {
+      final int byDrop = b.dropBasisPoints.compareTo(a.dropBasisPoints);
+      return byDrop != 0
+          ? byDrop
+          : a.fare.price.amountMinor.compareTo(b.fare.price.amountMinor);
+    });
+  if (!shuffle) return out;
+  final int top = out.length < 5 ? out.length : 5;
+  final List<Deal> best = out.sublist(0, top)..shuffle(random ?? Random());
+  out.setRange(0, top, best);
+  return out;
+}
+
 class FlightsScreen extends StatefulWidget {
   const FlightsScreen({super.key});
 
@@ -49,14 +72,20 @@ class FlightsScreen extends StatefulWidget {
   @visibleForTesting
   static WebSceneBridge? lastBridge;
 
+  /// Barajar los mejores chollos (los tests lo apagan para saber el orden).
+  @visibleForTesting
+  static bool shuffleDeals = true;
+
   @override
   State<FlightsScreen> createState() => _FlightsScreenState();
 }
 
 class _FlightsScreenState extends State<FlightsScreen> {
   late final AppServices _services = ServicesScope.of(context);
-  late final String _origin =
-      _services.prefs.readFlightOrigin() ?? defaultOrigin;
+
+  /// Tu aeropuerto: el que elegiste o, si nunca elegiste, el grande más
+  /// cerca de ti (con el GPS). Madrid solo si no se sabe dónde estás.
+  late String _origin = _services.prefs.readFlightOrigin() ?? defaultOrigin;
   final WebSceneBridge _bridge = FlightsScreen.lastBridge = WebSceneBridge();
   bool _started = false;
 
@@ -98,19 +127,23 @@ class _FlightsScreenState extends State<FlightsScreen> {
     } on Object {
       // Sin los datos de aeropuertos no hay ruta en el globo (el resto sí).
     }
+    if (_services.prefs.readFlightOrigin() == null) {
+      _origin = await _nearOrigin() ?? defaultOrigin;
+    }
     bool failed = false;
     List<Deal> deals = <Deal>[];
     List<Watch> watches = <Watch>[];
     bool guest = false;
     try {
       deals = await _services.fares.deals(_origin);
-      // Primero lo que más ha bajado; a igual bajada, lo más barato.
-      deals.sort((Deal a, Deal b) {
-        final int byDrop = b.dropBasisPoints.compareTo(a.dropBasisPoints);
-        return byDrop != 0
-            ? byDrop
-            : a.fare.price.amountMinor.compareTo(b.fare.price.amountMinor);
-      });
+      // Un aeropuerto pequeño sin chollos: los de Madrid, mejor que nada.
+      if (deals.isEmpty &&
+          _origin != defaultOrigin &&
+          _services.prefs.readFlightOrigin() == null) {
+        _origin = defaultOrigin;
+        deals = await _services.fares.deals(_origin);
+      }
+      deals = sortDeals(deals, shuffle: FlightsScreen.shuffleDeals);
     } on ApiException {
       failed = true;
     }
@@ -130,6 +163,26 @@ class _FlightsScreenState extends State<FlightsScreen> {
       _cards.clear();
       _html = flightsPageWith(_page!, _data(failed));
     });
+  }
+
+  /// El aeropuerto grande más cerca, si el GPS ya tiene permiso (aquí no
+  /// se pide: eso lo hace el mapa) y responde rápido.
+  Future<String?> _nearOrigin() async {
+    final Airports? positions = _airports;
+    if (positions == null) return null;
+    try {
+      final LocationSource gps = _services.location;
+      if (await gps.check() != LocationAccess.granted) return null;
+      final PositionFix? fix = await gps.current().timeout(
+        const Duration(seconds: 4),
+        onTimeout: () => null,
+      );
+      if (fix == null) return null;
+      final AirportNames names = await AirportNames.load();
+      return names.mainNear(positions, LatLon(fix.point.lat, fix.point.lon));
+    } on Object {
+      return null;
+    }
   }
 
   Map<String, Object?> _data(bool failed) {

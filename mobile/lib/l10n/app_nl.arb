@@ -2320,5 +2320,11 @@
   "nbClothes": "Kleding",
   "nbOpenNow": "Open",
   "nbClosedNow": "Gesloten",
-  "sosMessageNoLocation": "Ik heb hulp nodig! (Mijn telefoon kon mijn locatie niet bepalen.)"
+  "sosMessageNoLocation": "Ik heb hulp nodig! (Mijn telefoon kon mijn locatie niet bepalen.)",
+  "searchKicker": "VIND JE VLUCHT",
+  "searchCityHint": "Stad of luchthaven, bijv. Amsterdam",
+  "searchPlaceMissing": "Typ de stad of luchthaven van vertrek en bestemming.",
+  "searchNearbyDays": "Prijs per dag rond je datum",
+  "searchNoExactDay": "Voor die dag is nog geen prijs. Deze dagen ernaast wel: tik er een aan.",
+  "searchCheapest": "Goedkoopst"
 }

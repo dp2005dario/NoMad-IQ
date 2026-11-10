@@ -2320,5 +2320,11 @@
   "nbClothes": "衣料品",
   "nbOpenNow": "営業中",
   "nbClosedNow": "営業時間外",
-  "sosMessageNoLocation": "助けてください！（スマホで現在地を取得できませんでした）"
+  "sosMessageNoLocation": "助けてください！（スマホで現在地を取得できませんでした）",
+  "searchKicker": "フライトを探す",
+  "searchCityHint": "都市または空港（例：東京）",
+  "searchPlaceMissing": "出発地と目的地の都市または空港を入力してください。",
+  "searchNearbyDays": "選んだ日付前後の1日ごとの料金",
+  "searchNoExactDay": "その日の料金はまだありません。近くのこの日なら料金があります。タップしてください。",
+  "searchCheapest": "最安"
 }

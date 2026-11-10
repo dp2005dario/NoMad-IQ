@@ -2320,5 +2320,11 @@
   "nbClothes": "कपड़े",
   "nbOpenNow": "खुला",
   "nbClosedNow": "बंद",
-  "sosMessageNoLocation": "मुझे मदद चाहिए! (मेरा फ़ोन मेरी लोकेशन नहीं ढूँढ पाया।)"
+  "sosMessageNoLocation": "मुझे मदद चाहिए! (मेरा फ़ोन मेरी लोकेशन नहीं ढूँढ पाया।)",
+  "searchKicker": "अपनी फ़्लाइट खोजें",
+  "searchCityHint": "शहर या एयरपोर्ट, जैसे दिल्ली",
+  "searchPlaceMissing": "जाने और पहुँचने का शहर या एयरपोर्ट लिखें।",
+  "searchNearbyDays": "आपकी तारीख़ के आसपास हर दिन का दाम",
+  "searchNoExactDay": "उस दिन का अभी दाम नहीं है। इन पास के दिनों का है: किसी एक पर टैप करें।",
+  "searchCheapest": "सबसे सस्ता"
 }

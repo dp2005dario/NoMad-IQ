@@ -2320,5 +2320,11 @@
   "nbClothes": "Giyim",
   "nbOpenNow": "Açık",
   "nbClosedNow": "Kapalı",
-  "sosMessageNoLocation": "Yardıma ihtiyacım var! (Telefonum konumumu bulamadı.)"
+  "sosMessageNoLocation": "Yardıma ihtiyacım var! (Telefonum konumumu bulamadı.)",
+  "searchKicker": "UÇUŞUNU BUL",
+  "searchCityHint": "Şehir veya havalimanı, ör. İstanbul",
+  "searchPlaceMissing": "Kalkış ve varış şehrini veya havalimanını yaz.",
+  "searchNearbyDays": "Tarihine yakın günlerin fiyatı",
+  "searchNoExactDay": "O gün için henüz fiyat yok. Yakındaki bu günlerde var: birine dokun.",
+  "searchCheapest": "En ucuz"
 }

@@ -2320,5 +2320,11 @@
   "nbClothes": "옷",
   "nbOpenNow": "영업 중",
   "nbClosedNow": "영업 종료",
-  "sosMessageNoLocation": "도와주세요! (휴대폰이 제 위치를 찾지 못했어요.)"
+  "sosMessageNoLocation": "도와주세요! (휴대폰이 제 위치를 찾지 못했어요.)",
+  "searchKicker": "항공편 찾기",
+  "searchCityHint": "도시 또는 공항 (예: 서울)",
+  "searchPlaceMissing": "출발지와 도착지의 도시나 공항을 입력하세요.",
+  "searchNearbyDays": "선택한 날짜 주변의 날짜별 가격",
+  "searchNoExactDay": "그날은 아직 가격이 없어요. 가까운 이 날짜들은 있어요. 하나를 누르세요.",
+  "searchCheapest": "최저가"
 }

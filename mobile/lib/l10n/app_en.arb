@@ -11150,5 +11150,29 @@
   "sosMessageNoLocation": "I need help! (My phone couldn't get my location.)",
   "@sosMessageNoLocation": {
     "description": "SOS text when the phone could not get the location (never say 'I'm here' without a location)"
+  },
+  "searchKicker": "FIND YOUR FLIGHT",
+  "@searchKicker": {
+    "description": "Small title above the flight search form"
+  },
+  "searchCityHint": "City or airport, e.g. London",
+  "@searchCityHint": {
+    "description": "Hint in the origin/destination fields (type a city name, not a code)"
+  },
+  "searchPlaceMissing": "Type the city or airport you leave from and where you're going.",
+  "@searchPlaceMissing": {
+    "description": "Error: origin or destination not found"
+  },
+  "searchNearbyDays": "Price per day, around your date",
+  "@searchNearbyDays": {
+    "description": "Title of the row of cheapest prices on days near the chosen date"
+  },
+  "searchNoExactDay": "No price for that day yet. These nearby days do have one: tap one.",
+  "@searchNoExactDay": {
+    "description": "No price for the exact date, but nearby days have prices"
+  },
+  "searchCheapest": "Cheapest",
+  "@searchCheapest": {
+    "description": "Badge on the cheapest day"
   }
 }

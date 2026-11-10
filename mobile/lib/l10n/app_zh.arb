@@ -2320,5 +2320,11 @@
   "nbClothes": "服装",
   "nbOpenNow": "营业中",
   "nbClosedNow": "已关门",
-  "sosMessageNoLocation": "我需要帮助！（手机无法获取我的位置。）"
+  "sosMessageNoLocation": "我需要帮助！（手机无法获取我的位置。）",
+  "searchKicker": "查找航班",
+  "searchCityHint": "城市或机场，例如 北京",
+  "searchPlaceMissing": "请输入出发地和目的地的城市或机场。",
+  "searchNearbyDays": "你所选日期前后每天的价格",
+  "searchNoExactDay": "那天还没有价格。附近这些日子有：点一个试试。",
+  "searchCheapest": "最便宜"
 }

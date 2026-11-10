@@ -2320,5 +2320,11 @@
   "nbClothes": "Odzież",
   "nbOpenNow": "Otwarte",
   "nbClosedNow": "Zamknięte",
-  "sosMessageNoLocation": "Potrzebuję pomocy! (Mój telefon nie mógł ustalić mojej lokalizacji.)"
+  "sosMessageNoLocation": "Potrzebuję pomocy! (Mój telefon nie mógł ustalić mojej lokalizacji.)",
+  "searchKicker": "ZNAJDŹ SWÓJ LOT",
+  "searchCityHint": "Miasto lub lotnisko, np. Warszawa",
+  "searchPlaceMissing": "Wpisz miasto lub lotnisko wylotu i celu.",
+  "searchNearbyDays": "Cena za dzień wokół twojej daty",
+  "searchNoExactDay": "Ten dzień nie ma jeszcze ceny. Te pobliskie dni mają: dotknij jednego.",
+  "searchCheapest": "Najtaniej"
 }

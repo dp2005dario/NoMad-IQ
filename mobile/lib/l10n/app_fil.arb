@@ -2320,5 +2320,11 @@
   "nbClothes": "Damit",
   "nbOpenNow": "Bukas",
   "nbClosedNow": "Sarado",
-  "sosMessageNoLocation": "Kailangan ko ng tulong! (Hindi makuha ng phone ko ang lokasyon ko.)"
+  "sosMessageNoLocation": "Kailangan ko ng tulong! (Hindi makuha ng phone ko ang lokasyon ko.)",
+  "searchKicker": "HANAPIN ANG FLIGHT MO",
+  "searchCityHint": "Lungsod o airport, hal. Manila",
+  "searchPlaceMissing": "Isulat ang lungsod o airport na aalisan at pupuntahan.",
+  "searchNearbyDays": "Presyo kada araw malapit sa petsa mo",
+  "searchNoExactDay": "Wala pang presyo sa araw na iyon. Mayroon ang mga kalapit na araw na ito: pindutin ang isa.",
+  "searchCheapest": "Pinakamura"
 }

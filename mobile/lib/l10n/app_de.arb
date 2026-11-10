@@ -2320,5 +2320,11 @@
   "nbClothes": "Kleidung",
   "nbOpenNow": "Geöffnet",
   "nbClosedNow": "Geschlossen",
-  "sosMessageNoLocation": "Ich brauche Hilfe! (Mein Handy konnte meinen Standort nicht ermitteln.)"
+  "sosMessageNoLocation": "Ich brauche Hilfe! (Mein Handy konnte meinen Standort nicht ermitteln.)",
+  "searchKicker": "FINDE DEINEN FLUG",
+  "searchCityHint": "Stadt oder Flughafen, z. B. Berlin",
+  "searchPlaceMissing": "Gib Stadt oder Flughafen für Abflug und Ziel ein.",
+  "searchNearbyDays": "Preis pro Tag rund um dein Datum",
+  "searchNoExactDay": "Für diesen Tag gibt es noch keinen Preis. Diese Tage in der Nähe schon: tippe einen an.",
+  "searchCheapest": "Am günstigsten"
 }

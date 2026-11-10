@@ -2320,5 +2320,11 @@
   "nbClothes": "Abbigliamento",
   "nbOpenNow": "Aperto",
   "nbClosedNow": "Chiuso",
-  "sosMessageNoLocation": "Ho bisogno di aiuto! (Il mio telefono non è riuscito a trovare la mia posizione.)"
+  "sosMessageNoLocation": "Ho bisogno di aiuto! (Il mio telefono non è riuscito a trovare la mia posizione.)",
+  "searchKicker": "TROVA IL TUO VOLO",
+  "searchCityHint": "Città o aeroporto, es. Roma",
+  "searchPlaceMissing": "Scrivi la città o l'aeroporto di partenza e di arrivo.",
+  "searchNearbyDays": "Prezzo al giorno, vicino alla tua data",
+  "searchNoExactDay": "Quel giorno non ha ancora un prezzo. Questi giorni vicini sì: toccane uno.",
+  "searchCheapest": "Il più economico"
 }

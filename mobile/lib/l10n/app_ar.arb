@@ -2320,5 +2320,11 @@
   "nbClothes": "ملابس",
   "nbOpenNow": "مفتوح",
   "nbClosedNow": "مغلق",
-  "sosMessageNoLocation": "أحتاج إلى مساعدة! (لم يتمكن هاتفي من تحديد موقعي.)"
+  "sosMessageNoLocation": "أحتاج إلى مساعدة! (لم يتمكن هاتفي من تحديد موقعي.)",
+  "searchKicker": "ابحث عن رحلتك",
+  "searchCityHint": "مدينة أو مطار، مثل دبي",
+  "searchPlaceMissing": "اكتب مدينة أو مطار المغادرة والوجهة.",
+  "searchNearbyDays": "السعر لكل يوم قرب تاريخك",
+  "searchNoExactDay": "لا يوجد سعر لذلك اليوم بعد. هذه الأيام القريبة لها سعر: اضغط على أحدها.",
+  "searchCheapest": "الأرخص"
 }
