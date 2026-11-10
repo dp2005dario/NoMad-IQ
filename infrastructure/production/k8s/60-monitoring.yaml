@@ -279,6 +279,7 @@ spec:
       labels: {app: alertmanager}
     spec:
       automountServiceAccountToken: false
+      enableServiceLinks: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534

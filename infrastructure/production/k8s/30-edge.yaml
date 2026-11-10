@@ -45,6 +45,7 @@ spec:
       labels: {app: edge}
     spec:
       automountServiceAccountToken: false
+      enableServiceLinks: false
       securityContext:
         runAsNonRoot: true
         runAsUser: 65532
