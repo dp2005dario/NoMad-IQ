@@ -41,7 +41,12 @@ spec:
               command:
                 - sh
                 - -c
-                - pg_dump -Fc -f "/backup/nomadiq-$(date -u +%Y%m%dT%H%M%SZ).dump"
+                # Espera hasta 2 minutos a poder conectar: el permiso de red
+                # (NetworkPolicy) de un pod recién creado tarda unos segundos
+                # en aplicarse, y sin esperar la conexión sale "rechazada".
+                - >-
+                  for i in $(seq 1 60); do pg_isready -q && break; sleep 2; done;
+                  pg_dump -Fc -f "/backup/nomadiq-$(date -u +%Y%m%dT%H%M%SZ).dump"
               env:
                 - {name: PGHOST, value: postgres}
                 - {name: PGUSER, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: POSTGRES_USER}}}
