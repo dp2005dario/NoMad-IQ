@@ -72,9 +72,10 @@ Puedes cambiar las opciones al crear el servidor, poniéndolas delante de
 
 1. Arriba a la derecha del portal, pulsa el icono **>_**.
 2. Elige **Bash**.
-3. Si pregunta por almacenamiento, elige **Montar una cuenta de
-   almacenamiento** y deja que la cree (cuesta céntimos). Así la llave para
-   entrar al servidor no se pierde cuando cierras la consola.
+3. Si pregunta por almacenamiento, elige **No se requiere cuenta de
+   almacenamiento** (o "Montar" si te deja). Las cuentas de estudiante a
+   veces no dejan crearla en la región que propone: no pasa nada, el script
+   se apaña sin ella.
 
 Se abre una terminal abajo. Ahí vas a pegar órdenes: clic derecho → Pegar
 (o Ctrl+Shift+V).
@@ -85,13 +86,18 @@ Pega esto y pulsa Enter:
 
 ```bash
 git clone https://github.com/dp2005dario/NoMad-IQ.git
-bash NoMad-IQ/infrastructure/azure/crear-servidor.sh
+APAGAR=no AVISO_EUR=70 bash NoMad-IQ/infrastructure/azure/crear-servidor.sh
 ```
+
+(`APAGAR=no` la deja siempre encendida, para que otros puedan usar la app;
+`AVISO_EUR=70` te avisa por correo al acercarte a 70 € en un mes. Si es solo
+para ti, quita las dos cosas y se apagará cada noche para ahorrar.)
 
 Tarda **15-25 minutos** y va poniendo puntos mientras espera. Deja la
 pestaña abierta (la Cloud Shell se cierra tras 20 minutos sin que toques
 nada: si ves que lleva rato, pulsa una flecha del teclado de vez en cuando).
-Si se cortara, vuelve a pegar la segunda orden: sigue donde iba. El script:
+Si se cortara, vuelve a pegar las dos órdenes: sigue donde iba (si la
+primera dice que la carpeta ya existe, no pasa nada). El script:
 
 1. Activa los servicios de Azure que hacen falta.
 2. Crea el grupo **eclipta-rg** (todo va dentro: si algún día quieres
@@ -104,13 +110,9 @@ Si se cortara, vuelve a pegar la segunda orden: sigue donde iba. El script:
 
 Al final te enseña la **dirección de tu servidor**. Apúntala.
 
-Si sale **"Azure no ha dejado crear la máquina"**: en esa región no hay ese
-tamaño para tu cuenta. Borra lo creado y prueba otra región:
-
-```bash
-az group delete -n eclipta-rg --yes
-REGION=northeurope bash NoMad-IQ/infrastructure/azure/crear-servidor.sh
-```
+El script mira solo qué **regiones** deja usar tu suscripción (las de
+estudiante tienen una lista cerrada) y elige la más cercana a España que
+tenga la máquina. Si dice que no encuentra ninguna, mándame una captura.
 
 ## Paso 4: poner tus claves (sin que pasen por ningún chat)
 

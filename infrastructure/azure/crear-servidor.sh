@@ -25,7 +25,9 @@
 #
 # Opciones (se ponen delante de "bash"), por ejemplo:
 #   REGION=northeurope bash NoMad-IQ/infrastructure/azure/crear-servidor.sh
-#   REGION     región de Azure (por defecto westeurope = Países Bajos).
+#   REGION     región de Azure. Si no la pones, el script mira qué regiones
+#              deja usar tu suscripción (las de estudiante tienen una lista
+#              cerrada) y elige la más cercana a España que tenga la máquina.
 #   SIZE       tamaño de la máquina (por defecto Standard_B2as_v2: 2 núcleos
 #              y 8 GB, sin la IA local). Con Standard_B4as_v2 (16 GB) se
 #              enciende también la IA de Flyra, pero cuesta el doble.
@@ -42,7 +44,7 @@
 # =============================================================================
 set -euo pipefail
 
-REGION="${REGION:-westeurope}"
+REGION_PEDIDA="${REGION:-}"
 SIZE="${SIZE:-Standard_B2as_v2}"
 RG=eclipta-rg
 VM=eclipta
@@ -68,29 +70,22 @@ fi
 SUB_NAME="$(az account show --query name -o tsv)"
 EMAIL="$(az account show --query user.name -o tsv)"
 echo "Suscripción: $SUB_NAME"
-echo "Región: $REGION · Máquina: $SIZE"
-
-# Lo que cuesta la máquina, con el precio oficial de Azure de hoy (su lista
-# pública de precios). Más disco (~5 €/mes) e IP fija (~3 €/mes).
-HOUR="$(curl -fsS --max-time 20 "https://prices.azure.com/api/retail/prices?currencyCode=EUR&\$filter=serviceName%20eq%20'Virtual%20Machines'%20and%20armRegionName%20eq%20'$REGION'%20and%20armSkuName%20eq%20'$SIZE'%20and%20priceType%20eq%20'Consumption'" 2>/dev/null \
-  | python3 -c "import json,sys; it=[i for i in json.load(sys.stdin)['Items'] if 'Windows' not in i['productName'] and 'Spot' not in i['skuName'] and 'Low Priority' not in i['skuName']]; print(min(i['retailPrice'] for i in it) if it else '')" 2>/dev/null || true)"
-if [ -n "$HOUR" ]; then
-  python3 - "$HOUR" <<'PY'
-import sys
-h = float(sys.argv[1])
-print(f"Precio de la máquina: {h:.3f} € por hora encendida.")
-print(f"  Encendida siempre: ~{h * 730 + 8:.0f} €/mes (con disco e IP).")
-print(f"  Encendida 8 h al día: ~{h * 8 * 30.4 + 8:.0f} €/mes (con disco e IP).")
-PY
-else
-  echo "(No he podido leer el precio de hoy: mira https://azure.microsoft.com/pricing/calculator/)"
-fi
+echo "Máquina: $SIZE"
 
 # Los nombres con letras al azar se guardan para que, si se vuelve a
 # ejecutar, use los mismos (no crea un segundo servidor).
 if [ -f "$STATE" ]; then
   # shellcheck disable=SC1090
   . "$STATE"
+fi
+# Si la Cloud Shell se ha borrado (por ejemplo, abierta sin almacenamiento),
+# se recuperan los nombres de lo que ya está creado en Azure.
+if [ -z "${SUFFIX:-}" ] && az group show -n "$RG" >/dev/null 2>&1; then
+  OLD="$(az storage account list -g "$RG" --query "[?starts_with(name, 'eclipta')].name | [0]" -o tsv 2>/dev/null || true)"
+  if [ -n "$OLD" ]; then
+    SUFFIX="${OLD#eclipta}"
+    echo "SUFFIX=$SUFFIX" > "$STATE"
+  fi
 fi
 if [ -z "${SUFFIX:-}" ]; then
   SUFFIX="$(tr -dc 'a-z0-9' </dev/urandom | head -c 6)"
@@ -112,15 +107,98 @@ for ns in Microsoft.Compute Microsoft.Network Microsoft.Storage; do
   az provider register --namespace "$ns" --wait >/dev/null
 done
 
-paso "2/6 Grupo de recursos"
-az group create -n "$RG" -l "$REGION" -o none
-
-paso "3/6 Almacén para las copias de seguridad"
-if ! az storage account show -n "$STORAGE" -g "$RG" >/dev/null 2>&1; then
-  az storage account create -n "$STORAGE" -g "$RG" -l "$REGION" \
-    --sku Standard_LRS --kind StorageV2 --https-only true \
-    --min-tls-version TLS1_2 --allow-blob-public-access false -o none
+paso "2/6 Buscando una región que tu suscripción permita"
+# Regiones por cercanía a España. Se cruzan con las que deja la política de
+# tu suscripción (las de estudiante solo permiten unas pocas).
+CERCANAS="spaincentral francecentral westeurope northeurope germanywestcentral \
+switzerlandnorth italynorth uksouth swedencentral polandcentral norwayeast \
+eastus eastus2 centralus westus2 westus3 canadacentral southcentralus"
+PERMITIDAS="$(az policy assignment list --disable-scope-strict-match -o json 2>/dev/null \
+  | python3 -c '
+import json, sys
+out = []
+try:
+    for a in json.load(sys.stdin):
+        for k, v in (a.get("parameters") or {}).items():
+            val = v.get("value") if isinstance(v, dict) else None
+            if "location" in k.lower() and isinstance(val, list):
+                out += [x.lower() for x in val if isinstance(x, str)]
+except Exception:
+    pass
+print(" ".join(dict.fromkeys(out)))
+' 2>/dev/null || true)"
+if [ -n "$PERMITIDAS" ]; then
+  echo "Tu suscripción deja usar: $PERMITIDAS"
 fi
+if [ -n "$REGION_PEDIDA" ]; then
+  CANDIDATAS="$REGION_PEDIDA"
+elif [ -n "$PERMITIDAS" ]; then
+  CANDIDATAS="$(for r in $CERCANAS; do case " $PERMITIDAS " in *" $r "*) printf "%s " "$r" ;; esac; done)"
+  for r in $PERMITIDAS; do
+    case " $CANDIDATAS " in *" $r "*) ;; *) CANDIDATAS="$CANDIDATAS $r" ;; esac
+  done
+else
+  CANDIDATAS="$CERCANAS"
+fi
+# Si ya existe la máquina, se sigue en su región.
+if az vm show -g "$RG" -n "$VM" >/dev/null 2>&1; then
+  CANDIDATAS="$(az vm show -g "$RG" -n "$VM" --query location -o tsv)"
+fi
+
+# ¿Hay máquinas de este tamaño para tu cuenta en esa región?
+hay_maquina() {
+  [ -n "$(az vm list-skus -l "$1" --size "$SIZE" --resource-type virtualMachines \
+    --query "[?name=='$SIZE' && length(restrictions)==\`0\`].name" -o tsv 2>/dev/null)" ]
+}
+
+paso "3/6 Grupo de recursos y almacén para las copias de seguridad"
+REGION=""
+for r in $CANDIDATAS; do
+  printf 'Probando %s... ' "$r"
+  if ! hay_maquina "$r"; then
+    echo "no hay máquinas $SIZE para tu cuenta."
+    continue
+  fi
+  if ! az group show -n "$RG" >/dev/null 2>&1; then
+    if ! az group create -n "$RG" -l "$r" -o none 2>/dev/null; then
+      echo "Azure no deja usarla."
+      continue
+    fi
+  fi
+  if az storage account show -n "$STORAGE" -g "$RG" >/dev/null 2>&1 \
+    || az storage account create -n "$STORAGE" -g "$RG" -l "$r" \
+      --sku Standard_LRS --kind StorageV2 --https-only true \
+      --min-tls-version TLS1_2 --allow-blob-public-access false -o none 2>/dev/null; then
+    REGION="$r"
+    echo "vale."
+    break
+  fi
+  echo "Azure no deja usarla."
+done
+if [ -z "$REGION" ]; then
+  echo >&2
+  echo "No he encontrado ninguna región donde tu suscripción deje crear el" >&2
+  echo "servidor. Mándame una captura de esto y lo vemos." >&2
+  exit 1
+fi
+echo "Región elegida: $REGION"
+
+# Lo que cuesta la máquina, con el precio oficial de Azure de hoy (su lista
+# pública de precios). Más disco (~5 €/mes) e IP fija (~3 €/mes).
+HOUR="$(curl -fsS --max-time 20 "https://prices.azure.com/api/retail/prices?currencyCode=EUR&\$filter=serviceName%20eq%20'Virtual%20Machines'%20and%20armRegionName%20eq%20'$REGION'%20and%20armSkuName%20eq%20'$SIZE'%20and%20priceType%20eq%20'Consumption'" 2>/dev/null \
+  | python3 -c "import json,sys; it=[i for i in json.load(sys.stdin)['Items'] if 'Windows' not in i['productName'] and 'Spot' not in i['skuName'] and 'Low Priority' not in i['skuName']]; print(min(i['retailPrice'] for i in it) if it else '')" 2>/dev/null || true)"
+if [ -n "$HOUR" ]; then
+  python3 - "$HOUR" <<'PY'
+import sys
+h = float(sys.argv[1])
+print(f"Precio de la máquina: {h:.3f} € por hora encendida.")
+print(f"  Encendida siempre: ~{h * 730 + 8:.0f} €/mes (con disco e IP).")
+print(f"  Encendida 8 h al día: ~{h * 8 * 30.4 + 8:.0f} €/mes (con disco e IP).")
+PY
+else
+  echo "(No he podido leer el precio de hoy: mira https://azure.microsoft.com/pricing/calculator/)"
+fi
+
 STORAGE_KEY="$(az storage account keys list -n "$STORAGE" -g "$RG" --query '[0].value' -o tsv)"
 az storage container create -n "$CONTAINER" --account-name "$STORAGE" \
   --account-key "$STORAGE_KEY" --public-access off -o none
@@ -142,19 +220,25 @@ EOF
     --os-disk-size-gb 64 --storage-sku StandardSSD_LRS \
     --custom-data "$INIT" -o none; then
     echo >&2
-    echo "Azure no ha dejado crear la máquina. Suele ser porque en esa región" >&2
-    echo "no hay ese tamaño para tu cuenta. Prueba otra región, por ejemplo:" >&2
-    echo "  REGION=northeurope bash $0" >&2
-    echo "  REGION=francecentral bash $0" >&2
-    echo "  REGION=swedencentral bash $0" >&2
-    echo "(antes borra el grupo a medio hacer: az group delete -n $RG --yes)" >&2
-    rm -f "$INIT" "$STATE"
+    echo "Azure no ha dejado crear la máquina en $REGION (a veces se queda sin" >&2
+    echo "máquinas libres). Prueba otra región de las permitidas, por ejemplo:" >&2
+    echo "  REGION=<otra-región> bash $0" >&2
+    rm -f "$INIT"
     exit 1
   fi
   rm -f "$INIT"
   # Puertas web: 80 (Let's Encrypt y redirigir) y 443 (https).
   az vm open-port -g "$RG" -n "$VM" --port 80 --priority 1010 -o none
   az vm open-port -g "$RG" -n "$VM" --port 443 --priority 1020 -o none
+else
+  # La máquina ya existía: si esta Cloud Shell es nueva, su llave no vale
+  # para entrar. Se añade la llave de esta consola a la máquina.
+  if [ ! -f "$HOME/.ssh/id_rsa" ]; then
+    mkdir -p "$HOME/.ssh"
+    ssh-keygen -q -t rsa -b 4096 -N '' -f "$HOME/.ssh/id_rsa"
+  fi
+  az vm user update -g "$RG" -n "$VM" -u "$USER_NAME" \
+    --ssh-key-value "$(cat "$HOME/.ssh/id_rsa.pub")" -o none
 fi
 # Apagado automático cada día (gratis; Azure avisa por correo 30 min antes).
 if [ "$APAGAR" != no ]; then
