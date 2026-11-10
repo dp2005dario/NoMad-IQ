@@ -191,9 +191,13 @@ class Settings(BaseSettings):
     # El buscador Overpass. Se puede cambiar por otro espejo o uno propio.
     overpass_url: str = "https://overpass-api.de/api/interpreter"
     # Espejos de respaldo, separados por comas: se prueban en orden si el
-    # principal falla (502, timeout...). Por defecto, el espejo de private.coffee,
-    # listado en la wiki de OpenStreetMap (vacío = sin respaldo).
-    overpass_fallback_urls: str = "https://overpass.private.coffee/api/interpreter"
+    # principal falla (502, timeout...). Por defecto, los espejos públicos que
+    # lista la wiki de OpenStreetMap (vacío = sin respaldo).
+    overpass_fallback_urls: str = (
+        "https://overpass.private.coffee/api/interpreter,"
+        "https://overpass.kumi.systems/api/interpreter,"
+        "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
+    )
     # Cuánto se conserva una casilla DESPUÉS de caducar, solo para servirla si Overpass falla.
     overpass_stale_seconds: int = Field(default=30 * 24 * 3600, ge=0, le=180 * 24 * 3600)
     # Su norma de uso justo: muy pocas peticiones por segundo (por copia).

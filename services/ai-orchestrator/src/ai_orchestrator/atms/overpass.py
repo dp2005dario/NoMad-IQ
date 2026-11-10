@@ -31,6 +31,9 @@ _CURRENCY = re.compile(r"^currency:([A-Z]{3})$")
 RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
 # Pausa corta antes de repetir un servidor que falló rápido.
 RETRY_PAUSE_SECONDS = 0.5
+# Si un servidor no contesta en estos segundos, se pregunta también al
+# siguiente espejo a la vez (y gana el primero que responda).
+HEDGE_SECONDS = 6.0
 
 
 class OverpassBusyError(Exception):
@@ -52,48 +55,81 @@ async def post_query(
     query: str,
     *,
     retry_pause: float = RETRY_PAUSE_SECONDS,
+    hedge_after: float = HEDGE_SECONDS,
 ) -> httpx.Response:
-    """Manda la consulta a los servidores Overpass, en orden, hasta que uno responda.
+    """Manda la consulta a los servidores Overpass hasta que uno responda.
 
-    Funciona en dos pasadas:
+    Los servidores públicos van muchas veces saturados (502, o tardan más de
+    20 s). Para que la app no se quede esperando:
 
-    1. Se prueba cada servidor una vez. Si uno falla de forma pasajera (error
-       de red, 429, 5xx) se pasa al siguiente.
-    2. Los que fallaron *rápido* se repiten una vez tras una pausa corta. Los
-       que se agotaron por tiempo (timeout) NO se repiten: ya habrían gastado
-       otros 25 s y la app está esperando.
+    1. Se pregunta al primero. Si falla, se pasa al siguiente al momento. Si
+       en ``hedge_after`` segundos aún no ha contestado, se pregunta TAMBIÉN
+       al siguiente (sin cortar al primero): gana el primero que responda
+       bien y los demás se cancelan. Así se espera lo que tarde el más rápido.
+    2. Los que fallaron *rápido* (error de red, 429, 5xx) se repiten una vez
+       tras una pausa corta. Los que se agotaron por tiempo no se repiten.
 
     Si todos fallan devuelve la última respuesta HTTP (para que quien llama
     decida si era "ocupado" o "error"), o lanza ``OverpassError`` si lo
     último fue un fallo de red.
     """
-    pending = list(urls)
     last_resp: httpx.Response | None = None
     last_error: str | None = None
+
+    async def ask(url: str) -> httpx.Response | Exception:
+        try:
+            return await http.post(
+                url,
+                data={"data": query},
+                headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
+            )
+        except httpx.HTTPError as exc:
+            return exc
+
+    pending = list(urls)
     for round_number in range(2):
         retry: list[str] = []
-        for url in pending:
-            try:
-                resp = await http.post(
-                    url,
-                    data={"data": query},
-                    headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
+        running: dict[asyncio.Task[httpx.Response | Exception], str] = {}
+        queue = list(pending)
+
+        def start_next(
+            queue: list[str] = queue,
+            running: dict[asyncio.Task[httpx.Response | Exception], str] = running,
+        ) -> None:
+            if queue:
+                url = queue.pop(0)
+                running[asyncio.ensure_future(ask(url))] = url
+
+        start_next()
+        try:
+            while running:
+                done, _ = await asyncio.wait(
+                    running, timeout=hedge_after, return_when=asyncio.FIRST_COMPLETED
                 )
-            except httpx.TimeoutException as exc:
-                # Solo el tipo de error: el mensaje podría llevar la zona.
-                last_resp, last_error = None, f"{type(exc).__name__} al llamar a Overpass"
-                continue  # lento: no se repite
-            except httpx.HTTPError as exc:
-                last_resp, last_error = None, f"{type(exc).__name__} al llamar a Overpass"
-                retry.append(url)
-                continue
-            if resp.status_code not in RETRYABLE_STATUS:
-                return resp  # éxito (o un error nuestro que no se arregla cambiando de servidor)
-            last_resp, last_error = resp, None
-            retry.append(url)
+                if not done:
+                    start_next()  # el que va tarda: se pregunta también al siguiente
+                    continue
+                for task in done:
+                    url = running.pop(task)
+                    outcome = task.result()
+                    if isinstance(outcome, httpx.TimeoutException):
+                        # Solo el tipo de error: el mensaje podría llevar la zona.
+                        last_resp, last_error = None, f"{type(outcome).__name__} al llamar a Overpass"
+                    elif isinstance(outcome, Exception):
+                        last_resp, last_error = None, f"{type(outcome).__name__} al llamar a Overpass"
+                        retry.append(url)
+                    elif outcome.status_code not in RETRYABLE_STATUS:
+                        return outcome  # éxito (o un error nuestro que otro servidor repetiría)
+                    else:
+                        last_resp, last_error = outcome, None
+                        retry.append(url)
+                    start_next()  # falló: al siguiente sin esperar
+        finally:
+            for task in running:
+                task.cancel()
         if round_number == 0 and retry:
             await asyncio.sleep(retry_pause)
-        pending = retry
+        pending = [u for u in urls if u in retry]
         if not pending:
             break
     if last_resp is not None:
