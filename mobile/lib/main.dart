@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:camera/camera.dart' show ResolutionPreset;
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:maplibre_gl/maplibre_gl.dart' show MapLibreMap;
 import 'package:just_audio_background/just_audio_background.dart';
 
@@ -47,7 +48,13 @@ import 'features/route/data_licenses.dart';
 import 'features/route/web_scene.dart';
 import 'features/welcome/welcome_video.dart';
 
-Future<void> main() async {
+Future<void> main() => startApp();
+
+/// Arranca la app. [router] (solo para la prueba con capturas, ver
+/// lib/tour_main.dart) da otro router; sin él, el de siempre.
+Future<void> startApp({
+  GoRouter Function(SessionController session)? router,
+}) async {
   // Necesario antes de usar plugins (como el almacenamiento) en main().
   WidgetsFlutterBinding.ensureInitialized();
   // El mapa se dibuja en un TextureView: así se comporta como cualquier otro
@@ -174,6 +181,7 @@ Future<void> main() async {
       settings: SettingsController(store),
       session: session,
       services: services,
+      router: router?.call(session),
     ),
   );
 }

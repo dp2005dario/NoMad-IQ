@@ -16,6 +16,10 @@
 #
 # Los aeropuertos del buscador van dentro de la página (sin Internet), de
 # assets/geo (OpenFlights, licencia ODbL; ver assets/geo/LEEME.md).
+#
+# OJO (11-11-2026): por la lista de errores de DARIO se cambió el HTML de la
+# página directamente en assets/ (no en este script). Si se vuelve a crear
+# desde la maqueta, hay que repetir esos cambios: ver `git log` del asset.
 import base64
 import json
 import os

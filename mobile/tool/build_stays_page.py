@@ -9,6 +9,10 @@
 #     tren o metro con alojamientos), a su distancia y dirección reales;
 #   - los precios: los que TÚ apuntas después de verlos en Booking. La app no
 #     se inventa ninguno: sin precio, el pin enseña cuántos alojamientos hay.
+#
+# OJO (11-11-2026): por la lista de errores de DARIO se cambió el HTML de la
+# página directamente en assets/ (no en este script). Si se vuelve a crear
+# desde la maqueta, hay que repetir esos cambios: ver `git log` del asset.
 import sys
 
 src, dst = sys.argv[1], sys.argv[2]
