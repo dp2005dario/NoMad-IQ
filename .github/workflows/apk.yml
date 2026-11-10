@@ -34,6 +34,9 @@ permissions:
 env:
   # La dirección del servidor de Azure (no es un secreto: es pública).
   SERVIDOR: https://eclipta-qlk7qx.denmarkeast.cloudapp.azure.com
+  # "Continuar con Google": el ID de cliente WEB de Google Cloud (no es un
+  # secreto; el mismo que GOOGLE_CLIENT_ID en config.env del servidor).
+  GOOGLE_CLIENT_ID: 668367557673-et1a2d6a29dvnaf3sqctplelr4a44rom.apps.googleusercontent.com
 
 jobs:
   apk:
@@ -65,7 +68,8 @@ jobs:
             *) echo "La dirección tiene que empezar por https://" >&2; exit 1 ;;
           esac
           echo "Servidor: $URL"
-          flutter build apk --release --dart-define=NOMADIQ_API_URL="$URL"
+          flutter build apk --release --dart-define=NOMADIQ_API_URL="$URL" \
+            --dart-define=NOMADIQ_GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID"
       - name: Subir APK
         uses: actions/upload-artifact@v4
         with:
