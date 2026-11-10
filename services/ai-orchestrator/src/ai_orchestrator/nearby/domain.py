@@ -15,9 +15,12 @@ __all__ = ["ATTRIBUTION", "CELL_DEGREES", "LICENSE_URL", "Nearby", "NearbySpot",
 # restaurante que según OSM acepta reservas (para "Colas": mesa para cenar).
 # Para "Viajo con mi perro": vet = veterinario · dog_park = parque para
 # perros · pet_stay = alojamiento que en OSM dice que admite perros.
+# shop = tiendas, bares, súper, farmacias, cajeros... (todo lo que sale en
+# un mapa normal); su "sub" dice el grupo: food, grocery, pharmacy, money,
+# fun o shop.
 # place = la ciudad, el distrito o el barrio donde cae la zona (su nombre).
 SpotKind = Literal[
-    "water", "toilets", "wifi", "charging", "sight", "table", "vet", "dog_park", "pet_stay", "place"
+    "water", "toilets", "wifi", "charging", "sight", "table", "vet", "dog_park", "pet_stay", "shop", "place"
 ]
 
 

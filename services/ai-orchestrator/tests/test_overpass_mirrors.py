@@ -121,7 +121,7 @@ async def test_redis_cache_keeps_stale_copy_after_fresh_mark_expires() -> None:
     redis: Any = FakeRedis()
     cache = RedisNearbyCache(redis, stale_seconds=1000)
     await cache.put(Nearby(lat=40.4, lon=-3.7, spots=[]), ttl_seconds=100)
-    key = "ai:nearby:v2:40.40:-3.70"
+    key = "ai:nearby:v3:40.40:-3.70"
     assert redis.ttl[key] == 1100 and redis.ttl[f"{key}:fresh"] == 100
     assert await cache.get(40.4, -3.7) is not None
     del redis.data[f"{key}:fresh"]  # la marca caduca

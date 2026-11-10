@@ -21,7 +21,7 @@ from ai_orchestrator.stale_cache import DEFAULT_STALE_SECONDS, read, write
 log = logging.getLogger(__name__)
 
 # v2: ahora también trae restaurantes con reserva (las fichas v1 no).
-KEY_PREFIX = "ai:nearby:v2"
+KEY_PREFIX = "ai:nearby:v3"
 
 
 class NearbySource(Protocol):
