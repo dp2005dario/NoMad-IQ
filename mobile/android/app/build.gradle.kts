@@ -56,6 +56,12 @@ android {
 
     buildTypes {
         release {
+            // Reglas extra para R8 (ver proguard-rules.pro): protegen el
+            // inicio de sesión con Google en la APK final.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
             signingConfig = if (hasUploadKey) {
                 signingConfigs.getByName("upload")
             } else {

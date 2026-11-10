@@ -5,6 +5,7 @@
 // se ve un fondo oscuro liso y todo lo demás funciona igual.
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../auth/auth_api.dart';
 import '../../auth/google_id_token.dart';
@@ -51,10 +52,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       _say(switch (e.error) {
         AuthError.network => t.errorNetwork,
         AuthError.unavailable => t.googleUnavailable, // 503: sin Google
-        _ => t.googleFailed,
+        // El código entre paréntesis (p. ej. "invalidCredentials") dice
+        // QUÉ falló, para poder arreglarlo sin un ordenador conectado.
+        _ => '${t.googleFailed} (${e.error.name})',
       });
-    } on Object {
-      if (mounted) _say(t.googleFailed);
+    } on GoogleSignInException catch (e) {
+      // Fallo en el propio móvil (Google): enseña el código y el detalle.
+      if (mounted) {
+        _say('${t.googleFailed} (${e.code.name}: ${e.description ?? ''})');
+      }
+    } on Object catch (e) {
+      if (mounted) _say('${t.googleFailed} (${e.runtimeType})');
     } finally {
       if (mounted) setState(() => _googleBusy = false);
     }
