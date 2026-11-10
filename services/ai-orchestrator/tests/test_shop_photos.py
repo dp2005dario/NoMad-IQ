@@ -10,9 +10,10 @@ from conftest import InMemoryStore
 from pydantic import SecretStr
 
 from ai_orchestrator.api import create_api
+from ai_orchestrator.geocode.api import GoogleFirstGeocoder, Place
 from ai_orchestrator.places.wikimedia import RateLimiter
 from ai_orchestrator.shop_photos.domain import ShopPhoto
-from ai_orchestrator.shop_photos.google import GooglePlacesClient, first_photo
+from ai_orchestrator.shop_photos.google import FIND_FIELDS, GooglePlacesClient, first_photo
 from ai_orchestrator.shop_photos.service import ShopPhotoService, ShopPhotoSettings
 
 KEY = "AIzaSyTEST_key-0123456789abcdef"
@@ -143,3 +144,57 @@ async def test_api_validates_and_says_busy() -> None:
         fake.status = 429
         busy = await c.get("/v1/nearby/photo", params={**ok, "id": "n99"})
     assert busy.status_code == 503 and busy.headers["retry-after"] == "60"
+
+
+class FakeNominatim:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def search(self, query: str, near: tuple[float, float] | None) -> list[Place]:
+        self.calls += 1
+        return [Place(name="OSM", address="OSM, Madrid", lat=40.0, lon=-3.0)]
+
+
+def google_finder(handler: Any) -> GooglePlacesClient:
+    http = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    return GooglePlacesClient(http, key=SecretStr(KEY), limiter=RateLimiter(1000, 1000))
+
+
+async def test_map_search_uses_google_then_cache_then_osm_when_out_of_quota() -> None:
+    seen: list[dict[str, Any]] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen.append(json.loads(req.content))
+        assert req.headers["X-Goog-FieldMask"] == FIND_FIELDS
+        return httpx.Response(
+            200,
+            json={
+                "places": [
+                    {
+                        "displayName": {"text": "Mercado de San Miguel"},
+                        "formattedAddress": "Plaza de San Miguel, Madrid",
+                        "location": {"latitude": 40.4154, "longitude": -3.7090},
+                    },
+                    {"displayName": {"text": "Sin sitio"}},
+                ]
+            },
+        )
+
+    osm = FakeNominatim()
+    geo = GoogleFirstGeocoder(google_finder(handler), osm, quota=MemoryQuota(), daily_limit=1)
+    found = await geo.search("mercado", (40.4, -3.7))
+    assert [(p.name, p.source) for p in found] == [("Mercado de San Miguel", "Google Maps")]
+    assert seen[0]["locationBias"]["circle"]["center"] == {"latitude": 40.4, "longitude": -3.7}
+    assert await geo.search("Mercado ", (40.4, -3.7)) == found  # caché
+    assert len(seen) == 1
+    # Cupo del día gastado: OpenStreetMap.
+    assert (await geo.search("otra cosa", None))[0].name == "OSM"
+    assert osm.calls == 1
+
+
+async def test_map_search_falls_back_when_google_fails() -> None:
+    osm = FakeNominatim()
+    geo = GoogleFirstGeocoder(
+        google_finder(lambda r: httpx.Response(500)), osm, quota=MemoryQuota(), daily_limit=10
+    )
+    assert (await geo.search("algo", None))[0].name == "OSM"

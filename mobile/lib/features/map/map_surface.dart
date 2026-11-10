@@ -13,6 +13,7 @@ import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'geo.dart';
 import 'map_patterns.dart';
+import 'me_marker.dart' show meImageId;
 import 'map_style.dart';
 
 /// Lo que la pantalla le puede pedir al mapa.
@@ -38,6 +39,9 @@ abstract interface class MapSurfaceController {
   /// Dibuja puntos sueltos con color (un FeatureCollection de GeoJSON con
   /// las propiedades "color" y "selected").
   Future<void> showPins(Map<String, Object?> features);
+
+  /// Cambia el dibujo de tu marca (tu foto de perfil, en PNG).
+  Future<void> setMeImage(Uint8List png);
 }
 
 /// Todo lo que la superficie necesita para dibujarse.
@@ -166,6 +170,9 @@ class _MapLibreController implements MapSurfaceController {
   @override
   Future<void> showPins(Map<String, Object?> features) =>
       _c.setGeoJsonSource(MapIds.pinsSource, features);
+
+  @override
+  Future<void> setMeImage(Uint8List png) => _c.addImage(meImageId, png);
 
   @override
   Future<void> showMe(GeoPoint? me) => _c.setGeoJsonSource(

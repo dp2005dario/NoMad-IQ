@@ -187,6 +187,8 @@ class Settings(BaseSettings):
     # Búsquedas NUEVAS al día para todos juntos (lo que ya está en caché no
     # cuenta). Es el freno para que Google nunca cobre una sorpresa.
     google_places_daily_limit: int = Field(default=100, ge=0, le=100_000)
+    # Búsquedas del buscador del Mapa en Google al día (lo demás, OpenStreetMap).
+    google_places_search_daily_limit: int = Field(default=150, ge=0, le=100_000)
     google_places_rate_per_second: float = Field(default=5.0, gt=0, le=50)
     google_places_timeout_seconds: float = Field(default=8.0, gt=0, le=60)
 

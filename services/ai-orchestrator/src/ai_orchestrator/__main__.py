@@ -85,7 +85,7 @@ from ai_orchestrator.flyra.service import KEY_PREFIX as FLYRA_QUOTA_PREFIX
 from ai_orchestrator.flyra.service import FlyraService, FlyraSettings
 from ai_orchestrator.fx.ecb import EcbClient
 from ai_orchestrator.fx.service import FxService, RedisRatesCache
-from ai_orchestrator.geocode.api import NominatimGeocoder, geocode_router
+from ai_orchestrator.geocode.api import Geocoder, GoogleFirstGeocoder, NominatimGeocoder, geocode_router
 from ai_orchestrator.group_chat.api import chat_router
 from ai_orchestrator.group_chat.push import ChatPusher, PushThrottle
 from ai_orchestrator.group_chat.store import PostgresChat
@@ -341,23 +341,28 @@ def _streetview(
     )
 
 
-def _shop_photos(settings: Settings, key: SecretStr, redis: Redis, stack: AsyncExitStack) -> ShopPhotoService:
-    """Fotos de Google Maps de las tiendas: tope diario + caché en Redis."""
+def _google_client(settings: Settings, key: SecretStr, stack: AsyncExitStack) -> GooglePlacesClient:
+    """Cliente de Google Places (la clave solo va en cabeceras)."""
     http = httpx.AsyncClient(
         timeout=httpx.Timeout(settings.google_places_timeout_seconds, connect=5.0),
         follow_redirects=False,
     )
     stack.push_async_callback(http.aclose)
-    return ShopPhotoService(
-        google=GooglePlacesClient(
-            http,
-            key=key,
-            limiter=RateLimiter(
-                settings.google_places_rate_per_second,
-                10,
-                busy=lambda: GoogleBusyError("límite de peticiones a Google"),
-            ),
+    return GooglePlacesClient(
+        http,
+        key=key,
+        limiter=RateLimiter(
+            settings.google_places_rate_per_second,
+            10,
+            busy=lambda: GoogleBusyError("límite de peticiones a Google"),
         ),
+    )
+
+
+def _shop_photos(settings: Settings, key: SecretStr, redis: Redis, stack: AsyncExitStack) -> ShopPhotoService:
+    """Fotos de Google Maps de las tiendas: tope diario + caché en Redis."""
+    return ShopPhotoService(
+        google=_google_client(settings, key, stack),
         cache=RedisShopPhotoCache(redis),
         quota=RedisQuota(redis, prefix=SHOP_PHOTO_QUOTA_PREFIX),
         settings=ShopPhotoSettings(daily_limit=settings.google_places_daily_limit),
@@ -889,6 +894,20 @@ async def run(settings: Settings) -> int:
         # Buscar tu hotel (Nominatim): su propio cliente, con poco tiempo de espera.
         geo_http = httpx.AsyncClient(timeout=httpx.Timeout(8.0, connect=5.0), follow_redirects=False)
         stack.push_async_callback(geo_http.aclose)
+        # El buscador del Mapa: Google Places si hay clave (como Google Maps)
+        # y, si no o se acaba el cupo del día, OpenStreetMap.
+        geocoder: Geocoder = NominatimGeocoder(geo_http)
+        if (
+            shop_photos is not None
+            and public_redis is not None
+            and settings.google_places_api_key is not None
+        ):
+            geocoder = GoogleFirstGeocoder(
+                _google_client(settings, settings.google_places_api_key, stack),
+                geocoder,
+                quota=RedisQuota(public_redis, prefix="ai:geocode:google:quota"),
+                daily_limit=settings.google_places_search_daily_limit,
+            )
         api = _server(
             create_api(
                 recommendations,
@@ -921,7 +940,7 @@ async def run(settings: Settings) -> int:
                 else None,
                 queues=queues_router(PostgresQueues(pool)) if settings.queues_enabled else None,
                 menu=menu,
-                geocode=geocode_router(NominatimGeocoder(geo_http)),
+                geocode=geocode_router(geocoder),
                 eraser=PostgresEraser(pool),
                 expose_docs=settings.expose_api_docs,
             ),

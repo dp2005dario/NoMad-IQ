@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:maplibre_gl/maplibre_gl.dart' show MapLibreMap;
 import 'package:just_audio_background/just_audio_background.dart';
 
 import 'app.dart';
@@ -48,6 +49,10 @@ import 'features/welcome/welcome_video.dart';
 Future<void> main() async {
   // Necesario antes de usar plugins (como el almacenamiento) en main().
   WidgetsFlutterBinding.ensureInitialized();
+  // El mapa se dibuja en un TextureView: así se comporta como cualquier otro
+  // trozo de la app. Con el modo de antes (Virtual Display) daba un
+  // "tembleque" al volver al Mapa desde otra pantalla.
+  MapLibreMap.useHybridComposition = true;
   registerDataLicenses();
   // Audioguías con el móvil bloqueado (maqueta "Bloqueo"): play/pausa y
   // partes en la pantalla de bloqueo, la notificación, el reloj y el coche.

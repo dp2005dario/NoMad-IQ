@@ -25,6 +25,8 @@ SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
 MEDIA_URL = "https://places.googleapis.com/v1/{name}/media"
 # Solo pedimos lo justo (Google cobra según los campos que pides).
 SEARCH_FIELDS = "places.id,places.photos"
+# Para el buscador del Mapa: nombre, dirección y dónde está.
+FIND_FIELDS = "places.displayName,places.formattedAddress,places.location"
 # Las fotos solo pueden venir de los servidores de Google.
 PHOTO_HOSTS = (".googleusercontent.com",)
 # "places/ChIJ.../photos/AUc7...": letras, números, "_", "-" y "/".
@@ -112,6 +114,10 @@ class GooglePlacesClient:
         except ValueError as exc:
             raise GoogleError("respuesta de Google que no es JSON") from exc
 
+    async def call_search(self, body: dict[str, Any], fields: str) -> Any:
+        """Una búsqueda de texto con los campos que se pidan."""
+        return await self._call("POST", SEARCH_URL, headers=self._headers(fields), json=body)
+
     async def photo_of(self, name: str, lat: float, lon: float) -> tuple[str, str | None, str | None] | None:
         """(dirección de la foto, autor, web del autor) del sitio, o None si no tiene."""
         found = await self._call(
@@ -143,3 +149,48 @@ class GooglePlacesClient:
         if url is None:
             return None
         return url, author, author_url
+
+
+def parse_found(data: Any, limit: int = 8) -> list[tuple[str, str, float, float]]:
+    """(nombre, dirección, lat, lon) de cada sitio que devolvió Google."""
+    places = data.get("places") if isinstance(data, dict) else None
+    if not isinstance(places, list):
+        return []
+    out: list[tuple[str, str, float, float]] = []
+    for p in places[:limit]:
+        if not isinstance(p, dict):
+            continue
+        loc = p.get("location")
+        lat = loc.get("latitude") if isinstance(loc, dict) else None
+        lon = loc.get("longitude") if isinstance(loc, dict) else None
+        if not isinstance(lat, int | float) or not isinstance(lon, int | float):
+            continue
+        if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+            continue
+        shown = p.get("displayName")
+        name = shown.get("text") if isinstance(shown, dict) else None
+        address = p.get("formattedAddress")
+        address = " ".join(address.split())[:300] if isinstance(address, str) else ""
+        name = (
+            " ".join(name.split())[:120] if isinstance(name, str) and name.strip() else address.split(",")[0]
+        )
+        if not name:
+            continue
+        out.append((name, address or name, float(lat), float(lon)))
+    return out
+
+
+async def find_places(
+    client: GooglePlacesClient, query: str, near: tuple[float, float] | None
+) -> list[tuple[str, str, float, float]]:
+    """Buscar "de todo", como en Google Maps (para el buscador del Mapa)."""
+    body: dict[str, Any] = {"textQuery": query, "maxResultCount": 8}
+    if near is not None:
+        body["locationBias"] = {
+            "circle": {
+                "center": {"latitude": round(near[0], 3), "longitude": round(near[1], 3)},
+                "radius": 20_000.0,
+            }
+        }
+    found = await client.call_search(body, FIND_FIELDS)
+    return parse_found(found)

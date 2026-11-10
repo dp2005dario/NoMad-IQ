@@ -38,6 +38,7 @@ import 'location.dart';
 import 'map_model.dart';
 import 'map_style.dart';
 import 'map_surface.dart';
+import 'me_marker.dart';
 import 'weather_overlay.dart';
 
 class MapScreen extends StatefulWidget {
@@ -74,6 +75,10 @@ class _MapScreenState extends State<MapScreen> {
   Timer? _idleDebounce;
   Timer? _lookTimer;
 
+  /// Buscar mientras escribes (como Google Maps), esperando a que pares
+  /// un momento para no preguntar letra a letra.
+  Timer? _typing;
+
   /// La luz (día, tarde, noche) va sola por la hora, como en la maqueta.
   static const MapLook _chosenLook = MapLook.auto;
   bool _tilted = true;
@@ -99,6 +104,16 @@ class _MapScreenState extends State<MapScreen> {
   GeoPoint? _sentMe;
   Zone? _lastEntered;
 
+  /// Adónde había que llevar la cámara antes de que el mapa estuviera listo
+  /// (p. ej. tu posición, si el GPS te encontró mientras cargaba).
+  (GeoPoint, double?)? _pendingFocus;
+
+  /// ¿Ya se llevó la cámara a tu posición alguna vez?
+  bool _centeredOnMe = false;
+
+  /// La foto con la que se dibujó tu marca la última vez.
+  Object? _meLookKey;
+
   // Caché del estilo: solo se recalcula si cambia el aspecto o el idioma.
   (MapLook, String)? _styleKey;
   Map<String, Object?> _style = const <String, Object?>{};
@@ -107,7 +122,7 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     FlyraNotes.instance.addListener(_changed);
-    ProfilePhotoController.instance.addListener(_changed);
+    ProfilePhotoController.instance.addListener(_photoChanged);
     // El modo "auto" cambia solo al atardecer y al anochecer.
     _lookTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
@@ -144,11 +159,12 @@ class _MapScreenState extends State<MapScreen> {
   void dispose() {
     _idleDebounce?.cancel();
     _lookTimer?.cancel();
+    _typing?.cancel();
     _model?.removeListener(_onModel);
     _model?.dispose();
     _search.dispose();
     FlyraNotes.instance.removeListener(_changed);
-    ProfilePhotoController.instance.removeListener(_changed);
+    ProfilePhotoController.instance.removeListener(_photoChanged);
     super.dispose();
   }
 
@@ -156,6 +172,36 @@ class _MapScreenState extends State<MapScreen> {
 
   void _changed() {
     if (mounted) setState(() {});
+  }
+
+  void _photoChanged() {
+    _changed();
+    unawaited(_updateMeImage());
+  }
+
+  /// Dibuja tu marca con tu foto de perfil (o avatar, o inicial).
+  Future<void> _updateMeImage({bool force = false}) async {
+    final MapSurfaceController? map = _map;
+    if (map == null || !mounted) return;
+    final ProfilePhotoChoice choice = ProfilePhotoController.instance.choice;
+    final SessionController session = SessionScope.read(context);
+    final String? google = session.user?.photoUrl;
+    final String? name = displayName(session.user?.email);
+    final Object key = Object.hash(choice.encode(), google, name);
+    if (!force && key == _meLookKey) return;
+    _meLookKey = key;
+    final MeLook look = await meLookFor(
+      choice,
+      name: name,
+      googlePhoto: google,
+    );
+    final Uint8List? png = await drawMeMarker(look);
+    if (png == null || !mounted || _map != map) return;
+    try {
+      await map.setMeImage(png);
+    } on Object {
+      // Si falla, se ve el punto de siempre.
+    }
   }
 
   // --- Mapa ↔ modelo -------------------------------------------------------
@@ -167,6 +213,16 @@ class _MapScreenState extends State<MapScreen> {
     _sentZones = -1;
     _sentMe = null;
     _syncMap();
+    unawaited(_updateMeImage(force: true));
+    // Si el GPS te encontró mientras el mapa cargaba, ahora sí se va allí.
+    final (GeoPoint, double?)? pending = _pendingFocus;
+    final GeoPoint? me = _m.me;
+    if (pending != null) {
+      _pendingFocus = null;
+      _focus(pending.$1, pending.$2);
+    } else if (me != null && !_centeredOnMe) {
+      _focus(me, 16);
+    }
     _scheduleIdle();
   }
 
@@ -251,7 +307,14 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _focus(GeoPoint target, double? zoom) {
-    unawaited(_map?.flyTo(target, zoom: zoom));
+    final MapSurfaceController? map = _map;
+    if (target == _m.me) _centeredOnMe = true;
+    if (map == null) {
+      // El mapa aún no está listo: se guarda y se hace en _onReady.
+      _pendingFocus = (target, zoom);
+      return;
+    }
+    unawaited(map.flyTo(target, zoom: zoom));
   }
 
   Map<String, Object?> _currentStyle(String language) {
@@ -293,9 +356,24 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  void _toggleTilt() {
+  /// 3D/2D. Si te habías alejado de tu posición, además te vuelve a ella.
+  Future<void> _toggleTilt() async {
     setState(() => _tilted = !_tilted);
-    unawaited(_map?.setTilt(_tilted ? 55 : 0));
+    final MapSurfaceController? map = _map;
+    if (map == null) return;
+    unawaited(map.setTilt(_tilted ? 55 : 0));
+    final GeoPoint? me = _m.me;
+    if (me == null) return;
+    final GeoBox? box = await map.visibleBox();
+    final GeoPoint? center = box == null
+        ? null
+        : GeoPoint(
+            (box.minLat + box.maxLat) / 2,
+            (box.minLon + box.maxLon) / 2,
+          );
+    if (center == null || center.distanceTo(me) > 150) {
+      unawaited(map.flyTo(me, zoom: 16));
+    }
   }
 
   /// "Girar el mapa": 45° más cada toque, como en la maqueta.
@@ -351,6 +429,31 @@ class _MapScreenState extends State<MapScreen> {
       _places = found;
       _searching = false;
     });
+  }
+
+  /// Lleva el mapa al sitio elegido y le pone una chincheta, como Google
+  /// Maps.
+  void _showPlace(GeoPlace p) {
+    _focus(p.point, 17);
+    unawaited(
+      _map?.showPins(<String, Object?>{
+        'type': 'FeatureCollection',
+        'features': <Object?>[
+          <String, Object?>{
+            'type': 'Feature',
+            'id': 'search',
+            'geometry': <String, Object?>{
+              'type': 'Point',
+              'coordinates': <double>[p.point.lon, p.point.lat],
+            },
+            'properties': <String, Object?>{
+              'color': '#FFB86B',
+              'selected': true,
+            },
+          },
+        ],
+      }),
+    );
   }
 
   void _clearSearch() {
@@ -461,7 +564,14 @@ class _MapScreenState extends State<MapScreen> {
                           Expanded(
                             child: _SearchBox(
                               controller: _search,
-                              onChanged: (_) => setState(() {}),
+                              onChanged: (String q) {
+                                setState(() {});
+                                _typing?.cancel();
+                                _typing = Timer(
+                                  const Duration(milliseconds: 600),
+                                  () => unawaited(_searchPlaces(q)),
+                                );
+                              },
                               onSubmit: (String q) =>
                                   unawaited(_searchPlaces(q)),
                             ),
@@ -497,7 +607,7 @@ class _MapScreenState extends State<MapScreen> {
                           },
                           onPlace: (GeoPlace p) {
                             _clearSearch();
-                            _focus(p.point, 17);
+                            _showPlace(p);
                           },
                         )
                       else ...<Widget>[
@@ -508,7 +618,7 @@ class _MapScreenState extends State<MapScreen> {
                               height: 40,
                               radius: 14,
                               tooltip: t.mapTiltTooltip,
-                              onTap: _toggleTilt,
+                              onTap: () => unawaited(_toggleTilt()),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                               ),

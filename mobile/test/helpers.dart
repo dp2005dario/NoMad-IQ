@@ -419,6 +419,12 @@ class FakeMap implements MapSurfaceController {
   @override
   Future<void> showMe(GeoPoint? point) async => me = point;
 
+  /// Cuántas veces se cambió el dibujo de tu marca (tu foto).
+  int meImages = 0;
+
+  @override
+  Future<void> setMeImage(Uint8List png) async => meImages++;
+
   /// Hacia dónde mira el mapa (lo último que pidió la pantalla).
   double bearing = 0;
 
