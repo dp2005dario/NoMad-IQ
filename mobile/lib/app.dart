@@ -13,6 +13,7 @@ import 'core/theme.dart';
 import 'features/flyra/flyra_mini.dart';
 import 'features/offline/offline_auto.dart';
 import 'features/settings/app_lock.dart';
+import 'features/shell/global_tab_bar.dart';
 import 'features/map/location.dart';
 import 'features/widgets/widget_sync.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -194,7 +195,13 @@ class _EcliptaAppState extends State<EcliptaApp> {
                       location: _location,
                       onOpen: (String? route) =>
                           unawaited(_router.push(route ?? Routes.flyra())),
-                      child: child ?? const SizedBox.shrink(),
+                      // La barra de abajo también en las pantallas que se
+                      // abren encima de las pestañas (Hoteles, Bóveda...).
+                      child: GlobalTabBar(
+                        location: _location,
+                        onTab: _router.go,
+                        child: child ?? const SizedBox.shrink(),
+                      ),
                     ),
                   ),
                 );
