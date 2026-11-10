@@ -2359,5 +2359,7 @@
   "routeDeparting": "যাত্রাস্থান",
   "routeArrivedShort": "পৌঁছে গেছ",
   "routePassTitle": "তোমার ফ্লাইট",
-  "routeNowThere": "এখন সেখানে"
+  "routeNowThere": "এখন সেখানে",
+  "cityPickPopular": "সবচেয়ে বেশি খোঁজা",
+  "cityPickNone": "এই শহর পাওয়া যায়নি। অন্য নাম চেষ্টা করো।"
 }

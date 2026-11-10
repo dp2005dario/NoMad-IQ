@@ -2359,5 +2359,7 @@
   "routeDeparting": "kalkış noktası",
   "routeArrivedShort": "vardın",
   "routePassTitle": "Uçuşun",
-  "routeNowThere": "Şu an orada"
+  "routeNowThere": "Şu an orada",
+  "cityPickPopular": "En çok arananlar",
+  "cityPickNone": "Bu şehri bulamadık. Başka bir ad dene."
 }

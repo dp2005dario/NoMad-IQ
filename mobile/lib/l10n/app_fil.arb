@@ -2359,5 +2359,7 @@
   "routeDeparting": "pinanggalingan",
   "routeArrivedShort": "nakarating ka na",
   "routePassTitle": "Ang lipad mo",
-  "routeNowThere": "Ngayon doon"
+  "routeNowThere": "Ngayon doon",
+  "cityPickPopular": "Pinakahinahanap",
+  "cityPickNone": "Hindi namin makita ang lungsod na iyan. Subukan ang ibang pangalan."
 }

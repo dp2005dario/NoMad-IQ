@@ -10,6 +10,7 @@ import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/easy/easy_mode.dart';
 import 'package:eclipta/features/events/event_reminders.dart';
+import 'package:eclipta/features/flights/airport_names.dart';
 import 'package:eclipta/features/events/events_api.dart';
 import 'package:eclipta/features/events/events_screen.dart';
 import 'package:eclipta/features/route/web_scene.dart';
@@ -168,6 +169,43 @@ void main() {
     expect(store.readData(LocalData.savedEvents), '["t-b"]');
     // El partido no tiene hora: solo el aviso de la víspera.
     expect(reminders.scheduled['t-b'], hasLength(1));
+  });
+
+  testWidgets('sin ciudad: se elige escribiendo su nombre, no el código', (
+    WidgetTester tester,
+  ) async {
+    await tester.runAsync(AirportNames.load);
+    final FakeGateway g = FakeGateway()..publicPrefixes.add('/v1/events');
+    final List<Uri> asked = <Uri>[];
+    g.services['/v1/events'] = (http.Request r) {
+      asked.add(r.url);
+      return FakeGateway.json(json());
+    };
+    final session = newSession()..continueAsGuest();
+    final m.PageSpy spy = m.PageSpy();
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.events(),
+      services: fakeServices(session, gateway: g, webScene: spy.build),
+    );
+    await tester.pumpAndSettle();
+    // La hoja se abre sola, con las ciudades más buscadas.
+    expect(find.text('Elegir ciudad'), findsOneWidget);
+    expect(find.text('LAS MÁS BUSCADAS'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'zzzz');
+    await tester.pump();
+    expect(
+      find.text('No encontramos esa ciudad. Prueba con otro nombre.'),
+      findsOneWidget,
+    );
+    await tester.enterText(find.byType(TextField), 'lisb');
+    await tester.pump();
+    expect(find.text('🇵🇹'), findsOneWidget);
+    await tester.tap(find.text('Lisboa'));
+    await tester.pumpAndSettle();
+    expect(asked.single.queryParameters['iata'], 'LIS');
   });
 
   testWidgets('mapa de verdad con los puntos y lo lejos que está tu hotel', (

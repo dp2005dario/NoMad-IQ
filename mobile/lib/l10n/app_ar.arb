@@ -2359,5 +2359,7 @@
   "routeDeparting": "نقطة الانطلاق",
   "routeArrivedShort": "لقد وصلت",
   "routePassTitle": "رحلتك",
-  "routeNowThere": "الآن هناك"
+  "routeNowThere": "الآن هناك",
+  "cityPickPopular": "الأكثر بحثًا",
+  "cityPickNone": "لم نجد هذه المدينة. جرّب اسمًا آخر."
 }

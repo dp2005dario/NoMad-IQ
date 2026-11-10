@@ -2359,5 +2359,7 @@
   "routeDeparting": "Abflugort",
   "routeArrivedShort": "angekommen",
   "routePassTitle": "Dein Flug",
-  "routeNowThere": "Jetzt dort"
+  "routeNowThere": "Jetzt dort",
+  "cityPickPopular": "Am häufigsten gesucht",
+  "cityPickNone": "Diese Stadt finden wir nicht. Versuch einen anderen Namen."
 }

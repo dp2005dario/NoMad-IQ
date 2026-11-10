@@ -2359,5 +2359,7 @@
   "routeDeparting": "vertrekpunt",
   "routeArrivedShort": "je bent er",
   "routePassTitle": "Jouw vlucht",
-  "routeNowThere": "Nu daar"
+  "routeNowThere": "Nu daar",
+  "cityPickPopular": "Meest gezocht",
+  "cityPickNone": "We vinden die stad niet. Probeer een andere naam."
 }

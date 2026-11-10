@@ -2359,5 +2359,7 @@
   "routeDeparting": "จุดออกเดินทาง",
   "routeArrivedShort": "ถึงแล้ว",
   "routePassTitle": "เที่ยวบินของคุณ",
-  "routeNowThere": "ตอนนี้ที่นั่น"
+  "routeNowThere": "ตอนนี้ที่นั่น",
+  "cityPickPopular": "ค้นหามากที่สุด",
+  "cityPickNone": "ไม่พบเมืองนี้ ลองชื่ออื่น"
 }

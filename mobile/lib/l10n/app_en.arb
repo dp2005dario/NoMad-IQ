@@ -11311,5 +11311,13 @@
   "routeNowThere": "Now there",
   "@routeNowThere": {
     "description": "Flight route screen"
+  },
+  "cityPickPopular": "Most searched",
+  "@cityPickPopular": {
+    "description": "Header of the list of popular cities in the city picker"
+  },
+  "cityPickNone": "We can't find that city. Try another name.",
+  "@cityPickNone": {
+    "description": "City picker: nothing matches what you typed"
   }
 }

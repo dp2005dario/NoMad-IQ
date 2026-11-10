@@ -2359,5 +2359,7 @@
   "routeDeparting": "điểm khởi hành",
   "routeArrivedShort": "bạn đã đến",
   "routePassTitle": "Chuyến bay của bạn",
-  "routeNowThere": "Bây giờ ở đó"
+  "routeNowThere": "Bây giờ ở đó",
+  "cityPickPopular": "Được tìm nhiều nhất",
+  "cityPickNone": "Không tìm thấy thành phố đó. Hãy thử tên khác."
 }

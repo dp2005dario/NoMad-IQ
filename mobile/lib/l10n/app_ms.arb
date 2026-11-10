@@ -2359,5 +2359,7 @@
   "routeDeparting": "titik berlepas",
   "routeArrivedShort": "anda telah tiba",
   "routePassTitle": "Penerbangan anda",
-  "routeNowThere": "Sekarang di sana"
+  "routeNowThere": "Sekarang di sana",
+  "cityPickPopular": "Paling dicari",
+  "cityPickNone": "Bandar itu tidak dijumpai. Cuba nama lain."
 }

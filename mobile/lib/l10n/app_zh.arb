@@ -2359,5 +2359,7 @@
   "routeDeparting": "出发地",
   "routeArrivedShort": "你已到达",
   "routePassTitle": "你的航班",
-  "routeNowThere": "当地现在"
+  "routeNowThere": "当地现在",
+  "cityPickPopular": "热门搜索",
+  "cityPickNone": "找不到这个城市，换个名字试试。"
 }

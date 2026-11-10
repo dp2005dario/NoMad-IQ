@@ -2359,5 +2359,7 @@
   "routeDeparting": "出発地",
   "routeArrivedShort": "到着",
   "routePassTitle": "あなたのフライト",
-  "routeNowThere": "現地の今"
+  "routeNowThere": "現地の今",
+  "cityPickPopular": "よく検索される都市",
+  "cityPickNone": "その都市は見つかりません。別の名前で試してください。"
 }

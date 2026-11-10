@@ -2359,5 +2359,7 @@
   "routeDeparting": "punct de plecare",
   "routeArrivedShort": "ai ajuns",
   "routePassTitle": "Zborul tău",
-  "routeNowThere": "Acum acolo"
+  "routeNowThere": "Acum acolo",
+  "cityPickPopular": "Cele mai căutate",
+  "cityPickNone": "Nu găsim acest oraș. Încearcă alt nume."
 }

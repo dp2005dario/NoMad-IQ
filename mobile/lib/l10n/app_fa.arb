@@ -2359,5 +2359,7 @@
   "routeDeparting": "نقطهٔ حرکت",
   "routeArrivedShort": "رسیدی",
   "routePassTitle": "پرواز تو",
-  "routeNowThere": "اکنون آنجا"
+  "routeNowThere": "اکنون آنجا",
+  "cityPickPopular": "پرجست‌وجوترین‌ها",
+  "cityPickNone": "این شهر را پیدا نکردیم. نام دیگری را امتحان کن."
 }

@@ -2359,5 +2359,7 @@
   "routeDeparting": "пункт вылета",
   "routeArrivedShort": "ты на месте",
   "routePassTitle": "Твой рейс",
-  "routeNowThere": "Сейчас там"
+  "routeNowThere": "Сейчас там",
+  "cityPickPopular": "Чаще всего ищут",
+  "cityPickNone": "Не нашли такой город. Попробуй другое название."
 }

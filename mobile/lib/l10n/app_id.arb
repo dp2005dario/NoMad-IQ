@@ -2359,5 +2359,7 @@
   "routeDeparting": "titik keberangkatan",
   "routeArrivedShort": "kamu sudah tiba",
   "routePassTitle": "Penerbanganmu",
-  "routeNowThere": "Sekarang di sana"
+  "routeNowThere": "Sekarang di sana",
+  "cityPickPopular": "Paling dicari",
+  "cityPickNone": "Kota itu tidak ditemukan. Coba nama lain."
 }

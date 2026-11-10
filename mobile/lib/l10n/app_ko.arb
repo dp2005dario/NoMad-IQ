@@ -2359,5 +2359,7 @@
   "routeDeparting": "출발지",
   "routeArrivedShort": "도착했어요",
   "routePassTitle": "내 항공편",
-  "routeNowThere": "지금 그곳"
+  "routeNowThere": "지금 그곳",
+  "cityPickPopular": "많이 찾는 도시",
+  "cityPickNone": "그 도시를 찾을 수 없어요. 다른 이름으로 해 보세요."
 }

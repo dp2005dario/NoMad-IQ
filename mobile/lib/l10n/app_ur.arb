@@ -2359,5 +2359,7 @@
   "routeDeparting": "روانگی کا مقام",
   "routeArrivedShort": "آپ پہنچ گئے",
   "routePassTitle": "آپ کی پرواز",
-  "routeNowThere": "ابھی وہاں"
+  "routeNowThere": "ابھی وہاں",
+  "cityPickPopular": "سب سے زیادہ تلاش",
+  "cityPickNone": "یہ شہر نہیں ملا۔ کوئی اور نام آزمائیں۔"
 }
