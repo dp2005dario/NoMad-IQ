@@ -95,9 +95,17 @@ Map<String, String> nearbyTexts(AppLocalizations t) {
 /// Lo que se manda a la página y, aparte, adónde lleva el botón "Ruta" de
 /// cada tarjeta (Google Maps andando: es un enlace, gratis).
 class NearbyPageData {
-  const NearbyPageData({required this.json, required this.routes});
+  const NearbyPageData({
+    required this.json,
+    required this.routes,
+    this.shops = const <int, NearbySpot>{},
+  });
 
   final Map<String, Object?> json;
+
+  /// Las tiendas por el número de su tarjeta (0 + i): para buscar su foto
+  /// de Google Maps cuando la página la pide ("photo:3").
+  final Map<int, NearbySpot> shops;
 
   /// Por el número de la tarjeta (100 + i en Gratis, 200 + i en planes).
   final Map<int, Uri> routes;
@@ -274,6 +282,7 @@ NearbyPageData nearbyPageData({
   bool retry = false,
 }) {
   final Map<int, Uri> routes = <int, Uri>{};
+  final Map<int, NearbySpot> shopSpots = <int, NearbySpot>{};
   final List<Map<String, Object?>> shops = <Map<String, Object?>>[];
   final List<Map<String, Object?>> free = <Map<String, Object?>>[];
   final List<Map<String, Object?>> plans = <Map<String, Object?>>[];
@@ -296,6 +305,7 @@ NearbyPageData nearbyPageData({
       final String name = s.name ?? label;
       final String raw = s.openingHours ?? '';
       routes[shops.length] = _mapsTo(me, <GeoPoint>[s.point]);
+      if (s.name != null) shopSpots[shops.length] = s;
       final String color = switch (open.state) {
         OpenState.closed => '#ff8a8a',
         _ => _chapaShop[k] ?? '#ffffff',
@@ -452,6 +462,7 @@ NearbyPageData nearbyPageData({
       'retry': retry,
     },
     routes: routes,
+    shops: shopSpots,
   );
 }
 

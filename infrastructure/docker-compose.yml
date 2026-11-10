@@ -337,6 +337,8 @@ services:
       # la calle de verdad" no aparece. Ver docs/guia-app-movil.md.
       MAPILLARY_TOKEN: ${MAPILLARY_TOKEN:-}
       TICKETMASTER_API_KEY: ${TICKETMASTER_API_KEY:-}
+      # Fotos de Google Maps de las tiendas de "Cerca de ti". Vacía = dibujo.
+      GOOGLE_PLACES_API_KEY: ${GOOGLE_PLACES_API_KEY:-}
       EXPOSE_API_DOCS: "true"
       LOG_LEVEL: ${LOG_LEVEL:-info}
     volumes:

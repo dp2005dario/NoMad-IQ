@@ -1,16 +1,18 @@
 // Cerca de ti (maqueta "Cerca de ti"), tal cual: cabecera con tu barrio y la
-// hora, pestañas "Ofertas ya / Gratis / Tengo 2 horas", el mapa 3D plegable
+// hora, pestañas "Tiendas y sitios / Gratis / Tengo 2 horas", el mapa 3D plegable
 // con los sitios alrededor de ti, las tarjetas y el paseo guiado.
 //
 // La página es la propia maqueta (assets/nearby/cerca.html) dentro de un
 // WebView, sin datos de ejemplo: la app le pone los textos en tu idioma y
 // los sitios REALES de OpenStreetMap (nearby_page.dart).
-//   - Ofertas ya: aún no hay una fuente libre y fiable de ofertas de
-//     locales, así que dice "Sin datos" (nada inventado).
+//   - Tiendas y sitios: lo que hay alrededor (súper, cafeterías, farmacias,
+//     cajeros...). Cuando una tarjeta se ve, la página pide su foto real de
+//     Google Maps ("photo:3"); el servidor la busca y se la pasamos.
 //   - El mapa de la página es un dibujo (no son tus calles de verdad): por
 //     eso no lleva nombres de calles. Los sitios sí están a su distancia y
 //     en su dirección reales. "Ruta" abre el camino de verdad en Google Maps.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -38,6 +40,11 @@ class _NearbyScreenState extends State<NearbyScreen> {
   String? _page;
   String? _html;
   Map<int, Uri> _routes = const <int, Uri>{};
+  Map<int, NearbySpot> _shops = const <int, NearbySpot>{};
+  final WebSceneBridge _bridge = WebSceneBridge();
+
+  /// El servidor no tiene fotos de Google (sin clave): no se piden más.
+  bool _photosOff = false;
   bool _started = false;
 
   @override
@@ -76,6 +83,7 @@ class _NearbyScreenState extends State<NearbyScreen> {
     );
     setState(() {
       _routes = data.routes;
+      _shops = data.shops;
       _html = nearbyPageWith(_page!, data);
     });
   }
@@ -132,9 +140,29 @@ class _NearbyScreenState extends State<NearbyScreen> {
     } else if (message == 'retry') {
       _show(message: AppLocalizations.of(context).nbLoading);
       unawaited(_search());
+    } else if (message.startsWith('photo:')) {
+      final int n = int.tryParse(message.substring(6)) ?? -1;
+      final NearbySpot? spot = _shops[n];
+      if (spot != null && !_photosOff) unawaited(_photo(n, spot));
     } else if (message.startsWith('route:')) {
       final Uri? url = _routes[int.tryParse(message.substring(6)) ?? -1];
       if (url != null) unawaited(_services.openBooking(url));
+    }
+  }
+
+  /// Busca la foto de Google Maps de la tarjeta [n] y se la pasa a la página.
+  Future<void> _photo(int n, NearbySpot spot) async {
+    try {
+      final ShopPhoto? photo = await _services.nearby.photo(spot);
+      if (photo == null || !mounted || _shops[n] != spot) return;
+      // jsonEncode: así ni la dirección ni el nombre pueden romper el JS.
+      await _bridge.run(
+        'window.__shopPhoto&&window.__shopPhoto($n,'
+        '${jsonEncode(photo.url.toString())},${jsonEncode(photo.credit)})',
+      );
+    } on ApiException catch (e) {
+      // 404 = el servidor no tiene la clave de Google: se queda el dibujo.
+      if (e.error == ApiError.notFound) _photosOff = true;
     }
   }
 
@@ -153,7 +181,11 @@ class _NearbyScreenState extends State<NearbyScreen> {
                 key: ValueKey<int>(html.hashCode),
                 child:
                     _services.webScene?.call(html, _onMessage) ??
-                    WebScene(html: html, onMessage: _onMessage),
+                    WebScene(
+                      html: html,
+                      onMessage: _onMessage,
+                      bridge: _bridge,
+                    ),
               ),
             ),
     );

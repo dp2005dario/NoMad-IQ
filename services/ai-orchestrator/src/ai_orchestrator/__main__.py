@@ -133,6 +133,15 @@ from ai_orchestrator.shared_trips.api import shared_trip_router
 from ai_orchestrator.shared_trips.service import QUOTA_PREFIX as TRIP_ADAPT_QUOTA_PREFIX
 from ai_orchestrator.shared_trips.service import AdaptSettings, RedisAdaptCache, TripAdapter
 from ai_orchestrator.shared_trips.store import PostgresSharedTrips
+from ai_orchestrator.shop_photos.google import GoogleBusyError, GooglePlacesClient
+from ai_orchestrator.shop_photos.service import (
+    QUOTA_PREFIX as SHOP_PHOTO_QUOTA_PREFIX,
+)
+from ai_orchestrator.shop_photos.service import (
+    RedisShopPhotoCache,
+    ShopPhotoService,
+    ShopPhotoSettings,
+)
 from ai_orchestrator.stays.overpass import StayOverpass
 from ai_orchestrator.stays.service import RedisStayCache, StayService, StaySettings
 from ai_orchestrator.store import (
@@ -329,6 +338,29 @@ def _streetview(
         ),
         cache=RedisStreetCache(redis),
         settings=StreetSettings(ttl_seconds=settings.street_ttl_seconds),
+    )
+
+
+def _shop_photos(settings: Settings, key: SecretStr, redis: Redis, stack: AsyncExitStack) -> ShopPhotoService:
+    """Fotos de Google Maps de las tiendas: tope diario + caché en Redis."""
+    http = httpx.AsyncClient(
+        timeout=httpx.Timeout(settings.google_places_timeout_seconds, connect=5.0),
+        follow_redirects=False,
+    )
+    stack.push_async_callback(http.aclose)
+    return ShopPhotoService(
+        google=GooglePlacesClient(
+            http,
+            key=key,
+            limiter=RateLimiter(
+                settings.google_places_rate_per_second,
+                10,
+                busy=lambda: GoogleBusyError("límite de peticiones a Google"),
+            ),
+        ),
+        cache=RedisShopPhotoCache(redis),
+        quota=RedisQuota(redis, prefix=SHOP_PHOTO_QUOTA_PREFIX),
+        settings=ShopPhotoSettings(daily_limit=settings.google_places_daily_limit),
     )
 
 
@@ -686,6 +718,7 @@ async def run(settings: Settings) -> int:
             if settings.places_enabled
             or settings.landmarks_enabled
             or settings.mapillary_token is not None
+            or settings.google_places_api_key is not None
             or (settings.flyra_enabled and llm is not None)
             or (settings.menu_enabled and llm is not None)
             or (settings.shared_trips_enabled and llm is not None)
@@ -715,6 +748,11 @@ async def run(settings: Settings) -> int:
         streetview: StreetViewService | None = None
         if settings.mapillary_token is not None and public_redis is not None:
             streetview = _streetview(settings, settings.mapillary_token, public_redis, stack)
+
+        # --- Fotos de Google Maps de las tiendas de "Cerca de ti" -------------------------
+        shop_photos: ShopPhotoService | None = None
+        if settings.google_places_api_key is not None and public_redis is not None:
+            shop_photos = _shop_photos(settings, settings.google_places_api_key, public_redis, stack)
 
         # --- OpenStreetMap (Overpass): cajeros, guía del aeropuerto y "cerca de ti" ------
         overpass = (
@@ -870,6 +908,7 @@ async def run(settings: Settings) -> int:
                 fx=fx,
                 atms=atms,
                 nearby=nearby,
+                shop_photos=shop_photos,
                 cravings=cravings,
                 drive=drive,
                 stays=stays,

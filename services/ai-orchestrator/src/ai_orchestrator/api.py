@@ -91,6 +91,12 @@ from ai_orchestrator.places.domain import PlaceCard
 from ai_orchestrator.places.service import PlaceBusyError, PlaceService, PlaceUnavailableError
 from ai_orchestrator.quota import QuotaExceededError
 from ai_orchestrator.radar.rain import RainBusyError, RainError, RainForecast, RainService
+from ai_orchestrator.shop_photos.domain import ShopPhoto
+from ai_orchestrator.shop_photos.service import (
+    ShopPhotoBusyError,
+    ShopPhotoService,
+    ShopPhotoUnavailableError,
+)
 from ai_orchestrator.stays.domain import StayArea
 from ai_orchestrator.stays.service import StayBusyError, StayService, StayUnavailableError
 from ai_orchestrator.store import RecommendationStore, StoreError
@@ -226,6 +232,8 @@ IMMUTABLE_CACHE = "public, max-age=31536000, immutable"
 PLACE_CACHE = "public, max-age=86400"
 # Las fotos de calle: una hora (sus direcciones caducan a los pocos días).
 STREET_CACHE = "public, max-age=3600"
+# La foto de Google de un sitio: la app la guarda unas horas.
+SHOP_PHOTO_CACHE = "public, max-age=21600"
 # Los tipos de cambio cambian una vez al día: una hora en cachés intermedias.
 FX_CACHE = "public, max-age=3600"
 # Los cajeros casi nunca cambian: seis horas en el móvil y en la CDN.
@@ -266,6 +274,7 @@ def create_api(
     fx: FxService | None = None,
     atms: AtmService | None = None,
     nearby: NearbyService | None = None,
+    shop_photos: ShopPhotoService | None = None,
     cravings: CravingService | None = None,
     drive: DriveService | None = None,
     stays: StayService | None = None,
@@ -453,6 +462,26 @@ def create_api(
                 return resp
             # Sin sitios también es 200 (lista vacía): la app lo explica.
             return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": NEARBY_CACHE})
+
+    if shop_photos is not None:
+
+        @app.get("/v1/nearby/photo", response_model=ShopPhoto)
+        async def get_shop_photo(
+            # El sitio de OpenStreetMap ("n123", "w45"...), su nombre y su punto.
+            id: Annotated[str, Query(pattern=r"^[nwr][1-9][0-9]{0,15}$")],
+            name: Annotated[str, Query(min_length=1, max_length=80)],
+            lat: Annotated[float, Query(ge=-85, le=85)],
+            lon: Annotated[float, Query(ge=-180, le=180)],
+        ) -> JSONResponse:
+            """La foto de Google Maps de una tienda o sitio de "Cerca de ti"."""
+            try:
+                photo = await shop_photos.photo(id, " ".join(name.split()), lat, lon)
+            except (ShopPhotoBusyError, ShopPhotoUnavailableError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "fotos de sitios ocupadas")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            # Sin foto también es 200 (photo_url vacío): la app deja el dibujo.
+            return JSONResponse(photo.model_dump(mode="json"), headers={"Cache-Control": SHOP_PHOTO_CACHE})
 
     if cravings is not None:
 

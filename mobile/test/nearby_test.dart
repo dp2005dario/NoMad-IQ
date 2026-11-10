@@ -273,6 +273,19 @@ void main() {
     expect(data.routes[0]!.queryParameters['destination'], '40.41710,-3.70350');
   });
 
+  test('la foto de Google: solo https de googleusercontent y su crédito', () {
+    final ShopPhoto? ok = ShopPhoto.parse(<String, Object?>{
+      'photo_url': 'https://lh3.googleusercontent.com/p/abc=s480',
+      'author': 'Ana G.',
+    });
+    expect(ok!.credit, 'Google Maps · Ana G.');
+    expect(
+      ShopPhoto.parse(<String, Object?>{'photo_url': 'https://evil.com/x.jpg'}),
+      isNull,
+    );
+    expect(ShopPhoto.parse(<String, Object?>{'photo_url': null}), isNull);
+  });
+
   testWidgets('abre la maqueta con los sitios reales; Ruta y Volver', (
     WidgetTester tester,
   ) async {

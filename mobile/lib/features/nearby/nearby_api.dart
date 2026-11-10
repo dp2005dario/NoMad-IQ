@@ -168,6 +168,37 @@ class NearbyList {
   }
 }
 
+/// La foto de Google Maps de una tienda o sitio (y a quién citar).
+class ShopPhoto {
+  const ShopPhoto({required this.url, this.author});
+
+  /// Siempre https y de los servidores de fotos de Google.
+  final Uri url;
+  final String? author;
+
+  /// "Google Maps · Ana G." (lo que se pone debajo de la foto).
+  String get credit => author == null ? 'Google Maps' : 'Google Maps · $author';
+
+  /// null = ese sitio no tiene foto (se deja el dibujo).
+  static ShopPhoto? parse(Object? json) {
+    if (json is! Map<String, Object?>) return null;
+    final Object? raw = json['photo_url'];
+    final Uri? url = raw is String ? Uri.tryParse(raw) : null;
+    if (url == null ||
+        url.scheme != 'https' ||
+        !url.host.endsWith('.googleusercontent.com')) {
+      return null;
+    }
+    final Object? author = json['author'];
+    return ShopPhoto(
+      url: url,
+      author: author is String && author.trim().isNotEmpty
+          ? author.trim().substring(0, author.trim().length.clamp(0, 60))
+          : null,
+    );
+  }
+}
+
 class NearbyApi {
   NearbyApi(this._api);
 
@@ -185,4 +216,23 @@ class NearbyApi {
       timeout: ApiClient.slow,
     ),
   );
+
+  /// La foto de Google Maps de una tienda (la busca el servidor, que es
+  /// quien tiene la clave de Google). null = no tiene foto.
+  Future<ShopPhoto?> photo(NearbySpot spot) async {
+    final String? name = spot.name;
+    if (name == null) return null;
+    return ShopPhoto.parse(
+      await _api.getJson(
+        '/v1/nearby/photo',
+        query: <String, String>{
+          'id': spot.id,
+          'name': name.length > 80 ? name.substring(0, 80) : name,
+          'lat': spot.point.lat.toStringAsFixed(5),
+          'lon': spot.point.lon.toStringAsFixed(5),
+        },
+        public: true,
+      ),
+    );
+  }
 }

@@ -12,8 +12,13 @@ from __future__ import annotations
 from pathlib import Path
 
 
-def secret(key: str) -> dict:
-    return {"secretKeyRef": {"name": "nomadiq-secrets", "key": key}}
+def secret(key: str, optional: bool = False) -> dict:
+    # optional=True: si la clave aún no está en secrets.env, el servicio
+    # arranca igual (esa función se queda apagada) en vez de no arrancar.
+    ref: dict = {"name": "nomadiq-secrets", "key": key}
+    if optional:
+        ref["optional"] = True
+    return {"secretKeyRef": ref}
 
 
 def config(key: str) -> dict:
@@ -143,6 +148,8 @@ SERVICES = [
             "NOTIFY_PSEUDONYM_KEY": secret("NOTIFY_PSEUDONYM_KEY"),
             "MAPILLARY_TOKEN": secret("MAPILLARY_TOKEN"),
             "TICKETMASTER_API_KEY": secret("TICKETMASTER_API_KEY"),
+            # Fotos de Google Maps de las tiendas de "Cerca de ti".
+            "GOOGLE_PLACES_API_KEY": secret("GOOGLE_PLACES_API_KEY", optional=True),
             "EXPOSE_API_DOCS": "false",
         },
     },

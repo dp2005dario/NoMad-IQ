@@ -179,6 +179,17 @@ class Settings(BaseSettings):
     mapillary_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
     street_ttl_seconds: int = Field(default=6 * 3600, ge=600, le=48 * 3600)
 
+    # --- Fotos de Google Maps de cada tienda de "Cerca de ti" (paquete shop_photos/) ---
+    # La clave de Places API (New) de Google Cloud. Sin ella, las tarjetas
+    # enseñan el dibujo de siempre (la ruta no existe). Es un secreto: solo
+    # en el servidor (poner-clave.sh), nunca en git ni dentro de la app.
+    google_places_api_key: SecretStr | None = None
+    # Búsquedas NUEVAS al día para todos juntos (lo que ya está en caché no
+    # cuenta). Es el freno para que Google nunca cobre una sorpresa.
+    google_places_daily_limit: int = Field(default=100, ge=0, le=100_000)
+    google_places_rate_per_second: float = Field(default=5.0, gt=0, le=50)
+    google_places_timeout_seconds: float = Field(default=8.0, gt=0, le=60)
+
     # --- Gastos compartidos (ver el paquete expenses/): solo necesita PostgreSQL ---
     expenses_enabled: bool = True
 
@@ -349,7 +360,13 @@ class Settings(BaseSettings):
     # --- Registros (logs) ---------------------------------------------------------
     log_level: Literal["debug", "info", "warning", "error"] = "info"
 
-    @field_validator("notify_pseudonym_key", "mapillary_token", "ticketmaster_api_key", mode="before")
+    @field_validator(
+        "notify_pseudonym_key",
+        "mapillary_token",
+        "ticketmaster_api_key",
+        "google_places_api_key",
+        mode="before",
+    )
     @classmethod
     def _empty_is_none(cls, value: object) -> object:
         # docker compose pasa "NOTIFY_PSEUDONYM_KEY=" o "MAPILLARY_TOKEN="
@@ -421,6 +438,16 @@ class Settings(BaseSettings):
                 "las fotos de calle necesitan Redis: define REDIS_HOST y REDIS_PASSWORD "
                 "(o quita MAPILLARY_TOKEN)"
             )
+        if self.google_places_api_key is not None and (not self.redis_host or self.redis_password is None):
+            problems.append(
+                "las fotos de Google de las tiendas necesitan Redis: define REDIS_HOST y "
+                "REDIS_PASSWORD (o quita GOOGLE_PLACES_API_KEY)"
+            )
+        if self.google_places_api_key is not None and not re.fullmatch(
+            r"[A-Za-z0-9_-]{20,100}", self.google_places_api_key.get_secret_value()
+        ):
+            # No repetimos el valor en el mensaje: es un secreto.
+            problems.append("GOOGLE_PLACES_API_KEY no tiene forma de clave de Google (AIza...)")
         if self.landmarks_enabled and (not self.redis_host or self.redis_password is None):
             problems.append(
                 "el modo cámara necesita Redis: define REDIS_HOST y REDIS_PASSWORD "
