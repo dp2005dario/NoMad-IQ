@@ -53,6 +53,11 @@ class ApiClient {
   final http.Client _client;
   final Duration timeout;
 
+  /// Para lo que el servidor saca de OpenStreetMap (Cerca de ti, Hoteles,
+  /// cajeros...): con los servidores públicos saturados tarda a veces 20-30 s.
+  /// Antes la app se rendía a los 10 s y decía "Sin conexión" sin serlo.
+  static const Duration slow = Duration(seconds: 45);
+
   /// Convierte una ruta del servidor ("/v1/audio/...") en dirección completa.
   /// Si ya es completa (https://cdn...), se deja tal cual.
   Uri resolve(String pathOrUrl) => _base.resolve(pathOrUrl);
@@ -60,17 +65,21 @@ class ApiClient {
   /// [public]: la ruta también la puede ver un invitado (p. ej. los chollos
   /// de vuelos). Si hay sesión se manda el pase igualmente; si no, se pide
   /// sin pase en lugar de rendirse.
+  ///
+  /// [timeout]: para las búsquedas lentas del servidor (OpenStreetMap a
+  /// veces tarda 20-30 s). Si no se pone, los 10 s de siempre.
   Future<Object?> getJson(
     String path, {
     Map<String, String>? query,
     bool public = false,
+    Duration? timeout,
   }) {
     final Uri uri = _base
         .resolve(path)
         .replace(
           queryParameters: query == null || query.isEmpty ? null : query,
         );
-    return _send('GET', uri, null, public: public);
+    return _send('GET', uri, null, public: public, timeout: timeout);
   }
 
   Future<Object?> postJson(String path, Object body) =>
@@ -127,21 +136,22 @@ class ApiClient {
     Uri uri,
     String? body, {
     bool public = false,
+    Duration? timeout,
   }) async {
     if (_session.status != SessionStatus.signedIn) {
       // Sin cuenta no hay pase: si la ruta es pública se pide sin él; si no,
       // ni lo intentamos (la puerta diría 401).
       if (!public) throw const ApiException(ApiError.signedOut);
-      return _decode(await _once(method, uri, body, null));
+      return _decode(await _once(method, uri, body, null, timeout));
     }
     String token = await _token(() => _session.accessToken());
-    http.Response response = await _once(method, uri, body, token);
+    http.Response response = await _once(method, uri, body, token, timeout);
     if (response.statusCode == 401) {
       // El pase no valía (p. ej. la sesión se cerró en otro sitio): se pide
       // uno nuevo UNA vez. Si tampoco vale, la sesión se da por terminada.
       final String rejected = token;
       token = await _token(() => _session.renewAccessToken(rejected));
-      response = await _once(method, uri, body, token);
+      response = await _once(method, uri, body, token, timeout);
     }
     return _decode(response);
   }
@@ -164,8 +174,10 @@ class ApiClient {
     String method,
     Uri uri,
     String? body,
-    String? token,
-  ) async {
+    String? token, [
+    Duration? wait,
+  ]) async {
+    final Duration limit = wait ?? timeout;
     final http.Request request = http.Request(method, uri)
       ..headers['Accept'] = 'application/json';
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
@@ -175,8 +187,8 @@ class ApiClient {
     }
     try {
       return await http.Response.fromStream(
-        await _client.send(request).timeout(timeout),
-      ).timeout(timeout);
+        await _client.send(request).timeout(limit),
+      ).timeout(limit);
     } on TimeoutException {
       throw const ApiException(ApiError.network);
     } on SocketException {

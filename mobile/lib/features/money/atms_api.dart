@@ -156,6 +156,7 @@ class AtmsApi {
         'lon': me.lon.toStringAsFixed(2),
       },
       public: true,
+      timeout: ApiClient.slow,
     ),
   );
 }

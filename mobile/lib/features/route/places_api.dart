@@ -177,6 +177,7 @@ class PlacesApi {
         '/v1/places/${Uri.encodeComponent(iata)}',
         query: <String, String>{'lang': lang},
         public: true,
+        timeout: ApiClient.slow,
       );
       return PlaceCard.parse(json);
     } on ApiException catch (e) {

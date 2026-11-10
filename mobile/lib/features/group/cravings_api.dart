@@ -73,6 +73,7 @@ class CravingsApi {
         'kind': kind.name,
       },
       public: true,
+      timeout: ApiClient.slow,
     );
     if (json is! Map<String, Object?> || json['spots'] is! List) {
       throw const ApiException(ApiError.unavailable);

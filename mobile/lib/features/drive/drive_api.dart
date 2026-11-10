@@ -157,6 +157,7 @@ class DriveApi {
           'lon': cell.lon.toStringAsFixed(2),
         },
         public: true,
+        timeout: ApiClient.slow,
       ),
     );
   }

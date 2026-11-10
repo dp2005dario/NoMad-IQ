@@ -128,6 +128,7 @@ class StaysApi {
         '/v1/stays',
         query: <String, String>{'lat': '$lat', 'lon': '$lon'},
         public: true,
+        timeout: ApiClient.slow,
       ),
     );
   }
