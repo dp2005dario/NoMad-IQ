@@ -2339,5 +2339,13 @@
   "groupStepOptions": "বিকল্পগুলো",
   "groupStepVote": "এজেন্টরা আলোচনা করে",
   "groupPreviewTitle": "তোমার গ্রুপ এভাবে দেখবে",
-  "groupPreviewEmpty": "বিকল্প লেখো, এখানে দেখতে পাবে"
+  "groupPreviewEmpty": "বিকল্প লেখো, এখানে দেখতে পাবে",
+  "hoNearTitle": "সবচেয়ে কাছের থাকার জায়গা",
+  "hoKindHotel": "হোটেল",
+  "hoKindHostel": "হোস্টেল",
+  "hoKindGuest": "গেস্টহাউস",
+  "hoKindMotel": "মোটেল",
+  "hoKindApartment": "অ্যাপার্টমেন্ট",
+  "hoOpenMaps": "ম্যাপস",
+  "hoHotelPrices": "দাম"
 }

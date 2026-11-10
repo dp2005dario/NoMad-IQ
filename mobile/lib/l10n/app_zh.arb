@@ -2339,5 +2339,13 @@
   "groupStepOptions": "选项",
   "groupStepVote": "智能体协商",
   "groupPreviewTitle": "你的小组会看到这样",
-  "groupPreviewEmpty": "写下选项，就会显示在这里"
+  "groupPreviewEmpty": "写下选项，就会显示在这里",
+  "hoNearTitle": "最近的住处",
+  "hoKindHotel": "酒店",
+  "hoKindHostel": "青旅",
+  "hoKindGuest": "民宿",
+  "hoKindMotel": "汽车旅馆",
+  "hoKindApartment": "公寓",
+  "hoOpenMaps": "地图",
+  "hoHotelPrices": "价格"
 }

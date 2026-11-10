@@ -222,17 +222,25 @@ class NearbyApi {
   Future<ShopPhoto?> photo(NearbySpot spot) async {
     final String? name = spot.name;
     if (name == null) return null;
-    return ShopPhoto.parse(
-      await _api.getJson(
-        '/v1/nearby/photo',
-        query: <String, String>{
-          'id': spot.id,
-          'name': name.length > 80 ? name.substring(0, 80) : name,
-          'lat': spot.point.lat.toStringAsFixed(5),
-          'lon': spot.point.lon.toStringAsFixed(5),
-        },
-        public: true,
-      ),
-    );
+    return photoOf(id: spot.id, name: name, point: spot.point);
   }
+
+  /// Lo mismo para cualquier sitio de OpenStreetMap con nombre (también
+  /// los hoteles de "Dormir barato").
+  Future<ShopPhoto?> photoOf({
+    required String id,
+    required String name,
+    required GeoPoint point,
+  }) async => ShopPhoto.parse(
+    await _api.getJson(
+      '/v1/nearby/photo',
+      query: <String, String>{
+        'id': id,
+        'name': name.length > 80 ? name.substring(0, 80) : name,
+        'lat': point.lat.toStringAsFixed(5),
+        'lon': point.lon.toStringAsFixed(5),
+      },
+      public: true,
+    ),
+  );
 }

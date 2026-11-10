@@ -58,6 +58,28 @@ const Map<String, Object?> staysJson = <String, Object?>{
     // Mal formada: se ignora.
     <String, Object?>{'id': 'x', 'by': 'boat'},
   ],
+  // El servidor los ordena desde el centro de su casilla; la app, desde ti.
+  'hotels': <Object?>[
+    <String, Object?>{
+      'id': 'n7',
+      'name': 'Hôtel Lejano',
+      'kind': 'hotel',
+      'lat': 48.8650,
+      'lon': 2.2945,
+      'km': 0.4,
+    },
+    <String, Object?>{
+      'id': 'w8',
+      'name': 'Pension Tour',
+      'kind': 'guest_house',
+      'stars': 3,
+      'lat': 48.8590,
+      'lon': 2.2945,
+      'km': 0.9,
+    },
+    // Sin id de OpenStreetMap válido: fuera.
+    <String, Object?>{'id': 'x1', 'name': 'Raro', 'kind': 'hotel'},
+  ],
 };
 
 void main() {
@@ -199,6 +221,30 @@ void main() {
     );
     send!('book:99'); // una zona que no existe: nada
     expect(opened, hasLength(1));
+
+    // Los alojamientos más cerca, como en Google Maps: el más cercano a TI
+    // primero, con su tipo, estrellas y metros.
+    final List<Object?> hotels = data['hotels']! as List<Object?>;
+    expect(hotels, hasLength(2));
+    final Map<String, Object?> first = hotels.first! as Map<String, Object?>;
+    expect(first['name'], 'Pension Tour');
+    expect(first['kind'], 'guest_house');
+    expect(first['stars'], 3);
+    expect(first['m'], 70);
+    // Tocar la tarjeta abre ESE hotel en Google Maps; "Precios", Booking
+    // alrededor del hotel.
+    send!('hotel:0');
+    expect(opened.last.host, 'www.google.com');
+    expect(opened.last.pathSegments, <String>[
+      'maps',
+      'search',
+      'Pension Tour',
+      '@48.85900,2.29450,17z',
+    ]);
+    send!('hprice:0');
+    expect(opened.last.queryParameters['latitude'], '48.85900');
+    send!('hotel:9'); // no existe: nada
+    expect(opened, hasLength(3));
 
     // Otro chip (la Torre Eiffel): se pide su zona y lo apuntado se guarda.
     final int before = pages.length;

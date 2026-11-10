@@ -2339,5 +2339,13 @@
   "groupStepOptions": "Opțiunile",
   "groupStepVote": "Agenții negociază",
   "groupPreviewTitle": "Așa îl va vedea grupul tău",
-  "groupPreviewEmpty": "Scrie opțiunile și le vei vedea aici"
+  "groupPreviewEmpty": "Scrie opțiunile și le vei vedea aici",
+  "hoNearTitle": "Cazare cea mai apropiată",
+  "hoKindHotel": "Hotel",
+  "hoKindHostel": "Hostel",
+  "hoKindGuest": "Pensiune",
+  "hoKindMotel": "Motel",
+  "hoKindApartment": "Apartament",
+  "hoOpenMaps": "Hărți",
+  "hoHotelPrices": "Prețuri"
 }

@@ -181,6 +181,14 @@ Map<String, String> staysTexts(AppLocalizations t) {
     'nearest': t.hoNearest,
     'save': t.hoSave('{money}', '{n}', '{place}'),
     'nearSite': t.staysNearSite,
+    'nearTitle': t.hoNearTitle,
+    'k_hotel': t.hoKindHotel,
+    'k_hostel': t.hoKindHostel,
+    'k_guest_house': t.hoKindGuest,
+    'k_motel': t.hoKindMotel,
+    'k_apartment': t.hoKindApartment,
+    'openMaps': t.hoOpenMaps,
+    'hotelPrices': t.hoHotelPrices,
   };
 }
 
@@ -189,6 +197,29 @@ Map<String, String> staysTexts(AppLocalizations t) {
   (p.lon - from.lon) * 111320 * math.cos(from.lat * math.pi / 180),
   -(p.lat - from.lat) * 110540,
 );
+
+/// Metros en línea recta de [a] a [b] (para "a 350 m").
+double distanceMeters(GeoPoint a, GeoPoint b) {
+  final (double x, double y) = metersFrom(a, b);
+  return math.sqrt(x * x + y * y);
+}
+
+/// Los alojamientos ordenados por lo cerca que están de TI (el servidor
+/// los ordena desde el centro de su casilla, que puede estar a 1 km).
+List<NearHotel> nearestHotels(
+  GeoPoint center,
+  List<NearHotel> hotels, {
+  int limit = 15,
+}) {
+  final List<NearHotel> list = List<NearHotel>.of(hotels)
+    ..sort(
+      (NearHotel a, NearHotel b) => distanceMeters(
+        center,
+        a.point,
+      ).compareTo(distanceMeters(center, b.point)),
+    );
+  return list.take(limit).toList();
+}
 
 /// Todo lo que necesita la página.
 Map<String, Object?> staysPageData({
@@ -200,6 +231,7 @@ Map<String, Object?> staysPageData({
   GeoPoint? center,
   StayArea? area,
   Map<String, StayPrices> prices = const <String, StayPrices>{},
+  Map<String, String> photos = const <String, String>{},
   String? message,
   bool retry = false,
 }) => <String, Object?>{
@@ -227,6 +259,20 @@ Map<String, Object?> staysPageData({
             'fare': p?.fare,
           };
         }(),
+  ],
+  // Los alojamientos más cerca, como en Google Maps: nombre, tipo,
+  // estrellas, metros hasta el sitio y su foto (si ya llegó).
+  'hotels': <Object?>[
+    if (center != null && area != null && message == null)
+      for (final NearHotel h in nearestHotels(center, area.hotels))
+        <String, Object?>{
+          'id': h.id,
+          'name': h.name,
+          'kind': h.kind,
+          'stars': h.stars,
+          'm': (distanceMeters(center, h.point) / 10).round() * 10,
+          'img': photos[h.id] ?? '',
+        },
   ],
   'nights': nights,
   'msg': message ?? '',

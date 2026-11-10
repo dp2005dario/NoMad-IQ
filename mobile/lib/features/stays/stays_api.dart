@@ -93,11 +93,64 @@ class StayZone {
   }
 }
 
+/// Un alojamiento con nombre cerca del sitio (la lista "como Google Maps").
+class NearHotel {
+  const NearHotel({
+    required this.id,
+    required this.name,
+    required this.kind,
+    required this.point,
+    this.stars,
+  });
+
+  /// El id de OpenStreetMap ("n123"): con él se pide su foto.
+  final String id;
+  final String name;
+
+  /// hotel · hostel · guest_house · motel · apartment
+  final String kind;
+  final GeoPoint point;
+  final int? stars;
+
+  static NearHotel? parse(Object? json) {
+    if (json is! Map<String, Object?>) return null;
+    final Object? id = json['id'];
+    final Object? name = json['name'];
+    final Object? kind = json['kind'];
+    final Object? lat = json['lat'];
+    final Object? lon = json['lon'];
+    final Object? stars = json['stars'];
+    if (id is! String ||
+        !RegExp(r'^[nwr][1-9][0-9]{0,15}$').hasMatch(id) ||
+        name is! String ||
+        name.trim().isEmpty ||
+        kind is! String ||
+        lat is! num ||
+        lon is! num) {
+      return null;
+    }
+    return NearHotel(
+      id: id,
+      name: name.trim(),
+      kind: kind,
+      point: GeoPoint(lat.toDouble(), lon.toDouble()),
+      stars: stars is int && stars >= 1 && stars <= 5 ? stars : null,
+    );
+  }
+}
+
 class StayArea {
-  const StayArea({required this.zones, required this.attribution});
+  const StayArea({
+    required this.zones,
+    required this.attribution,
+    this.hotels = const <NearHotel>[],
+  });
 
   final List<StayZone> zones;
   final String attribution;
+
+  /// Los alojamientos más cerca (puede venir vacío en un servidor viejo).
+  final List<NearHotel> hotels;
 
   static StayArea parse(Object? json) {
     if (json is! Map<String, Object?> || json['zones'] is! List) {
@@ -108,6 +161,11 @@ class StayArea {
       zones: <StayZone>[
         for (final Object? z in json['zones']! as List<Object?>)
           ?StayZone.parse(z),
+      ],
+      hotels: <NearHotel>[
+        if (json['hotels'] is List<Object?>)
+          for (final Object? h in json['hotels']! as List<Object?>)
+            ?NearHotel.parse(h),
       ],
       attribution: attribution is String
           ? attribution

@@ -2339,5 +2339,13 @@
   "groupStepOptions": "De opties",
   "groupStepVote": "De agenten onderhandelen",
   "groupPreviewTitle": "Zo ziet je groep het",
-  "groupPreviewEmpty": "Schrijf de opties en je ziet ze hier"
+  "groupPreviewEmpty": "Schrijf de opties en je ziet ze hier",
+  "hoNearTitle": "Dichtstbijzijnde overnachting",
+  "hoKindHotel": "Hotel",
+  "hoKindHostel": "Hostel",
+  "hoKindGuest": "Pension",
+  "hoKindMotel": "Motel",
+  "hoKindApartment": "Appartement",
+  "hoOpenMaps": "Maps",
+  "hoHotelPrices": "Prijzen"
 }

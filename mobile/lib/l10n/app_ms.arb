@@ -2339,5 +2339,13 @@
   "groupStepOptions": "Pilihan",
   "groupStepVote": "Ejen berunding",
   "groupPreviewTitle": "Beginilah kumpulan anda akan melihatnya",
-  "groupPreviewEmpty": "Tulis pilihan dan lihat di sini"
+  "groupPreviewEmpty": "Tulis pilihan dan lihat di sini",
+  "hoNearTitle": "Penginapan terdekat",
+  "hoKindHotel": "Hotel",
+  "hoKindHostel": "Asrama",
+  "hoKindGuest": "Rumah tamu",
+  "hoKindMotel": "Motel",
+  "hoKindApartment": "Pangsapuri",
+  "hoOpenMaps": "Peta",
+  "hoHotelPrices": "Harga"
 }

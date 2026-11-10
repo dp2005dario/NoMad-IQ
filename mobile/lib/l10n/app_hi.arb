@@ -2339,5 +2339,13 @@
   "groupStepOptions": "विकल्प",
   "groupStepVote": "एजेंट मोलभाव करते हैं",
   "groupPreviewTitle": "आपका ग्रुप इसे ऐसे देखेगा",
-  "groupPreviewEmpty": "विकल्प लिखें, यहाँ दिखेंगे"
+  "groupPreviewEmpty": "विकल्प लिखें, यहाँ दिखेंगे",
+  "hoNearTitle": "सबसे पास ठहरने की जगह",
+  "hoKindHotel": "होटल",
+  "hoKindHostel": "हॉस्टल",
+  "hoKindGuest": "गेस्टहाउस",
+  "hoKindMotel": "मोटल",
+  "hoKindApartment": "अपार्टमेंट",
+  "hoOpenMaps": "मैप्स",
+  "hoHotelPrices": "कीमतें"
 }

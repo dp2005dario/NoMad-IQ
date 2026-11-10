@@ -2339,5 +2339,13 @@
   "groupStepOptions": "Mga opsyon",
   "groupStepVote": "Nag-uusap ang mga agent",
   "groupPreviewTitle": "Ganito ito makikita ng grupo mo",
-  "groupPreviewEmpty": "Isulat ang mga opsyon at makikita mo rito"
+  "groupPreviewEmpty": "Isulat ang mga opsyon at makikita mo rito",
+  "hoNearTitle": "Pinakamalapit na matutuluyan",
+  "hoKindHotel": "Hotel",
+  "hoKindHostel": "Hostel",
+  "hoKindGuest": "Guesthouse",
+  "hoKindMotel": "Motel",
+  "hoKindApartment": "Apartment",
+  "hoOpenMaps": "Maps",
+  "hoHotelPrices": "Presyo"
 }

@@ -2339,5 +2339,13 @@
   "groupStepOptions": "候補",
   "groupStepVote": "エージェントが交渉",
   "groupPreviewTitle": "グループにはこう見えます",
-  "groupPreviewEmpty": "候補を書くとここに表示されます"
+  "groupPreviewEmpty": "候補を書くとここに表示されます",
+  "hoNearTitle": "近くの宿",
+  "hoKindHotel": "ホテル",
+  "hoKindHostel": "ホステル",
+  "hoKindGuest": "ゲストハウス",
+  "hoKindMotel": "モーテル",
+  "hoKindApartment": "アパートメント",
+  "hoOpenMaps": "マップ",
+  "hoHotelPrices": "料金"
 }

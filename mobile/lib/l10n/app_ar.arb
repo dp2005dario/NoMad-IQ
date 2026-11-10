@@ -2339,5 +2339,13 @@
   "groupStepOptions": "الخيارات",
   "groupStepVote": "الوكلاء يتفاوضون",
   "groupPreviewTitle": "هكذا ستراها مجموعتك",
-  "groupPreviewEmpty": "اكتب الخيارات وستراها هنا"
+  "groupPreviewEmpty": "اكتب الخيارات وستراها هنا",
+  "hoNearTitle": "أقرب أماكن للمبيت",
+  "hoKindHotel": "فندق",
+  "hoKindHostel": "نُزُل",
+  "hoKindGuest": "بيت ضيافة",
+  "hoKindMotel": "موتيل",
+  "hoKindApartment": "شقة",
+  "hoOpenMaps": "الخرائط",
+  "hoHotelPrices": "الأسعار"
 }

@@ -2339,5 +2339,13 @@
   "groupStepOptions": "Варианты",
   "groupStepVote": "Агенты договариваются",
   "groupPreviewTitle": "Так это увидит твоя группа",
-  "groupPreviewEmpty": "Напиши варианты — и увидишь их здесь"
+  "groupPreviewEmpty": "Напиши варианты — и увидишь их здесь",
+  "hoNearTitle": "Ближайшее жильё",
+  "hoKindHotel": "Отель",
+  "hoKindHostel": "Хостел",
+  "hoKindGuest": "Гостевой дом",
+  "hoKindMotel": "Мотель",
+  "hoKindApartment": "Апартаменты",
+  "hoOpenMaps": "Карты",
+  "hoHotelPrices": "Цены"
 }

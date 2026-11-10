@@ -11226,5 +11226,37 @@
   "groupPreviewEmpty": "Write the options and you'll see them here",
   "@groupPreviewEmpty": {
     "description": "Empty live preview"
+  },
+  "hoNearTitle": "Nearest places to stay",
+  "@hoNearTitle": {
+    "description": "Title of the horizontal list of the nearest hotels (like Google Maps)"
+  },
+  "hoKindHotel": "Hotel",
+  "@hoKindHotel": {
+    "description": "Type of lodging"
+  },
+  "hoKindHostel": "Hostel",
+  "@hoKindHostel": {
+    "description": "Type of lodging"
+  },
+  "hoKindGuest": "Guesthouse",
+  "@hoKindGuest": {
+    "description": "Type of lodging (guest house)"
+  },
+  "hoKindMotel": "Motel",
+  "@hoKindMotel": {
+    "description": "Type of lodging"
+  },
+  "hoKindApartment": "Apartment",
+  "@hoKindApartment": {
+    "description": "Type of lodging (holiday apartment)"
+  },
+  "hoOpenMaps": "Maps",
+  "@hoOpenMaps": {
+    "description": "Short button: open this hotel in Google Maps"
+  },
+  "hoHotelPrices": "Prices",
+  "@hoHotelPrices": {
+    "description": "Short button: see prices of this hotel on Booking"
   }
 }

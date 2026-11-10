@@ -2339,5 +2339,13 @@
   "groupStepOptions": "اختیارات",
   "groupStepVote": "ایجنٹ بات چیت کرتے ہیں",
   "groupPreviewTitle": "آپ کا گروپ اسے ایسے دیکھے گا",
-  "groupPreviewEmpty": "اختیارات لکھیں، یہاں نظر آئیں گے"
+  "groupPreviewEmpty": "اختیارات لکھیں، یہاں نظر آئیں گے",
+  "hoNearTitle": "قریب ترین رہائش",
+  "hoKindHotel": "ہوٹل",
+  "hoKindHostel": "ہاسٹل",
+  "hoKindGuest": "گیسٹ ہاؤس",
+  "hoKindMotel": "موٹل",
+  "hoKindApartment": "اپارٹمنٹ",
+  "hoOpenMaps": "نقشہ",
+  "hoHotelPrices": "قیمتیں"
 }

@@ -2339,5 +2339,13 @@
   "groupStepOptions": "Seçenekler",
   "groupStepVote": "Ajanlar pazarlık eder",
   "groupPreviewTitle": "Grubun böyle görecek",
-  "groupPreviewEmpty": "Seçenekleri yaz, burada görürsün"
+  "groupPreviewEmpty": "Seçenekleri yaz, burada görürsün",
+  "hoNearTitle": "En yakın konaklama",
+  "hoKindHotel": "Otel",
+  "hoKindHostel": "Hostel",
+  "hoKindGuest": "Pansiyon",
+  "hoKindMotel": "Motel",
+  "hoKindApartment": "Daire",
+  "hoOpenMaps": "Haritalar",
+  "hoHotelPrices": "Fiyatlar"
 }

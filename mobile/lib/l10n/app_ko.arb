@@ -2339,5 +2339,13 @@
   "groupStepOptions": "선택지",
   "groupStepVote": "에이전트가 협상해요",
   "groupPreviewTitle": "그룹에는 이렇게 보여요",
-  "groupPreviewEmpty": "선택지를 쓰면 여기에 보여요"
+  "groupPreviewEmpty": "선택지를 쓰면 여기에 보여요",
+  "hoNearTitle": "가장 가까운 숙소",
+  "hoKindHotel": "호텔",
+  "hoKindHostel": "호스텔",
+  "hoKindGuest": "게스트하우스",
+  "hoKindMotel": "모텔",
+  "hoKindApartment": "아파트",
+  "hoOpenMaps": "지도",
+  "hoHotelPrices": "가격"
 }

@@ -20,8 +20,9 @@ from ai_orchestrator.stays.domain import (
     cell_of,
     km_between,
     minutes_for,
+    nearest_hotels,
 )
-from ai_orchestrator.stays.overpass import StayOverpass, build_query, parse
+from ai_orchestrator.stays.overpass import StayOverpass, build_far_query, build_near_query, parse
 from ai_orchestrator.stays.service import StayService
 
 # Disneyland París (más o menos) y estaciones del RER A hacia París.
@@ -95,21 +96,48 @@ def test_parse_keeps_only_ours() -> None:
 
 
 def test_query_has_fixed_numbers() -> None:
-    q = build_query(48.88, 2.78)
-    assert "around:35000,48.88000,2.78000" in q
-    assert "around.st:600" in q
-    assert q.count("out center") == 2
+    near = build_near_query(48.88, 2.78)
+    assert "around:2000,48.88000,2.78000" in near
+    assert near.count("out center") == 1 and "railway" not in near
+    far = build_far_query(48.88, 2.78)
+    assert "around:35000,48.88000,2.78000" in far
+    assert "around.st:600" in far
+    assert far.count("out center") == 1
+
+
+def test_nearest_hotels_closest_first_and_only_with_name() -> None:
+    lodgings = [
+        Lodging(id="n1", lat=PARK[0] + 0.01, lon=PARK[1], name="Lejos", kind="hotel"),
+        Lodging(id="n2", lat=PARK[0] + 0.001, lon=PARK[1], name="Al lado", kind="hostel", stars=3),
+        Lodging(id="n3", lat=PARK[0] + 0.0005, lon=PARK[1], name=None, kind="hotel"),
+        Lodging(id="n4", lat=VAL[0] - 0.05, lon=VAL[1], name="Fuera", kind="hotel"),
+    ]
+    hotels = nearest_hotels(*PARK, lodgings)
+    assert [h.name for h in hotels] == ["Al lado", "Lejos"]
+    assert hotels[0].stars == 3 and hotels[0].km < 0.2
 
 
 class FakeOverpass:
     def __init__(self) -> None:
         self.requests: list[httpx.Request] = []
         self.status = 200
+        # Solo falla la pregunta grande (las estaciones).
+        self.far_status = 200
 
     def handler(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request)
         if self.status != 200:
             return httpx.Response(self.status)
+        if "around.st" not in request.content.decode():
+            # La pregunta pequeña: los hoteles de al lado del parque.
+            return httpx.Response(
+                200,
+                json={
+                    "elements": [row(200, PARK[0] + 0.002, PARK[1], tourism="hotel", name="Junto al parque")]
+                },
+            )
+        if self.far_status != 200:
+            return httpx.Response(self.far_status)
         rows = [row(100, *VAL, railway="station", name="Val d'Europe")] + [
             row(10 + i, VAL[0] + i * 1e-4, VAL[1], tourism="hotel", name=f"H{i}") for i in range(3)
         ]
@@ -137,15 +165,18 @@ async def test_one_overpass_call_per_cell_and_public_api() -> None:
     fake = FakeOverpass()
     svc = service(fake)
     await asyncio.gather(*(svc.around(*PARK) for _ in range(5)))
-    assert len(fake.requests) == 1
-    sent = parse_qs(fake.requests[0].content.decode())["data"][0]
-    assert "48.8722" not in sent  # la casilla, no el punto exacto
+    # Una vez por casilla: la pregunta pequeña y la grande, a la vez.
+    assert len(fake.requests) == 2
+    for req in fake.requests:
+        sent = parse_qs(req.content.decode())["data"][0]
+        assert "48.8722" not in sent  # la casilla, no el punto exacto
     app = create_api(InMemoryStore(), stays=svc)
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as client:
         ok = await client.get("/v1/stays", params={"lat": PARK[0], "lon": PARK[1]})
         assert ok.status_code == 200 and ok.headers["Cache-Control"] == "public, max-age=86400"
         body = ok.json()
-        assert [z["name"] for z in body["zones"]] == ["Val d'Europe"]
+        assert [z["name"] for z in body["zones"]] == [None, "Val d'Europe"]
+        assert body["hotels"][0]["name"] == "Junto al parque"
         assert "OpenStreetMap" in body["attribution"]
         assert (await client.get("/v1/stays", params={"lat": 99, "lon": 0})).status_code == 400
 
@@ -158,3 +189,25 @@ async def test_busy_when_overpass_fails(status: int) -> None:
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as client:
         resp = await client.get("/v1/stays", params={"lat": 40.4, "lon": -3.7})
     assert resp.status_code == 503 and resp.headers["Retry-After"] == "60"
+
+
+async def test_only_near_hotels_when_the_big_query_fails() -> None:
+    """La parte lenta falla: salen igual los hoteles de al lado (no "sin
+    conexión") y se guarda poco rato para volver a intentarlo."""
+    fake = FakeOverpass()
+    fake.far_status = 504
+    cache = MemoryCache()
+    puts: list[int] = []
+    original = cache.put
+
+    async def put(area: StayArea, *, ttl_seconds: int) -> None:
+        puts.append(ttl_seconds)
+        await original(area, ttl_seconds=ttl_seconds)
+
+    cache.put = put  # type: ignore[method-assign]
+    http = httpx.AsyncClient(transport=httpx.MockTransport(fake.handler))
+    source = StayOverpass(http, limiter=RateLimiter(1000, 1000), url="https://overpass.test/api")
+    area = await StayService(source=source, cache=cache).around(*PARK)
+    assert [h.name for h in area.hotels] == ["Junto al parque"]
+    assert [z.id for z in area.zones] == ["walk"]
+    assert puts == [3600]

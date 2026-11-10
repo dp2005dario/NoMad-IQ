@@ -2339,5 +2339,13 @@
   "groupStepOptions": "گزینه‌ها",
   "groupStepVote": "عامل‌ها مذاکره می‌کنند",
   "groupPreviewTitle": "گروهت این‌طور می‌بیند",
-  "groupPreviewEmpty": "گزینه‌ها را بنویس تا این‌جا ببینی"
+  "groupPreviewEmpty": "گزینه‌ها را بنویس تا این‌جا ببینی",
+  "hoNearTitle": "نزدیک‌ترین اقامتگاه‌ها",
+  "hoKindHotel": "هتل",
+  "hoKindHostel": "هاستل",
+  "hoKindGuest": "مهمان‌خانه",
+  "hoKindMotel": "متل",
+  "hoKindApartment": "آپارتمان",
+  "hoOpenMaps": "نقشه",
+  "hoHotelPrices": "قیمت‌ها"
 }

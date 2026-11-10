@@ -2339,5 +2339,13 @@
   "groupStepOptions": "Les options",
   "groupStepVote": "Les agents négocient",
   "groupPreviewTitle": "Ce que verra ton groupe",
-  "groupPreviewEmpty": "Écris les options et tu les verras ici"
+  "groupPreviewEmpty": "Écris les options et tu les verras ici",
+  "hoNearTitle": "Pour dormir au plus près",
+  "hoKindHotel": "Hôtel",
+  "hoKindHostel": "Auberge",
+  "hoKindGuest": "Maison d'hôtes",
+  "hoKindMotel": "Motel",
+  "hoKindApartment": "Appartement",
+  "hoOpenMaps": "Maps",
+  "hoHotelPrices": "Prix"
 }

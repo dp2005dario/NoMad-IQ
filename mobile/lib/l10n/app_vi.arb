@@ -2339,5 +2339,13 @@
   "groupStepOptions": "Các lựa chọn",
   "groupStepVote": "Các trợ lý thương lượng",
   "groupPreviewTitle": "Nhóm của bạn sẽ thấy thế này",
-  "groupPreviewEmpty": "Viết các lựa chọn và bạn sẽ thấy ở đây"
+  "groupPreviewEmpty": "Viết các lựa chọn và bạn sẽ thấy ở đây",
+  "hoNearTitle": "Chỗ ở gần nhất",
+  "hoKindHotel": "Khách sạn",
+  "hoKindHostel": "Nhà nghỉ tập thể",
+  "hoKindGuest": "Nhà khách",
+  "hoKindMotel": "Nhà nghỉ",
+  "hoKindApartment": "Căn hộ",
+  "hoOpenMaps": "Bản đồ",
+  "hoHotelPrices": "Giá"
 }
