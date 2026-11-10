@@ -156,18 +156,22 @@ fi
 
 # ¿Hay máquinas para tu cuenta en esa región? Se prueba el tamaño pedido y,
 # si no lo hay, otros de 8 GB parecidos. Deja en SIZE el primero que haya.
+# Solo descarta la restricción de tipo "Location" (ese tamaño no está en la
+# región para tu cuenta). La de tipo "Zone" solo quita alguna zona concreta
+# y la máquina se puede crear igual, porque no pedimos zona.
 TAMANOS="$SIZE"
 if [ "$SIZE" = Standard_B2as_v2 ]; then
-  TAMANOS="Standard_B2as_v2 Standard_B2s_v2 Standard_D2as_v5 Standard_D2s_v5"
+  TAMANOS="Standard_B2as_v2 Standard_B2s_v2 Standard_B2ms Standard_D2as_v5 Standard_D2s_v5 Standard_D2as_v4 Standard_D2s_v3"
 fi
 hay_maquina() {
-  local t
+  local libres t
+  # Una sola consulta por región (tarda unos segundos).
+  libres=" $(az vm list-skus -l "$1" --resource-type virtualMachines \
+    --query "[?length(restrictions[?type=='Location'])==\`0\`].name" -o tsv 2>/dev/null | tr '\n' ' ') "
   for t in $TAMANOS; do
-    if [ -n "$(az vm list-skus -l "$1" --size "$t" --resource-type virtualMachines \
-      --query "[?name=='$t' && length(restrictions)==\`0\`].name" -o tsv 2>/dev/null)" ]; then
-      SIZE="$t"
-      return 0
-    fi
+    case "$libres" in
+      *" $t "*) SIZE="$t"; return 0 ;;
+    esac
   done
   return 1
 }
