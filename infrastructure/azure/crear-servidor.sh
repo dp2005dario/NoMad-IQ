@@ -78,6 +78,9 @@ if ! az account show >/dev/null 2>&1; then
 fi
 SUB_NAME="$(az account show --query name -o tsv)"
 EMAIL="$(az account show --query user.name -o tsv)"
+# Con cuentas personales de Microsoft, Azure lo da como "live.com#tu@correo".
+# Let's Encrypt rechaza el "#" (y sin certificado la app no conecta).
+EMAIL="${EMAIL##*#}"
 echo "Suscripción: $SUB_NAME"
 echo "Máquina: $SIZE"
 
