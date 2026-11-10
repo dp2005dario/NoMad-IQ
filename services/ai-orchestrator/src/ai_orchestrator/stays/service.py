@@ -16,7 +16,7 @@ from redis.exceptions import RedisError
 
 from ai_orchestrator.atms.overpass import OverpassBusyError, OverpassError
 from ai_orchestrator.audioguides.cache import CacheError, SingleFlight
-from ai_orchestrator.stays.domain import Lodging, Station, StayArea, build_zones, cell_of
+from ai_orchestrator.stays.domain import Lodging, Station, StayArea, build_zones, cell_of, nearest_hotels
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ KEY_PREFIX = "ai:stays:v1"
 
 
 class StaySource(Protocol):
-    async def around(self, lat: float, lon: float) -> tuple[list[Station], list[Lodging]]: ...
+    async def around(self, lat: float, lon: float) -> tuple[list[Station], list[Lodging], bool]: ...
 
 
 class StayCache(Protocol):
@@ -71,6 +71,9 @@ class StayUnavailableError(Exception):
 @dataclass(frozen=True, slots=True)
 class StaySettings:
     ttl_seconds: int = 30 * 24 * 3600
+    # Si solo llegó una parte (la pregunta grande falló), se guarda poco
+    # rato: la siguiente vez se vuelve a intentar entera.
+    partial_ttl_seconds: int = 3600
 
 
 class StayService:
@@ -95,7 +98,13 @@ class StayService:
         return result
 
     async def _build(self, lat: float, lon: float) -> StayArea:
-        stations, lodgings = await self._source.around(lat, lon)
-        result = StayArea(lat=lat, lon=lon, zones=build_zones(lat, lon, stations, lodgings))
-        await self._cache.put(result, ttl_seconds=self._settings.ttl_seconds)
+        stations, lodgings, complete = await self._source.around(lat, lon)
+        result = StayArea(
+            lat=lat,
+            lon=lon,
+            zones=build_zones(lat, lon, stations, lodgings),
+            hotels=nearest_hotels(lat, lon, lodgings),
+        )
+        ttl = self._settings.ttl_seconds if complete else self._settings.partial_ttl_seconds
+        await self._cache.put(result, ttl_seconds=ttl)
         return result

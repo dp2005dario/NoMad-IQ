@@ -12,7 +12,7 @@ from conftest import InMemoryStore
 
 from ai_orchestrator.api import create_api
 from ai_orchestrator.nearby.domain import Nearby
-from ai_orchestrator.nearby.overpass import NearbyOverpass, build_query, parse_place, parse_spot
+from ai_orchestrator.nearby.overpass import MAX_SHOPS, NearbyOverpass, build_query, parse_place, parse_spot
 from ai_orchestrator.nearby.service import NearbyService, NearbyUnavailableError
 from ai_orchestrator.places.wikimedia import RateLimiter
 
@@ -118,8 +118,11 @@ def test_parse_restaurant_with_reservation() -> None:
         "required",
     )
     # Sin reserva, sin forma de reservar o con enlaces raros: fuera.
-    assert parse_spot(node(8, amenity="restaurant", name="X", website="https://x.es")) is None
-    assert parse_spot(node(8, amenity="restaurant", reservation="no", name="X", phone="+3491")) is None
+    # Sin reserva ya no es "mesa", pero sí sale como sitio para comer.
+    plain = parse_spot(node(8, amenity="restaurant", name="X", website="https://x.es"))
+    assert plain is not None and (plain.kind, plain.sub) == ("shop", "restaurant")
+    no_book = parse_spot(node(8, amenity="restaurant", reservation="no", name="X", phone="+3491"))
+    assert no_book is not None and no_book.kind == "shop"
     assert (
         parse_spot(node(8, amenity="restaurant", reservation="yes", name="X", website="javascript:1")) is None
     )
@@ -207,3 +210,21 @@ def test_sight_types_and_place_names() -> None:
         is None
     )
     assert parse_place(node(1, name="x"), 0, 0) is None
+
+
+def test_parse_shops_like_a_normal_map() -> None:
+    """Tiendas, súper, farmacias y cajeros salen como "shop" con su grupo."""
+    assert parse_spot(node(20, shop="clothes", name="Zara")).sub == "clothes"
+    assert parse_spot(node(21, shop="supermarket", name="Día")).sub == "supermarket"
+    assert parse_spot(node(22, amenity="pharmacy", name="Farmacia Sol")).sub == "pharmacy"
+    assert parse_spot(node(24, shop="Ropa rara!", name="X")).sub == "shop"
+    assert parse_spot(node(23, amenity="cafe", name="Café Central")).sub == "cafe"
+    # Un cajero sin nombre vale (se ve el banco si lo pone); una tienda no.
+    assert parse_spot(node(24, amenity="atm", operator="Santander")).name == "Santander"
+    assert parse_spot(node(25, shop="clothes")) is None
+
+
+def test_query_asks_for_shops_nearby() -> None:
+    q = build_query(40.40, -3.72, 40.44, -3.68)
+    assert 'nwr["shop"]["name"]' in q
+    assert f"out center {MAX_SHOPS}" in q

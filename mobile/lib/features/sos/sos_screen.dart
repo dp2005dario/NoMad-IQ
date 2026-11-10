@@ -98,8 +98,12 @@ class _SosScreenState extends State<SosScreen>
     await _services.openLink(uri);
   }
 
-  Future<void> _textContacts(AppLocalizations t) =>
-      _open(smsUri(_contacts, sosMessage(t.sosMessage, _fix?.point)));
+  Future<void> _textContacts(AppLocalizations t) => _open(
+    smsUri(
+      _contacts,
+      sosMessage(t.sosMessage, _fix?.point, noLocation: t.sosMessageNoLocation),
+    ),
+  );
 
   Future<void> _addContact() async {
     if (_contacts.length >= maxSosContacts) return;

@@ -96,6 +96,52 @@ MrzData? parseMrz(Iterable<String> pages, {DateTime? now}) {
     final MrzData? d = _pair(lines[i], lines[i + 1], today);
     if (d != null) return d;
   }
+  return _td3Loose(_allLines(pages), today);
+}
+
+/// Todas las líneas limpias (también las cortas: a veces el OCR parte una
+/// línea de la MRZ en dos trozos).
+List<String> _allLines(Iterable<String> pages) => <String>[
+  for (final String page in pages)
+    for (final String l in page.split('\n'))
+      if (_clean(l).length >= 5) _clean(l),
+];
+
+/// Plan B del pasaporte: se juntan todas las letras (sin saltos de línea)
+/// y se busca el "dibujo" de la línea 2 (número, control, país, fechas...);
+/// la línea 1 es la última que empieza por "P" antes de ella. Los dígitos de
+/// control siguen mandando: si no cuadran, nada.
+MrzData? _td3Loose(List<String> lines, DateTime now) {
+  final String flat = lines.join();
+  final RegExp low = RegExp(
+    r'[A-Z0-9<]{9}[0-9OI][A-Z<]{3}[0-9OI]{6}[0-9OI][MFX<][0-9OI]{6}[0-9OI]',
+  );
+  final RegExp top = RegExp(r'P[A-Z<][A-Z<]{3}[A-Z<]{3,}');
+  for (int i = 0; i < flat.length; i++) {
+    if (low.matchAsPrefix(flat, i) == null) continue;
+    final String l2 = flat
+        .substring(i, i + 44 > flat.length ? flat.length : i + 44)
+        .padRight(44, '<');
+    // La línea 1: en las líneas de antes, la última que encaja (y si el OCR
+    // la partió, se le pega el trozo siguiente).
+    final String before = flat.substring(0, i);
+    String? l1;
+    for (int k = 0; k < lines.length; k++) {
+      final RegExpMatch? m = top.firstMatch(lines[k]);
+      if (m == null || !before.contains(m[0]!)) continue;
+      String candidate = m[0]!;
+      if (candidate.length < 40 &&
+          k + 1 < lines.length &&
+          RegExp(r'^[A-Z<]+$').hasMatch(lines[k + 1]) &&
+          before.contains(candidate + lines[k + 1])) {
+        candidate += lines[k + 1];
+      }
+      l1 = candidate;
+    }
+    if (l1 == null) continue;
+    final MrzData? d = _pair(l1, l2, now);
+    if (d != null) return d;
+  }
   return null;
 }
 
@@ -170,6 +216,43 @@ MrzData? parseIdMrz(Iterable<String> pages, {DateTime? now}) {
   ];
   for (int i = 0; i + 2 < lines.length; i++) {
     final MrzData? d = _triple(lines[i], lines[i + 1], lines[i + 2], today);
+    if (d != null) return d;
+  }
+  return _td1Loose(_allLines(pages), today);
+}
+
+/// Plan B del DNI: igual que con el pasaporte, se busca el dibujo de la
+/// línea 2 (fechas, sexo y país) en todo el texto junto; la línea 1 es la
+/// última antes que empieza por I/A/C + país + número, y la 3, la primera
+/// después que solo tiene letras y "<<".
+MrzData? _td1Loose(List<String> lines, DateTime now) {
+  final String flat = lines.join();
+  final RegExp mid = RegExp(
+    r'[0-9OI]{6}[0-9OI][MFX<][0-9OI]{6}[0-9OI][A-Z<]{3}',
+  );
+  final RegExp first = RegExp(r'[IAC][A-Z<][A-Z<]{3}[A-Z0-9<]{9}[0-9OI<]');
+  final RegExp names = RegExp(r'^[A-Z<]*<<[A-Z<]*$');
+  for (int i = 0; i < flat.length; i++) {
+    if (mid.matchAsPrefix(flat, i) == null) continue;
+    final String l2 = flat
+        .substring(i, i + 30 > flat.length ? flat.length : i + 30)
+        .padRight(30, '<');
+    final String before = flat.substring(0, i);
+    final int start = before.lastIndexOf(first);
+    if (start < 0) continue;
+    final String l1 = flat
+        .substring(start, start + 30 > i ? i : start + 30)
+        .padRight(30, '<');
+    String? l3;
+    final String after = flat.substring(i + 18);
+    for (final String l in lines) {
+      if (names.hasMatch(l) && after.contains(l) && l.length >= 8) {
+        l3 = l;
+        break;
+      }
+    }
+    if (l3 == null) continue;
+    final MrzData? d = _triple(l1, l2, l3, now);
     if (d != null) return d;
   }
   return null;

@@ -136,11 +136,16 @@ void main() {
     spy.send!('wa:0');
     spy.send!('sms:0');
     spy.send!('call');
+    // Sin GPS en el test: se espera lo máximo (5 s + 8 s) y luego se manda.
+    await tester.pump(const Duration(seconds: 14));
     await tester.pumpAndSettle();
-    expect(opened[0].host, 'wa.me');
-    expect(opened[0].queryParameters['text'], startsWith('¡Necesito ayuda!'));
-    expect(opened[1].scheme, 'sms');
-    expect(opened[2].toString(), 'tel:112');
+    // WhatsApp y SMS esperan a saber dónde estás: pueden abrirse después.
+    final Uri wa = opened.firstWhere((Uri u) => u.host == 'wa.me');
+    expect(wa.queryParameters['text'], startsWith('¡Necesito ayuda!'));
+    // Sin GPS no dice "Estoy aquí:" (haría creer que mandó la ubicación).
+    expect(wa.queryParameters['text'], isNot(contains('Estoy aquí')));
+    expect(opened.where((Uri u) => u.scheme == 'sms'), hasLength(1));
+    expect(opened.map((Uri u) => u.toString()), contains('tel:112'));
 
     // "Añadir" en el segundo hueco: nombre y teléfono.
     spy.send!('pick:1');
@@ -157,7 +162,5 @@ void main() {
       (spy.data(HomeScreen.lastBridge!)['contacts']! as List<Object?>).length,
       2,
     );
-    // El GPS espera hasta 15 s una posición: se deja terminar.
-    await tester.pump(const Duration(seconds: 16));
   });
 }

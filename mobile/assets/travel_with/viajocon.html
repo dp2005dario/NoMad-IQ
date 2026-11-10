@@ -542,7 +542,7 @@ const vc = v && v.cabin ? '#3DDC97' : '#FFB86B';
 return {
 back: () => toApp('back'), backTxt: T.back || '', title: T.title || '',
 name: st.name,
-setName: (e) => { const v = ((e && e.target && e.target.value) || '').slice(0, 30); if (v !== st.name) { this.setState({ name: v }); toApp('name:' + v); } },
+setName: (e) => { const v = ((e && e.target && e.target.value) || '').slice(0, 30); if (v !== st.name) { this.setState({ name: v }); toApp('name:' + encodeURIComponent(v)); } },
 nameHint: T.nameHint || '', nameLine: st.name.trim() ? 'transparent' : '#FFB86B',
 petH: E.petH || '', bagH: E.bagH || '', bagFullTxt: E.bagFullTxt || '',
 petChecks, mpins, mcats, bag, bagDone: nb + ' de ' + bag.length, bagFull: bag.length > 0 && nb === bag.length,

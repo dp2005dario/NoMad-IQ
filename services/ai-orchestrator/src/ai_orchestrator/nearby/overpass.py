@@ -16,10 +16,20 @@ from ai_orchestrator.places.wikimedia import RateLimiter
 # Como mucho estos sitios por consulta (un centro histórico tiene cientos de
 # fuentes y bancos: con esto la respuesta nunca pesa demasiado).
 MAX_RESULTS = 400
+# Tiendas, bares, súper, farmacias, cajeros... (como en Google Maps): van
+# aparte y solo en ~1 km alrededor, con su propio tope, para que en una
+# ciudad no se coman los demás sitios (agua, baños, monumentos...).
+MAX_SHOPS = 250
+SHOP_HALF_LAT = 0.009
+SHOP_HALF_LON = 0.012
 _QID = re.compile(r"^Q[1-9][0-9]{0,11}$")
 # Un teléfono: solo dígitos, espacios, +, -, paréntesis y puntos.
 _PHONE = re.compile(r"^\+?[0-9 ()./-]{6,24}$")
 _RESERVATION = ("yes", "required", "recommended")
+# Comer y beber, para la clase "food" de las tiendas.
+_FOOD = ("restaurant", "cafe", "fast_food", "bar", "pub", "ice_cream", "food_court", "biergarten")
+_MONEY = ("atm", "bank", "bureau_de_change")
+_SUB = re.compile(r"^[a-z][a-z_0-9]{0,23}$")
 # Tipos de alojamiento que buscamos para "Viajo con mi perro".
 _STAYS = ("hotel", "apartment", "guest_house", "hostel", "motel")
 # Qué tipo de sitio que ver es (para el icono de la app).
@@ -65,11 +75,41 @@ def build_query(south: float, west: float, north: float, east: float) -> str:
         f'nwr["leisure"="dog_park"]({box});'
         f'nwr["tourism"~"^(hotel|apartment|guest_house|hostel|motel)$"]["dog"~"^(yes|leashed)$"]["name"]({box});'
         f");out center {MAX_RESULTS};"
+        # Lo de "como en Google Maps": todo lo que tiene nombre y se puede
+        # visitar (tiendas, bares, súper, farmacias, cajeros), en ~1 km.
+        f"({_shop_lines(south, west, north, east)});out center {MAX_SHOPS};"
         # Y en qué ciudad y barrio cae el centro de la zona (para la cabecera
         # "Madrid · Centro"): las zonas administrativas que lo contienen.
         f"is_in({(south + north) / 2:.5f},{(west + east) / 2:.5f})->.z;"
         'area.z["boundary"="administrative"]["admin_level"~"^(8|9|10)$"]["name"];out tags;'
     )
+
+
+def _shop_lines(south: float, west: float, north: float, east: float) -> str:
+    lat, lon = (south + north) / 2, (west + east) / 2
+    box = (
+        f"{lat - SHOP_HALF_LAT:.5f},{lon - SHOP_HALF_LON:.5f},"
+        f"{lat + SHOP_HALF_LAT:.5f},{lon + SHOP_HALF_LON:.5f}"
+    )
+    return (
+        f'nwr["shop"]["name"]({box});'
+        f'nwr["amenity"~"^({"|".join(_FOOD)})$"]["name"]({box});'
+        f'nwr["amenity"~"^(pharmacy|marketplace|post_office|library|cinema|theatre)$"]["name"]({box});'
+        f'nwr["amenity"~"^({"|".join(_MONEY)})$"]({box});'
+    )
+
+
+def _shop_sub(tags: dict[str, Any]) -> str:
+    """Qué es exactamente ("supermarket", "cafe", "atm", "clothes"...).
+
+    La app lo agrupa para el icono y lo traduce para la tarjeta. Solo letras
+    minúsculas, números y "_" (como mucho 24): nada de texto raro.
+    """
+    amenity, shop = tags.get("amenity"), tags.get("shop")
+    raw = amenity if isinstance(amenity, str) and amenity and shop is None else shop
+    if isinstance(raw, str) and _SUB.match(raw):
+        return raw
+    return "shop"
 
 
 def _text(tags: dict[str, Any], key: str, limit: int = 80) -> str | None:
@@ -101,8 +141,8 @@ def _phone(tags: dict[str, Any]) -> str | None:
 
 def _kind(tags: dict[str, Any]) -> SpotKind | None:
     amenity = tags.get("amenity")
-    if amenity == "restaurant":
-        return "table" if tags.get("reservation") in _RESERVATION else None
+    if amenity == "restaurant" and tags.get("reservation") in _RESERVATION:
+        return "table"
     if amenity == "drinking_water":
         return "water"
     if amenity == "toilets":
@@ -122,6 +162,13 @@ def _kind(tags: dict[str, Any]) -> SpotKind | None:
         return "sight"
     if tags.get("leisure") == "park" or amenity == "place_of_worship":
         return "sight"
+    if (
+        tags.get("shop")
+        or amenity in _FOOD
+        or amenity in _MONEY
+        or amenity in ("pharmacy", "marketplace", "post_office", "library", "cinema", "theatre")
+    ):
+        return "shop"
     return None
 
 
@@ -196,6 +243,21 @@ def parse_spot(row: Any) -> NearbySpot | None:
             website=_https(tags),
             phone=_phone(tags),
         )
+    if kind == "shop":
+        if name is None and tags.get("amenity") not in _MONEY:
+            return None  # una tienda sin nombre no se puede buscar
+        return NearbySpot(
+            id=f"{kind_raw[0]}{oid}",
+            kind=kind,
+            lat=float(lat),
+            lon=float(lon),
+            name=name or _text(tags, "operator") or _text(tags, "brand"),
+            opening_hours=_text(tags, "opening_hours"),
+            website=_https(tags),
+            phone=_phone(tags),
+            cuisine=_text(tags, "cuisine", 40),
+            sub=_shop_sub(tags),
+        )
     if kind == "table":
         website, phone = _https(tags), _phone(tags)
         if name is None or (website is None and phone is None):
@@ -262,4 +324,4 @@ class NearbyOverpass:
             if spot is not None and spot.id not in seen:
                 seen.add(spot.id)
                 out.append(spot)
-        return out[:MAX_RESULTS]
+        return out[: MAX_RESULTS + MAX_SHOPS]

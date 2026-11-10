@@ -464,7 +464,7 @@ const fic = (side) => {
 const F = this.fichas[side];
 const P = R ? R[side] : null;
 const wait = F ? null : '…';
-const pl = F && F.places ? F.places.map((x, i) => ({ name: x.name, desc: x.desc || '', img: 'display: block; width: 240px; height: 150px; background: ' + (x.img ? '#0F171D url(' + JSON.stringify(x.img) + ') center/cover no-repeat' : '#1A2630'), open: () => toApp('photo:' + (side === 'o' ? 0 : 1) + ':' + i) })) : [];
+const pl = F && F.places ? F.places.map((x, i) => ({ name: x.name, desc: x.desc || '', img: 'display: block; width: 150px; height: 96px; background: ' + (x.img ? '#0F171D url(' + JSON.stringify(x.img) + ') center/cover no-repeat' : '#1A2630'), open: () => toApp('photo:' + (side === 'o' ? 0 : 1) + ':' + i) })) : [];
 const o = {};
 o[side + 'Country'] = P ? P.country : '';
 o[side + 'City'] = P ? P.city : '';
@@ -557,7 +557,12 @@ flyRetry: () => { this.setState({ flyOn: false }); toApp('retry'); },
 ...this.gangaVals(),
 ...this.routeVals(),
 accent, bars, confetti,
-fromCity: E.fromCity || '', userInitial: E.initial || '?',
+fromCity: E.fromCity || '',
+// Tu foto de perfil (la del móvil o la de Google) llena el círculo; sin
+// foto, la inicial de tu nombre como antes.
+userInitial: E.photo ? '' : (E.initial || '?'),
+userAvatarStyle: 'width: 44px; height: 44px; border-radius: 22px; background: #B69CFF; color: #0B1217; font-weight: 800; font-size: 16px; display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0; box-shadow: 0 0 0 2px #0B1217, 0 0 0 4px #B69CFF55, 0 0 18px #B69CFF66'
+  + (E.photo ? '; background-image: url("' + String(E.photo).replace(/["\\()\s]/g, encodeURIComponent) + '"); background-size: cover; background-position: center' : ''),
 openSettings: () => toApp('settings'),
 shareTrip: () => toApp(E.guest ? 'signin' : 'share'),
 tile0: () => toApp('tile:0'), tile1: () => toApp('tile:1'), tile2: () => toApp('tile:2'), tile3: () => toApp('tile:3'), tile4: () => toApp('tile:4'),
@@ -596,7 +601,7 @@ nightStyle: 'position: absolute; inset: 0; background: rgba(3,8,24,0.62); opacit
 planeStyle: 'position: absolute; left: 39px; top: ' + (flying ? 150 : 120) + 'px; width: 280px; height: 140px; z-index: 6; transform-origin: 50% 50%; transform: rotate(' + bank.toFixed(1) + 'deg) scale(' + (flying ? 1 : 0.7) + '); transition: transform 1s ease, top 1s ease; pointer-events: none; filter: drop-shadow(0 14px 10px rgba(0,0,0,0.45))',
 miniBar: 'position: absolute; left: 0; top: 0; height: 4px; border-radius: 2px; background: #6CA8FF; width: ' + Math.round((view === 'dest' ? 1 : t) * 100) + '%',
 miniPlane: 'position: absolute; top: -5px; width: 14px; height: 14px; margin-left: -7px; border-radius: 7px; background: #FFFFFF; box-shadow: 0 0 8px rgba(255,255,255,0.8); left: ' + Math.round((view === 'dest' ? 1 : t) * 100) + '%',
-isWorld: view === 'world',
+isWorld: view === 'world', hasGlobe: true,
 isOrigin: view === 'origin',
 isFlight: view === 'flight',
 isDest: view === 'dest',

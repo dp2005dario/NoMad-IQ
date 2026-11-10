@@ -107,6 +107,23 @@ class StayZone(BaseModel):
     examples: list[str] = Field(default_factory=list)
 
 
+class NearHotel(BaseModel):
+    """Un alojamiento con nombre cerca del sitio (la lista "como Google Maps")."""
+
+    model_config = ConfigDict(frozen=True)
+
+    # El id de OpenStreetMap ("n123", "w45"): con él la app pide su foto.
+    id: str
+    name: str
+    # hotel · hostel · guest_house · motel · apartment
+    kind: str
+    stars: int | None = None
+    lat: float
+    lon: float
+    # Distancia en línea recta desde el centro de la casilla.
+    km: float
+
+
 class StayArea(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -114,11 +131,35 @@ class StayArea(BaseModel):
     lat: float
     lon: float
     zones: list[StayZone] = Field(default_factory=list)
+    # Los alojamientos con nombre más cerca, del más cercano al más lejano.
+    hotels: list[NearHotel] = Field(default_factory=list)
     attribution: str = ATTRIBUTION
     license_url: str = LICENSE_URL
 
 
 _BUDGET = {"hostel", "guest_house", "motel"}
+
+# Cuántos alojamientos salen en la lista de "los más cerca".
+MAX_HOTELS = 25
+
+
+def nearest_hotels(
+    lat: float, lon: float, lodgings: list[Lodging], limit: int = MAX_HOTELS
+) -> list[NearHotel]:
+    """Los alojamientos CON NOMBRE a menos de 2 km, del más cercano al más
+    lejano (sin nombre no se pueden buscar ni reconocer: se saltan)."""
+    found: list[NearHotel] = []
+    for x in lodgings:
+        if not x.name:
+            continue
+        km = km_between(lat, lon, x.lat, x.lon)
+        if km > WALK_KM:
+            continue
+        found.append(
+            NearHotel(id=x.id, name=x.name, kind=x.kind, stars=x.stars, lat=x.lat, lon=x.lon, km=round(km, 2))
+        )
+    found.sort(key=lambda h: h.km)
+    return found[:limit]
 
 
 def build_zones(lat: float, lon: float, stations: list[Station], lodgings: list[Lodging]) -> list[StayZone]:

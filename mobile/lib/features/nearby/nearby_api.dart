@@ -25,6 +25,10 @@ enum NearbyKind {
   dogPark,
   petStay,
 
+  /// Tiendas y sitios del día a día (súper, cafetería, farmacia, cajero,
+  /// cine...). Qué es exactamente va en [NearbySpot.sub] ("supermarket").
+  shop,
+
   /// No es un sitio: la ciudad, el distrito o el barrio donde estás (su
   /// nombre, para la cabecera "Madrid · Embajadores").
   place;
@@ -79,6 +83,7 @@ class NearbySpot {
   final bool reservationRequired;
 
   /// Sitios que ver: museum, viewpoint, park, worship, monument...
+  /// Tiendas ([NearbyKind.shop]): supermarket, cafe, atm, clothes...
   /// Zonas ([NearbyKind.place]): "8" ciudad, "9" distrito, "10" barrio.
   final String? sub;
 
@@ -156,9 +161,40 @@ class NearbyList {
     }
     return NearbyList(
       spots: <NearbySpot>[
-        for (final Object? s in spots.take(400)) ?NearbySpot.parse(s),
+        for (final Object? s in spots.take(700)) ?NearbySpot.parse(s),
       ],
       attribution: attribution,
+    );
+  }
+}
+
+/// La foto de Google Maps de una tienda o sitio (y a quién citar).
+class ShopPhoto {
+  const ShopPhoto({required this.url, this.author});
+
+  /// Siempre https y de los servidores de fotos de Google.
+  final Uri url;
+  final String? author;
+
+  /// "Google Maps · Ana G." (lo que se pone debajo de la foto).
+  String get credit => author == null ? 'Google Maps' : 'Google Maps · $author';
+
+  /// null = ese sitio no tiene foto (se deja el dibujo).
+  static ShopPhoto? parse(Object? json) {
+    if (json is! Map<String, Object?>) return null;
+    final Object? raw = json['photo_url'];
+    final Uri? url = raw is String ? Uri.tryParse(raw) : null;
+    if (url == null ||
+        url.scheme != 'https' ||
+        !url.host.endsWith('.googleusercontent.com')) {
+      return null;
+    }
+    final Object? author = json['author'];
+    return ShopPhoto(
+      url: url,
+      author: author is String && author.trim().isNotEmpty
+          ? author.trim().substring(0, author.trim().length.clamp(0, 60))
+          : null,
     );
   }
 }
@@ -175,6 +211,34 @@ class NearbyApi {
       query: <String, String>{
         'lat': me.lat.toStringAsFixed(2),
         'lon': me.lon.toStringAsFixed(2),
+      },
+      public: true,
+      timeout: ApiClient.slow,
+    ),
+  );
+
+  /// La foto de Google Maps de una tienda (la busca el servidor, que es
+  /// quien tiene la clave de Google). null = no tiene foto.
+  Future<ShopPhoto?> photo(NearbySpot spot) async {
+    final String? name = spot.name;
+    if (name == null) return null;
+    return photoOf(id: spot.id, name: name, point: spot.point);
+  }
+
+  /// Lo mismo para cualquier sitio de OpenStreetMap con nombre (también
+  /// los hoteles de "Dormir barato").
+  Future<ShopPhoto?> photoOf({
+    required String id,
+    required String name,
+    required GeoPoint point,
+  }) async => ShopPhoto.parse(
+    await _api.getJson(
+      '/v1/nearby/photo',
+      query: <String, String>{
+        'id': id,
+        'name': name.length > 80 ? name.substring(0, 80) : name,
+        'lat': point.lat.toStringAsFixed(5),
+        'lon': point.lon.toStringAsFixed(5),
       },
       public: true,
     ),

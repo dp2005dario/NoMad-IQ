@@ -368,7 +368,7 @@ class _OfflineScreenState extends State<OfflineScreen> {
       case 'plane':
         setState(() => _pretend = !_pretend);
       case 'q':
-        setState(() => _query = arg);
+        setState(() => _query = webSceneText(arg));
       case 'pick':
         final Airport? a = _airportOf(arg);
         if (a != null) setState(() => _picked = a);

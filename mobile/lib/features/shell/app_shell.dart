@@ -107,15 +107,22 @@ class _CameraSpot extends FloatingActionButtonLocation {
 
 /// El círculo verde de la cámara (degradado, borde oscuro y brillo).
 class _CameraButton extends StatelessWidget {
-  const _CameraButton({required this.label, required this.onTap});
+  const _CameraButton({
+    required this.label,
+    required this.onTap,
+    this.tooltip = true,
+  });
 
   final String label;
   final VoidCallback onTap;
 
+  /// Fuera del navegador (la barra de las pantallas de encima) no hay sitio
+  /// donde flotar el globito, así que allí va sin él.
+  final bool tooltip;
+
   @override
-  Widget build(BuildContext context) => Tooltip(
-    message: label,
-    child: Semantics(
+  Widget build(BuildContext context) {
+    final Widget button = Semantics(
       button: true,
       label: label,
       excludeSemantics: true,
@@ -159,8 +166,9 @@ class _CameraButton extends StatelessWidget {
           ),
         ),
       ),
-    ),
-  );
+    );
+    return tooltip ? Tooltip(message: label, child: button) : button;
+  }
 }
 
 class _Tab extends StatelessWidget {
@@ -207,6 +215,72 @@ class _Tab extends StatelessWidget {
                   color: color,
                   fontSize: 11,
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// La misma barra de abajo, para las pantallas que se abren ENCIMA de las
+/// pestañas (Hoteles, Bóveda, Radar...). Antes esas pantallas no tenían
+/// barra y solo se podía salir con "atrás". Ninguna pestaña sale marcada
+/// (no estás en ninguna) y tocar una te lleva directamente a ella.
+class ShellTabBar extends StatelessWidget {
+  const ShellTabBar({super.key, required this.onTab});
+
+  /// Se llama con la posición de la pestaña (0 Inicio ... 4 Grupo).
+  final void Function(int index) onTab;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    return Material(
+      type: MaterialType.transparency,
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 82,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.bottomCenter,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 14),
+                child: Container(
+                  height: 68,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF141E25),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: const Color(0xFF26363F)),
+                  ),
+                  child: Row(
+                    children: <Widget>[
+                      _Tab(_homeIcon, t.navHome, AppShell._home, -1, onTab),
+                      _Tab(_mapIcon, t.navMap, AppShell._map, -1, onTab),
+                      const Expanded(child: SizedBox()),
+                      _Tab(
+                        _flightsIcon,
+                        t.navFlights,
+                        AppShell._flights,
+                        -1,
+                        onTab,
+                      ),
+                      _Tab(_groupIcon, t.navGroup, AppShell._group, -1, onTab),
+                    ],
+                  ),
+                ),
+              ),
+              // El botón de la cámara sobresale por arriba, como en las pestañas.
+              Positioned(
+                top: -6,
+                child: _CameraButton(
+                  label: t.navCamera,
+                  onTap: () => onTab(AppShell.camera),
+                  tooltip: false,
                 ),
               ),
             ],

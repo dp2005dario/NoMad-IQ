@@ -32,6 +32,23 @@ async def test_falls_back_to_next_server_on_502() -> None:
     assert resp.status_code == 200 and hosts == ["a.test", "b.test"]
 
 
+async def test_slow_server_is_raced_by_the_next_mirror() -> None:
+    """Si el primero tarda, se pregunta también al siguiente y gana el rápido."""
+    import asyncio
+    import time
+
+    async def handler(req: httpx.Request) -> httpx.Response:
+        if req.url.host == "a.test":
+            await asyncio.sleep(5)
+        return httpx.Response(200, json={"from": req.url.host})
+
+    start = time.monotonic()
+    http = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    resp = await post_query(http, [A, B], "q", retry_pause=0, hedge_after=0.05)
+    assert resp.json() == {"from": "b.test"}
+    assert time.monotonic() - start < 2
+
+
 async def test_falls_back_on_timeout_and_does_not_repeat_slow_server() -> None:
     hosts: list[str] = []
 
@@ -86,6 +103,8 @@ def test_config_lists_primary_then_known_mirror_without_duplicates() -> None:
     assert s.overpass_servers == [
         "https://overpass-api.de/api/interpreter",
         "https://overpass.private.coffee/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter",
+        "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
     ]
     custom = settings(
         **DEV,
@@ -121,7 +140,7 @@ async def test_redis_cache_keeps_stale_copy_after_fresh_mark_expires() -> None:
     redis: Any = FakeRedis()
     cache = RedisNearbyCache(redis, stale_seconds=1000)
     await cache.put(Nearby(lat=40.4, lon=-3.7, spots=[]), ttl_seconds=100)
-    key = "ai:nearby:v2:40.40:-3.70"
+    key = "ai:nearby:v3:40.40:-3.70"
     assert redis.ttl[key] == 1100 and redis.ttl[f"{key}:fresh"] == 100
     assert await cache.get(40.4, -3.7) is not None
     del redis.data[f"{key}:fresh"]  # la marca caduca

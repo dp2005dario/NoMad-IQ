@@ -81,6 +81,26 @@ header{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .leg i{width:10px;height:10px;border-radius:50%}
 .leg .l{display:flex;align-items:center;gap:6px}
 .credit{position:absolute;left:10px;bottom:8px;z-index:7;font-size:10px;color:rgba(232,241,238,.55);font-weight:600}
+/* hoteles más cerca (como Google Maps): tarjetas que se deslizan abajo del mapa */
+.hl{position:absolute;left:0;right:0;bottom:24px;z-index:8;touch-action:pan-x}
+.hl:empty{display:none}
+.hl .hh{display:inline-flex;align-items:center;gap:6px;margin:0 0 6px 10px;padding:4px 10px;border-radius:99px;background:rgba(8,16,20,.88);border:1px solid var(--line);font:700 11px var(--body);color:var(--ink)}
+.hl .hh b{color:var(--mint)}
+.hl .row{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 10px 2px;scrollbar-width:none}
+.hl .row::-webkit-scrollbar{display:none}
+.hc{flex:none;width:236px;scroll-snap-align:start;display:flex;gap:9px;align-items:center;padding:7px;border-radius:16px;background:rgba(14,24,30,.94);border:1px solid var(--line);box-shadow:0 10px 24px -12px #000;text-align:left;animation:hcIn .45s cubic-bezier(.2,.8,.2,1) both}
+@keyframes hcIn{from{opacity:0;transform:translateY(14px)}}
+.hc .lg{position:relative;flex:none;width:54px;height:54px;border-radius:12px;overflow:hidden;display:grid;place-items:center;font:800 20px var(--display);color:#071117}
+.hc .lg svg{position:absolute;right:4px;bottom:4px;width:15px;height:15px;opacity:.75}
+.hc .lg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .4s}
+.hc .lg img.on{opacity:1}
+.hc .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.hc .nm{font:700 13px/1.2 var(--body);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hc .kd{font-size:11px;color:var(--mut);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hc .kd i{font-style:normal;color:var(--amber);letter-spacing:-1px}
+.hc .bt{display:flex;gap:5px;margin-top:2px}
+.hc .bt span{font:700 10.5px var(--body);padding:3px 8px;border-radius:99px;background:rgba(61,220,151,.14);color:var(--mint)}
+.hc .bt span.p{background:rgba(139,124,246,.18);color:#c9bfff}
 /* hoja */
 .sheet{position:absolute;left:8px;right:8px;bottom:8px;z-index:9;background:rgba(17,28,35,.97);border:1px solid var(--line);border-radius:22px;box-shadow:0 -10px 40px -10px #000;transform:translateY(120%);transition:transform .45s cubic-bezier(.2,.8,.2,1);backdrop-filter:blur(14px);overflow:hidden}
 .sheet.open{transform:none}
@@ -130,6 +150,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:8px}
       <button id="rc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
     </div>
     <div class="credit" id="t_credit"></div>
+    <div class="hl" id="hl"></div>
     <div class="sheet" id="sheet" role="dialog"></div>
   </div>
 </div>
@@ -424,7 +445,7 @@ function load(i){
  if(m.kind==='map'){post('map');return}
  if(i!==(ECL.cur|0)){loading=true;ECL.msg='';ECL.retry=false;hotels=[];sel=null;cur=m;
   [].forEach.call(document.querySelectorAll('.chip'),function(c,k){c.setAttribute('aria-pressed',k===i)});
-  buildPins();renderMon();$('#sheet').classList.remove('open');view.x=0;view.y=0;goal={x:0,y:0,s:.45};dirty=true;post('chip:'+i);return}
+  buildPins();renderMon();renderHotels();$('#sheet').classList.remove('open');view.x=0;view.y=0;goal={x:0,y:0,s:.45};dirty=true;post('chip:'+i);return}
  cur=m;hotels=makeHotels(cur);sel=null;
  [].forEach.call(document.querySelectorAll('.chip'),function(c,k){c.setAttribute('aria-pressed',k===i)});
  buildPins();
@@ -435,6 +456,23 @@ function load(i){
  $('#chips').innerHTML=MON.map(function(m,i){return '<button class="chip" data-i="'+i+'" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="'+(ci[m.id]||ci[m.kind]||ci.target)+'"/></svg>'+esc(m.short)+'</button>'}).join('');
  $('#chips').addEventListener('click',function(e){var b=e.target.closest('.chip');if(b)load(+b.dataset.i)})})();
 
+
+/* ---------- hoteles más cerca (como Google Maps) ---------- */
+var HOT=ECL.hotels||[];
+function dist(m){return m<1000?(m|0)+' m':km(m/1000)}
+function hotelCard(h,i){var c=['#6df0b6','#ffd37a','#a596fa','#7fd3ff','#ff9e9e'][Math.floor(H(i,h.name.length,9)*5)];
+ var st=h.stars?' · <i>'+'★'.repeat(h.stars)+'</i>':'';
+ return '<button class="hc" data-i="'+i+'" style="animation-delay:'+(i*60)+'ms"><span class="lg" style="background:linear-gradient(135deg,'+c+',#1d3a36)">'+esc(h.name.trim().charAt(0).toUpperCase())+
+ '<svg viewBox="0 0 24 24" fill="none" stroke="#071117" stroke-width="2.2" stroke-linecap="round"><path d="M3 18V7M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5"/><circle cx="7" cy="11" r="1.6"/></svg>'+
+ (h.img?'<img alt="" src="'+esc(h.img)+'" onload="this.classList.add(\'on\')">':'')+'</span>'+
+ '<span class="tx"><span class="nm">'+esc(h.name)+'</span><span class="kd">'+esc(tx('k_'+h.kind))+st+' · '+esc(dist(h.m))+'</span>'+
+ '<span class="bt"><span>'+esc(tx('openMaps'))+'</span><span class="p" data-p="1">'+esc(tx('hotelPrices'))+'</span></span></span></button>'}
+function renderHotels(){var el=$('#hl');if(loading||ECL.msg||!HOT.length){el.innerHTML='';return}
+ el.innerHTML='<div class="hh">'+esc(tx('nearTitle'))+' <b>'+HOT.length+'</b></div><div class="row">'+HOT.map(hotelCard).join('')+'</div>'}
+$('#hl').addEventListener('click',function(e){var b=e.target.closest('.hc');if(!b)return;post((e.target.closest('[data-p]')?'hprice:':'hotel:')+b.dataset.i)});
+/* La app manda las fotos de Google Maps según llegan. */
+window.__hotelPhoto=function(id,url){HOT.forEach(function(h,i){if(h.id!==id)return;h.img=url;var lg=document.querySelector('.hc[data-i="'+i+'"] .lg');if(!lg)return;var im=document.createElement('img');im.alt='';im.onload=function(){im.classList.add('on')};im.src=url;lg.appendChild(im)})};
+
 /* ---------- gestos ---------- */
 var ptrs={},last=null,vel={x:0,y:0};
 function zoomBy(f){view.s=Math.min(MAXS,Math.max(MINS,view.s*f));goal=null;dirty=true}
@@ -442,7 +480,7 @@ $('#zi').onclick=function(){goal={x:view.x,y:view.y,s:Math.min(MAXS,view.s*1.6)}
 $('#rc').onclick=function(){goal={x:0,y:0,s:Math.max(view.s,.45)}};
 $('#t3').onclick=function(){tilt=!tilt;this.setAttribute('aria-pressed',tilt);inner.classList.toggle('t3d',tilt);mapEl.classList.toggle('t3d-on',tilt);resize()};
 mapEl.addEventListener('wheel',function(e){e.preventDefault();zoomBy(Math.exp(-e.deltaY*.0016))},{passive:false});
-mapEl.addEventListener('pointerdown',function(e){if(e.target.closest('.ctrl,.sheet'))return;mapEl.setPointerCapture(e.pointerId);ptrs[e.pointerId]={x:e.clientX,y:e.clientY};last=null;goal=null;vel={x:0,y:0}});
+mapEl.addEventListener('pointerdown',function(e){if(e.target.closest('.ctrl,.sheet,.hl'))return;mapEl.setPointerCapture(e.pointerId);ptrs[e.pointerId]={x:e.clientX,y:e.clientY};last=null;goal=null;vel={x:0,y:0}});
 mapEl.addEventListener('pointermove',function(e){var p=ptrs[e.pointerId];if(!p)return;var ids=Object.keys(ptrs);
  if(ids.length===1){var dx=e.clientX-p.x,dy=e.clientY-p.y,f=tilt?1.7:1;view.x-=dx/view.s;view.y-=dy*f/view.s;vel={x:dx,y:dy*f}}
  else if(ids.length===2){var o=ptrs[ids.find(function(k){return k!=e.pointerId})],d0=Math.hypot(p.x-o.x,p.y-o.y),d1=Math.hypot(e.clientX-o.x,e.clientY-o.y);if(d0>5)zoomBy(d1/d0)}
@@ -459,7 +497,7 @@ function frame(){
 $('#t_brand').textContent=tx('title');$('#t_leg').textContent=tx('legend');$('#t_cheap').textContent=tx('cheap');$('#t_mid').textContent=tx('mid');$('#t_dear').textContent=tx('dear');$('#t_credit').textContent=tx('credit');
 [['#zi','zoomIn'],['#zo','zoomOut'],['#t3','tilt'],['#rc','center']].forEach(function(p){$(p[0]).setAttribute('aria-label',tx(p[1]))});
 nights=ECL.nights||3;
-resize();load(ECL.cur|0);requestAnimationFrame(frame);
+resize();load(ECL.cur|0);renderHotels();requestAnimationFrame(frame);
 /* El chip elegido, a la vista. */
 var pc=document.querySelector('.chip[aria-pressed=true]');if(pc&&pc.scrollIntoView)pc.scrollIntoView({inline:'center',block:'nearest'});
 </script>

@@ -112,6 +112,14 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 
+    # La foto de Google Maps de una tienda de "Cerca de ti" (la clave de
+    # Google se queda en el servidor). Pública como "Cerca de ti".
+    nearby-photo:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/nearby/photo`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
     # «¿Qué os apetece?» de la pantalla Grupo (OpenStreetMap): tapas,
     # pescado, vegetariano, café o vistas cerca. Público como "Cerca de ti".
     cravings:

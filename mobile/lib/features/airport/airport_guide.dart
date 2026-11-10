@@ -164,6 +164,7 @@ class AirportGuideApi {
       await _api.getJson(
         '/v1/airports/${Uri.encodeComponent(code)}/spots',
         public: true,
+        timeout: ApiClient.slow,
       ),
     );
     return _memo[code] = g;

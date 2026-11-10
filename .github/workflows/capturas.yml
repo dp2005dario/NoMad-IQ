@@ -1,0 +1,78 @@
+# Capturas de todas las pantallas en un móvil Android de mentira (emulador).
+#
+# Compila la app con lib/tour_main.dart (la app de verdad, contra el
+# servidor de Azure, que se abre sola y va pantalla por pantalla), la instala
+# en un emulador y hace una foto de cada pantalla. Así se ve cómo queda en un
+# móvil antes de fusionar la PR, con las páginas web incluidas.
+#
+# Dónde verlas: GitHub → pestaña "Actions" → "Capturas en Android" → la
+# ejecución → abajo, en "Artifacts", "capturas-android" (un .zip con un
+# .png por pantalla y el registro de la app).
+name: Capturas en Android
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "mobile/**"
+      - ".github/workflows/capturas.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: capturas-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SERVIDOR: https://eclipta-qlk7qx.denmarkeast.cloudapp.azure.com
+
+jobs:
+  capturas:
+    name: capturas en el emulador
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.7"
+          channel: stable
+          cache: true
+      - name: Dependencias
+        working-directory: mobile
+        run: flutter pub get --enforce-lockfile
+      - name: Compilar la app del recorrido (x86_64, para el emulador)
+        working-directory: mobile
+        run: |
+          flutter build apk --debug --target-platform android-x64 \
+            -t lib/tour_main.dart \
+            --dart-define=NOMADIQ_API_URL="$SERVIDOR"
+      - name: Permitir la aceleración del emulador (KVM)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Emulador y capturas
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated
+          script: bash mobile/tool/capturas.sh mobile/build/app/outputs/flutter-apk/app-debug.apk capturas
+      - name: Subir las capturas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas-android
+          path: capturas
+          if-no-files-found: warn
+          retention-days: 14

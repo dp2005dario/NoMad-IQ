@@ -105,6 +105,17 @@ void main() {
     ]);
   });
 
+  test('sin fotos desde el inicio del viaje, salen tus últimas fotos', () {
+    final List<Memory> all = <Memory>[
+      for (int i = 0; i < 8; i++)
+        photo('p$i.jpg', DateTime(2026, 9, 1 + i, 12)),
+    ];
+    expect(
+      storyPhotos(all, DateTime(2026, 11, 1)).map((Memory m) => m.file),
+      <String>['p2.jpg', 'p3.jpg', 'p4.jpg', 'p5.jpg', 'p6.jpg', 'p7.jpg'],
+    );
+  });
+
   test('un nombre de archivo con "../" no se acepta', () {
     expect(
       Memory.parse(<String, Object?>{'file': '../x.jpg', 'at': '2026-10-22'}),

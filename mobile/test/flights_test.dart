@@ -2,20 +2,26 @@
 // precio objetivo, el detalle con su gráfica y la lista de avisos. El
 // servidor es falso (ver helpers.dart).
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/copy_trip/share_trip_screen.dart';
+import 'package:eclipta/features/flights/airport_names.dart';
 import 'package:eclipta/features/flights/fares_api.dart';
 import 'package:eclipta/features/flights/flight_format.dart';
 import 'package:eclipta/features/flights/flights_screen.dart';
 import 'package:eclipta/features/flights/price_chart.dart';
 import 'package:eclipta/features/flights/flights_page.dart';
+import 'package:eclipta/features/route/geo.dart';
+import 'package:eclipta/features/route/flight3d.dart' show Flight3dScreen;
 import 'package:eclipta/features/route/web_scene.dart';
+import 'package:eclipta/features/route/world_data.dart';
 
 import 'helpers.dart';
 
@@ -98,9 +104,11 @@ class FaresBackend {
         'provider': 'travelpayouts',
         'observed_at': '2026-10-23T10:00:00Z',
         'offers': <Object?>[
-          offer(31550, 0, 'https://www.aviasales.com/search/MAD1512NRT22122'),
-          offer(42000, 1, 'https://www.aviasales.com/search/x'),
-          offer(100, 0, 'javascript:alert(1)'), // nunca se enseña
+          if (!searchEmpty || q['departure'] != emptyDay) ...<Object?>[
+            offer(31550, 0, 'https://www.aviasales.com/search/MAD1512NRT22122'),
+            offer(42000, 1, 'https://www.aviasales.com/search/x'),
+            offer(100, 0, 'javascript:alert(1)'), // nunca se enseña
+          ],
         ],
       });
     };
@@ -185,6 +193,10 @@ class FaresBackend {
   final Map<String, int?> watched = <String, int?>{lisbon: 30000};
   final List<Map<String, String>> searches = <Map<String, String>>[];
   bool searchBusy = false;
+
+  /// Ese día no hay vuelos (para probar "días cercanos").
+  bool searchEmpty = false;
+  String? emptyDay;
   int limit = 50;
 }
 
@@ -233,6 +245,9 @@ Future<FaresBackend> pumpFlights(
   PageSpy? page,
   List<Uri>? links,
 }) async {
+  // Sin barajar los chollos: así se sabe cuál va primero.
+  FlightsScreen.shuffleDeals = false;
+  addTearDown(() => FlightsScreen.shuffleDeals = true);
   // Pantalla alta: la lista entera cabe sin desplazarse.
   tester.view.physicalSize = const Size(1200, 6000);
   tester.view.devicePixelRatio = 3;
@@ -266,6 +281,59 @@ Future<FaresBackend> pumpFlights(
 }
 
 void main() {
+  test('los 5 mejores chollos se barajan: arriba no sale siempre el mismo', () {
+    final Fare fare = Fare(
+      route: FareRoute.fromKey('MAD-LIS:2027-01-10:ECONOMY')!,
+      price: const Money(2700, 'EUR'),
+      observedAt: DateTime(2026),
+    );
+    final List<Deal> deals = <Deal>[
+      for (int i = 0; i < 8; i++)
+        Deal(fare: fare, usualMinor: 0, dropBasisPoints: i * 100),
+    ];
+    int top(List<Deal> d) => d.first.dropBasisPoints;
+    // Sin barajar: primero lo que más ha bajado.
+    expect(top(sortDeals(deals, shuffle: false)), 700);
+    final Set<int> tops = <int>{
+      for (int seed = 0; seed < 30; seed++)
+        top(sortDeals(deals, random: Random(seed))),
+    };
+    // Arriba solo salen los 5 mejores, pero no siempre el mismo.
+    expect(tops.length, greaterThan(1));
+    expect(tops.every((int d) => d >= 300), isTrue);
+    // Los demás no se mueven.
+    expect(
+      sortDeals(
+        deals,
+        random: Random(1),
+      ).skip(5).map((Deal d) => d.dropBasisPoints),
+      <int>[200, 100, 0],
+    );
+  });
+
+  test(
+    'aeropuertos por nombre: ciudad, otro idioma y el grande de la zona',
+    () async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      final AirportNames names = await AirportNames.load();
+      expect(names.all.length, greaterThan(5000));
+      expect(names.search('lisboa').first.iata, 'LIS');
+      expect(names.search('Lisbon').first.iata, 'LIS');
+      expect(names.search('fráncfort').first.iata, 'FRA');
+      expect(names.search('frankfurt').first.iata, 'FRA');
+      expect(names.search('mad').first.iata, 'MAD');
+      expect(names.search('nueva york').first.city, 'Nueva York');
+      expect(names['NRT']!.flag, '🇯🇵');
+      final Airports positions = Airports.parse(
+        await rootBundle.loadString('assets/geo/airports.txt'),
+      );
+      // En Torrejón (al lado de Madrid) el aeropuerto "de verdad" es Barajas.
+      expect(names.mainNear(positions, const LatLon(40.49, -3.45)), 'MAD');
+      // En mitad del océano no hay ninguno.
+      expect(names.mainNear(positions, const LatLon(30, -40)), isNull);
+    },
+  );
+
   testWidgets('la página: tu mejor chollo arriba, su ruta y tus alertas', (
     WidgetTester tester,
   ) async {
@@ -274,6 +342,9 @@ void main() {
     await page.wait(tester, () => page.pages.isNotEmpty);
     expect(b.origins, <String>['MAD']);
     final Map<String, Object?> e = flightsData(page.pages.last);
+    // Sin foto de perfil: el círculo de arriba lleva tu inicial.
+    expect(e['photo'], '');
+    expect(e['initial'], 'A');
     final List<Object?> deals = e['deals']! as List<Object?>;
     // Tokio (−59 %, parece tarifa error) va primero aunque el servidor lo
     // mandara segundo.
@@ -471,6 +542,23 @@ void main() {
     },
   );
 
+  testWidgets('"Vuelo 3D" abre el vuelo en 3D del chollo de arriba', (
+    WidgetTester tester,
+  ) async {
+    final PageSpy page = PageSpy();
+    await pumpFlights(tester, page: page);
+    await page.wait(tester, () => page.pages.isNotEmpty);
+    page.send!('fly3d');
+    // Los aeropuertos se leen de verdad (fuera del reloj falso).
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(seconds: 2)),
+    );
+    // (La escena gira cargando: no se espera a que "se calme".)
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byType(Flight3dScreen), findsOneWidget);
+  });
+
   testWidgets('avisar si baja: con precio objetivo', (
     WidgetTester tester,
   ) async {
@@ -609,7 +697,7 @@ void main() {
       );
       await tester.tap(find.text('Buscar'));
       await tester.pumpAndSettle();
-      expect(find.textContaining('código de 3 letras'), findsOneWidget);
+      expect(find.textContaining('Escribe la ciudad'), findsOneWidget);
 
       await tester.enterText(find.byType(TextField).last, 'mad');
       await tester.tap(find.text('Buscar'));
@@ -623,6 +711,76 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Elige las fechas del viaje.'), findsOneWidget);
       expect(b.searches, isEmpty);
+    });
+
+    testWidgets('se escribe la ciudad y, sin precio ese día, salen los '
+        'días cercanos', (WidgetTester tester) async {
+      final FaresBackend b = FaresBackend()
+        ..searchEmpty = true
+        ..emptyDay = isoDay(dep);
+      final DateTime near = dep.add(const Duration(days: 2));
+      final List<String> months = <String>[];
+      b.g.publicPrefixes.add('/v1/fares/days');
+      b.g.services['/v1/fares/days'] = (http.Request r) {
+        months.add(r.url.queryParameters['month']!);
+        expect(r.url.queryParameters['origin'], 'MAD');
+        expect(r.url.queryParameters['destination'], 'LIS');
+        return FakeGateway.json(<String, Object?>{
+          'days': <Object?>[
+            for (final (DateTime d, int p) in <(DateTime, int)>[
+              (near, 2700),
+              (dep.subtract(const Duration(days: 1)), 4100),
+            ])
+              <String, Object?>{
+                'date': isoDay(d),
+                'price_per_adult': <String, Object?>{
+                  'amount_minor': p,
+                  'currency': 'EUR',
+                },
+              },
+          ],
+        });
+      };
+      // La lista de aeropuertos se lee de verdad (fuera del reloj falso).
+      await tester.runAsync(AirportNames.load);
+      await pumpFlights(
+        tester,
+        backend: b,
+        initialLocation: Routes.fareSearch(
+          origin: 'MAD',
+          departure: isoDay(dep),
+          returnDate: isoDay(ret),
+        ),
+      );
+      await tester.pumpAndSettle();
+      // El origen se enseña con su nombre, no con el código.
+      expect(find.text('Madrid'), findsOneWidget);
+      // Se escribe "lisboa" y la lista propone Lisboa (LIS).
+      await tester.enterText(find.byType(TextField).last, 'lisboa');
+      await tester.pumpAndSettle();
+      expect(find.text('Portugal'), findsOneWidget);
+      await tester.tap(find.text('Portugal'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Buscar'));
+      await tester.pumpAndSettle();
+      expect(b.searches.last['destination'], 'LIS');
+      expect(months, contains(isoDay(dep).substring(0, 7)));
+      // Ese día no hay precio: lo dice y enseña los días cercanos.
+      expect(
+        find.textContaining('Ese día aún no tiene precio'),
+        findsOneWidget,
+      );
+      expect(find.text('Más barato'), findsOneWidget);
+      // Se toca el más barato: busca ese día y la vuelta se mueve igual.
+      await tester.tap(find.text('Más barato'));
+      await tester.pumpAndSettle();
+      expect(b.searches.last['departure'], isoDay(near));
+      expect(
+        b.searches.last['return'],
+        isoDay(ret.add(const Duration(days: 2))),
+      );
+      expect(find.text('2 vuelos'), findsOneWidget);
+      expect(find.text('Madrid → Lisboa'), findsOneWidget);
     });
 
     testWidgets('si el servidor pide frenar, se explica', (

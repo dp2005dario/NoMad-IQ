@@ -12,6 +12,7 @@ import 'package:eclipta/features/home/my_passport.dart';
 import 'package:eclipta/features/vault/doc_source.dart';
 import 'package:eclipta/features/visa/mrz.dart';
 
+import 'camera_test.dart' show FakeCamera;
 import 'helpers.dart';
 import 'money_test.dart' as m;
 
@@ -82,6 +83,39 @@ void main() {
     final List<String> bad = idMrz();
     bad[1] = bad[1].replaceFirst('960314', '960315');
     expect(parseIdMrz(<String>[bad.join('\n')]), isNull);
+  });
+
+  test('se lee aunque el móvil parta las líneas en trozos y meta ruido', () {
+    final List<String> p = passportMrz();
+    // El OCR de verdad: la línea 1 en dos trozos, la 2 cortada a la mitad,
+    // espacios y texto del pasaporte alrededor.
+    final String messy = <String>[
+      'REINO DE ESPAÑA',
+      'PASAPORTE',
+      p[0].substring(0, 22),
+      p[0].substring(22),
+      '${p[1].substring(0, 15)} ${p[1].substring(15, 20)}',
+      p[1].substring(20),
+      'Firma del titular',
+    ].join('\n');
+    final MrzData? d = parseMrz(<String>[messy]);
+    expect(d, isNotNull);
+    expect(d!.surname, 'EJEMPLO');
+    expect(d.givenNames, 'LUNA');
+    expect(d.birth, DateTime(1996, 3, 14));
+
+    final List<String> id = idMrz();
+    final String idMessy = <String>[
+      'Domicilio CALLE FALSA 1',
+      id[0].substring(0, 14),
+      id[0].substring(14),
+      id[1],
+      id[2],
+    ].join('\n');
+    final MrzData? i = parseIdMrz(<String>[idMessy]);
+    expect(i, isNotNull);
+    expect(i!.number, '12345678Z');
+    expect(i.givenNames, 'LUNA');
   });
 
   test('del número solo quedan las 3 últimas cifras', () {
@@ -171,5 +205,48 @@ void main() {
     expect(saved, isNot(contains('XDE482916')));
     expect(saved, isNot(contains('12345678Z')));
     expect(cam.shots, 3);
+  });
+
+  testWidgets('el escáner enseña la cámara en el marco y hace la foto ahí', (
+    WidgetTester tester,
+  ) async {
+    final FakeCam system = FakeCam();
+    final FakeCamera live = FakeCamera();
+    final session = newSession()..continueAsGuest();
+    final m.PageSpy spy = m.PageSpy();
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.home,
+      services: fakeServices(
+        session,
+        docSource: system,
+        docReader: FakeReader(<List<String>>[passportMrz()]),
+        newDocCamera: () => live,
+        webScene: spy.build,
+      ),
+    );
+    await spy.wait(tester, () => spy.pages.isNotEmpty);
+    spy.send!('scan');
+    await tester.pumpAndSettle();
+    // Lo que ve la cámara, dentro del marco (y no un fondo vacío).
+    expect(
+      find.byWidgetPredicate(
+        (Widget w) => w is ColoredBox && w.color == Colors.blueGrey,
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(find.bySemanticsLabel('Hacer foto'));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Pasaporte leído'), findsOneWidget);
+    expect(live.photos, 1);
+    expect(system.shots, 0);
+    await tester.pump(const Duration(milliseconds: 1400));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Cerrar'));
+    await tester.pumpAndSettle();
+    expect(live.disposed, isTrue);
   });
 }

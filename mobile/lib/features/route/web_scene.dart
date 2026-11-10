@@ -14,13 +14,72 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
-/// Los únicos avisos que pasan: una palabra en minúsculas y, si acaso, uno
-/// o dos números separados por ":" ("night:2:9000"). O una palabra, un
-/// número y datos en base64url ("save:5:WyJ..." de la Bóveda), que solo
-/// llevan letras, números, "-" y "_".
+/// Un trocito de JavaScript que va al principio de TODAS las páginas para
+/// que la app vaya fluida (las maquetas tienen muchas animaciones):
+///
+///  1. Las animaciones que se repiten siempre y están FUERA de la pantalla
+///     (más abajo, sin hacer scroll) se paran hasta que se ven. El móvil
+///     solo dibuja lo que tienes delante.
+///  2. Cuando la pantalla queda tapada por otra (abres Hoteles encima de
+///     Inicio, o cambias de pestaña), la app llama a __eclVis(false) y la
+///     página se congela entera: animaciones y dibujos (requestAnimationFrame).
+///     Antes seguían moviéndose a escondidas y robaban fuerza a la pantalla
+///     que sí estabas mirando. __eclVis(true) lo despierta todo.
+///  3. Las fotos se descodifican aparte, sin frenar las animaciones.
+///
+/// No cambia nada de lo que se ve: solo deja de gastar en lo que no se ve.
+const String webScenePrelude = r'''<script>(function(){
+var shown=true,frozen=[],waiting=[],raf=window.requestAnimationFrame.bind(window);
+window.requestAnimationFrame=function(cb){if(shown)return raf(cb);waiting.push(cb);return 0;};
+var seen=new WeakMap(),io=('IntersectionObserver' in window)?new IntersectionObserver(function(es){
+es.forEach(function(e){var l=seen.get(e.target)||[];l.forEach(function(a){
+if(e.isIntersecting){if(shown&&a.playState==='paused'&&a.__ecl)a.play();a.__ecl=false;}
+else if(a.playState==='running'){a.pause();a.__ecl=true;}});});},{rootMargin:'120px'}):null;
+function scan(){if(!io||!document.getAnimations)return;document.getAnimations().forEach(function(a){
+var ef=a.effect,t=ef&&ef.target;if(!t||!ef.getTiming||ef.getTiming().iterations!==Infinity)return;
+var l=seen.get(t);if(!l){l=[];seen.set(t,l);io.observe(t);}if(l.indexOf(a)<0){l.push(a);io.unobserve(t);io.observe(t);}});}
+window.__eclVis=function(v){if(v===shown)return;shown=v;
+if(!v){frozen=document.getAnimations?document.getAnimations().filter(function(a){return a.playState==='running';}):[];
+frozen.forEach(function(a){a.pause();});document.querySelectorAll('video').forEach(function(m){if(!m.paused){m.pause();m.__ecl=true;}});}
+else{frozen.forEach(function(a){if(!a.__ecl)a.play();});frozen=[];
+document.querySelectorAll('video').forEach(function(m){if(m.__ecl){m.__ecl=false;m.play();}});
+var w=waiting;waiting=[];w.forEach(function(cb){raf(cb);});scan();}};
+new MutationObserver(function(ms){ms.forEach(function(m){m.addedNodes.forEach(function(n){
+if(n.tagName==='IMG'&&!n.hasAttribute('decoding'))n.decoding='async';});});})
+.observe(document.documentElement,{childList:true,subtree:true});
+var tick=0;function loop(){if(shown)scan();if(++tick<20)setTimeout(loop,tick<5?400:1500);else setInterval(function(){if(shown)scan();},4000);}
+document.addEventListener('DOMContentLoaded',function(){scan();loop();});
+})();</script>''';
+
+/// La página con [webScenePrelude] puesto lo primero (justo tras `<head>`).
+String withPrelude(String html) {
+  final int head = html.indexOf(RegExp('<head[^>]*>', caseSensitive: false));
+  if (head < 0) return '$webScenePrelude$html';
+  final int end = html.indexOf('>', head) + 1;
+  return '${html.substring(0, end)}$webScenePrelude${html.substring(end)}';
+}
+
+/// Los únicos avisos que pasan: una palabra en minúsculas y, si acaso, hasta
+/// tres trozos separados por ":" con letras, números, ".", "_", "-", "~" o
+/// "%" ("lang:en", "pick:USD", "paid:12.50", "spot:3:call", "name:Ra%C3%BAl").
+/// O una palabra, un número y datos en base64url ("save:5:WyJ..." de la
+/// Bóveda). Nada de espacios, comillas ni "<": nada que pueda colarse.
+///
+/// (Antes solo pasaban números y en la app de verdad se perdían en silencio
+/// muchos toques: el idioma, la moneda, los timos del Radar, "Llamar"...)
 final RegExp webSceneMessage = RegExp(
-  r'^([a-z]{1,12}(:[0-9]{1,8}){0,2}|[a-z]{1,12}:[0-9]{1,8}:[A-Za-z0-9_-]{1,4000})$',
+  r'^([a-z]{1,12}(:[A-Za-z0-9._~%-]{1,64}){0,3}|[a-z]{1,12}:[0-9]{1,8}:[A-Za-z0-9_-]{1,4000})$',
 );
+
+/// Un trozo de aviso que la página mandó con encodeURIComponent (textos que
+/// escribes: un nombre, una búsqueda). Si viene roto, se deja tal cual.
+String webSceneText(String raw) {
+  try {
+    return Uri.decodeComponent(raw);
+  } on ArgumentError {
+    return raw;
+  }
+}
 
 /// Para mandarle a la página JavaScript cuando ya está abierta. Sin página
 /// (o en los tests), lo mandado se queda apuntado en [sent].
@@ -66,6 +125,7 @@ class _WebSceneState extends State<WebScene> {
     ..setBackgroundColor(const Color(0xFF050A14))
     ..setNavigationDelegate(
       NavigationDelegate(
+        onPageFinished: (_) => _loaded(),
         onNavigationRequest: (NavigationRequest r) =>
             r.url == 'about:blank' || r.url.startsWith('data:')
             ? NavigationDecision.navigate
@@ -78,17 +138,58 @@ class _WebSceneState extends State<WebScene> {
         if (webSceneMessage.hasMatch(m.message)) widget.onMessage(m.message);
       },
     )
-    ..loadHtmlString(widget.html);
+    ..loadHtmlString(withPrelude(widget.html));
+
+  /// ¿Se está viendo? (pestaña activa y sin otra pantalla encima).
+  bool _visible = true;
+
+  /// Lo que la app manda antes de que la página termine de cargar se
+  /// guarda y se manda en cuanto carga (si no, se perdería).
+  bool _ready = false;
+  final List<String> _pending = <String>[];
+
+  void _loaded() {
+    if (_ready) return;
+    _ready = true;
+    final List<String> todo = List<String>.of(_pending);
+    _pending.clear();
+    for (final String js in todo) {
+      _controller.runJavaScript(js).catchError((Object _) {});
+    }
+  }
+
+  Future<void> _run(String js) async {
+    if (!_ready) {
+      _pending.add(js);
+      return;
+    }
+    await _controller.runJavaScript(js);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // TickerMode se apaga en las pestañas que no estás mirando; isCurrent
+    // es false cuando otra pantalla está encima de esta.
+    final bool visible =
+        TickerMode.valuesOf(context).enabled &&
+        (ModalRoute.of(context)?.isCurrent ?? true);
+    if (visible == _visible) return;
+    _visible = visible;
+    _controller
+        .runJavaScript('window.__eclVis&&window.__eclVis($visible)')
+        .catchError((Object _) {});
+  }
 
   @override
   void initState() {
     super.initState();
-    widget.bridge?._run = _controller.runJavaScript;
+    widget.bridge?._run = _run;
   }
 
   @override
   void dispose() {
-    if (widget.bridge?._run == _controller.runJavaScript) {
+    if (widget.bridge?._run == _run) {
       widget.bridge?._run = null;
     }
     super.dispose();

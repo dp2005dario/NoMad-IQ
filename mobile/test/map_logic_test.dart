@@ -6,6 +6,8 @@ import 'dart:typed_data';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:eclipta/features/settings/profile_photo.dart';
+import 'package:eclipta/features/map/me_marker.dart';
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/api_client.dart';
 import 'package:eclipta/features/map/geo.dart';
@@ -253,8 +255,11 @@ void main() {
           'building-3d',
         ]),
       );
-      // Tu posición se dibuja encima de las zonas.
-      expect(ids.last, 'nomad-me-dot');
+      // Tu posición (con tu foto de perfil) se dibuja encima de todo.
+      expect(ids.sublist(ids.length - 2), <String>[
+        'nomad-me-dot',
+        'nomad-me-photo',
+      ]);
       final Map<String, Object?> sources =
           style['sources']! as Map<String, Object?>;
       expect(sources.keys, contains(MapIds.zonesSource));
@@ -509,6 +514,36 @@ void main() {
       expect(await m.enableLocation(), LocationAccess.granted);
       expect(m.tracking, isTrue);
       m.dispose();
+    });
+  });
+
+  testWidgets('tu marca: tu inicial, tu avatar o tu foto, en PNG', (
+    WidgetTester tester,
+  ) async {
+    await tester.runAsync(() async {
+      final MeLook initial = await meLookFor(
+        const ProfilePhotoChoice(),
+        name: 'dario',
+        googlePhoto: null,
+      );
+      expect((initial as MeInitial).letter, 'D');
+      final MeLook preset = await meLookFor(
+        const ProfilePhotoChoice(preset: 1),
+        name: 'dario',
+        googlePhoto: 'https://lh3.googleusercontent.com/a/x',
+      );
+      expect(preset, isA<MePreset>());
+      // Una foto de un sitio raro no se descarga: se queda la inicial.
+      final MeLook evil = await meLookFor(
+        const ProfilePhotoChoice(),
+        name: 'dario',
+        googlePhoto: 'https://evil.example/x.jpg',
+        download: (Uri _) async => throw StateError('no debería bajar nada'),
+      );
+      expect(evil, isA<MeInitial>());
+      final List<int>? png = await drawMeMarker(initial);
+      expect(png, isNotNull);
+      expect(png!.sublist(1, 4), 'PNG'.codeUnits);
     });
   });
 }

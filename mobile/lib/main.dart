@@ -3,7 +3,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:camera/camera.dart' show ResolutionPreset;
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:maplibre_gl/maplibre_gl.dart' show MapLibreMap;
 import 'package:just_audio_background/just_audio_background.dart';
 
 import 'app.dart';
@@ -45,9 +48,19 @@ import 'features/route/data_licenses.dart';
 import 'features/route/web_scene.dart';
 import 'features/welcome/welcome_video.dart';
 
-Future<void> main() async {
+Future<void> main() => startApp();
+
+/// Arranca la app. [router] (solo para la prueba con capturas, ver
+/// lib/tour_main.dart) da otro router; sin él, el de siempre.
+Future<void> startApp({
+  GoRouter Function(SessionController session)? router,
+}) async {
   // Necesario antes de usar plugins (como el almacenamiento) en main().
   WidgetsFlutterBinding.ensureInitialized();
+  // El mapa se dibuja en un TextureView: así se comporta como cualquier otro
+  // trozo de la app. Con el modo de antes (Virtual Display) daba un
+  // "tembleque" al volver al Mapa desde otra pantalla.
+  MapLibreMap.useHybridComposition = true;
   registerDataLicenses();
   // Audioguías con el móvil bloqueado (maqueta "Bloqueo"): play/pausa y
   // partes en la pantalla de bloqueo, la notificación, el reloj y el coche.
@@ -89,7 +102,9 @@ Future<void> main() async {
     api: ApiClient(baseUrl: AppConfig.apiBaseUrl, session: session),
     location: const DeviceLocationSource(),
     mapSurface: (MapSurfaceSpec spec) => MapLibreSurface(spec: spec),
-    webScene: (String html, void Function(String) onMessage) =>
+    // El Vuelo 3D. Las demás pantallas crean su WebScene ellas mismas (con
+    // su puente para actualizarse sin recargar).
+    scene3d: (String html, void Function(String) onMessage) =>
         WebScene(html: html, onMessage: onMessage),
     newPlayer: JustAudioGuidePlayer.new,
     newWelcomeVideo: AssetWelcomeVideo.new,
@@ -97,6 +112,7 @@ Future<void> main() async {
         ? null
         : PluginGoogleIdTokenSource(AppConfig.googleClientId),
     newCamera: DeviceCamera.new,
+    newDocCamera: () => DeviceCamera(preset: ResolutionPreset.veryHigh),
     newTravelCamera: DeviceTravelCamera.new,
     memoryFiles: AppMemoryFiles(),
     homeWidgets: DeviceHomeWidgets(),
@@ -165,6 +181,7 @@ Future<void> main() async {
       settings: SettingsController(store),
       session: session,
       services: services,
+      router: router?.call(session),
     ),
   );
 }

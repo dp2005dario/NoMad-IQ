@@ -138,6 +138,17 @@ def test_landmarks_need_redis() -> None:
     assert settings(**DEV).landmark_vision_model is None
 
 
+def test_google_places_key_is_optional_checked_and_never_echoed() -> None:
+    # Sin clave, las tiendas enseñan el dibujo de siempre y nada falla.
+    assert settings(**DEV).google_places_api_key is None
+    assert settings(**DEV, google_places_api_key="").google_places_api_key is None
+    assert settings(**DEV, google_places_api_key="AIzaSyA-0123456789abcdefXYZ").google_places_api_key
+    with pytest.raises(ValidationError) as err:
+        settings(**DEV, google_places_api_key="mi clave rara!")
+    assert "GOOGLE_PLACES_API_KEY" in str(err.value)
+    assert "mi clave rara" not in str(err.value)
+
+
 def test_mapillary_token_is_optional_checked_and_never_echoed() -> None:
     # Sin token, el botón "Ver la calle de verdad" no existe y nada falla.
     assert settings(**DEV).mapillary_token is None

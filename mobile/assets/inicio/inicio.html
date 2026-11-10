@@ -26,7 +26,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 background:radial-gradient(60% 42% at 50% 38%,#3DDC9733,transparent 70%),radial-gradient(55% 40% at 78% 30%,#9B7BFF40,transparent 70%),radial-gradient(50% 35% at 18% 52%,#5A5BD930,transparent 70%),
 radial-gradient(1.5px 1.5px at 12% 14%,#fff9,transparent),radial-gradient(1px 1px at 30% 8%,#fff8,transparent),radial-gradient(1.5px 1.5px at 62% 12%,#fffa,transparent),radial-gradient(1px 1px at 88% 20%,#fff8,transparent),radial-gradient(1px 1px at 8% 44%,#fff7,transparent),radial-gradient(1.5px 1.5px at 94% 56%,#fff9,transparent),radial-gradient(1px 1px at 22% 70%,#fff7,transparent),radial-gradient(1px 1px at 80% 78%,#fff7,transparent);
 -webkit-mask:linear-gradient(#000 65%,transparent);mask:linear-gradient(#000 65%,transparent);animation:aur 12s ease-in-out infinite alternate}
-.hero::after{content:"";position:absolute;z-index:-1;left:50%;width:440px;margin-left:-220px;top:-10px;height:440px;border-radius:50%;-webkit-mask:radial-gradient(closest-side,#000 55%,transparent 100%);mask:radial-gradient(closest-side,#000 55%,transparent 100%);pointer-events:none;background:conic-gradient(from 200deg at 50% 50%,transparent,#3DDC9722,#9B7BFF26,transparent 60%);filter:blur(36px);animation:spin 40s linear infinite}
+.hero::after{content:"";position:absolute;z-index:-1;left:50%;width:440px;margin-left:-220px;top:-10px;height:440px;border-radius:50%;-webkit-mask:radial-gradient(closest-side,#000 55%,transparent 100%);mask:radial-gradient(closest-side,#000 55%,transparent 100%);pointer-events:none;background:conic-gradient(from 200deg at 50% 50%,transparent,#3DDC9722,#9B7BFF26,transparent 60%);animation:spin 40s linear infinite;will-change:transform}
 @keyframes aur{to{transform:translateY(10px) scale(1.04);opacity:.85}}
 .top{width:100%;display:flex;justify-content:space-between;align-items:center}
 .chip,.friends div,.tile b,.tile small,dd{min-width:0;overflow-wrap:anywhere}.chip{max-width:60%}.brand{font:800 15px var(--d);letter-spacing:.2em}
@@ -46,7 +46,7 @@ box-shadow:0 0 60px #3DDC9755,0 0 120px #9B7BFF33,inset 0 -14px 30px #2a1f7a66;a
 .orb.on .core{box-shadow:0 0 80px #3DDC97aa,0 0 140px #9B7BFF77}
 .bars{position:absolute;bottom:34px;display:flex;gap:4px;align-items:flex-end;height:22px;opacity:0;transition:.2s}
 .orb.on .bars{opacity:1}
-.bars i{width:4px;border-radius:2px;background:#fff;height:6px;animation:bar .5s ease-in-out infinite alternate}
+.bars i{width:4px;border-radius:2px;background:#fff;height:6px;animation:bar .5s ease-in-out infinite alternate}.orb:not(.on) .bars i{animation:none}
 .bars i:nth-child(2n){animation-delay:.15s}.bars i:nth-child(3n){animation-delay:.3s}
 @keyframes bar{to{height:22px}}
 .hint{font:700 15px var(--d);height:22px;color:var(--fg)}
@@ -682,23 +682,46 @@ var car=$('car'),dots=$('dots');
 // El efecto 3D lo hace el propio navegador con animation-timeline (sin JavaScript al deslizar); si no lo soporta, se calcula con requestAnimationFrame.
 // Cada cuadrado va dentro de un 'hueco' fijo (slot): el hueco es el que se para en el centro y el cuadrado de dentro es el que gira.
 // Asi el giro 3D no mueve los puntos de parada y no hay temblores.
-var N=T.length,tiles=T.map(function(t,i){var b=document.createElement('button');b.className='slot';b.type='button';var tl=document.createElement('span');tl.className='tile';tl.style.setProperty('--c',t[3]);b.appendChild(tl);
+// INFINITO: los cuadrados van 3 veces seguidas (copias iguales) y se empieza
+// en la copia del medio. Cuando el carrusel se PARA (nunca mientras deslizas,
+// para no romper la inercia) y estas en una copia de los lados, se salta sin
+// animacion a la misma posicion de la copia del medio: se ve igual, pero
+// siempre quedan cuadrados a la izquierda y a la derecha.
+var N=T.length,REP=3,tiles=[];
+for(var r=0;r<REP;r++)T.forEach(function(t,i){var j=r*N+i;var b=document.createElement('button');b.className='slot';b.type='button';var tl=document.createElement('span');tl.className='tile';tl.style.setProperty('--c',t[3]);b.appendChild(tl);
  tl.innerHTML='<span class="sc">'+(PH[i]?'<img class="ph" src="'+PH[i]+'" alt="" draggable="false" decoding="async">':SC[i])+'</span><span class="lg"><img src="'+IM[i]+'" alt="" draggable="false" decoding="async"></span><span class="tx"><b>'+t[1]+'</b><small>'+t[2]+'</small></span>';
  b.setAttribute('aria-label',t[1]+'. '+t[2]);
- b.onclick=function(){if(Math.abs(cxs()[i]-(car.scrollLeft+car.clientWidth/2))>20){car.scrollTo({left:cxs()[i]-car.clientWidth/2,behavior:'smooth'})}else toApp('tile:'+i)};
- car.appendChild(b);return tl});
+ // Las copias no las lee el lector de pantalla (solo la del medio).
+ if(r!==1){b.setAttribute('aria-hidden','true');b.tabIndex=-1}
+ b.onclick=function(){if(Math.abs(cxs()[j]-(car.scrollLeft+car.clientWidth/2))>20){car.scrollTo({left:cxs()[j]-car.clientWidth/2,behavior:'smooth'})}else toApp('tile:'+i)};
+ car.appendChild(b);tiles.push(tl)});
 for(var k=0;k<8;k++)dots.appendChild(document.createElement('i'));
 var CX=null;function cxs(){if(!CX)CX=tiles.map(function(t){return t.parentNode.offsetLeft+t.parentNode.offsetWidth/2});return CX}
 window.addEventListener('resize',function(){CX=null},{passive:true});
 var NATIVE3D=window.CSS&&CSS.supports&&CSS.supports('animation-timeline','view(inline)');
 if(NATIVE3D)car.classList.add('n3d');
 var lastB=-1,lastDot=-1;
-function mark(){var X=cxs(),c=car.scrollLeft+car.clientWidth/2,best=0,bd=1e9;for(var i=0;i<N;i++){var d=Math.abs(X[i]-c);if(d<bd){bd=d;best=i}}
+function mark(){var X=cxs(),c=car.scrollLeft+car.clientWidth/2,best=0,bd=1e9;for(var i=0;i<tiles.length;i++){var d=Math.abs(X[i]-c);if(d<bd){bd=d;best=i}}
  if(best!==lastB){if(lastB>=0)tiles[lastB].classList.remove('act');tiles[best].classList.add('act');lastB=best}
- var n=Math.round(best/(N-1)*7);if(n!==lastDot){[].forEach.call(dots.children,function(d,j){d.classList.toggle('on',j===n)});lastDot=n}}
-function tilt(){var X=cxs(),c=car.scrollLeft+car.clientWidth/2;for(var i=0;i<N;i++){var o=(X[i]-c)/264;if(Math.abs(o)>2.6)continue;o=Math.max(-2,Math.min(2,o));var a=Math.abs(o);
+ var n=Math.round((best%N)/(N-1)*7);if(n!==lastDot){[].forEach.call(dots.children,function(d,j){d.classList.toggle('on',j===n)});lastDot=n}}
+function tilt(){var X=cxs(),c=car.scrollLeft+car.clientWidth/2;for(var i=0;i<tiles.length;i++){var o=(X[i]-c)/264;if(Math.abs(o)>2.6)continue;o=Math.max(-2,Math.min(2,o));var a=Math.abs(o);
  tiles[i].style.transform='scale('+(1-Math.min(a,1)*.14).toFixed(3)+')';tiles[i].style.opacity=(1-Math.min(a,1)*.4).toFixed(3)}}
-var rq=0;car.addEventListener('scroll',function(){if(rq)return;rq=1;requestAnimationFrame(function(){rq=0;if(!NATIVE3D)tilt();mark()})},{passive:true});
+// Lo que mide una copia entera (de un cuadrado al mismo de la copia siguiente).
+function lap(){var X=cxs();return X[N]-X[0]}
+var touching=false,idleT=0;
+function recenter(){if(touching)return;var X=cxs(),c=car.scrollLeft+car.clientWidth/2,L=lap();if(!L)return;
+ // En la primera copia: un salto adelante; en la tercera: uno atras.
+ var shift=c<X[N]-L/2/N?L:c>X[2*N-1]+L/2/N?-L:0;if(!shift)return;
+ var snap=car.style.scrollSnapType;car.style.scrollSnapType='none';car.scrollLeft+=shift;car.style.scrollSnapType=snap;CX=null;mark();if(!NATIVE3D)tilt()}
+function settle(){clearTimeout(idleT);idleT=setTimeout(recenter,140)}
+car.addEventListener('pointerdown',function(){touching=true;clearTimeout(idleT)},{passive:true});
+car.addEventListener('touchstart',function(){touching=true;clearTimeout(idleT)},{passive:true});
+['pointerup','pointercancel','touchend','touchcancel'].forEach(function(n){car.addEventListener(n,function(){touching=false;settle()},{passive:true})});
+if('onscrollend' in window)car.addEventListener('scrollend',function(){if(!touching)recenter()});
+var rq=0;car.addEventListener('scroll',function(){settle();if(rq)return;rq=1;requestAnimationFrame(function(){rq=0;if(!NATIVE3D)tilt();mark()})},{passive:true});
+// Se empieza en el primer cuadrado de la copia del medio.
+function startMid(){var X=cxs();var snap=car.style.scrollSnapType;car.style.scrollSnapType='none';car.scrollLeft=X[N]-car.clientWidth/2;car.style.scrollSnapType=snap}
+startMid();requestAnimationFrame(function(){CX=null;if(Math.abs(cxs()[N]-(car.scrollLeft+car.clientWidth/2))>4)startMid();mark();if(!NATIVE3D)tilt()});
 mark();if(!NATIVE3D)tilt();
 // hold helper
 function hold(el,on,off,ms,done){var t;function s(e){e.preventDefault();on();if(ms)t=setTimeout(function(){done();off()},ms)}function e(){clearTimeout(t);off()}

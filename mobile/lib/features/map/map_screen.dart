@@ -38,6 +38,9 @@ import 'location.dart';
 import 'map_model.dart';
 import 'map_style.dart';
 import 'map_surface.dart';
+import 'me_marker.dart';
+import '../nearby/nearby_api.dart';
+import '../nearby/nearby_page.dart' show spotLook;
 import 'weather_overlay.dart';
 
 class MapScreen extends StatefulWidget {
@@ -74,6 +77,10 @@ class _MapScreenState extends State<MapScreen> {
   Timer? _idleDebounce;
   Timer? _lookTimer;
 
+  /// Buscar mientras escribes (como Google Maps), esperando a que pares
+  /// un momento para no preguntar letra a letra.
+  Timer? _typing;
+
   /// La luz (día, tarde, noche) va sola por la hora, como en la maqueta.
   static const MapLook _chosenLook = MapLook.auto;
   bool _tilted = true;
@@ -99,6 +106,22 @@ class _MapScreenState extends State<MapScreen> {
   GeoPoint? _sentMe;
   Zone? _lastEntered;
 
+  /// Adónde había que llevar la cámara antes de que el mapa estuviera listo
+  /// (p. ej. tu posición, si el GPS te encontró mientras cargaba).
+  (GeoPoint, double?)? _pendingFocus;
+
+  /// Lo que hay cerca de ti (tiendas y sitios), para el panel de abajo
+  /// cuando no estás en ninguna zona: así siempre hay algo que ver.
+  List<_Around> _around = const <_Around>[];
+  GeoPoint? _aroundFor;
+  bool _aroundLoading = false;
+
+  /// ¿Ya se llevó la cámara a tu posición alguna vez?
+  bool _centeredOnMe = false;
+
+  /// La foto con la que se dibujó tu marca la última vez.
+  Object? _meLookKey;
+
   // Caché del estilo: solo se recalcula si cambia el aspecto o el idioma.
   (MapLook, String)? _styleKey;
   Map<String, Object?> _style = const <String, Object?>{};
@@ -107,7 +130,7 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     FlyraNotes.instance.addListener(_changed);
-    ProfilePhotoController.instance.addListener(_changed);
+    ProfilePhotoController.instance.addListener(_photoChanged);
     // El modo "auto" cambia solo al atardecer y al anochecer.
     _lookTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
@@ -144,11 +167,12 @@ class _MapScreenState extends State<MapScreen> {
   void dispose() {
     _idleDebounce?.cancel();
     _lookTimer?.cancel();
+    _typing?.cancel();
     _model?.removeListener(_onModel);
     _model?.dispose();
     _search.dispose();
     FlyraNotes.instance.removeListener(_changed);
-    ProfilePhotoController.instance.removeListener(_changed);
+    ProfilePhotoController.instance.removeListener(_photoChanged);
     super.dispose();
   }
 
@@ -156,6 +180,36 @@ class _MapScreenState extends State<MapScreen> {
 
   void _changed() {
     if (mounted) setState(() {});
+  }
+
+  void _photoChanged() {
+    _changed();
+    unawaited(_updateMeImage());
+  }
+
+  /// Dibuja tu marca con tu foto de perfil (o avatar, o inicial).
+  Future<void> _updateMeImage({bool force = false}) async {
+    final MapSurfaceController? map = _map;
+    if (map == null || !mounted) return;
+    final ProfilePhotoChoice choice = ProfilePhotoController.instance.choice;
+    final SessionController session = SessionScope.read(context);
+    final String? google = session.user?.photoUrl;
+    final String? name = displayName(session.user?.email);
+    final Object key = Object.hash(choice.encode(), google, name);
+    if (!force && key == _meLookKey) return;
+    _meLookKey = key;
+    final MeLook look = await meLookFor(
+      choice,
+      name: name,
+      googlePhoto: google,
+    );
+    final Uint8List? png = await drawMeMarker(look);
+    if (png == null || !mounted || _map != map) return;
+    try {
+      await map.setMeImage(png);
+    } on Object {
+      // Si falla, se ve el punto de siempre.
+    }
   }
 
   // --- Mapa ↔ modelo -------------------------------------------------------
@@ -167,6 +221,16 @@ class _MapScreenState extends State<MapScreen> {
     _sentZones = -1;
     _sentMe = null;
     _syncMap();
+    unawaited(_updateMeImage(force: true));
+    // Si el GPS te encontró mientras el mapa cargaba, ahora sí se va allí.
+    final (GeoPoint, double?)? pending = _pendingFocus;
+    final GeoPoint? me = _m.me;
+    if (pending != null) {
+      _pendingFocus = null;
+      _focus(pending.$1, pending.$2);
+    } else if (me != null && !_centeredOnMe) {
+      _focus(me, 16);
+    }
     _scheduleIdle();
   }
 
@@ -179,6 +243,7 @@ class _MapScreenState extends State<MapScreen> {
     }
     _lastEntered = entered;
     _syncMap();
+    _loadAround();
     if (mounted) setState(() {});
   }
 
@@ -251,7 +316,14 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _focus(GeoPoint target, double? zoom) {
-    unawaited(_map?.flyTo(target, zoom: zoom));
+    final MapSurfaceController? map = _map;
+    if (target == _m.me) _centeredOnMe = true;
+    if (map == null) {
+      // El mapa aún no está listo: se guarda y se hace en _onReady.
+      _pendingFocus = (target, zoom);
+      return;
+    }
+    unawaited(map.flyTo(target, zoom: zoom));
   }
 
   Map<String, Object?> _currentStyle(String language) {
@@ -293,9 +365,24 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  void _toggleTilt() {
+  /// 3D/2D. Si te habías alejado de tu posición, además te vuelve a ella.
+  Future<void> _toggleTilt() async {
     setState(() => _tilted = !_tilted);
-    unawaited(_map?.setTilt(_tilted ? 55 : 0));
+    final MapSurfaceController? map = _map;
+    if (map == null) return;
+    unawaited(map.setTilt(_tilted ? 55 : 0));
+    final GeoPoint? me = _m.me;
+    if (me == null) return;
+    final GeoBox? box = await map.visibleBox();
+    final GeoPoint? center = box == null
+        ? null
+        : GeoPoint(
+            (box.minLat + box.maxLat) / 2,
+            (box.minLon + box.maxLon) / 2,
+          );
+    if (center == null || center.distanceTo(me) > 150) {
+      unawaited(map.flyTo(me, zoom: 16));
+    }
   }
 
   /// "Girar el mapa": 45° más cada toque, como en la maqueta.
@@ -351,6 +438,63 @@ class _MapScreenState extends State<MapScreen> {
       _places = found;
       _searching = false;
     });
+  }
+
+  /// Busca lo que hay cerca de ti (una vez, y otra si te mueves ~400 m).
+  void _loadAround() {
+    final GeoPoint? me = _m.me;
+    final GeoPoint? last = _aroundFor;
+    if (me == null || _aroundLoading) return;
+    if (last != null && last.distanceTo(me) < 400) return;
+    _aroundLoading = true;
+    _aroundFor = me;
+    unawaited(() async {
+      try {
+        final NearbyList found = await _services.nearby.near(me);
+        if (!mounted) return;
+        final AppLocalizations t = AppLocalizations.of(context);
+        final List<_Around> list = <_Around>[
+          for (final NearbySpot s in found.spots)
+            if (s.name != null && spotLook(t, s) != null)
+              _Around(
+                name: s.name!,
+                label: spotLook(t, s)!.$2,
+                meters: me.distanceTo(s.point).round(),
+                point: s.point,
+              ),
+        ]..sort((_Around a, _Around b) => a.meters.compareTo(b.meters));
+        setState(() => _around = list.take(12).toList());
+      } on Object {
+        // Sin red o servidor ocupado: se vuelve a probar cuando te muevas.
+      } finally {
+        _aroundLoading = false;
+      }
+    }());
+  }
+
+  /// Lleva el mapa al sitio elegido y le pone una chincheta, como Google
+  /// Maps.
+  void _showPlace(GeoPlace p) {
+    _focus(p.point, 17);
+    unawaited(
+      _map?.showPins(<String, Object?>{
+        'type': 'FeatureCollection',
+        'features': <Object?>[
+          <String, Object?>{
+            'type': 'Feature',
+            'id': 'search',
+            'geometry': <String, Object?>{
+              'type': 'Point',
+              'coordinates': <double>[p.point.lon, p.point.lat],
+            },
+            'properties': <String, Object?>{
+              'color': '#FFB86B',
+              'selected': true,
+            },
+          },
+        ],
+      }),
+    );
   }
 
   void _clearSearch() {
@@ -461,7 +605,14 @@ class _MapScreenState extends State<MapScreen> {
                           Expanded(
                             child: _SearchBox(
                               controller: _search,
-                              onChanged: (_) => setState(() {}),
+                              onChanged: (String q) {
+                                setState(() {});
+                                _typing?.cancel();
+                                _typing = Timer(
+                                  const Duration(milliseconds: 600),
+                                  () => unawaited(_searchPlaces(q)),
+                                );
+                              },
                               onSubmit: (String q) =>
                                   unawaited(_searchPlaces(q)),
                             ),
@@ -497,7 +648,7 @@ class _MapScreenState extends State<MapScreen> {
                           },
                           onPlace: (GeoPlace p) {
                             _clearSearch();
-                            _focus(p.point, 17);
+                            _showPlace(p);
                           },
                         )
                       else ...<Widget>[
@@ -508,7 +659,7 @@ class _MapScreenState extends State<MapScreen> {
                               height: 40,
                               radius: 14,
                               tooltip: t.mapTiltTooltip,
-                              onTap: _toggleTilt,
+                              onTap: () => unawaited(_toggleTilt()),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                               ),
@@ -679,6 +830,10 @@ class _MapScreenState extends State<MapScreen> {
                   status: _m.status,
                   onListen: _openGuide,
                   onEnable: () => unawaited(_enableLocation()),
+                  around: _around,
+                  onAround: (_Around a) => _showPlace(
+                    GeoPlace(name: a.name, address: a.label, point: a.point),
+                  ),
                 ),
               ],
             ),
@@ -1468,9 +1623,15 @@ class _ZonePanel extends StatelessWidget {
     required this.status,
     required this.onListen,
     required this.onEnable,
+    this.around = const <_Around>[],
+    this.onAround,
   });
 
   final Zone? zone;
+
+  /// Lo más cercano (tiendas y sitios) cuando no estás en ninguna zona.
+  final List<_Around> around;
+  final ValueChanged<_Around>? onAround;
 
   /// true si estás dentro de esta zona ahora mismo.
   final bool here;
@@ -1506,6 +1667,14 @@ class _ZonePanel extends StatelessWidget {
           ? t.mapZonesGuest
           : t.mapLocationWhy;
       action = onEnable;
+      icon = 'M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11zM12 8a2 2 0 1 0 0.01 0';
+    } else if (around.isNotEmpty) {
+      // Sin zona aquí: lo que tienes alrededor, como en un mapa normal.
+      color = NomadColors.mint;
+      kicker = 'Cerca de ti';
+      title = around.first.name;
+      sub = '${around.first.label} · a ${_meters(around.first.meters)}';
+      action = () => onAround?.call(around.first);
       icon = 'M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11zM12 8a2 2 0 1 0 0.01 0';
     } else {
       color = NomadColors.mint;
@@ -1616,6 +1785,35 @@ class _ZonePanel extends StatelessWidget {
               ],
             ),
           ),
+          if (z == null && around.length > 1) ...<Widget>[
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 34,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: around.length - 1,
+                separatorBuilder: (_, _) => const SizedBox(width: 6),
+                itemBuilder: (BuildContext context, int i) {
+                  final _Around a = around[i + 1];
+                  return ActionChip(
+                    onPressed: () => onAround?.call(a),
+                    backgroundColor: const Color(0xFF1B2830),
+                    side: const BorderSide(color: Color(0xFF26363F)),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    label: Text(
+                      '${a.name} · ${_meters(a.meters)}',
+                      style: const TextStyle(
+                        fontFamily: 'Manrope',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFFF2F5F3),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           const Row(
             children: <Widget>[
@@ -1646,6 +1844,26 @@ class _ZonePanel extends StatelessWidget {
     );
   }
 }
+
+/// Un sitio de alrededor para el panel del mapa.
+class _Around {
+  const _Around({
+    required this.name,
+    required this.label,
+    required this.meters,
+    required this.point,
+  });
+
+  final String name;
+  final String label;
+  final int meters;
+  final GeoPoint point;
+}
+
+/// "120 m" o "1,2 km".
+String _meters(int m) => m < 1000
+    ? '${(m / 10).round() * 10} m'
+    : '${(m / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
 
 /// Un atajo del panel (Cerca de ti, Radar o Asistente).
 class _Shortcut extends StatelessWidget {

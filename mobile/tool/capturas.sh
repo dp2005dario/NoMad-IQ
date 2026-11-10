@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Hace las capturas de todas las pantallas en un emulador Android.
+#
+# Lo usa el robot de GitHub (.github/workflows/capturas.yml) con el emulador
+# ya encendido. La app se compila con lib/tour_main.dart: se abre sola,
+# visita cada pantalla y escribe "ECLIPTA_SHOT:nombre" en el registro del
+# móvil (logcat). Este script lo lee y hace la foto en ese momento.
+#
+# Uso: tool/capturas.sh <app.apk> <carpeta de las capturas>
+set -u
+
+APK="$1"
+OUT="$2"
+PKG=com.eclipta.app
+mkdir -p "$OUT"
+
+# -g: todos los permisos ya dados (ubicación, cámara...), sin ventanitas.
+adb install -r -g "$APK"
+adb logcat -c
+# Sin animaciones del sistema: capturas más estables.
+adb shell settings put global window_animation_scale 0 || true
+adb shell settings put global transition_animation_scale 0 || true
+adb shell settings put global animator_duration_scale 0 || true
+
+adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null
+
+# Lee el registro hasta "FIN" (o como mucho 15 minutos).
+timeout 900 adb logcat -v raw -s flutter:I | while IFS= read -r line; do
+  case "$line" in
+    *ECLIPTA_SHOT:FIN*)
+      echo "Fin del recorrido"
+      break
+      ;;
+    *ECLIPTA_SHOT:*)
+      name="${line##*ECLIPTA_SHOT:}"
+      name="$(printf '%s' "$name" | tr -cd 'a-z0-9-')"
+      adb exec-out screencap -p > "$OUT/$name.png"
+      echo "Captura: $name"
+      ;;
+  esac
+done
+
+# El registro completo de la app, por si algo falla (errores de Flutter).
+adb logcat -d -s flutter:* > "$OUT/registro-flutter.txt" || true
+count=$(ls "$OUT"/*.png 2>/dev/null | wc -l)
+echo "Capturas hechas: $count"
+[ "$count" -gt 0 ]

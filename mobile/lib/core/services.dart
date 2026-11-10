@@ -83,7 +83,9 @@ class AppServices {
     this.openBooking = openInBrowser,
     this.openLink = openExternal,
     this.webScene,
+    this.scene3d,
     this.newCamera,
+    this.newDocCamera,
     this.speaker = const SilentSpeaker(),
     this.translator = const NoTranslator(),
     this.speechInput = const NoSpeechInput(),
@@ -182,6 +184,10 @@ class AppServices {
   /// Enciende la cámara (null = este aparato no tiene: la pestaña lo dice).
   final CameraFactory? newCamera;
 
+  /// La cámara para escanear documentos (más resolución). null = se usa la
+  /// cámara del sistema para hacer la foto.
+  final CameraFactory? newDocCamera;
+
   /// La voz del móvil para "Escuchar" la ficha de un monumento.
   final Speaker speaker;
 
@@ -255,9 +261,17 @@ class AppServices {
   /// tiene Firebase, o en los tests). Lo pone main.dart al arrancar.
   PushRegistrar? push;
 
-  /// Dónde se ve el Vuelo 3D (un WebView en la app). Sin él (tests), el
-  /// botón "Despegar" hace la animación del mapa plano de siempre.
+  /// SOLO para los tests: cambia el WebView de todas las pantallas por algo
+  /// falso. En la app es null y cada pantalla usa su WebScene de verdad, con
+  /// su "puente" para actualizar la página sin recargarla.
+  ///
+  /// (Antes la app también lo ponía y entonces las pantallas perdían el
+  /// puente: los cambios no se veían hasta salir y volver a entrar.)
   final WebSceneBuilder? webScene;
+
+  /// Dónde se ve el Vuelo 3D (un WebView en la app). Sin él (ni [webScene],
+  /// en los tests) el botón "Despegar" hace la animación del mapa plano.
+  final WebSceneBuilder? scene3d;
 
   /// Cómo se dibuja el mapa (MapLibre en la app, uno falso en los tests).
   final MapSurfaceBuilder mapSurface;

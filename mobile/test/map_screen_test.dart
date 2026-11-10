@@ -219,6 +219,17 @@ void main() {
 
     expect(map.me, solCenter);
     expect(map.calls, contains('flyTo ${solCenter.lat},${solCenter.lon}'));
+    // Te alejas mirando el mapa y pulsas 3D/2D: te devuelve a tu posición.
+    map.view = const GeoBox(
+      minLon: -3.60,
+      minLat: 40.50,
+      maxLon: -3.58,
+      maxLat: 40.52,
+    );
+    map.calls.clear();
+    await tester.tap(find.text('3D'));
+    await tester.pumpAndSettle();
+    expect(map.calls, contains('flyTo ${solCenter.lat},${solCenter.lon}'));
     expect(find.text('ESTÁS EN LA ZONA'), findsOneWidget);
     expect(find.text('Puerta del Sol'), findsOneWidget);
     // 10 posiciones = un lote, enviado de una vez (no 10 peticiones).

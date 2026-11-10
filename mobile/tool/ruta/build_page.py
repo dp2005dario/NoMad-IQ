@@ -10,6 +10,10 @@
 # Wikidata con fotos de licencia libre (en vez de los dibujos de ejemplo).
 # La app los pone en la marca /*ECLIPTA*/
 # (lib/features/route/route_page.dart).
+#
+# OJO (11-11-2026): por la lista de errores de DARIO se cambió el HTML de la
+# página directamente en assets/ (no en este script). Si se vuelve a crear
+# desde la maqueta, hay que repetir esos cambios: ver `git log` del asset.
 import os
 import sys
 

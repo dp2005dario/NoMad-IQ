@@ -1344,7 +1344,7 @@ Map<String, Object?> buildMapStyle({
         'paint': <String, Object?>{
           'circle-color': hex(ZoneColors.audioguide),
           'circle-opacity': 0.18,
-          'circle-radius': 22,
+          'circle-radius': 32,
         },
       },
       <String, Object?>{
@@ -1356,6 +1356,20 @@ Map<String, Object?> buildMapStyle({
           'circle-radius': 7,
           'circle-stroke-color': '#ffffff',
           'circle-stroke-width': 2.5,
+        },
+      },
+      // Encima del punto, tu foto de perfil (la dibuja me_marker.dart). Si
+      // aún no está, se ve el punto de debajo.
+      <String, Object?>{
+        'id': 'nomad-me-photo',
+        'type': 'symbol',
+        'source': MapIds.meSource,
+        'layout': <String, Object?>{
+          'icon-image': 'nomad-me-photo',
+          'icon-size': 0.42,
+          'icon-allow-overlap': true,
+          'icon-ignore-placement': true,
+          'icon-pitch-alignment': 'viewport',
         },
       },
     ],

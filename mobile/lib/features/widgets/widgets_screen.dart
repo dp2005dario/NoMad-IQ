@@ -22,6 +22,7 @@ import '../easy/easy_mode.dart';
 import '../money/money_screen.dart' show MoneyTab;
 import '../route/web_scene.dart';
 import 'home_widgets.dart';
+import '../route/open_flight3d.dart';
 import 'widget_snapshots.dart';
 import 'widget_sync.dart';
 import 'widgets_page.dart';
@@ -134,9 +135,7 @@ class _WidgetsScreenState extends State<WidgetsScreen> {
       case 'fly3d':
         final FlightPlan? p = _plan;
         if (p != null) {
-          unawaited(
-            context.push(Routes.flightRoute(from: p.from.iata, to: p.to.iata)),
-          );
+          unawaited(openFlight3d(context, from: p.from.iata, to: p.to.iata));
         }
       case 'boarding':
         unawaited(context.push(Routes.vault));

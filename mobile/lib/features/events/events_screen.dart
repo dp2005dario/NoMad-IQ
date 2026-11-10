@@ -168,7 +168,14 @@ class _EventsScreenState extends State<EventsScreen> {
     } on Object {
       return;
     }
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    setState(() {});
+    // Sin ciudad (no hay viaje guardado): se pregunta al momento, por su
+    // nombre, en vez de dejar la pantalla vacía.
+    if (_iata == null) {
+      await _pickCity();
+      return;
+    }
     await _load();
   }
 
@@ -210,7 +217,11 @@ class _EventsScreenState extends State<EventsScreen> {
   }
 
   Future<void> _pickCity() async {
-    final String? code = await showOriginSheet(context, current: _iata ?? '');
+    final String? code = await showOriginSheet(
+      context,
+      current: _iata ?? '',
+      title: AppLocalizations.of(context).eventsPickCity,
+    );
     if (code == null || !mounted) return;
     setState(() => (_iata = code, _zone = null, _hotel = _hotelFor(code)));
     await _load();

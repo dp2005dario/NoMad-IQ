@@ -252,6 +252,7 @@ Map<String, Object?> flightsPageData({
   required String origin,
   required String locale,
   required String initial,
+  String photo = '',
   required List<Map<String, Object?>> deals,
   required List<Map<String, Object?>> alerts,
   required bool guest,
@@ -266,6 +267,8 @@ Map<String, Object?> flightsPageData({
         Duration.millisecondsPerDay,
     'origin': origin,
     'initial': initial,
+    // Tu foto de perfil para el círculo de arriba ('' = la inicial).
+    'photo': photo,
     'locale': locale,
     'cur': code,
     'exp': <String, int>{

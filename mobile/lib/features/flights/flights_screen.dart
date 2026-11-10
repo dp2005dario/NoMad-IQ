@@ -13,6 +13,9 @@
 // Los botones que llevan a otra pantalla (buscar, reservar, avisar, Vuelo
 // 3D, los cuadrados de "Planea tu viaje"...) los abre la app.
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,9 +30,16 @@ import '../../core/router.dart';
 import '../../core/services.dart';
 import '../home/home_screen.dart' show displayName;
 import '../route/flight3d.dart' show CountryCodes;
+import '../route/open_flight3d.dart';
 import '../route/places_api.dart';
 import '../route/web_scene.dart';
+import '../map/geo.dart';
+import '../map/location.dart';
+import '../route/geo.dart';
 import '../route/world_data.dart';
+import '../settings/profile_photo.dart';
+import '../../widgets/user_avatar.dart' show isTrustedPhotoUrl;
+import 'airport_names.dart';
 import 'fares_api.dart';
 import 'flight_format.dart' show localeOf;
 import 'flights_page.dart';
@@ -41,6 +51,24 @@ const String defaultOrigin = 'MAD';
 /// Cuántos chollos van a la página (para la ganga a medida).
 const int maxDeals = 20;
 
+/// Primero lo que más ha bajado; a igual bajada, lo más barato. Y los cinco
+/// mejores se barajan cada vez: así el de arriba no es SIEMPRE el mismo
+/// (antes salía todos los días "Lisboa 27 €").
+List<Deal> sortDeals(List<Deal> deals, {bool shuffle = true, Random? random}) {
+  final List<Deal> out = List<Deal>.of(deals)
+    ..sort((Deal a, Deal b) {
+      final int byDrop = b.dropBasisPoints.compareTo(a.dropBasisPoints);
+      return byDrop != 0
+          ? byDrop
+          : a.fare.price.amountMinor.compareTo(b.fare.price.amountMinor);
+    });
+  if (!shuffle) return out;
+  final int top = out.length < 5 ? out.length : 5;
+  final List<Deal> best = out.sublist(0, top)..shuffle(random ?? Random());
+  out.setRange(0, top, best);
+  return out;
+}
+
 class FlightsScreen extends StatefulWidget {
   const FlightsScreen({super.key});
 
@@ -49,14 +77,20 @@ class FlightsScreen extends StatefulWidget {
   @visibleForTesting
   static WebSceneBridge? lastBridge;
 
+  /// Barajar los mejores chollos (los tests lo apagan para saber el orden).
+  @visibleForTesting
+  static bool shuffleDeals = true;
+
   @override
   State<FlightsScreen> createState() => _FlightsScreenState();
 }
 
 class _FlightsScreenState extends State<FlightsScreen> {
   late final AppServices _services = ServicesScope.of(context);
-  late final String _origin =
-      _services.prefs.readFlightOrigin() ?? defaultOrigin;
+
+  /// Tu aeropuerto: el que elegiste o, si nunca elegiste, el grande más
+  /// cerca de ti (con el GPS). Madrid solo si no se sabe dónde estás.
+  late String _origin = _services.prefs.readFlightOrigin() ?? defaultOrigin;
   final WebSceneBridge _bridge = FlightsScreen.lastBridge = WebSceneBridge();
   bool _started = false;
 
@@ -67,6 +101,9 @@ class _FlightsScreenState extends State<FlightsScreen> {
   List<Deal> _deals = <Deal>[];
   List<Watch> _watches = <Watch>[];
   bool _guest = false;
+
+  /// Tu foto de perfil lista para la página ('' = sale tu inicial).
+  String _myPhoto = '';
 
   /// El chollo que se ve arriba (cambia con la ganga a medida).
   int _hunt = 0;
@@ -98,19 +135,25 @@ class _FlightsScreenState extends State<FlightsScreen> {
     } on Object {
       // Sin los datos de aeropuertos no hay ruta en el globo (el resto sí).
     }
+    _myPhoto = await _profilePhoto();
+    if (!mounted) return;
+    if (_services.prefs.readFlightOrigin() == null) {
+      _origin = await _nearOrigin() ?? defaultOrigin;
+    }
     bool failed = false;
     List<Deal> deals = <Deal>[];
     List<Watch> watches = <Watch>[];
     bool guest = false;
     try {
       deals = await _services.fares.deals(_origin);
-      // Primero lo que más ha bajado; a igual bajada, lo más barato.
-      deals.sort((Deal a, Deal b) {
-        final int byDrop = b.dropBasisPoints.compareTo(a.dropBasisPoints);
-        return byDrop != 0
-            ? byDrop
-            : a.fare.price.amountMinor.compareTo(b.fare.price.amountMinor);
-      });
+      // Un aeropuerto pequeño sin chollos: los de Madrid, mejor que nada.
+      if (deals.isEmpty &&
+          _origin != defaultOrigin &&
+          _services.prefs.readFlightOrigin() == null) {
+        _origin = defaultOrigin;
+        deals = await _services.fares.deals(_origin);
+      }
+      deals = sortDeals(deals, shuffle: FlightsScreen.shuffleDeals);
     } on ApiException {
       failed = true;
     }
@@ -132,6 +175,43 @@ class _FlightsScreenState extends State<FlightsScreen> {
     });
   }
 
+  /// Tu foto: la que elegiste en el móvil (se lee del archivo) o, si no
+  /// elegiste ninguna, la de tu cuenta de Google. Si no hay, ''.
+  Future<String> _profilePhoto() async {
+    final ProfilePhotoChoice choice = ProfilePhotoController.instance.choice;
+    final String? path = choice.filePath;
+    if (path != null) {
+      try {
+        final List<int> bytes = await File(path).readAsBytes();
+        return 'data:image/jpeg;base64,${base64Encode(bytes)}';
+      } on Object {
+        return '';
+      }
+    }
+    final String? google = SessionScope.of(context).user?.photoUrl;
+    return choice.isNone && isTrustedPhotoUrl(google) ? google! : '';
+  }
+
+  /// El aeropuerto grande más cerca, si el GPS ya tiene permiso (aquí no
+  /// se pide: eso lo hace el mapa) y responde rápido.
+  Future<String?> _nearOrigin() async {
+    final Airports? positions = _airports;
+    if (positions == null) return null;
+    try {
+      final LocationSource gps = _services.location;
+      if (await gps.check() != LocationAccess.granted) return null;
+      final PositionFix? fix = await gps.current().timeout(
+        const Duration(seconds: 4),
+        onTimeout: () => null,
+      );
+      if (fix == null) return null;
+      final AirportNames names = await AirportNames.load();
+      return names.mainNear(positions, LatLon(fix.point.lat, fix.point.lon));
+    } on Object {
+      return null;
+    }
+  }
+
   Map<String, Object?> _data(bool failed) {
     final DateTime now = DateTime.now();
     final String locale = localeOf(context);
@@ -143,6 +223,7 @@ class _FlightsScreenState extends State<FlightsScreen> {
       origin: _origin,
       locale: locale.replaceAll('_', '-'),
       initial: name == null ? '?' : name[0],
+      photo: _myPhoto,
       guest: _guest,
       failed: failed,
       deals: <Map<String, Object?>>[
@@ -213,10 +294,11 @@ class _FlightsScreenState extends State<FlightsScreen> {
         unawaited(_book(_deals[n], int.tryParse(p[2]) ?? 0));
       case 'watch' when n >= 0 && n < _deals.length:
         unawaited(_watch(_deals[n]));
-      case 'fly3d' when _deals.isNotEmpty:
-        final FareRoute r = _deals[_hunt].fare.route;
+      case 'fly3d':
+        // El vuelo 3D de tu viaje (o, si no tienes, el del chollo de arriba).
+        final FareRoute? r = _deals.isEmpty ? null : _deals[_hunt].fare.route;
         unawaited(
-          context.push(Routes.flightRoute(from: r.origin, to: r.destination)),
+          openFlight3d(context, from: r?.origin ?? _origin, to: r?.destination),
         );
       case 'tile':
         final String? to = switch (n) {

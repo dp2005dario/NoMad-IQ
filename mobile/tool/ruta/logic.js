@@ -67,6 +67,13 @@ pic: 'display: block; width: 128px; height: 92px; border-radius: 14px; backgroun
 }))
 });
 }
+chip(x, label, color) {
+const w = String(label || '').length * 5.8 + 16;
+let shift = 0;
+if (x - w / 2 < 6) shift = 6 - (x - w / 2);
+else if (x + w / 2 > 352) shift = 352 - (x + w / 2);
+return 'position: absolute; left: 50%; bottom: 36px; transform: translateX(calc(-50% + ' + shift.toFixed(0) + 'px)); height: 22px; border-radius: 11px; background: ' + color + '; color: #0B1217; font-size: 10px; font-weight: 800; padding: 0 8px; display: flex; align-items: center; white-space: nowrap; transition: transform 0.6s ease';
+}
 renderVals() {
 const E = this.E;
 const { view, t, follow } = this.state;
@@ -110,7 +117,11 @@ camStyle: 'transform: translate(179px, 130px) scale(' + z + ') translate(' + (-c
 trail: shown + ' 1',
 dotR: (5 / z).toFixed(3),
 madridBtn: btn(ms, true), tokyoBtn: btn(ts, !!D),
-oLbl: O.lbl || '', dLbl: D ? D.lbl : '', oAria: O.aria || '', dAria: D ? D.aria : '',
+oLbl: O.lbl || '', dLbl: D ? D.lbl : '', oFlag: O.flag || '', dFlag: D ? (D.flag || '') : '',
+hasPass: view === 'world' && !!E.pass,
+// La etiqueta con el nombre del aeropuerto no se sale del mapa: si el
+// punto está cerca del borde, la etiqueta se corre hacia dentro.
+oChip: this.chip(ms[0], O.lbl, '#6CA8FF'), dChip: this.chip(ts[0], D ? D.lbl : '', '#FF8A65'), oAria: O.aria || '', dAria: D ? D.aria : '',
 planeStyle: 'position: absolute; left: ' + (ps[0] - 28) + 'px; top: ' + (ps[1] - 28) + 'px; width: 56px; height: 56px; pointer-events: none; transform: rotate(' + angle.toFixed(1) + 'deg) scale(' + (view === 'world' ? 0.55 : 1) + '); filter: drop-shadow(0 12px 6px rgba(0,0,0,0.5)); transition: left ' + dur + ', top ' + dur + ', transform ' + dur + (D ? '' : '; display: none'),
 zoomLabel: view === 'world' ? (E.worldLbl || '') : view === 'origin' ? 'Zoom: ' + (O.city || '') : view === 'dest' ? 'Zoom: ' + (D ? D.city : '') : (E.followLbl || ''),
 isWorld: view === 'world', isOrigin: view === 'origin', isFlight: view === 'flight', isDest: view === 'dest',

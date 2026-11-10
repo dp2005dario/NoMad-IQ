@@ -202,6 +202,7 @@ AppServices fakeServices(
   OpenBooking? openBooking,
   Future<bool> Function(Uri)? openLink,
   CameraFactory? newCamera,
+  CameraFactory? newDocCamera,
   Speaker? speaker,
   PhraseTranslator? translator,
   SpeechInput? speechInput,
@@ -261,6 +262,7 @@ AppServices fakeServices(
     openBooking: openBooking ?? (Uri _) async => true,
     openLink: openLink ?? (Uri _) async => true,
     newCamera: newCamera,
+    newDocCamera: newDocCamera,
     speaker: speaker ?? const SilentSpeaker(),
     translator: translator ?? const NoTranslator(),
     speechInput: speechInput ?? const NoSpeechInput(),
@@ -418,6 +420,12 @@ class FakeMap implements MapSurfaceController {
 
   @override
   Future<void> showMe(GeoPoint? point) async => me = point;
+
+  /// Cuántas veces se cambió el dibujo de tu marca (tu foto).
+  int meImages = 0;
+
+  @override
+  Future<void> setMeImage(Uint8List png) async => meImages++;
 
   /// Hacia dónde mira el mapa (lo último que pidió la pantalla).
   double bearing = 0;

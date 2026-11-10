@@ -16,12 +16,14 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show Uint8List;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/services.dart';
 import '../../core/settings.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../camera/camera_device.dart';
 import '../vault/doc_source.dart';
 import '../visa/mrz.dart';
 import '../visa/visa_data.dart' show CountryNames;
@@ -157,6 +159,36 @@ class _PassportScanScreenState extends State<PassportScanScreen> {
   Timer? _next;
   CountryNames? _names;
 
+  /// La cámara en vivo dentro del marco (null mientras se enciende, o si no
+  /// hay: entonces el botón blanco abre la cámara del sistema).
+  CameraDevice? _camera;
+  bool _cameraAsked = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_cameraAsked) return;
+    _cameraAsked = true;
+    unawaited(_startCamera());
+  }
+
+  Future<void> _startCamera() async {
+    final CameraFactory? make = ServicesScope.of(context).newDocCamera;
+    if (make == null) return;
+    final CameraDevice camera = make();
+    CameraStart started;
+    try {
+      started = await camera.start();
+    } on Object {
+      started = CameraStart.missing;
+    }
+    if (!mounted || started != CameraStart.ready) {
+      await camera.dispose();
+      return;
+    }
+    setState(() => _camera = camera);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -171,7 +203,22 @@ class _PassportScanScreenState extends State<PassportScanScreen> {
   @override
   void dispose() {
     _next?.cancel();
+    unawaited(_camera?.dispose());
     super.dispose();
+  }
+
+  /// La foto: de la cámara en vivo si está encendida; si no, la del sistema.
+  Future<PickedDoc?> _photo(AppServices services) async {
+    final CameraDevice? camera = _camera;
+    if (camera != null) {
+      try {
+        final Uint8List bytes = await camera.takePhoto();
+        return PickedDoc(bytes: bytes, mime: 'image/jpeg', name: 'scan.jpg');
+      } on Object {
+        // Si falla la foto en vivo, se prueba con la cámara del sistema.
+      }
+    }
+    return services.docSource.pick(DocOrigin.camera);
   }
 
   MyDocs get _result => MyDocs(passport: _passport, id: _id);
@@ -203,7 +250,7 @@ class _PassportScanScreenState extends State<PassportScanScreen> {
       _busy = true;
       _message = null;
     });
-    final PickedDoc? photo = await services.docSource.pick(DocOrigin.camera);
+    final PickedDoc? photo = await _photo(services);
     if (!mounted) return;
     if (photo == null || photo.bytes.isEmpty) {
       setState(() => _busy = false);
@@ -330,7 +377,11 @@ class _PassportScanScreenState extends State<PassportScanScreen> {
                       ),
                       const SizedBox(height: 14),
                       Expanded(
-                        child: _Viewfinder(busy: _busy, rows: _just),
+                        child: _Viewfinder(
+                          busy: _busy,
+                          rows: _just,
+                          camera: _finished ? null : _camera?.preview(),
+                        ),
                       ),
                       const SizedBox(height: 14),
                       Text(
@@ -390,10 +441,13 @@ class _PassportScanScreenState extends State<PassportScanScreen> {
 /// El "visor": fondo oscuro con el marco verde de las cuatro esquinas. La
 /// foto la hace la cámara del móvil al pulsar el botón blanco.
 class _Viewfinder extends StatelessWidget {
-  const _Viewfinder({required this.busy, required this.rows});
+  const _Viewfinder({required this.busy, required this.rows, this.camera});
 
   final bool busy;
   final List<(String, String)> rows;
+
+  /// Lo que ve la cámara (de fondo, dentro del marco).
+  final Widget? camera;
 
   @override
   Widget build(BuildContext context) {
@@ -413,6 +467,10 @@ class _Viewfinder extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: <Widget>[
+            ?camera,
+            // Con lo leído encima, la imagen se oscurece para que se lea.
+            if (camera != null && rows.isNotEmpty)
+              const ColoredBox(color: Color(0xCC04080B)),
             FractionallySizedBox(
               widthFactor: 0.84,
               heightFactor: 0.72,

@@ -270,7 +270,7 @@ class _TravelWithScreenState extends State<TravelWithScreen> {
       case 'nophoto':
         unawaited(_removePhoto());
       case 'name':
-        _rename(arg);
+        _rename(webSceneText(arg));
       case 'check':
         final int n = int.tryParse(arg) ?? -1;
         if (n >= 0 && n < PetCheck.values.length) {

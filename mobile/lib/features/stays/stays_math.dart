@@ -68,3 +68,16 @@ Uri mapsHotels(GeoPoint at) => Uri.https(
   'www.google.com',
   '/maps/search/hotels/@${at.lat.toStringAsFixed(5)},${at.lon.toStringAsFixed(5)},15z',
 );
+
+/// Un hotel concreto en Google Maps: se busca su nombre alrededor de su
+/// punto (así sale ESE hotel, con fotos, opiniones y precios).
+Uri mapsPlace(String name, GeoPoint at) => Uri(
+  scheme: 'https',
+  host: 'www.google.com',
+  pathSegments: <String>[
+    'maps',
+    'search',
+    name,
+    '@${at.lat.toStringAsFixed(5)},${at.lon.toStringAsFixed(5)},17z',
+  ],
+);

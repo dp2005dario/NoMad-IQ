@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Sequence
 from typing import Any
 
@@ -19,12 +20,23 @@ MAX_LODGINGS = 2500
 _LODGING = "^(hotel|hostel|guest_house|motel|apartment)$"
 
 
-def build_query(lat: float, lon: float) -> str:
-    """La consulta. Los números con formato fijo: nunca entra texto raro."""
+def build_near_query(lat: float, lon: float) -> str:
+    """Los alojamientos a menos de 2 km del sitio. Es la pregunta pequeña y
+    rápida: con ella ya salen los hoteles más cerca aunque la grande tarde.
+    Los números con formato fijo: nunca entra texto raro."""
+    at = f"{lat:.5f},{lon:.5f}"
+    return (
+        "[out:json][timeout:20];"
+        f'nwr["tourism"~"{_LODGING}"](around:{int(WALK_KM * 1000)},{at});out center {MAX_NEAR};'
+    )
+
+
+def build_far_query(lat: float, lon: float) -> str:
+    """Las estaciones hasta 35 km y los alojamientos junto a cada una (las
+    zonas "a unas paradas"). Es la pregunta grande: puede tardar."""
     at = f"{lat:.5f},{lon:.5f}"
     return (
         "[out:json][timeout:25];"
-        f'nwr["tourism"~"{_LODGING}"](around:{int(WALK_KM * 1000)},{at});out center {MAX_NEAR};'
         # Estaciones de tren, cercanías y metro (no funiculares ni museos).
         f'node["railway"~"^(station|halt)$"]["name"]["station"!~"funicular|miniature"]'
         f"(around:{int(MAX_KM * 1000)},{at})->.st;"
@@ -102,9 +114,33 @@ class StayOverpass:
         self._urls = as_urls(url)
         self._max_wait = max_wait_seconds
 
-    async def around(self, lat: float, lon: float) -> tuple[list[Station], list[Lodging]]:
+    async def around(self, lat: float, lon: float) -> tuple[list[Station], list[Lodging], bool]:
+        """Las dos preguntas A LA VEZ. Si la grande falla pero la pequeña no,
+        se devuelve lo que hay (los hoteles de al lado) y ``False`` (no está
+        completo): así la pantalla nunca se queda en "sin conexión" por la
+        parte lenta."""
+        near, far = await asyncio.gather(
+            self._ask(build_near_query(lat, lon)),
+            self._ask(build_far_query(lat, lon)),
+            return_exceptions=True,
+        )
+        if isinstance(near, BaseException) and isinstance(far, BaseException):
+            raise near
+        stations: list[Station] = []
+        lodgings: dict[str, Lodging] = {}
+        for part in (near, far):
+            if isinstance(part, BaseException):
+                continue
+            st, lo = part
+            stations.extend(st)
+            for x in lo:
+                lodgings.setdefault(x.id, x)
+        complete = not isinstance(near, BaseException) and not isinstance(far, BaseException)
+        return stations, list(lodgings.values()), complete
+
+    async def _ask(self, query: str) -> tuple[list[Station], list[Lodging]]:
         await self._limiter.acquire(self._max_wait)
-        resp = await post_query(self._http, self._urls, build_query(lat, lon))
+        resp = await post_query(self._http, self._urls, query)
         if resp.status_code in (429, 503, 504):
             raise OverpassBusyError(f"Overpass respondió {resp.status_code}")
         if resp.status_code != 200:

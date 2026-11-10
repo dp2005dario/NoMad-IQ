@@ -13,6 +13,7 @@
 //   - El mapa de la página es un dibujo (no son tus calles), pero cada zona
 //     está a su distancia y en su dirección reales.
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,6 +25,7 @@ import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../map/geo.dart';
 import '../map/location.dart';
+import '../nearby/nearby_api.dart' show ShopPhoto;
 import '../route/web_scene.dart';
 import 'pick_point_screen.dart';
 import 'stays_api.dart';
@@ -57,6 +59,18 @@ class _StaysScreenState extends State<StaysScreen> {
   int _nights = 3;
   StayArea? _area;
   final Map<String, StayPrices> _prices = <String, StayPrices>{};
+
+  /// Para mandar a la página las fotos de los hoteles sin recargarla.
+  final WebSceneBridge _bridge = WebSceneBridge();
+
+  /// Las fotos de Google Maps que ya llegaron (id del hotel → enlace).
+  final Map<String, String> _photos = <String, String>{};
+
+  /// Hoteles cuya foto ya se pidió (para no pedirla dos veces).
+  final Set<String> _asked = <String>{};
+
+  /// El servidor no tiene la clave de Google: no se piden más fotos.
+  bool _photosOff = false;
 
   @override
   void didChangeDependencies() {
@@ -115,10 +129,48 @@ class _StaysScreenState extends State<StaysScreen> {
       center: _points[_current],
       area: message == null ? _area : null,
       prices: _prices,
+      photos: _photos,
       message: message,
       retry: retry,
     );
     setState(() => _html = staysPageWith(_page!, data));
+    if (message == null) unawaited(_hotelPhotos());
+  }
+
+  /// Los hoteles de la lista, en el mismo orden que la página.
+  List<NearHotel> _hotels() {
+    final GeoPoint? center = _points[_current];
+    final StayArea? area = _area;
+    if (center == null || area == null) return const <NearHotel>[];
+    return nearestHotels(center, area.hotels);
+  }
+
+  /// Pide las fotos de Google Maps de los primeros hoteles, una a una, y
+  /// se las pasa a la página al momento (sin recargarla).
+  Future<void> _hotelPhotos() async {
+    final List<NearHotel> list = _hotels();
+    for (int i = 0; i < list.length && i < 8; i++) {
+      final NearHotel h = list[i];
+      if (_photosOff || !_asked.add(h.id)) continue;
+      try {
+        final ShopPhoto? photo = await _services.nearby.photoOf(
+          id: h.id,
+          name: h.name,
+          point: h.point,
+        );
+        if (photo == null || !mounted) continue;
+        final String url = photo.url.toString();
+        _photos[h.id] = url;
+        // jsonEncode: así ningún nombre ni enlace puede romper el JS.
+        await _bridge.run(
+          'window.__hotelPhoto&&window.__hotelPhoto('
+          '${jsonEncode(h.id)},${jsonEncode(url)})',
+        );
+      } on ApiException catch (e) {
+        // 404 = el servidor no tiene la clave de Google: se queda el logo.
+        if (e.error == ApiError.notFound) _photosOff = true;
+      }
+    }
   }
 
   /// Elige el chip [i]: busca dónde está (GPS si es "cerca de ti") y sus
@@ -229,6 +281,30 @@ class _StaysScreenState extends State<StaysScreen> {
         } else {
           p.fare = v;
         }
+      case 'hotel' || 'hprice':
+        final int? n = int.tryParse(a ?? '');
+        final List<NearHotel> list = _hotels();
+        if (n == null || n < 0 || n >= list.length) return;
+        final NearHotel h = list[n];
+        if (part.first == 'hotel') {
+          // Como en Google Maps: ese hotel, con sus fotos y opiniones.
+          unawaited(_services.openBooking(mapsPlace(h.name, h.point)));
+          return;
+        }
+        final DateTime from = DateUtils.dateOnly(DateTime.now())
+            .add(const Duration(days: 14));
+        unawaited(
+          _services.openBooking(
+            bookingSearch(
+              at: h.point,
+              checkIn: from,
+              checkOut: from.add(Duration(days: _nights)),
+              adults: 2,
+              language: Localizations.localeOf(context).languageCode,
+              affiliateId: AppConfig.bookingAffiliateId,
+            ),
+          ),
+        );
       case 'book':
         final StayZone? z = _zone(a);
         if (z == null) return;
@@ -262,7 +338,11 @@ class _StaysScreenState extends State<StaysScreen> {
                 key: ValueKey<int>(html.hashCode),
                 child:
                     _services.webScene?.call(html, _onMessage) ??
-                    WebScene(html: html, onMessage: _onMessage),
+                    WebScene(
+                      html: html,
+                      onMessage: _onMessage,
+                      bridge: _bridge,
+                    ),
               ),
             ),
     );

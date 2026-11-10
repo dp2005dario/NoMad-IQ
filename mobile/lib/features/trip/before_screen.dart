@@ -355,6 +355,8 @@ class _BeforeTripScreenState extends State<BeforeTripScreen> {
           ? const <Object?>[]
           : _factsFor(t, lang, country, to),
       'tipsH': t.beforeTipsTitle(name),
+      // "FUENTE · {source}" en tu idioma (la página pone la fuente).
+      'srcFmt': t.beforeSource('{source}'),
       'tips': <Map<String, Object?>>[
         for (final _Tip tip in tips)
           <String, Object?>{'t': tip.text, 's': tip.source},

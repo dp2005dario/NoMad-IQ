@@ -88,6 +88,7 @@ class ExploreScreen extends StatefulWidget {
 
 class _ExploreScreenState extends State<ExploreScreen> {
   late final AppServices _services = ServicesScope.of(context);
+  final WebSceneBridge _bridge = WebSceneBridge();
   String? _page;
   CountryClimate _climate = const CountryClimate(
     byCountry: <String, List<List<double>>>{},
@@ -121,13 +122,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
       // Sin red: el mundo sale en gris ("Sin datos"); se reintenta.
     }
     if (!mounted) return;
-    final bool more = climate.byCountry.length > _climate.byCountry.length;
+    final CountryClimate before = _climate;
+    final Map<String, List<List<double>>> added = <String, List<List<double>>>{
+      for (final MapEntry<String, List<List<double>>> e
+          in climate.byCountry.entries)
+        if (!before.byCountry.containsKey(e.key)) e.key: e.value,
+    };
+    final bool first = _html == null;
     setState(() {
       _climate = climate;
-      // Solo se vuelve a cargar la página si hay países nuevos (cargarla
-      // reinicia el globo).
-      if (_html == null || more) _html = _build();
+      if (first) _html = _build();
     });
+    // Países nuevos con la página ya abierta: se le mandan sin recargarla
+    // (recargar cerraba la ficha del país que estabas mirando y reiniciaba
+    // el globo: por eso "salía muy rápido" o parecía pillado).
+    if (!first && added.isNotEmpty) {
+      await _bridge.run(
+        'window.__climate&&window.__climate('
+        '${jsonEncode(added).replaceAll('</', r'<\/')});',
+      );
+    }
     // La primera vez el servidor va pidiendo los países poco a poco: se
     // vuelve a preguntar unas cuantas veces.
     if (!climate.complete && _tries < 4) {
@@ -156,13 +170,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
           ? const SizedBox.expand()
           : SafeArea(
               bottom: false,
-              child: KeyedSubtree(
-                // Una página nueva = un WebView nuevo.
-                key: ValueKey<int>(html.hashCode),
-                child:
-                    _services.webScene?.call(html, (_) {}) ??
-                    WebScene(html: html, onMessage: (_) {}),
-              ),
+              child:
+                  _services.webScene?.call(html, (_) {}) ??
+                  WebScene(html: html, onMessage: (_) {}, bridge: _bridge),
             ),
     );
   }

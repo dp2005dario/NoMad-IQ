@@ -143,8 +143,11 @@ extension on String {
 
 /// El mensaje que reciben tus contactos: corto (cabe en un SMS) y con un
 /// enlace al mapa que se abre en cualquier móvil, sin instalar nada.
-String sosMessage(String intro, GeoPoint? where) {
-  if (where == null) return intro;
+///
+/// Sin ubicación se manda [noLocation] ("no he podido saber dónde estoy"):
+/// nunca "Estoy aquí:" sin nada detrás, que haría creer que la mandaste.
+String sosMessage(String intro, GeoPoint? where, {String? noLocation}) {
+  if (where == null) return noLocation ?? intro;
   final String lat = where.lat.toStringAsFixed(5);
   final String lon = where.lon.toStringAsFixed(5);
   return '$intro https://www.openstreetmap.org/?mlat=$lat&mlon=$lon#map=17/$lat/$lon';
