@@ -2347,5 +2347,17 @@
   "hoKindMotel": "모텔",
   "hoKindApartment": "아파트",
   "hoOpenMaps": "지도",
-  "hoHotelPrices": "가격"
+  "hoHotelPrices": "가격",
+  "routeAirportOf": "{city} 공항",
+  "routeTapOrigin": "출발지를 눌러 시작하세요",
+  "routeSimulation": "경로 시뮬레이션",
+  "routeDoneShort": "비행한 거리",
+  "routeLeftShort": "남음",
+  "routeGoDest": "목적지로",
+  "routeSee3d": "3D로 비행 보기",
+  "routeOverSea": "바다 위를 비행 중",
+  "routeDeparting": "출발지",
+  "routeArrivedShort": "도착했어요",
+  "routePassTitle": "내 항공편",
+  "routeNowThere": "지금 그곳"
 }

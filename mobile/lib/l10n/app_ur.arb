@@ -2347,5 +2347,17 @@
   "hoKindMotel": "موٹل",
   "hoKindApartment": "اپارٹمنٹ",
   "hoOpenMaps": "نقشہ",
-  "hoHotelPrices": "قیمتیں"
+  "hoHotelPrices": "قیمتیں",
+  "routeAirportOf": "{city} ایئرپورٹ",
+  "routeTapOrigin": "شروع کرنے کے لیے روانگی پر ٹیپ کریں",
+  "routeSimulation": "راستے کی نقل",
+  "routeDoneShort": "طے شدہ",
+  "routeLeftShort": "باقی",
+  "routeGoDest": "منزل پر جائیں",
+  "routeSee3d": "پرواز 3D میں دیکھیں",
+  "routeOverSea": "سمندر کے اوپر",
+  "routeDeparting": "روانگی کا مقام",
+  "routeArrivedShort": "آپ پہنچ گئے",
+  "routePassTitle": "آپ کی پرواز",
+  "routeNowThere": "ابھی وہاں"
 }

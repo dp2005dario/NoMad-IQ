@@ -2347,5 +2347,17 @@
   "hoKindMotel": "Motel",
   "hoKindApartment": "Pangsapuri",
   "hoOpenMaps": "Peta",
-  "hoHotelPrices": "Harga"
+  "hoHotelPrices": "Harga",
+  "routeAirportOf": "Lapangan Terbang {city}",
+  "routeTapOrigin": "Ketik asal untuk bermula",
+  "routeSimulation": "SIMULASI LALUAN",
+  "routeDoneShort": "Ditempuh",
+  "routeLeftShort": "Baki",
+  "routeGoDest": "Ke destinasi",
+  "routeSee3d": "Lihat penerbangan 3D",
+  "routeOverSea": "Di atas laut",
+  "routeDeparting": "titik berlepas",
+  "routeArrivedShort": "anda telah tiba",
+  "routePassTitle": "Penerbangan anda",
+  "routeNowThere": "Sekarang di sana"
 }

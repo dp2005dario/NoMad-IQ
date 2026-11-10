@@ -2347,5 +2347,17 @@
   "hoKindMotel": "モーテル",
   "hoKindApartment": "アパートメント",
   "hoOpenMaps": "マップ",
-  "hoHotelPrices": "料金"
+  "hoHotelPrices": "料金",
+  "routeAirportOf": "{city}空港",
+  "routeTapOrigin": "出発地をタップして開始",
+  "routeSimulation": "ルートのシミュレーション",
+  "routeDoneShort": "飛行済み",
+  "routeLeftShort": "残り",
+  "routeGoDest": "目的地へ",
+  "routeSee3d": "3Dでフライトを見る",
+  "routeOverSea": "海の上を飛行中",
+  "routeDeparting": "出発地",
+  "routeArrivedShort": "到着",
+  "routePassTitle": "あなたのフライト",
+  "routeNowThere": "現地の今"
 }

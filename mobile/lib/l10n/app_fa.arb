@@ -2347,5 +2347,17 @@
   "hoKindMotel": "متل",
   "hoKindApartment": "آپارتمان",
   "hoOpenMaps": "نقشه",
-  "hoHotelPrices": "قیمت‌ها"
+  "hoHotelPrices": "قیمت‌ها",
+  "routeAirportOf": "فرودگاه {city}",
+  "routeTapOrigin": "برای شروع روی مبدأ بزن",
+  "routeSimulation": "شبیه‌سازی مسیر",
+  "routeDoneShort": "طی‌شده",
+  "routeLeftShort": "مانده",
+  "routeGoDest": "برو به مقصد",
+  "routeSee3d": "پرواز را سه‌بعدی ببین",
+  "routeOverSea": "بر فراز دریا",
+  "routeDeparting": "نقطهٔ حرکت",
+  "routeArrivedShort": "رسیدی",
+  "routePassTitle": "پرواز تو",
+  "routeNowThere": "اکنون آنجا"
 }

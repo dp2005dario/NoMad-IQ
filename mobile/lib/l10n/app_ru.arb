@@ -2347,5 +2347,17 @@
   "hoKindMotel": "Мотель",
   "hoKindApartment": "Апартаменты",
   "hoOpenMaps": "Карты",
-  "hoHotelPrices": "Цены"
+  "hoHotelPrices": "Цены",
+  "routeAirportOf": "Аэропорт {city}",
+  "routeTapOrigin": "Нажми на точку вылета, чтобы начать",
+  "routeSimulation": "СИМУЛЯЦИЯ МАРШРУТА",
+  "routeDoneShort": "Пройдено",
+  "routeLeftShort": "Осталось",
+  "routeGoDest": "К месту назначения",
+  "routeSee3d": "Смотреть полёт в 3D",
+  "routeOverSea": "Над морем",
+  "routeDeparting": "пункт вылета",
+  "routeArrivedShort": "ты на месте",
+  "routePassTitle": "Твой рейс",
+  "routeNowThere": "Сейчас там"
 }

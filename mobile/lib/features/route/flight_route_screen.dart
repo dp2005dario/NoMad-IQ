@@ -20,6 +20,7 @@ import 'package:timezone/data/latest_10y.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../l10n/generated/app_localizations.dart';
+import '../flights/airport_names.dart';
 import '../flights/booking.dart';
 import '../flights/flight_format.dart';
 import '../money/currency_info.dart' show flagOf;
@@ -87,6 +88,9 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
 
   CountryCodes? _codes;
   CountryNames? _names;
+
+  /// Los nombres "de persona" de los aeropuertos (Tokio, no Tokyo).
+  AirportNames? _airNames;
   List<(double, String)> _regions = const <(double, String)>[];
 
   /// Las fichas de ciudad ("" mientras llegan; null si no hay).
@@ -124,6 +128,14 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
       // Sin ellos sale el nombre en inglés y sin bandera.
     }
     if (mounted) setState(_setRegions);
+    // Los nombres en español ("Tokio") llegan aparte: si tardan, lo demás
+    // ya se ve.
+    try {
+      final AirportNames names = await AirportNames.load();
+      if (mounted) setState(() => _airNames = names);
+    } on Object {
+      // Sin ellos, el nombre de los datos del mapa.
+    }
   }
 
   /// Prepara la ruta con los aeropuertos elegidos.
@@ -149,6 +161,42 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
     }
   }
 
+  /// La ciudad del aeropuerto como la dice la gente: los nombres de la
+  /// lista de Vuelos están en español ("Tokio"); en otro idioma, el de
+  /// los datos del mapa ("Tokyo").
+  String _city(Airport a) {
+    final AirportName? n = _airNames?[a.iata];
+    if (n == null || Localizations.localeOf(context).languageCode != 'es') {
+      return a.city;
+    }
+    return n.city;
+  }
+
+  /// La bandera del país del aeropuerto (🌐 si no se sabe).
+  String _flag(Airport a) {
+    final String? code = _airNames?[a.iata]?.countryCode ?? _codes?[a.country];
+    final String flag = code == null ? '' : flagOf(code);
+    return flag.isEmpty ? '🌐' : flag;
+  }
+
+  /// La hora de ahora allí ("14:05"), o '' si no se sabe la zona.
+  String _clock(Airport a, String locale) {
+    final Duration? offset = _offset(a.timeZone);
+    if (offset == null) return '';
+    return DateFormat.Hm(locale).format(DateTime.now().toUtc().add(offset));
+  }
+
+  /// La tarjeta de embarque de un lado: bandera, ciudad, aeropuerto, país
+  /// y la hora de allí.
+  Map<String, Object?> _side(AppLocalizations t, Airport a, String locale) =>
+      <String, Object?>{
+        'flag': _flag(a),
+        'city': _city(a),
+        'name': t.routeAirportOf(_city(a)),
+        'country': _country(a),
+        'clock': _clock(a, locale),
+      };
+
   /// El nombre del país de un aeropuerto, en tu idioma si se sabe.
   String _country(Airport a) {
     final String? code = _codes?[a.country];
@@ -169,7 +217,9 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
     _regions = regionsAlong(
       _route,
       (LatLon p) {
-        if (!onLand(world.shapes, p)) return 'Sobrevolando el mar';
+        if (!onLand(world.shapes, p)) {
+          return AppLocalizations.of(context).routeOverSea;
+        }
         Airport? best;
         double bestKm = double.infinity;
         for (final Airport a in world.airports.all) {
@@ -280,7 +330,7 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
       'flag': code == null ? '🌐' : flagOf(code),
       'country': country,
       'city': a.city,
-      'sub': '$country · ${origin ? 'punto de salida' : 'has llegado'}',
+      'sub': '$country · ${origin ? t.routeDeparting : t.routeArrivedShort}',
       'tag': origin ? t.routeOriginTag : t.routeDestinationTag,
       'tagSt':
           'height: 26px; flex-shrink: 0; border-radius: 13px; background: ${origin ? '#6CA8FF' : '#FF8A65'}; color: #0B1217; font-size: 11px; font-weight: 800; display: flex; align-items: center; padding: 0 10px',
@@ -324,7 +374,7 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
           ? t.routeUnknownAirport
           : d == null
           ? t.routeTitle
-          : '${o.city} → ${d.city}',
+          : '${_city(o)} → ${_city(d)}',
       'sub': d == null
           ? (o == null ? '' : '${o.iata} · ${o.city}')
           : '${t.routeDistance(km.format(_km.round()))} · ${t.routeFlightTime(dur)}',
@@ -338,9 +388,11 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
                 'x': mapPoint(o.position)[0],
                 'y': mapPoint(o.position)[1],
               },
-              'lbl': '${o.iata} · origen',
-              'aria': t.placeAbout(o.city),
-              'city': o.city,
+              // El nombre del aeropuerto (no el código) y su bandera debajo.
+              'lbl': t.routeAirportOf(_city(o)),
+              'flag': _flag(o),
+              'aria': t.placeAbout(_city(o)),
+              'city': _city(o),
             },
       'd': d == null
           ? null
@@ -352,15 +404,27 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
                       ? 0
                       : mapPoint(_route.last)[0] - mapPoint(d.position)[0]),
               'y': mapPoint(d.position)[1],
-              'lbl': '${d.iata} · destino',
-              'aria': t.placeAbout(d.city),
-              'city': d.city,
+              'lbl': t.routeAirportOf(_city(d)),
+              'flag': _flag(d),
+              'aria': t.placeAbout(_city(d)),
+              'city': _city(d),
             },
-      'worldH': d == null
-          ? t.routePickDestination
-          : 'Toca el origen para empezar',
-      'worldP': d == null || o == null ? '' : t.routeStartHint(o.city),
-      'startTxt': o == null ? '' : t.routeStartAt(o.city),
+      'worldH': d == null ? t.routePickDestination : t.routeTapOrigin,
+      'worldP': d == null || o == null ? '' : t.routeStartHint(_city(o)),
+      'startTxt': o == null ? '' : t.routeStartAt(_city(o)),
+      // La tarjeta de embarque de la vista "Mundo".
+      'pass': o == null || d == null
+          ? null
+          : <String, Object?>{
+              'title': t.routePassTitle,
+              'o': _side(t, o, locale),
+              'd': _side(t, d, locale),
+              'dist': '${km.format(_km.round())} km',
+              'dur': dur,
+              'nowTxt': t.routeNowThere,
+              'diff':
+                  '${_city(d)}: ${_localTime(t, d, o, locale).replaceFirst(RegExp(r'^[^·]*·\s*'), '')}',
+            },
       'pickTxt': t.routePickDestination,
       'regions': <Object?>[
         for (final (double at, String label) in _regions)
@@ -368,18 +432,18 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
       ],
       'km': _km.round(),
       'mins': total.inMinutes,
-      'simTxt': 'SIMULACIÓN DEL RECORRIDO',
-      'doneTxt': 'Recorrido',
-      'leftTxt': 'Quedan',
+      'simTxt': t.routeSimulation,
+      'doneTxt': t.routeDoneShort,
+      'leftTxt': t.routeLeftShort,
       'landTxt': t.routeLand,
       'op': o == null ? null : _place(t, o, null, true, locale),
       'dp': d == null || o == null ? null : _place(t, d, o, false, locale),
       'whyH': t.placeWhyFamous,
       'moreTxt': t.placeReadMore,
       'sightsH': t.placeMostVisited,
-      'flyTxt': 'Ir al destino',
+      'flyTxt': t.routeGoDest,
       'has3d': widget.scene3d != null && d != null,
-      'fly3dTxt': 'Ver el vuelo en 3D',
+      'fly3dTxt': t.routeSee3d,
       'replayTxt': t.routeReplay,
       'backOriginTxt': t.routeBackToOrigin,
       'credits': <String>[

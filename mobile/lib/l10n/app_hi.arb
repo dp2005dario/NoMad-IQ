@@ -2347,5 +2347,17 @@
   "hoKindMotel": "मोटल",
   "hoKindApartment": "अपार्टमेंट",
   "hoOpenMaps": "मैप्स",
-  "hoHotelPrices": "कीमतें"
+  "hoHotelPrices": "कीमतें",
+  "routeAirportOf": "{city} हवाई अड्डा",
+  "routeTapOrigin": "शुरू करने के लिए प्रस्थान पर टैप करें",
+  "routeSimulation": "मार्ग का सिमुलेशन",
+  "routeDoneShort": "तय दूरी",
+  "routeLeftShort": "बाकी",
+  "routeGoDest": "गंतव्य पर जाएँ",
+  "routeSee3d": "उड़ान 3D में देखें",
+  "routeOverSea": "समुद्र के ऊपर",
+  "routeDeparting": "प्रस्थान स्थान",
+  "routeArrivedShort": "आप पहुँच गए",
+  "routePassTitle": "आपकी उड़ान",
+  "routeNowThere": "अभी वहाँ"
 }

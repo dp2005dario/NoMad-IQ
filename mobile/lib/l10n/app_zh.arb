@@ -2347,5 +2347,17 @@
   "hoKindMotel": "汽车旅馆",
   "hoKindApartment": "公寓",
   "hoOpenMaps": "地图",
-  "hoHotelPrices": "价格"
+  "hoHotelPrices": "价格",
+  "routeAirportOf": "{city}机场",
+  "routeTapOrigin": "点击出发地开始",
+  "routeSimulation": "航线模拟",
+  "routeDoneShort": "已飞",
+  "routeLeftShort": "剩余",
+  "routeGoDest": "前往目的地",
+  "routeSee3d": "3D 查看航班",
+  "routeOverSea": "飞越海洋",
+  "routeDeparting": "出发地",
+  "routeArrivedShort": "你已到达",
+  "routePassTitle": "你的航班",
+  "routeNowThere": "当地现在"
 }

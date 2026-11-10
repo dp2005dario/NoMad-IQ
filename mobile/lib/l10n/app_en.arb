@@ -11258,5 +11258,58 @@
   "hoHotelPrices": "Prices",
   "@hoHotelPrices": {
     "description": "Short button: see prices of this hotel on Booking"
+  },
+  "routeAirportOf": "{city} airport",
+  "@routeAirportOf": {
+    "description": "Name of the airport of a city",
+    "placeholders": {
+      "city": {
+        "type": "String"
+      }
+    }
+  },
+  "routeTapOrigin": "Tap the origin to start",
+  "@routeTapOrigin": {
+    "description": "Flight route screen"
+  },
+  "routeSimulation": "ROUTE SIMULATION",
+  "@routeSimulation": {
+    "description": "Flight route screen"
+  },
+  "routeDoneShort": "Flown",
+  "@routeDoneShort": {
+    "description": "Flight route screen"
+  },
+  "routeLeftShort": "Left",
+  "@routeLeftShort": {
+    "description": "Flight route screen"
+  },
+  "routeGoDest": "Go to destination",
+  "@routeGoDest": {
+    "description": "Flight route screen"
+  },
+  "routeSee3d": "See the flight in 3D",
+  "@routeSee3d": {
+    "description": "Flight route screen"
+  },
+  "routeOverSea": "Flying over the sea",
+  "@routeOverSea": {
+    "description": "Flight route screen"
+  },
+  "routeDeparting": "departure point",
+  "@routeDeparting": {
+    "description": "Flight route screen"
+  },
+  "routeArrivedShort": "you've arrived",
+  "@routeArrivedShort": {
+    "description": "Flight route screen"
+  },
+  "routePassTitle": "Your flight",
+  "@routePassTitle": {
+    "description": "Flight route screen"
+  },
+  "routeNowThere": "Now there",
+  "@routeNowThere": {
+    "description": "Flight route screen"
   }
 }

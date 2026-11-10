@@ -2347,5 +2347,17 @@
   "hoKindMotel": "Мотель",
   "hoKindApartment": "Апартаменти",
   "hoOpenMaps": "Мапи",
-  "hoHotelPrices": "Ціни"
+  "hoHotelPrices": "Ціни",
+  "routeAirportOf": "Аеропорт {city}",
+  "routeTapOrigin": "Торкнися точки вильоту, щоб почати",
+  "routeSimulation": "СИМУЛЯЦІЯ МАРШРУТУ",
+  "routeDoneShort": "Пройдено",
+  "routeLeftShort": "Залишилось",
+  "routeGoDest": "До пункту призначення",
+  "routeSee3d": "Дивитися політ у 3D",
+  "routeOverSea": "Над морем",
+  "routeDeparting": "пункт вильоту",
+  "routeArrivedShort": "ти на місці",
+  "routePassTitle": "Твій рейс",
+  "routeNowThere": "Зараз там"
 }

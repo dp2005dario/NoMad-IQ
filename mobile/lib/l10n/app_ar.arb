@@ -2347,5 +2347,17 @@
   "hoKindMotel": "موتيل",
   "hoKindApartment": "شقة",
   "hoOpenMaps": "الخرائط",
-  "hoHotelPrices": "الأسعار"
+  "hoHotelPrices": "الأسعار",
+  "routeAirportOf": "مطار {city}",
+  "routeTapOrigin": "المس نقطة الانطلاق للبدء",
+  "routeSimulation": "محاكاة المسار",
+  "routeDoneShort": "المقطوع",
+  "routeLeftShort": "المتبقي",
+  "routeGoDest": "اذهب إلى الوجهة",
+  "routeSee3d": "شاهد الرحلة بتقنية 3D",
+  "routeOverSea": "فوق البحر",
+  "routeDeparting": "نقطة الانطلاق",
+  "routeArrivedShort": "لقد وصلت",
+  "routePassTitle": "رحلتك",
+  "routeNowThere": "الآن هناك"
 }

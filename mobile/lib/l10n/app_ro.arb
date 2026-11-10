@@ -2347,5 +2347,17 @@
   "hoKindMotel": "Motel",
   "hoKindApartment": "Apartament",
   "hoOpenMaps": "Hărți",
-  "hoHotelPrices": "Prețuri"
+  "hoHotelPrices": "Prețuri",
+  "routeAirportOf": "Aeroportul {city}",
+  "routeTapOrigin": "Atinge plecarea ca să începi",
+  "routeSimulation": "SIMULAREA TRASEULUI",
+  "routeDoneShort": "Parcurs",
+  "routeLeftShort": "Rămân",
+  "routeGoDest": "Mergi la destinație",
+  "routeSee3d": "Vezi zborul în 3D",
+  "routeOverSea": "Deasupra mării",
+  "routeDeparting": "punct de plecare",
+  "routeArrivedShort": "ai ajuns",
+  "routePassTitle": "Zborul tău",
+  "routeNowThere": "Acum acolo"
 }

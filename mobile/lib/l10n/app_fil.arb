@@ -2347,5 +2347,17 @@
   "hoKindMotel": "Motel",
   "hoKindApartment": "Apartment",
   "hoOpenMaps": "Maps",
-  "hoHotelPrices": "Presyo"
+  "hoHotelPrices": "Presyo",
+  "routeAirportOf": "Paliparan ng {city}",
+  "routeTapOrigin": "I-tap ang pinanggalingan para magsimula",
+  "routeSimulation": "SIMULASYON NG RUTA",
+  "routeDoneShort": "Nalakbay",
+  "routeLeftShort": "Natitira",
+  "routeGoDest": "Pumunta sa destinasyon",
+  "routeSee3d": "Tingnan ang lipad sa 3D",
+  "routeOverSea": "Sa ibabaw ng dagat",
+  "routeDeparting": "pinanggalingan",
+  "routeArrivedShort": "nakarating ka na",
+  "routePassTitle": "Ang lipad mo",
+  "routeNowThere": "Ngayon doon"
 }

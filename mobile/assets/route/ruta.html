@@ -373,6 +373,7 @@ try { window.__dcHostRuntime = true; } catch (e) {}
 <style>
 html,body{margin:0;background:#0B1217;overflow:hidden}
 a{color:#9CC4FF}a:hover{color:#C6DCFF}
+@keyframes q-pass-in{from{opacity:0;transform:translateY(12px)}}.q-pass{animation:q-pass-in .6s cubic-bezier(.2,.8,.2,1) both}@keyframes q-fly{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}.q-pass-plane{animation:q-fly 2.4s ease-in-out infinite}
 @keyframes nq-ping{0%{transform:scale(0.6);opacity:0.9}100%{transform:scale(2.2);opacity:0}}
 </style>
 </helmet>
@@ -412,11 +413,13 @@ a{color:#9CC4FF}a:hover{color:#C6DCFF}
 </svg>
 <button type="button" onClick="{{goOrigin}}" aria-label="{{oAria}}" style="{{madridBtn}}">
 <span style="position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 11px; border: 2px solid #6CA8FF; animation: nq-ping 1.6s ease-out infinite"></span>
-<span style="position: absolute; left: 50%; bottom: 36px; transform: translateX(-50%); height: 22px; border-radius: 11px; background: #6CA8FF; color: #0B1217; font-size: 10px; font-weight: 800; padding: 0 8px; display: flex; align-items: center; white-space: nowrap">{{oLbl}}</span>
+<span style="{{oChip}}">{{oLbl}}</span>
+<span style="position: absolute; left: 50%; top: 36px; transform: translateX(-50%); font-size: 17px; line-height: 1; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6))">{{oFlag}}</span>
 </button>
 <button type="button" onClick="{{goDest}}" aria-label="{{dAria}}" style="{{tokyoBtn}}">
 <span style="position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 11px; border: 2px solid #FF8A65; animation: nq-ping 1.6s ease-out 0.8s infinite"></span>
-<span style="position: absolute; left: 50%; bottom: 36px; transform: translateX(-50%); height: 22px; border-radius: 11px; background: #FF8A65; color: #0B1217; font-size: 10px; font-weight: 800; padding: 0 8px; display: flex; align-items: center; white-space: nowrap">{{dLbl}}</span>
+<span style="{{dChip}}">{{dLbl}}</span>
+<span style="position: absolute; left: 50%; top: 36px; transform: translateX(-50%); font-size: 17px; line-height: 1; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6))">{{dFlag}}</span>
 </button>
 <div style="{{planeStyle}}">
 <svg width="56" height="56" viewBox="0 0 60 60" style="transform: perspective(200px) rotateX(30deg)">
@@ -440,6 +443,32 @@ a{color:#9CC4FF}a:hover{color:#C6DCFF}
 <span style="font-size: 14px; line-height: 1.5; color: #B7C5CC">{{worldP}}</span>
 <sc-if value="{{hasDest}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{goOrigin}}" style="width: 100%; height: 50px; border-radius: 16px; border: none; background: #6CA8FF; color: #0B1217; font-family: inherit; font-size: 15px; font-weight: 800; cursor: pointer">{{startTxt}}</button></sc-if>
 <button type="button" onClick="{{pick}}" style="{{pickSt}}">{{pickTxt}}</button>
+</div>
+</sc-if>
+<sc-if value="{{hasPass}}" hint-placeholder-val="{{ true }}">
+<div class="q-pass" style="position: relative; border-radius: 22px; background: linear-gradient(160deg, #16253F, #101B2D); border: 1px solid #2A3E63; padding: 16px; display: flex; flex-direction: column; gap: 12px; overflow: hidden">
+<div style="display: flex; align-items: center; justify-content: space-between"><span style="font-size: 11px; font-weight: 800; letter-spacing: 0.08em; color: #9CC4FF; text-transform: uppercase">{{Q.title}}</span><span style="font-size: 11px; font-weight: 800; color: #0B1217; background: #3DDC97; border-radius: 10px; padding: 3px 9px">{{Q.dist}}</span></div>
+<div style="display: flex; align-items: flex-start; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; align-items: flex-start; text-align: left">
+<span style="font-size: 30px; line-height: 1">{{Q.o.flag}}</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 22px; font-weight: 800; color: #6CA8FF; overflow-wrap: anywhere">{{Q.o.city}}</span>
+<span style="font-size: 12px; font-weight: 700; color: #F2F5F3; overflow-wrap: anywhere">{{Q.o.name}}</span>
+<span style="font-size: 11px; color: #9FB0B8">{{Q.o.country}}</span>
+<span style="margin-top: 4px; font-size: 11px; color: #9FB0B8">{{Q.nowTxt}} · <b style="color: #F2F5F3; font-variant-numeric: tabular-nums">{{Q.o.clock}}</b></span>
+</div>
+<div style="flex: 0 0 74px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding-top: 10px">
+<svg width="74" height="26" viewBox="0 0 74 26" aria-hidden="true"><path d="M4 20 Q37 -2 70 20" fill="none" stroke="#3A5584" stroke-width="2" stroke-dasharray="3 4"></path><path class="q-pass-plane" d="M37 4 l6 4 -6 1 -1 4 -2 -1 1 -3 -5 -1 0 -2 5 0 0 -3 2 0 z" fill="#F2F5F3"></path><circle cx="4" cy="20" r="3" fill="#6CA8FF"></circle><circle cx="70" cy="20" r="3" fill="#FF8A65"></circle></svg>
+<span style="font-size: 12px; font-weight: 800; color: #F2F5F3; white-space: nowrap">{{Q.dur}}</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; align-items: flex-end; text-align: right">
+<span style="font-size: 30px; line-height: 1">{{Q.d.flag}}</span>
+<span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 22px; font-weight: 800; color: #FF8A65; overflow-wrap: anywhere">{{Q.d.city}}</span>
+<span style="font-size: 12px; font-weight: 700; color: #F2F5F3; overflow-wrap: anywhere">{{Q.d.name}}</span>
+<span style="font-size: 11px; color: #9FB0B8">{{Q.d.country}}</span>
+<span style="margin-top: 4px; font-size: 11px; color: #9FB0B8">{{Q.nowTxt}} · <b style="color: #F2F5F3; font-variant-numeric: tabular-nums">{{Q.d.clock}}</b></span>
+</div>
+</div>
+<div style="border-top: 1px dashed #2A3E63; padding-top: 10px; font-size: 12.5px; line-height: 1.45; color: #B7C5CC">{{Q.diff}}</div>
 </div>
 </sc-if>
 <sc-if value="{{isFlight}}" hint-placeholder-val="{{ false }}">
@@ -558,6 +587,13 @@ pic: 'display: block; width: 128px; height: 92px; border-radius: 14px; backgroun
 }))
 });
 }
+chip(x, label, color) {
+const w = String(label || '').length * 5.8 + 16;
+let shift = 0;
+if (x - w / 2 < 6) shift = 6 - (x - w / 2);
+else if (x + w / 2 > 352) shift = 352 - (x + w / 2);
+return 'position: absolute; left: 50%; bottom: 36px; transform: translateX(calc(-50% + ' + shift.toFixed(0) + 'px)); height: 22px; border-radius: 11px; background: ' + color + '; color: #0B1217; font-size: 10px; font-weight: 800; padding: 0 8px; display: flex; align-items: center; white-space: nowrap; transition: transform 0.6s ease';
+}
 renderVals() {
 const E = this.E;
 const { view, t, follow } = this.state;
@@ -601,7 +637,11 @@ camStyle: 'transform: translate(179px, 130px) scale(' + z + ') translate(' + (-c
 trail: shown + ' 1',
 dotR: (5 / z).toFixed(3),
 madridBtn: btn(ms, true), tokyoBtn: btn(ts, !!D),
-oLbl: O.lbl || '', dLbl: D ? D.lbl : '', oAria: O.aria || '', dAria: D ? D.aria : '',
+oLbl: O.lbl || '', dLbl: D ? D.lbl : '', oFlag: O.flag || '', dFlag: D ? (D.flag || '') : '',
+hasPass: view === 'world' && !!E.pass,
+// La etiqueta con el nombre del aeropuerto no se sale del mapa: si el
+// punto está cerca del borde, la etiqueta se corre hacia dentro.
+oChip: this.chip(ms[0], O.lbl, '#6CA8FF'), dChip: this.chip(ts[0], D ? D.lbl : '', '#FF8A65'), Q: E.pass || { o: {}, d: {} }, oAria: O.aria || '', dAria: D ? D.aria : '',
 planeStyle: 'position: absolute; left: ' + (ps[0] - 28) + 'px; top: ' + (ps[1] - 28) + 'px; width: 56px; height: 56px; pointer-events: none; transform: rotate(' + angle.toFixed(1) + 'deg) scale(' + (view === 'world' ? 0.55 : 1) + '); filter: drop-shadow(0 12px 6px rgba(0,0,0,0.5)); transition: left ' + dur + ', top ' + dur + ', transform ' + dur + (D ? '' : '; display: none'),
 zoomLabel: view === 'world' ? (E.worldLbl || '') : view === 'origin' ? 'Zoom: ' + (O.city || '') : view === 'dest' ? 'Zoom: ' + (D ? D.city : '') : (E.followLbl || ''),
 isWorld: view === 'world', isOrigin: view === 'origin', isFlight: view === 'flight', isDest: view === 'dest',

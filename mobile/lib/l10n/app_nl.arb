@@ -2347,5 +2347,17 @@
   "hoKindMotel": "Motel",
   "hoKindApartment": "Appartement",
   "hoOpenMaps": "Maps",
-  "hoHotelPrices": "Prijzen"
+  "hoHotelPrices": "Prijzen",
+  "routeAirportOf": "Luchthaven {city}",
+  "routeTapOrigin": "Tik op het vertrek om te beginnen",
+  "routeSimulation": "SIMULATIE VAN DE ROUTE",
+  "routeDoneShort": "Gevlogen",
+  "routeLeftShort": "Nog",
+  "routeGoDest": "Naar de bestemming",
+  "routeSee3d": "Bekijk de vlucht in 3D",
+  "routeOverSea": "Boven zee",
+  "routeDeparting": "vertrekpunt",
+  "routeArrivedShort": "je bent er",
+  "routePassTitle": "Jouw vlucht",
+  "routeNowThere": "Nu daar"
 }

@@ -2347,5 +2347,17 @@
   "hoKindMotel": "মোটেল",
   "hoKindApartment": "অ্যাপার্টমেন্ট",
   "hoOpenMaps": "ম্যাপস",
-  "hoHotelPrices": "দাম"
+  "hoHotelPrices": "দাম",
+  "routeAirportOf": "{city} বিমানবন্দর",
+  "routeTapOrigin": "শুরু করতে যাত্রাস্থানে ট্যাপ করো",
+  "routeSimulation": "রুটের সিমুলেশন",
+  "routeDoneShort": "অতিক্রান্ত",
+  "routeLeftShort": "বাকি",
+  "routeGoDest": "গন্তব্যে যাও",
+  "routeSee3d": "ফ্লাইট 3D-তে দেখো",
+  "routeOverSea": "সমুদ্রের ওপর দিয়ে",
+  "routeDeparting": "যাত্রাস্থান",
+  "routeArrivedShort": "পৌঁছে গেছ",
+  "routePassTitle": "তোমার ফ্লাইট",
+  "routeNowThere": "এখন সেখানে"
 }

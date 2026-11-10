@@ -2347,5 +2347,17 @@
   "hoKindMotel": "Motel",
   "hoKindApartment": "Daire",
   "hoOpenMaps": "Haritalar",
-  "hoHotelPrices": "Fiyatlar"
+  "hoHotelPrices": "Fiyatlar",
+  "routeAirportOf": "{city} Havalimanı",
+  "routeTapOrigin": "Başlamak için kalkış noktasına dokun",
+  "routeSimulation": "ROTA SİMÜLASYONU",
+  "routeDoneShort": "Gidilen",
+  "routeLeftShort": "Kalan",
+  "routeGoDest": "Varış noktasına git",
+  "routeSee3d": "Uçuşu 3B izle",
+  "routeOverSea": "Deniz üzerinde",
+  "routeDeparting": "kalkış noktası",
+  "routeArrivedShort": "vardın",
+  "routePassTitle": "Uçuşun",
+  "routeNowThere": "Şu an orada"
 }

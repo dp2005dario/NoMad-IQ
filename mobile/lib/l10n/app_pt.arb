@@ -2347,5 +2347,17 @@
   "hoKindMotel": "Motel",
   "hoKindApartment": "Apartamento",
   "hoOpenMaps": "Maps",
-  "hoHotelPrices": "Preços"
+  "hoHotelPrices": "Preços",
+  "routeAirportOf": "Aeroporto de {city}",
+  "routeTapOrigin": "Toca na origem para começar",
+  "routeSimulation": "SIMULAÇÃO DO PERCURSO",
+  "routeDoneShort": "Percorrido",
+  "routeLeftShort": "Faltam",
+  "routeGoDest": "Ir ao destino",
+  "routeSee3d": "Ver o voo em 3D",
+  "routeOverSea": "Sobrevoando o mar",
+  "routeDeparting": "ponto de partida",
+  "routeArrivedShort": "chegaste",
+  "routePassTitle": "O teu voo",
+  "routeNowThere": "Agora lá"
 }

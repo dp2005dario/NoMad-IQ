@@ -2347,5 +2347,17 @@
   "hoKindMotel": "Nhà nghỉ",
   "hoKindApartment": "Căn hộ",
   "hoOpenMaps": "Bản đồ",
-  "hoHotelPrices": "Giá"
+  "hoHotelPrices": "Giá",
+  "routeAirportOf": "Sân bay {city}",
+  "routeTapOrigin": "Chạm vào điểm đi để bắt đầu",
+  "routeSimulation": "MÔ PHỎNG HÀNH TRÌNH",
+  "routeDoneShort": "Đã bay",
+  "routeLeftShort": "Còn lại",
+  "routeGoDest": "Đến điểm đến",
+  "routeSee3d": "Xem chuyến bay 3D",
+  "routeOverSea": "Bay trên biển",
+  "routeDeparting": "điểm khởi hành",
+  "routeArrivedShort": "bạn đã đến",
+  "routePassTitle": "Chuyến bay của bạn",
+  "routeNowThere": "Bây giờ ở đó"
 }

@@ -2347,5 +2347,17 @@
   "hoKindMotel": "Motel",
   "hoKindApartment": "Apartemen",
   "hoOpenMaps": "Maps",
-  "hoHotelPrices": "Harga"
+  "hoHotelPrices": "Harga",
+  "routeAirportOf": "Bandara {city}",
+  "routeTapOrigin": "Ketuk asal untuk mulai",
+  "routeSimulation": "SIMULASI RUTE",
+  "routeDoneShort": "Ditempuh",
+  "routeLeftShort": "Sisa",
+  "routeGoDest": "Ke tujuan",
+  "routeSee3d": "Lihat penerbangan 3D",
+  "routeOverSea": "Di atas laut",
+  "routeDeparting": "titik keberangkatan",
+  "routeArrivedShort": "kamu sudah tiba",
+  "routePassTitle": "Penerbanganmu",
+  "routeNowThere": "Sekarang di sana"
 }

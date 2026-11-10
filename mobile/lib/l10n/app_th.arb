@@ -2347,5 +2347,17 @@
   "hoKindMotel": "โมเต็ล",
   "hoKindApartment": "อพาร์ตเมนต์",
   "hoOpenMaps": "แผนที่",
-  "hoHotelPrices": "ราคา"
+  "hoHotelPrices": "ราคา",
+  "routeAirportOf": "สนามบิน{city}",
+  "routeTapOrigin": "แตะต้นทางเพื่อเริ่ม",
+  "routeSimulation": "จำลองเส้นทาง",
+  "routeDoneShort": "บินมาแล้ว",
+  "routeLeftShort": "เหลือ",
+  "routeGoDest": "ไปที่ปลายทาง",
+  "routeSee3d": "ดูเที่ยวบินแบบ 3D",
+  "routeOverSea": "บินเหนือทะเล",
+  "routeDeparting": "จุดออกเดินทาง",
+  "routeArrivedShort": "ถึงแล้ว",
+  "routePassTitle": "เที่ยวบินของคุณ",
+  "routeNowThere": "ตอนนี้ที่นั่น"
 }

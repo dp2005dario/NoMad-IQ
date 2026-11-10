@@ -12,6 +12,7 @@ import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/theme.dart';
 import 'package:eclipta/features/route/flight3d.dart';
 import 'package:eclipta/features/route/flight_route_screen.dart';
+import 'package:eclipta/features/flights/airport_names.dart';
 import 'package:eclipta/features/flights/booking.dart';
 import 'package:eclipta/features/route/geo.dart';
 import 'package:eclipta/features/route/places_api.dart';
@@ -43,6 +44,8 @@ Future<m.PageSpy> pumpRoute(
   await tester.runAsync(() async {
     await CountryCodes.load();
     await CountryNames.load();
+    // Los nombres de persona de los aeropuertos ("Tokio").
+    await AirportNames.load();
   });
   // Los datos reales de la app (assets/geo), cargados una vez.
   final WorldData world = (await tester.runAsync(WorldData.load))!;
@@ -154,8 +157,17 @@ void main() {
   ) async {
     final m.PageSpy spy = await pumpRoute(tester);
     expect(spy.pages.first, contains('ECLIPTA · Ruta del vuelo'));
+    await spy.wait(tester, () => routeData(spy)['title'] == 'Madrid → Tokio');
     final Map<String, Object?> d = routeData(spy);
-    expect(d['title'], 'Madrid → Tokyo');
+    // La ciudad como la dice la gente (no "Tokyo") y el nombre del
+    // aeropuerto con su bandera, no el código.
+    expect(d['title'], 'Madrid → Tokio');
+    final Map<String, Object?> dest = d['d']! as Map<String, Object?>;
+    expect(dest['lbl'], 'Aeropuerto de Tokio');
+    expect(dest['flag'], '🇯🇵');
+    final Map<String, Object?> pass = d['pass']! as Map<String, Object?>;
+    expect((pass['o']! as Map<String, Object?>)['country'], 'España');
+    expect(pass['diff'], startsWith('Tokio: '));
     expect(d['sub'], contains('10.7')); // km con punto español
     expect(d['startTxt'], 'Empezar en Madrid');
     // El mapa de la maqueta: x = longitud + 180, y = 90 − latitud.
@@ -205,7 +217,7 @@ void main() {
     await tester.enterText(find.byType(TextField), 'lis');
     await tester.tap(find.text('Ver ruta'));
     await tester.pump(const Duration(milliseconds: 1500));
-    expect(routeData(spy)['title'], 'Madrid → Lisbon');
+    expect(routeData(spy)['title'], 'Madrid → Lisboa');
 
     // "¿A dónde vuelas?" en la página vuelve a abrir la hoja.
     spy.to('ECLIPTA · Ruta del vuelo')('pick');
