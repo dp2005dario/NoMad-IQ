@@ -13,6 +13,8 @@
 // Los botones que llevan a otra pantalla (buscar, reservar, avisar, Vuelo
 // 3D, los cuadrados de "Planea tu viaje"...) los abre la app.
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -35,6 +37,8 @@ import '../map/geo.dart';
 import '../map/location.dart';
 import '../route/geo.dart';
 import '../route/world_data.dart';
+import '../settings/profile_photo.dart';
+import '../../widgets/user_avatar.dart' show isTrustedPhotoUrl;
 import 'airport_names.dart';
 import 'fares_api.dart';
 import 'flight_format.dart' show localeOf;
@@ -98,6 +102,9 @@ class _FlightsScreenState extends State<FlightsScreen> {
   List<Watch> _watches = <Watch>[];
   bool _guest = false;
 
+  /// Tu foto de perfil lista para la página ('' = sale tu inicial).
+  String _myPhoto = '';
+
   /// El chollo que se ve arriba (cambia con la ganga a medida).
   int _hunt = 0;
 
@@ -128,6 +135,8 @@ class _FlightsScreenState extends State<FlightsScreen> {
     } on Object {
       // Sin los datos de aeropuertos no hay ruta en el globo (el resto sí).
     }
+    _myPhoto = await _profilePhoto();
+    if (!mounted) return;
     if (_services.prefs.readFlightOrigin() == null) {
       _origin = await _nearOrigin() ?? defaultOrigin;
     }
@@ -166,6 +175,23 @@ class _FlightsScreenState extends State<FlightsScreen> {
     });
   }
 
+  /// Tu foto: la que elegiste en el móvil (se lee del archivo) o, si no
+  /// elegiste ninguna, la de tu cuenta de Google. Si no hay, ''.
+  Future<String> _profilePhoto() async {
+    final ProfilePhotoChoice choice = ProfilePhotoController.instance.choice;
+    final String? path = choice.filePath;
+    if (path != null) {
+      try {
+        final List<int> bytes = await File(path).readAsBytes();
+        return 'data:image/jpeg;base64,${base64Encode(bytes)}';
+      } on Object {
+        return '';
+      }
+    }
+    final String? google = SessionScope.of(context).user?.photoUrl;
+    return choice.isNone && isTrustedPhotoUrl(google) ? google! : '';
+  }
+
   /// El aeropuerto grande más cerca, si el GPS ya tiene permiso (aquí no
   /// se pide: eso lo hace el mapa) y responde rápido.
   Future<String?> _nearOrigin() async {
@@ -197,6 +223,7 @@ class _FlightsScreenState extends State<FlightsScreen> {
       origin: _origin,
       locale: locale.replaceAll('_', '-'),
       initial: name == null ? '?' : name[0],
+      photo: _myPhoto,
       guest: _guest,
       failed: failed,
       deals: <Map<String, Object?>>[

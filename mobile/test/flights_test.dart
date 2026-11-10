@@ -342,6 +342,9 @@ void main() {
     await page.wait(tester, () => page.pages.isNotEmpty);
     expect(b.origins, <String>['MAD']);
     final Map<String, Object?> e = flightsData(page.pages.last);
+    // Sin foto de perfil: el círculo de arriba lleva tu inicial.
+    expect(e['photo'], '');
+    expect(e['initial'], 'A');
     final List<Object?> deals = e['deals']! as List<Object?>;
     // Tokio (−59 %, parece tarifa error) va primero aunque el servidor lo
     // mandara segundo.
