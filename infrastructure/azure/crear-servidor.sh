@@ -43,6 +43,15 @@
 # Nunca enseña ninguna clave por pantalla.
 # =============================================================================
 set -euo pipefail
+# Si algo falla, se dice dónde (antes el script podía pararse sin avisar).
+trap 'echo >&2; echo "ERROR: el script se ha parado en la línea $LINENO. Mándame una captura de esto." >&2' ERR
+
+# Letras y números al azar. (Con "tr ... </dev/urandom | head" el script se
+# paraba sin decir nada: con pipefail, "tr" acaba con error cuando "head"
+# deja de leer.)
+azar() {
+  python3 -c "import secrets, string, sys; print(''.join(secrets.choice(string.ascii_lowercase + string.digits) for _ in range(int(sys.argv[1]))))" "$1"
+}
 
 REGION_PEDIDA="${REGION:-}"
 SIZE="${SIZE:-Standard_B2as_v2}"
@@ -88,7 +97,7 @@ if [ -z "${SUFFIX:-}" ] && az group show -n "$RG" >/dev/null 2>&1; then
   fi
 fi
 if [ -z "${SUFFIX:-}" ]; then
-  SUFFIX="$(tr -dc 'a-z0-9' </dev/urandom | head -c 6)"
+  SUFFIX="$(azar 6)"
   echo "SUFFIX=$SUFFIX" > "$STATE"
 fi
 DNS_LABEL="eclipta-$SUFFIX"
@@ -145,10 +154,22 @@ if az vm show -g "$RG" -n "$VM" >/dev/null 2>&1; then
   CANDIDATAS="$(az vm show -g "$RG" -n "$VM" --query location -o tsv)"
 fi
 
-# ¿Hay máquinas de este tamaño para tu cuenta en esa región?
+# ¿Hay máquinas para tu cuenta en esa región? Se prueba el tamaño pedido y,
+# si no lo hay, otros de 8 GB parecidos. Deja en SIZE el primero que haya.
+TAMANOS="$SIZE"
+if [ "$SIZE" = Standard_B2as_v2 ]; then
+  TAMANOS="Standard_B2as_v2 Standard_B2s_v2 Standard_D2as_v5 Standard_D2s_v5"
+fi
 hay_maquina() {
-  [ -n "$(az vm list-skus -l "$1" --size "$SIZE" --resource-type virtualMachines \
-    --query "[?name=='$SIZE' && length(restrictions)==\`0\`].name" -o tsv 2>/dev/null)" ]
+  local t
+  for t in $TAMANOS; do
+    if [ -n "$(az vm list-skus -l "$1" --size "$t" --resource-type virtualMachines \
+      --query "[?name=='$t' && length(restrictions)==\`0\`].name" -o tsv 2>/dev/null)" ]; then
+      SIZE="$t"
+      return 0
+    fi
+  done
+  return 1
 }
 
 paso "3/6 Grupo de recursos y almacén para las copias de seguridad"
@@ -156,7 +177,7 @@ REGION=""
 for r in $CANDIDATAS; do
   printf 'Probando %s... ' "$r"
   if ! hay_maquina "$r"; then
-    echo "no hay máquinas $SIZE para tu cuenta."
+    echo "no hay máquinas de 8 GB para tu cuenta."
     continue
   fi
   if ! az group show -n "$RG" >/dev/null 2>&1; then
@@ -181,7 +202,7 @@ if [ -z "$REGION" ]; then
   echo "servidor. Mándame una captura de esto y lo vemos." >&2
   exit 1
 fi
-echo "Región elegida: $REGION"
+echo "Región elegida: $REGION · Máquina: $SIZE"
 
 # Lo que cuesta la máquina, con el precio oficial de Azure de hoy (su lista
 # pública de precios). Más disco (~5 €/mes) e IP fija (~3 €/mes).
@@ -293,7 +314,7 @@ fi
 paso "6/6 Rellenando config.env y secrets.env en la máquina"
 # Un tema de ntfy con letras al azar (es como una contraseña: quien lo sepa
 # puede leer los avisos del servidor).
-NTFY_TOPIC="eclipta-avisos-$(tr -dc 'a-z0-9' </dev/urandom | head -c 12)"
+NTFY_TOPIC="eclipta-avisos-$(azar 12)"
 # La clave del almacén viaja por la conexión SSH cifrada (por la "entrada"
 # del programa), sin salir en pantalla ni quedar en ningún historial.
 printf '%s\n' "$STORAGE_KEY" | "${SSH[@]}" \
