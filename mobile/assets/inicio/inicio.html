@@ -355,7 +355,6 @@ body.red .rm .dg{fill:#ff3b30;animation:blink .25s steps(1) infinite}
 .top{gap:8px}.top .brand{margin-right:auto}
 .halo{position:absolute;left:50%;top:50%;width:176px;height:176px;margin:-88px 0 0 -88px;border-radius:50%;background:radial-gradient(circle,#3DDC9788,#9B7BFF55 55%,transparent 72%);opacity:0;pointer-events:none}
 .halo.go{animation:halo2 1.6s ease-out}
-.hero.lay::before,.hero.lay .core{will-change:transform}
 @keyframes halo2{0%{opacity:.95;transform:scale(.8)}100%{opacity:0;transform:scale(2.3)}}
 .greet .w{display:inline-block;opacity:0;filter:blur(8px);transform:translateY(8px);animation:wd .7s cubic-bezier(.2,.8,.2,1) forwards}
 @keyframes wd{0%{opacity:0;filter:blur(8px);transform:translateY(8px);text-shadow:0 0 0 #3DDC97}55%{opacity:1;text-shadow:0 0 18px #3DDC97,0 0 34px #9B7BFF}100%{opacity:1;filter:none;transform:none;text-shadow:0 0 0 #3DDC9700}}
@@ -770,11 +769,7 @@ function at(s){var n=PATH.length-3,f=s*n,i=Math.min(Math.floor(f),n-1),u=f-i,a=P
 function clearT(){timers.forEach(clearTimeout);timers=[];cancelAnimationFrame(raf)}
 function words(){g.innerHTML=txt.split(' ').map(function(w,i){return'<span class="w" style="animation-delay:'+(i*130)+'ms">'+w+'</span>'}).join(' ')}
 function final(){g.textContent=txt;bird.style.opacity=0}
-function play(){clearT();size();g.innerHTML='';halo.classList.remove('go');hero.classList.remove('intro');void hero.offsetWidth;hero.classList.add('intro');
- // Mientras dura la intro, el fondo y la bola van en su propia capa (el
- // móvil los pinta una vez y solo los mueve: fluido). Al acabar se quita,
- // para no ocupar memoria de vídeo el resto del tiempo.
- hero.classList.add('lay');timers.push(setTimeout(function(){hero.classList.remove('lay')},6500));bird.style.opacity=0;
+function play(){clearT();size();g.innerHTML='';halo.classList.remove('go');hero.classList.remove('intro');void hero.offsetWidth;hero.classList.add('intro');bird.style.opacity=0;
  if(matchMedia('(prefers-reduced-motion:reduce)').matches){hero.classList.remove('intro');final();return}
  pts=targets();var N=pts.length,P=pts.map(function(p,i){var a=Math.random()*6.283,r=170+Math.random()*120;return{sx:Math.cos(a)*r,sy:Math.sin(a)*r*.8,tx:p[0],ty:p[1],c:p[2],d:Math.random()*450,r:.9+Math.random()*1.3}});
  var trail=[],rip=[],t0=performance.now(),landed=false,wd=false,fl=0;
