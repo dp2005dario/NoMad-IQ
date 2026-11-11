@@ -41,7 +41,9 @@ class Settings(BaseSettings):
 
     # extra="ignore": el entorno tiene muchas otras variables (PATH, HOME...)
     # que no son nuestras; las ignoramos en vez de fallar.
-    model_config = SettingsConfigDict(extra="ignore", frozen=True)
+    # hide_input_in_errors: si algo está mal, el error NO copia los valores
+    # (entre ellos hay claves secretas), solo qué campo falla y por qué.
+    model_config = SettingsConfigDict(extra="ignore", frozen=True, hide_input_in_errors=True)
 
     # --- Servidores HTTP -------------------------------------------------------
     http_port: int = Field(default=8085, ge=1, le=65535)
@@ -283,7 +285,8 @@ class Settings(BaseSettings):
     events_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
 
     # --- Chat libre con Flyra (ver el paquete flyra/) --------------------------------
-    # Necesita Ollama (LLM_ENABLED) y Redis (el contador de preguntas diarias).
+    # Necesita una IA (Gemini con GEMINI_API_KEY, u Ollama con LLM_ENABLED) y
+    # Redis (el contador de preguntas diarias).
     flyra_enabled: bool = True
     # Preguntas gratis por persona y día: el tope que evita sorpresas de coste.
     flyra_daily_limit: int = Field(default=50, ge=1, le=1000)
@@ -342,6 +345,17 @@ class Settings(BaseSettings):
     # Interruptor general: sin LLM todas las recomendaciones salen de reglas.
     llm_enabled: bool = True
 
+    # --- Gemini (la IA de Google, en sus servidores; ver llm/gemini.py) -----------
+    # Para servidores pequeños donde no cabe Ollama. Si hay clave, se usa
+    # Gemini en vez de Ollama para Flyra, las cartas y "copia este viaje".
+    # Se pone en el servidor con poner-clave.sh: NUNCA en el código.
+    gemini_api_key: SecretStr | None = None
+    # "gemini-flash-latest" = siempre el Flash más nuevo (tiene plan gratis).
+    gemini_model: str = "gemini-flash-latest"
+    gemini_url: str = "https://generativelanguage.googleapis.com"
+    gemini_timeout_seconds: float = Field(default=60.0, gt=0, le=600)
+    gemini_max_concurrency: int = Field(default=4, ge=1, le=64)
+
     # --- Comportamiento del LLM -------------------------------------------------
     # Temperatura baja = respuestas más predecibles y fieles al formato JSON.
     llm_temperature: float = Field(default=0.1, ge=0.0, le=1.0)
@@ -367,6 +381,7 @@ class Settings(BaseSettings):
         "mapillary_token",
         "ticketmaster_api_key",
         "google_places_api_key",
+        "gemini_api_key",
         mode="before",
     )
     @classmethod
@@ -455,7 +470,16 @@ class Settings(BaseSettings):
                 "el modo cámara necesita Redis: define REDIS_HOST y REDIS_PASSWORD "
                 "(o LANDMARKS_ENABLED=false)"
             )
-        if self.flyra_enabled and self.llm_enabled and (not self.redis_host or self.redis_password is None):
+        if self.gemini_api_key is not None and not re.fullmatch(
+            r"[A-Za-z0-9_-]{20,100}", self.gemini_api_key.get_secret_value()
+        ):
+            # No repetimos el valor en el mensaje: es un secreto.
+            problems.append("GEMINI_API_KEY no tiene forma de clave de Google AI Studio (AIza...)")
+        if not re.fullmatch(r"[A-Za-z0-9._-]{1,80}", self.gemini_model):
+            problems.append("GEMINI_MODEL solo admite letras, números, '.', '_' y '-'")
+        if not self.gemini_url.startswith("https://"):
+            problems.append("GEMINI_URL debe empezar por https://")
+        if self.flyra_enabled and self.has_llm and (not self.redis_host or self.redis_password is None):
             problems.append(
                 "el chat con Flyra necesita Redis: define REDIS_HOST y REDIS_PASSWORD (o FLYRA_ENABLED=false)"
             )
@@ -503,6 +527,11 @@ class Settings(BaseSettings):
             # Todos los problemas a la vez: arreglas el .env de una sola pasada.
             raise ValueError("configuración inválida:\n  - " + "\n  - ".join(problems))
         return self
+
+    @property
+    def has_llm(self) -> bool:
+        """¿Hay alguna IA? Gemini (con su clave) u Ollama (LLM_ENABLED)."""
+        return self.gemini_api_key is not None or self.llm_enabled
 
     @property
     def overpass_servers(self) -> list[str]:

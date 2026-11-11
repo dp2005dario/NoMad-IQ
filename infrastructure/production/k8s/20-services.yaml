@@ -347,6 +347,8 @@ spec:
             - {name: MAPILLARY_TOKEN, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: MAPILLARY_TOKEN}}}
             - {name: TICKETMASTER_API_KEY, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: TICKETMASTER_API_KEY}}}
             - {name: GOOGLE_PLACES_API_KEY, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: GOOGLE_PLACES_API_KEY, optional: true}}}
+            - {name: GEMINI_API_KEY, valueFrom: {secretKeyRef: {name: nomadiq-secrets, key: GEMINI_API_KEY, optional: true}}}
+            - {name: GEMINI_MODEL, valueFrom: {configMapKeyRef: {name: nomadiq-config, key: GEMINI_MODEL, optional: true}}}
             - {name: EXPOSE_API_DOCS, value: "false"}
             - {name: LOG_LEVEL, value: "info"}
           ports:

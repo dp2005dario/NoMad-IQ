@@ -29,19 +29,42 @@ timeout 900 adb logcat -v raw -s flutter:I | while IFS= read -r line; do
   case "$line" in
     *ECLIPTA_SHOT:FIN*)
       echo "Fin del recorrido"
+      touch "$OUT/.fin"
       break
       ;;
     *ECLIPTA_SHOT:*)
       name="${line##*ECLIPTA_SHOT:}"
       name="$(printf '%s' "$name" | tr -cd 'a-z0-9-')"
-      adb exec-out screencap -p > "$OUT/$name.png"
+      # Como mucho 30 s por foto: si el emulador se cae, adb se quedaría
+      # esperando para siempre ("waiting for device") hasta el límite de
+      # 60 minutos del robot. Así falla rápido y se ve dónde se cayó.
+      if ! timeout 30 adb exec-out screencap -p > "$OUT/$name.png"; then
+        echo "El emulador no responde (se ha caído) en: $name" >&2
+        break
+      fi
       echo "Captura: $name"
       ;;
   esac
 done
 
 # El registro completo de la app, por si algo falla (errores de Flutter).
-adb logcat -d -s flutter:* > "$OUT/registro-flutter.txt" || true
+timeout 30 adb logcat -d -s flutter:* > "$OUT/registro-flutter.txt" || true
 count=$(ls "$OUT"/*.png 2>/dev/null | wc -l)
 echo "Capturas hechas: $count"
+# Solo vale si la app llegó al final: si el emulador se cae a medias, es
+# un fallo (antes salía "bien" con que hubiera una sola foto).
+if [ ! -f "$OUT/.fin" ]; then
+  echo "El recorrido NO llegó al final (mira la última captura)." >&2
+  # Pistas en el registro del robot (el .zip no siempre se puede abrir):
+  # ¿sigue viva la app?, sus últimas líneas y si Android la cerró.
+  echo "== ¿App viva? (número de proceso) ==" >&2
+  timeout 15 adb shell pidof "$PKG" >&2 || echo "  NO: la app se cerró" >&2
+  echo "== Últimas líneas de la app ==" >&2
+  tail -n 40 "$OUT/registro-flutter.txt" >&2 || true
+  echo "== Cierres de Android (crash / sin memoria) ==" >&2
+  timeout 15 adb logcat -d -b crash | tail -n 40 >&2 || true
+  timeout 15 adb logcat -d | grep -E "lowmemorykiller|ActivityManager: (Process|Killing).*eclipta|ANR in" | tail -n 20 >&2 || true
+  exit 1
+fi
+rm -f "$OUT/.fin"
 [ "$count" -gt 0 ]
