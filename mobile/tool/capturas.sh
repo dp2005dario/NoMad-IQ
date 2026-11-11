@@ -29,6 +29,7 @@ timeout 900 adb logcat -v raw -s flutter:I | while IFS= read -r line; do
   case "$line" in
     *ECLIPTA_SHOT:FIN*)
       echo "Fin del recorrido"
+      touch "$OUT/.fin"
       break
       ;;
     *ECLIPTA_SHOT:*)
@@ -50,4 +51,11 @@ done
 timeout 30 adb logcat -d -s flutter:* > "$OUT/registro-flutter.txt" || true
 count=$(ls "$OUT"/*.png 2>/dev/null | wc -l)
 echo "Capturas hechas: $count"
+# Solo vale si la app llegó al final: si el emulador se cae a medias, es
+# un fallo (antes salía "bien" con que hubiera una sola foto).
+if [ ! -f "$OUT/.fin" ]; then
+  echo "El recorrido NO llegó al final (mira la última captura)." >&2
+  exit 1
+fi
+rm -f "$OUT/.fin"
 [ "$count" -gt 0 ]
