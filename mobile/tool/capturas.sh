@@ -55,6 +55,15 @@ echo "Capturas hechas: $count"
 # un fallo (antes salía "bien" con que hubiera una sola foto).
 if [ ! -f "$OUT/.fin" ]; then
   echo "El recorrido NO llegó al final (mira la última captura)." >&2
+  # Pistas en el registro del robot (el .zip no siempre se puede abrir):
+  # ¿sigue viva la app?, sus últimas líneas y si Android la cerró.
+  echo "== ¿App viva? (número de proceso) ==" >&2
+  timeout 15 adb shell pidof "$PKG" >&2 || echo "  NO: la app se cerró" >&2
+  echo "== Últimas líneas de la app ==" >&2
+  tail -n 40 "$OUT/registro-flutter.txt" >&2 || true
+  echo "== Cierres de Android (crash / sin memoria) ==" >&2
+  timeout 15 adb logcat -d -b crash | tail -n 40 >&2 || true
+  timeout 15 adb logcat -d | grep -E "lowmemorykiller|ActivityManager: (Process|Killing).*eclipta|ANR in" | tail -n 20 >&2 || true
   exit 1
 fi
 rm -f "$OUT/.fin"
