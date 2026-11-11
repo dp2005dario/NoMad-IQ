@@ -158,6 +158,8 @@ def test_gemini_key_is_optional_checked_and_never_echoed() -> None:
     on = settings(**DEV, llm_enabled=False, gemini_api_key="AIzaSyA-0123456789abcdefXYZ")
     assert on.has_llm
     assert on.gemini_model == "gemini-flash-latest"
+    # Otros formatos de clave de Google (con puntos, sin "AIza") también valen.
+    assert settings(**DEV, gemini_api_key="AQ.Ab8RN6Kx-0123456789_abcdefXYZ.q").gemini_api_key
     with pytest.raises(ValidationError) as err:
         settings(**DEV, gemini_api_key="mi clave rara!")
     assert "GEMINI_API_KEY" in str(err.value)
