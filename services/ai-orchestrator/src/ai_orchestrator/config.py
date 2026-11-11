@@ -471,10 +471,18 @@ class Settings(BaseSettings):
                 "(o LANDMARKS_ENABLED=false)"
             )
         if self.gemini_api_key is not None and not re.fullmatch(
-            r"[A-Za-z0-9_-]{20,100}", self.gemini_api_key.get_secret_value()
+            # Google ha usado varios formatos de clave ("AIza...", con puntos...):
+            # solo exigimos que no tenga espacios ni caracteres raros y un
+            # tamaño razonable. Si la clave no vale, Google responde 400/403
+            # y Flyra dice "ocupada", pero el servicio NO se cae.
+            r"[\x21-\x7e]{20,200}",
+            self.gemini_api_key.get_secret_value(),
         ):
             # No repetimos el valor en el mensaje: es un secreto.
-            problems.append("GEMINI_API_KEY no tiene forma de clave de Google AI Studio (AIza...)")
+            problems.append(
+                "GEMINI_API_KEY no parece una clave (¿tiene espacios o está cortada?): "
+                "vuelve a ponerla con poner-clave.sh"
+            )
         if not re.fullmatch(r"[A-Za-z0-9._-]{1,80}", self.gemini_model):
             problems.append("GEMINI_MODEL solo admite letras, números, '.', '_' y '-'")
         if not self.gemini_url.startswith("https://"):
