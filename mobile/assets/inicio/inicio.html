@@ -281,7 +281,7 @@ body.red .rm .dg{fill:#ff3b30;animation:blink .25s steps(1) infinite}
 @keyframes pop{from{transform:scale(.3);opacity:0}}
 .sres h3{font:800 26px var(--d);margin:0}.rows{display:grid;gap:8px;text-align:left}.rows div{display:flex;justify-content:space-between;gap:10px;background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:11px 14px;font-size:13.5px}.rows span{color:var(--mut)}.rows b{font-weight:700;text-align:right;overflow-wrap:anywhere}
 .primary{height:52px;border-radius:16px;border:0;background:var(--mint);color:#06281a;font:800 16px var(--d)}
-.bird{position:absolute;left:50%;top:182px;width:64px;height:44px;margin:-22px 0 0 -32px;z-index:4;pointer-events:none;opacity:0;will-change:transform,opacity}
+.bird{position:absolute;left:50%;top:182px;width:64px;height:44px;margin:-22px 0 0 -32px;z-index:4;pointer-events:none;opacity:0;will-change:transform}
 .bird svg{width:100%;height:100%;overflow:visible}
 .bird::before{content:"";position:absolute;left:-14px;right:-14px;top:-14px;bottom:-14px;border-radius:50%;background:radial-gradient(closest-side,#3DDC9766,#3DDC9722 60%,transparent);pointer-events:none}
 .bird .wl,.bird .wr{transform-origin:32px 22px;animation:flap .22s ease-in-out infinite alternate}.bird .wr{animation-delay:.02s}
@@ -355,10 +355,10 @@ body.red .rm .dg{fill:#ff3b30;animation:blink .25s steps(1) infinite}
 .top{gap:8px}.top .brand{margin-right:auto}
 .halo{position:absolute;left:50%;top:50%;width:176px;height:176px;margin:-88px 0 0 -88px;border-radius:50%;background:radial-gradient(circle,#3DDC9788,#9B7BFF55 55%,transparent 72%);opacity:0;pointer-events:none}
 .halo.go{animation:halo2 1.6s ease-out}
-/* Lo que se mueve en la intro va en su propia capa: el móvil lo pinta una
-   vez y luego solo lo mueve (fluido aunque el móvil sea modesto). */
-.core,.core::before,.hero::before,.halo,.intro .core img,.greet .w{will-change:transform,opacity}
-.intro .core{will-change:transform,opacity,filter}
+/* El fondo de luces y la bola de Flyra van en su propia capa: el móvil los
+   pinta una vez y luego solo los mueve (antes los repintaba en cada
+   fotograma). Solo estos dos: más capas gastan memoria de vídeo. */
+.hero::before,.core{will-change:transform}
 @keyframes halo2{0%{opacity:.95;transform:scale(.8)}100%{opacity:0;transform:scale(2.3)}}
 .greet .w{display:inline-block;opacity:0;filter:blur(8px);transform:translateY(8px);animation:wd .7s cubic-bezier(.2,.8,.2,1) forwards}
 @keyframes wd{0%{opacity:0;filter:blur(8px);transform:translateY(8px);text-shadow:0 0 0 #3DDC97}55%{opacity:1;text-shadow:0 0 18px #3DDC97,0 0 34px #9B7BFF}100%{opacity:1;filter:none;transform:none;text-shadow:0 0 0 #3DDC9700}}
