@@ -115,6 +115,7 @@ class FlyraApi {
         'language': language,
         'place': ?place,
       },
+      timeout: aiTimeout,
     );
     if (body is! Map<String, Object?>) _bad();
     final Object? reply = body['reply'];

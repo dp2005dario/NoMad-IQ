@@ -317,7 +317,7 @@ class SharedTripApi {
     await _api.postJson('$_base/$code/adapt', <String, Object?>{
       'budget_minor': budgetMinor,
       'language': language,
-    }),
+    }, timeout: aiTimeout),
   );
 
   Future<void> unshare(String code) => _api.delete('$_base/$code');

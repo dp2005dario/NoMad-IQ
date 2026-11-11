@@ -23,8 +23,8 @@ enum ApiError {
   conflict, // 409: choca con algo que ya existe (p. ej. un id de móvil ajeno)
   invalidInput, // 400/422: el servidor rechaza lo que mandamos
   rateLimited, // 429: demasiadas peticiones, esperar
-  unavailable, // 5xx o una respuesta que no entendemos
-  network, // sin conexión o el servidor no responde
+  unavailable, // 5xx, una respuesta que no entendemos o el servidor tarda demasiado
+  network, // sin conexión (no se pudo llegar al servidor)
 }
 
 class ApiException implements Exception {
@@ -38,6 +38,11 @@ class ApiException implements Exception {
   @override
   String toString() => 'ApiException($error)';
 }
+
+/// Lo que se espera a la IA (Gemini u Ollama) antes de rendirse. El
+/// servidor corta a los 120 s; con 10 s, una respuesta larga de Flyra salía
+/// como "Sin conexión" aunque hubiera internet.
+const Duration aiTimeout = Duration(seconds: 100);
 
 class ApiClient {
   ApiClient({
@@ -82,8 +87,10 @@ class ApiClient {
     return _send('GET', uri, null, public: public, timeout: timeout);
   }
 
-  Future<Object?> postJson(String path, Object body) =>
-      _send('POST', _base.resolve(path), jsonEncode(body));
+  /// [timeout]: para lo que contesta la IA (Flyra, cartas, adaptar un
+  /// viaje), que puede tardar bastante más que los 10 s normales.
+  Future<Object?> postJson(String path, Object body, {Duration? timeout}) =>
+      _send('POST', _base.resolve(path), jsonEncode(body), timeout: timeout);
 
   /// PUT = "guarda esto con este nombre" (si ya existía, se sustituye).
   Future<Object?> putJson(String path, Object body) =>
@@ -190,7 +197,9 @@ class ApiClient {
         await _client.send(request).timeout(limit),
       ).timeout(limit);
     } on TimeoutException {
-      throw const ApiException(ApiError.network);
+      // Hay internet (la petición salió) pero el servidor no contestó a
+      // tiempo: es un fallo del servidor, no "Sin conexión".
+      throw const ApiException(ApiError.unavailable);
     } on SocketException {
       throw const ApiException(ApiError.network);
     } on http.ClientException {
