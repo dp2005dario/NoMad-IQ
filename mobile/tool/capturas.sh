@@ -34,14 +34,20 @@ timeout 900 adb logcat -v raw -s flutter:I | while IFS= read -r line; do
     *ECLIPTA_SHOT:*)
       name="${line##*ECLIPTA_SHOT:}"
       name="$(printf '%s' "$name" | tr -cd 'a-z0-9-')"
-      adb exec-out screencap -p > "$OUT/$name.png"
+      # Como mucho 30 s por foto: si el emulador se cae, adb se quedaría
+      # esperando para siempre ("waiting for device") hasta el límite de
+      # 60 minutos del robot. Así falla rápido y se ve dónde se cayó.
+      if ! timeout 30 adb exec-out screencap -p > "$OUT/$name.png"; then
+        echo "El emulador no responde (se ha caído) en: $name" >&2
+        break
+      fi
       echo "Captura: $name"
       ;;
   esac
 done
 
 # El registro completo de la app, por si algo falla (errores de Flutter).
-adb logcat -d -s flutter:* > "$OUT/registro-flutter.txt" || true
+timeout 30 adb logcat -d -s flutter:* > "$OUT/registro-flutter.txt" || true
 count=$(ls "$OUT"/*.png 2>/dev/null | wc -l)
 echo "Capturas hechas: $count"
 [ "$count" -gt 0 ]
