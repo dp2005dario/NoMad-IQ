@@ -308,6 +308,18 @@ class _TripCreateScreenState extends State<TripCreateScreen> {
                       const SizedBox(height: 14),
                       _Appear(
                         order: 4,
+                        child: _PlansBox(
+                          onSearch: (String place) => _services.openLink(
+                            plansSearchUri(
+                              AppLocalizations.of(context)
+                                  .groupPlansQuery(place),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _Appear(
+                        order: 4,
                         child: _Preview(
                           title: t.groupPreviewTitle,
                           empty: t.groupPreviewEmpty,
@@ -411,6 +423,109 @@ class _TripCreateScreenState extends State<TripCreateScreen> {
           ..addAll(tpl.tags);
       }
     });
+  }
+}
+
+/// Dónde se buscan vídeos de planes para un sitio (TikTok, que abre su
+/// app si la tienes).
+Uri plansSearchUri(String query) =>
+    Uri.https('www.tiktok.com', '/search/video', <String, String>{'q': query});
+
+/// "¿No se te ocurren planes?": escribes una ciudad o país y te enseña
+/// vídeos cortos de cosas que hacer allí.
+class _PlansBox extends StatefulWidget {
+  const _PlansBox({required this.onSearch});
+
+  final ValueChanged<String> onSearch;
+
+  @override
+  State<_PlansBox> createState() => _PlansBoxState();
+}
+
+class _PlansBoxState extends State<_PlansBox> {
+  final TextEditingController _place = TextEditingController();
+
+  @override
+  void dispose() {
+    _place.dispose();
+    super.dispose();
+  }
+
+  void _go() {
+    final String place = _place.text.trim();
+    if (place.isNotEmpty) widget.onSearch(place);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFF5A2E5E)),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[Color(0xFF3B1A3F), Color(0xFF16142A)],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              const Text('🎬', style: TextStyle(fontSize: 22)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  t.groupPlansTitle,
+                  style: const TextStyle(
+                    fontFamily: NomadFonts.display,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _place,
+            textInputAction: TextInputAction.search,
+            textCapitalization: TextCapitalization.words,
+            onSubmitted: (_) => _go(),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: const Color(0xFF120E1E),
+              prefixIcon: Padding(
+                padding: const EdgeInsetsDirectional.only(start: 14, end: 6),
+                child: Center(
+                  widthFactor: 1,
+                  child: Text(
+                    t.groupPlansFor,
+                    style: const TextStyle(
+                      color: Color(0xFFFF8FD8),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+              hintText: t.groupPlansHint,
+              suffixIcon: IconButton(
+                tooltip: t.groupPlansFor,
+                onPressed: _go,
+                icon: const Icon(Icons.search_rounded),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

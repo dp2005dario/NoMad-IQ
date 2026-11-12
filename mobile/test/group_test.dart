@@ -134,6 +134,7 @@ Future<GroupBackend> pumpGroup(
   MemorySettingsStore? prefs,
   bool guest = false,
   WebSceneBuilder? webScene,
+  List<Uri>? opened,
 }) async {
   tester.view.physicalSize = const Size(1200, 9000);
   tester.view.devicePixelRatio = 3;
@@ -147,7 +148,16 @@ Future<GroupBackend> pumpGroup(
     locale: 'es',
     session: s,
     initialLocation: initialLocation,
-    services: fakeServices(s, gateway: b.g, prefs: prefs, webScene: webScene),
+    services: fakeServices(
+      s,
+      gateway: b.g,
+      prefs: prefs,
+      webScene: webScene,
+      openLink: (Uri u) async {
+        opened?.add(u);
+        return true;
+      },
+    ),
   );
   return b;
 }
@@ -283,10 +293,21 @@ void main() {
   testWidgets('idea rápida: pone el nombre y los gustos de las opciones', (
     WidgetTester tester,
   ) async {
-    await pumpGroup(tester);
+    final List<Uri> opened = <Uri>[];
+    await pumpGroup(tester, opened: opened);
     await tester.tap(find.text('Nuevo viaje en grupo'));
     await tester.pumpAndSettle();
     expect(find.text('Organizad vuestro viaje'), findsOneWidget);
+
+    // "¿No se te ocurren planes?": busca vídeos de ese sitio.
+    await tester.enterText(
+      find.widgetWithText(TextField, 'ciudad o país'),
+      'Lisboa',
+    );
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+    expect(opened.single.host, 'www.tiktok.com');
+    expect(opened.single.queryParameters['q'], 'qué hacer en Lisboa');
     await tester.tap(find.text('Playa y sol'));
     await tester.pumpAndSettle();
     final TextFormField title = tester.widget<TextFormField>(

@@ -11331,6 +11331,27 @@
   "@groupTplFood": {
     "description": "Template: food trip"
   },
+  "groupPlansTitle": "Out of ideas?",
+  "@groupPlansTitle": {
+    "description": "Title of the section with video ideas of plans"
+  },
+  "groupPlansFor": "Plans for:",
+  "@groupPlansFor": {
+    "description": "Label of the search box: plans for (city/country)"
+  },
+  "groupPlansHint": "city or country",
+  "@groupPlansHint": {
+    "description": "Hint in the plans search box"
+  },
+  "groupPlansQuery": "things to do in {place}",
+  "@groupPlansQuery": {
+    "description": "Video search text sent to the video site; keep {place}",
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
   "hoNearTitle": "Nearest places to stay",
   "@hoNearTitle": {
     "description": "Title of the horizontal list of the nearest hotels (like Google Maps)"
