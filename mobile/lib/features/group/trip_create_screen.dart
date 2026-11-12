@@ -68,6 +68,16 @@ class _TripCreateScreenState extends State<TripCreateScreen> {
     _OptionDraft(),
   ];
   String _currency = tripCurrencies.first;
+
+  /// Reglas del grupo: máximo por persona y lo que nadie quiere.
+  final TextEditingController _maxPrice = TextEditingController();
+  final Set<String> _ruleAvoid = <String>{};
+
+  int? get _maxPriceValue {
+    final int? v = int.tryParse(_maxPrice.text);
+    return v != null && v > 0 ? v : null;
+  }
+
   String? _problem;
   bool _busy = false;
 
@@ -75,6 +85,7 @@ class _TripCreateScreenState extends State<TripCreateScreen> {
   void dispose() {
     _title.dispose();
     _name.dispose();
+    _maxPrice.dispose();
     for (final _OptionDraft o in _options) {
       o.dispose();
     }
@@ -97,6 +108,12 @@ class _TripCreateScreenState extends State<TripCreateScreen> {
           currency: _currency,
           language: language,
           myName: name.isEmpty ? null : name,
+          rules: TripRules(
+            maxPriceMinor: _maxPriceValue == null
+                ? null
+                : wholeToMinor(_maxPriceValue!, _currency),
+            avoid: _ruleAvoid.toList(),
+          ),
           options: <TripOption>[
             for (int i = 0; i < _options.length; i++)
               TripOption(
@@ -257,6 +274,44 @@ class _TripCreateScreenState extends State<TripCreateScreen> {
                       _Appear(
                         order: 3,
                         child: _Section(
+                          icon: Icons.gavel_rounded,
+                          color: const Color(0xFFFFB86B),
+                          title: t.groupRulesTitle,
+                          subtitle: t.groupRulesHelp,
+                          children: <Widget>[
+                            TextFormField(
+                              controller: _maxPrice,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: <TextInputFormatter>[
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(7),
+                              ],
+                              decoration: InputDecoration(
+                                labelText: t.groupRulesMax,
+                                suffixText: _currency,
+                                prefixIcon: const Icon(Icons.savings_rounded),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              t.groupRulesAvoid,
+                              style: const TextStyle(
+                                color: NomadColors.textMuted,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            TagPicker(
+                              selected: _ruleAvoid,
+                              onChanged: () => setState(() {}),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _Appear(
+                        order: 3,
+                        child: _Section(
                           icon: Icons.how_to_vote_rounded,
                           color: NomadColors.group,
                           title: t.groupOptionsTitle,
@@ -281,6 +336,7 @@ class _TripCreateScreenState extends State<TripCreateScreen> {
                                           )
                                         : null,
                                     onTags: () => setState(() {}),
+                                    maxPrice: _maxPriceValue,
                                   ),
                                 ),
                               ),
@@ -1156,11 +1212,15 @@ class _OptionCard extends StatelessWidget {
     required this.currency,
     required this.onRemove,
     required this.onTags,
+    this.maxPrice,
   });
 
   final int index;
   final _OptionDraft draft;
   final String currency;
+
+  /// El máximo por persona de las reglas del grupo (o null).
+  final int? maxPrice;
   final VoidCallback? onRemove;
   final VoidCallback onTags;
 
@@ -1243,9 +1303,14 @@ class _OptionCard extends StatelessWidget {
                       fillColor: NomadColors.background,
                       prefixIcon: const Icon(Icons.payments_rounded),
                     ),
-                    validator: (String? v) => (int.tryParse(v ?? '') ?? 0) <= 0
-                        ? t.groupPriceInvalid
-                        : null,
+                    validator: (String? v) {
+                      final int price = int.tryParse(v ?? '') ?? 0;
+                      if (price <= 0) return t.groupPriceInvalid;
+                      final int? max = maxPrice;
+                      return max != null && price > max
+                          ? t.groupPriceOverMax
+                          : null;
+                    },
                   ),
                 ],
               ),

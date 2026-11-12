@@ -1,10 +1,8 @@
 """El servicio de vídeos de planes.
 
-Para cada sitio junta dos cosas:
-    - Los enlaces de TikTok/Instagram que ha pegado la gente (primero).
-    - Los vídeos cortos de YouTube (si hay clave): caché de 7 días en Redis
-      (``ai:planvideos:v1:<idioma>:<sitio>``), single flight y tope diario
-      de búsquedas nuevas.
+Vídeos cortos de YouTube de cada sitio (si hay clave): caché de 7 días en
+Redis (``ai:planvideos:v1:<idioma>:<sitio>``), single flight y tope diario
+de búsquedas nuevas. Y la foto de Wikipedia de un sitio.
 """
 
 from __future__ import annotations
@@ -21,7 +19,6 @@ from redis.exceptions import RedisError
 
 from ai_orchestrator.audioguides.cache import CacheError, SingleFlight
 from ai_orchestrator.plan_videos.domain import PlanVideo, PlanVideos
-from ai_orchestrator.plan_videos.links import BadLinkError, LinkResolver
 from ai_orchestrator.plan_videos.youtube import YouTubeBusyError, YouTubeClient, YouTubeError
 from ai_orchestrator.quota import QuotaUnavailableError, day_key
 
@@ -29,7 +26,6 @@ log = logging.getLogger(__name__)
 
 KEY_PREFIX = "ai:planvideos:v1"
 QUOTA_PREFIX = "ai:planvideos:quota"
-LINK_QUOTA_PREFIX = "ai:planvideos:linkquota"
 
 
 def place_key(place: str) -> str:
@@ -56,12 +52,6 @@ class PhotoCache(Protocol):
 
 class PhotoSource(Protocol):
     async def photo_of(self, place: str, language: str) -> str | None: ...
-
-
-class LinkStore(Protocol):
-    async def list(self, place_key: str) -> list[PlanVideo]: ...
-
-    async def add(self, place_key: str, video: PlanVideo) -> None: ...
 
 
 class DailyQuota(Protocol):
@@ -99,10 +89,6 @@ class PlanVideosUnavailableError(Exception):
     """YouTube o Redis no responden ahora mismo."""
 
 
-class TooManyLinksError(Exception):
-    """Esta persona ya ha pegado muchos enlaces hoy."""
-
-
 @dataclass(frozen=True, slots=True)
 class PlanVideoSettings:
     ttl_seconds: int = 7 * 24 * 3600
@@ -110,8 +96,6 @@ class PlanVideoSettings:
     empty_ttl_seconds: int = 24 * 3600
     # Búsquedas nuevas al día (cada una gasta 100 de las 10 000 unidades gratis).
     daily_limit: int = 80
-    # Enlaces que puede pegar cada persona al día.
-    links_per_day: int = 20
 
 
 class PlanVideoService:
@@ -119,11 +103,8 @@ class PlanVideoService:
         self,
         *,
         youtube: YouTubeClient | None,
-        resolver: LinkResolver,
-        links: LinkStore,
         cache: PlanVideoCache,
         quota: DailyQuota,
-        link_quota: DailyQuota,
         photos: PhotoSource,
         photo_cache: PhotoCache,
         settings: PlanVideoSettings | None = None,
@@ -132,25 +113,18 @@ class PlanVideoService:
         self._photo_cache = photo_cache
         self._photo_flight: SingleFlight[str | None] = SingleFlight()
         self._youtube = youtube
-        self._resolver = resolver
-        self._links = links
         self._cache = cache
         self._quota = quota
-        self._link_quota = link_quota
         self._settings = settings or PlanVideoSettings()
         self._flight: SingleFlight[list[PlanVideo]] = SingleFlight()
 
     async def videos(self, place: str, query: str, language: str) -> PlanVideos:
         """Vídeos de ``place``; ``query`` es la búsqueda ya en su idioma
         ("qué hacer en Lisboa")."""
-        try:
-            pasted = await self._links.list(place_key(place))
-        except CacheError as exc:
-            raise PlanVideosUnavailableError(str(exc)) from exc
         found: list[PlanVideo] = []
         if self._youtube is not None:
             found = await self._youtube_videos(place, query, language)
-        return PlanVideos(place=place, videos=[*pasted, *found], youtube=self._youtube is not None)
+        return PlanVideos(place=place, videos=found, youtube=self._youtube is not None)
 
     async def photo(self, place: str, language: str) -> str | None:
         """La foto de Wikipedia de un sitio (o None), guardada 30 días."""
@@ -172,23 +146,6 @@ class PlanVideoService:
         except CacheError:
             log.warning("no se pudo guardar la foto del sitio")
         return url
-
-    async def add_link(self, user_id: str, place: str, url: str) -> PlanVideo:
-        """Guarda el enlace pegado para ese sitio (lanza BadLinkError si no vale)."""
-        try:
-            left = await self._link_quota.take(
-                user_id, day_key(datetime.now(UTC)), self._settings.links_per_day
-            )
-        except QuotaUnavailableError as exc:
-            raise PlanVideosUnavailableError(str(exc)) from exc
-        if left is None:
-            raise TooManyLinksError("ya has pegado muchos enlaces hoy")
-        video = await self._resolver.resolve(url)
-        try:
-            await self._links.add(place_key(place), video)
-        except CacheError as exc:
-            raise PlanVideosUnavailableError(str(exc)) from exc
-        return video
 
     async def _youtube_videos(self, place: str, query: str, language: str) -> list[PlanVideo]:
         key = cache_key(place, language)
@@ -218,14 +175,3 @@ class PlanVideoService:
         ttl = self._settings.ttl_seconds if found else self._settings.empty_ttl_seconds
         await self._cache.put(key, PlanVideos(place=place, videos=found), ttl_seconds=ttl)
         return found
-
-
-__all__ = [
-    "BadLinkError",
-    "PlanVideoService",
-    "PlanVideoSettings",
-    "PlanVideosBusyError",
-    "PlanVideosUnavailableError",
-    "RedisPlanVideoCache",
-    "TooManyLinksError",
-]

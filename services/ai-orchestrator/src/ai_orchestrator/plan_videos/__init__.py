@@ -8,4 +8,5 @@ cosas que hacer allí. Salen de YouTube (Data API v3, gratis):
       hay un tope diario de búsquedas nuevas (YOUTUBE_DAILY_LIMIT).
     - TikTok e Instagram no dejan buscar vídeos desde otras apps: la app
       abre sus búsquedas con el mismo sitio.
+    - Además da la foto de Wikipedia de un sitio (GET /v1/plan-videos/photo).
 """

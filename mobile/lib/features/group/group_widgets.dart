@@ -82,7 +82,8 @@ class MemberFace extends StatelessWidget {
             Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: NomadColors.background, width: 3),
+                // Cada persona su color, el mismo en toda la app.
+                border: Border.all(color: faceColor(index), width: 3),
               ),
               // La tuya es TU foto (la que elegiste en el móvil o la de
               // Google), no una letra.

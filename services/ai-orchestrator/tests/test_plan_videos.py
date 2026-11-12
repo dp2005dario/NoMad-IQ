@@ -5,18 +5,15 @@ from __future__ import annotations
 from typing import Any
 
 import httpx
-import pytest
 from conftest import InMemoryStore
 from pydantic import SecretStr
 
 from ai_orchestrator.api import create_api
-from ai_orchestrator.plan_videos.domain import PlanVideo, PlanVideos
-from ai_orchestrator.plan_videos.links import LinkResolver, parse_link
+from ai_orchestrator.plan_videos.domain import PlanVideos
 from ai_orchestrator.plan_videos.photos import WikipediaPhotos, lead_photo
 from ai_orchestrator.plan_videos.service import (
     PlanVideoService,
     PlanVideoSettings,
-    TooManyLinksError,
     cache_key,
     place_key,
 )
@@ -44,10 +41,6 @@ class FakeYouTube:
         self.items: list[dict[str, Any]] = [item("abcdefghijk"), item("ABCDEFGHIJK")]
 
     def handler(self, request: httpx.Request) -> httpx.Response:
-        if request.url.host == "vm.tiktok.com":
-            return httpx.Response(
-                301, headers={"location": "https://www.tiktok.com/@ana/video/7301234567890123456?lang=es"}
-            )
         if request.url.host.endswith("wikipedia.org"):
             self.wiki.append(str(request.url))
             if request.url.host.startswith("es.") or "Nowhere" in str(request.url):
@@ -59,15 +52,6 @@ class FakeYouTube:
                     "thumbnail": {
                         "source": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/b/Lisboa.jpg/320px-Lisboa.jpg"
                     },
-                },
-            )
-        if request.url.path == "/oembed":
-            return httpx.Response(
-                200,
-                json={
-                    "title": "Tranvía  28 al atardecer",
-                    "author_name": "ana",
-                    "thumbnail_url": "https://p16-sign.tiktokcdn.com/obj/abc.jpg",
                 },
             )
         self.requests.append(request)
@@ -85,18 +69,6 @@ class MemoryPhotos:
 
     async def put(self, key: str, url: str | None, *, ttl_seconds: int) -> None:
         self.items[key] = url
-
-
-class MemoryLinks:
-    def __init__(self) -> None:
-        self.items: dict[str, list[PlanVideo]] = {}
-
-    async def list(self, place_key: str) -> list[PlanVideo]:
-        return list(self.items.get(place_key, []))
-
-    async def add(self, place_key: str, video: PlanVideo) -> None:
-        old = [v for v in self.items.get(place_key, []) if (v.source, v.id) != (video.source, video.id)]
-        self.items[place_key] = [video, *old][:40]
 
 
 class MemoryCache:
@@ -127,14 +99,11 @@ def service(
     cache = MemoryCache()
     svc = PlanVideoService(
         youtube=YouTubeClient(http, SecretStr(KEY)) if youtube else None,
-        resolver=LinkResolver(http),
-        links=MemoryLinks(),
         cache=cache,
         quota=MemoryQuota(),
-        link_quota=MemoryQuota(),
         photos=WikipediaPhotos(http),
         photo_cache=MemoryPhotos(),
-        settings=PlanVideoSettings(daily_limit=limit, links_per_day=2),
+        settings=PlanVideoSettings(daily_limit=limit),
     )
     return svc, cache
 
@@ -173,38 +142,6 @@ async def test_searches_shorts_with_the_key_in_a_header_and_caches() -> None:
     assert place_key("Lisboa") == place_key(" LISBOA ")
 
 
-def test_only_real_tiktok_and_instagram_links() -> None:
-    assert parse_link("https://www.tiktok.com/@ana.b/video/7301234567890123456?is_from_webapp=1") == (
-        "tiktok",
-        "7301234567890123456",
-    )
-    assert parse_link("https://www.instagram.com/reel/C1a2B3c4D5e/?igsh=x") == ("instagram", "C1a2B3c4D5e")
-    assert parse_link("https://instagram.com/p/C1a2B3c4D5e") == ("instagram", "C1a2B3c4D5e")
-    for bad in (
-        "https://evil.com/@a/video/7301234567890123456",
-        "https://www.tiktok.com.evil.com/@a/video/7301234567890123456",
-        "javascript:alert(1)",
-        "https://www.tiktok.com/@ana",
-        "https://www.instagram.com/ana/",
-    ):
-        assert parse_link(bad) is None, bad
-
-
-async def test_pasted_links_come_first_and_youtube_is_optional() -> None:
-    fake = FakeYouTube()
-    svc, _ = service(fake, youtube=False)
-    tiktok = await svc.add_link("u1", "Lisboa", "https://vm.tiktok.com/ZMabc123/")
-    assert tiktok.source == "tiktok" and tiktok.id == "7301234567890123456"
-    assert tiktok.title == "Tranvía 28 al atardecer" and tiktok.thumb is not None
-    await svc.add_link("u1", "lisboa", "https://www.instagram.com/reel/C1a2B3c4D5e/")
-    found = await svc.videos("LISBOA", "qué hacer en Lisboa", "es")
-    assert [v.source for v in found.videos] == ["instagram", "tiktok"] and found.youtube is False
-    assert fake.requests == []  # sin clave no se llama a YouTube
-    # Tope de enlaces al día por persona.
-    with pytest.raises(TooManyLinksError):
-        await svc.add_link("u1", "Lisboa", "https://www.instagram.com/reel/Zzzzzzzzzzz/")
-
-
 async def test_daily_limit_and_empty_results() -> None:
     fake = FakeYouTube()
     fake.items = []
@@ -223,20 +160,11 @@ async def test_api_validates_and_says_busy() -> None:
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://t") as c:
         resp = await c.get("/v1/plan-videos", params=ok)
         assert resp.status_code == 200 and resp.json()["videos"][0]["id"] == "abcdefghijk"
-        assert resp.headers["cache-control"] == "public, max-age=300"
+        assert resp.headers["cache-control"] == "public, max-age=86400"
         assert (await c.get("/v1/plan-videos", params={**ok, "lang": "ES!"})).status_code == 400
         assert (await c.get("/v1/plan-videos", params={**ok, "place": "a" * 61})).status_code == 400
         fake.status = 403
         busy = await c.get("/v1/plan-videos", params={**ok, "place": "Roma"})
-        user = {"X-User-ID": "u-1", "X-User-Roles": "USER"}
-        link = {"place": "Lisboa", "url": "https://www.instagram.com/reel/C1a2B3c4D5e/"}
-        assert (await c.post("/v1/plan-videos/links", json=link)).status_code == 401
-        added = await c.post("/v1/plan-videos/links", json=link, headers=user)
-        assert added.status_code == 201 and added.json()["source"] == "instagram"
-        bad = await c.post(
-            "/v1/plan-videos/links", json={**link, "url": "https://evil.com/x/y/z"}, headers=user
-        )
-        assert bad.status_code == 422
     assert busy.status_code == 503 and busy.headers["retry-after"] == "60"
 
 
@@ -254,3 +182,10 @@ async def test_place_photo_from_wikipedia_with_fallback_and_cache() -> None:
         is None
     )
     assert lead_photo({"thumbnail": {"source": "https://evil.com/x.jpg"}}) is None
+
+
+async def test_without_youtube_key_there_are_no_videos() -> None:
+    fake = FakeYouTube()
+    svc, _ = service(fake, youtube=False)
+    found = await svc.videos("Lisboa", "qué hacer en Lisboa", "es")
+    assert found.videos == [] and found.youtube is False and fake.requests == []

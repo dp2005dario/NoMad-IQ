@@ -1,13 +1,10 @@
 // "¿No se te ocurren planes?": un carrusel de vídeos cortos (reels) de
 // cosas que hacer en un sitio, que se ven DENTRO de ECLIPTA.
 //
-// Los vídeos salen de dos sitios:
-//   - YouTube Shorts: los busca nuestro servidor (que es quien tiene la
-//     clave) y los guarda 7 días.
-//   - TikTok e Instagram no dejan buscar vídeos desde otras apps, pero sí
-//     enseñar uno si tienes su enlace: cualquiera puede pegar el enlace de
-//     un TikTok o un reel para ese sitio y le sale a todo el mundo.
-// Debajo hay botones que abren la búsqueda de ese sitio en cada red.
+// Los vídeos son de YouTube Shorts: los busca nuestro servidor (que es
+// quien tiene la clave) y los guarda 7 días. TikTok e Instagram no dejan
+// buscar vídeos desde otras apps: debajo hay botones que abren la búsqueda
+// de ese sitio en cada red (en su app si la tienes).
 import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
@@ -16,22 +13,16 @@ import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'reel_player.dart';
 
-/// De qué red es un vídeo (cada una tiene su reproductor oficial).
-enum ReelSource { youtube, tiktok, instagram }
-
 /// Un vídeo corto.
 class PlanReel {
   const PlanReel({
     required this.id,
     required this.title,
-    this.source = ReelSource.youtube,
     this.channel,
     this.thumb,
   });
 
-  final ReelSource source;
-
-  /// El id en su red (YouTube 11 letras, TikTok un número, Instagram un código).
+  /// El id de YouTube (11 letras).
   final String id;
   final String title;
   final String? channel;
@@ -39,39 +30,19 @@ class PlanReel {
   /// Miniatura (solo de los servidores de cada red).
   final Uri? thumb;
 
-  static final Map<ReelSource, RegExp> _ids = <ReelSource, RegExp>{
-    ReelSource.youtube: RegExp(r'^[A-Za-z0-9_-]{11}$'),
-    ReelSource.tiktok: RegExp(r'^[0-9]{15,25}$'),
-    ReelSource.instagram: RegExp(r'^[A-Za-z0-9_-]{5,40}$'),
-  };
+  static final RegExp _id = RegExp(r'^[A-Za-z0-9_-]{11}$');
 
   static bool _safeThumb(Uri u) =>
-      u.isScheme('https') &&
-      (u.host.endsWith('ytimg.com') ||
-          u.host.endsWith('.tiktokcdn.com') ||
-          u.host.endsWith('.tiktokcdn-us.com') ||
-          u.host.endsWith('.tiktokcdn-eu.com'));
+      u.isScheme('https') && u.host.endsWith('ytimg.com');
 
   /// Su reproductor oficial (para verlo dentro de la app).
-  Uri get player => switch (source) {
-    ReelSource.youtube => Uri.https(
-      'www.youtube.com',
-      '/embed/$id',
-      <String, String>{
-        'autoplay': '1',
-        'playsinline': '1',
-        'rel': '0',
-        'loop': '1',
-        'playlist': id,
-      },
-    ),
-    ReelSource.tiktok => Uri.https(
-      'www.tiktok.com',
-      '/player/v1/$id',
-      <String, String>{'autoplay': '1', 'loop': '1', 'description': '1'},
-    ),
-    ReelSource.instagram => Uri.https('www.instagram.com', '/reel/$id/embed/'),
-  };
+  Uri get player => Uri.https('www.youtube.com', '/embed/$id', <String, String>{
+    'autoplay': '1',
+    'playsinline': '1',
+    'rel': '0',
+    'loop': '1',
+    'playlist': id,
+  });
 
   /// Los vídeos de la respuesta del servidor (lo raro se salta).
   static List<PlanReel> parseAll(Object? json) {
@@ -80,24 +51,12 @@ class PlanReel {
     final List<PlanReel> out = <PlanReel>[];
     for (final Object? v in list) {
       if (v is! Map) continue;
-      final ReelSource? source = switch (v['source'] ?? 'youtube') {
-        'youtube' => ReelSource.youtube,
-        'tiktok' => ReelSource.tiktok,
-        'instagram' => ReelSource.instagram,
-        _ => null,
-      };
       final Object? id = v['id'];
       final Object? title = v['title'];
-      if (source == null ||
-          id is! String ||
-          !_ids[source]!.hasMatch(id) ||
-          title is! String) {
-        continue;
-      }
+      if (id is! String || !_id.hasMatch(id) || title is! String) continue;
       final Uri? thumb = Uri.tryParse('${v['thumb'] ?? ''}');
       out.add(
         PlanReel(
-          source: source,
           id: id,
           title: title,
           channel: v['channel'] is String ? v['channel'] as String : null,
@@ -132,12 +91,33 @@ class ReelsApi {
     ),
   );
 
-  /// Pegar el enlace de un TikTok o reel de Instagram para [place].
-  Future<void> addLink({required String place, required String url}) =>
-      _api.postJson('/v1/plan-videos/links', <String, String>{
-        'place': place.length > 60 ? place.substring(0, 60) : place,
-        'url': url.trim(),
-      });
+  /// La foto de Wikipedia de un sitio (fondo de la tarjeta de un viaje).
+  /// Se recuerda mientras la app está abierta: no se pide dos veces.
+  Future<Uri?> photo(String place, String language) async {
+    final String key = '$language:${place.toLowerCase()}';
+    if (_photos.containsKey(key)) return _photos[key];
+    Uri? found;
+    try {
+      final Object? json = await _api.getJson(
+        '/v1/plan-videos/photo',
+        query: <String, String>{
+          'place': place.length > 60 ? place.substring(0, 60) : place,
+          'lang': language,
+        },
+        public: true,
+      );
+      final Uri? u = Uri.tryParse(json is Map ? '${json['photo'] ?? ''}' : '');
+      found =
+          u != null && u.isScheme('https') && u.host == 'upload.wikimedia.org'
+          ? u
+          : null;
+    } on ApiException {
+      return null; // sin foto esta vez (se volverá a probar)
+    }
+    return _photos[key] = found;
+  }
+
+  static final Map<String, Uri?> _photos = <String, Uri?>{};
 }
 
 /// Dónde buscar más vídeos de [query] en cada red.
@@ -188,35 +168,6 @@ class _PlanReelsState extends State<PlanReels> {
   /// El sitio con el que se guardan los vídeos (sin sitio, las ideas generales).
   String _placeKey(AppLocalizations t) =>
       widget.place.trim().isEmpty ? _query(t) : widget.place.trim();
-
-  Future<void> _pasteLink() async {
-    final AppLocalizations t = AppLocalizations.of(context);
-    final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
-    final String? url = await showDialog<String>(
-      context: context,
-      builder: (_) => const _PasteLinkDialog(),
-    );
-    if (url == null || url.trim().isEmpty || !mounted) return;
-    try {
-      await _services.reels.addLink(place: _placeKey(t), url: url);
-    } on ApiException catch (e) {
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(switch (e.error) {
-            ApiError.invalidInput => t.groupPlansLinkBad,
-            ApiError.signedOut => t.groupSignIn,
-            ApiError.network => t.errorNetwork,
-            _ => t.errorUnavailable,
-          }),
-        ),
-      );
-      return;
-    }
-    messenger.showSnackBar(SnackBar(content: Text(t.groupPlansLinkDone)));
-    // Se vuelve a pedir: el enlace nuevo sale el primero.
-    _loadedFor = null;
-    await _maybeLoad();
-  }
 
   Future<void> _maybeLoad() async {
     final String place = widget.place.trim();
@@ -273,20 +224,7 @@ class _PlanReelsState extends State<PlanReels> {
             t.groupPlansNone,
             style: const TextStyle(color: Color(0xFFD6CCF5)),
           ),
-        const SizedBox(height: 10),
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: TextButton.icon(
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFFF8FD8),
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-            ),
-            onPressed: _pasteLink,
-            icon: const Icon(Icons.add_link_rounded, size: 20),
-            label: Text(t.groupPlansAddLink),
-          ),
-        ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 12),
         Row(
           children: <Widget>[
             if (reels == null || reels.isNotEmpty) ...<Widget>[
@@ -409,20 +347,12 @@ class _ReelCard extends StatelessWidget {
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: switch (r.source) {
-                        ReelSource.youtube => const Color(0xFFFF0033),
-                        ReelSource.tiktok => const Color(0xFF111111),
-                        ReelSource.instagram => const Color(0xFFD62976),
-                      },
+                      color: const Color(0xFFFF0033),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Text(
-                      switch (r.source) {
-                        ReelSource.youtube => 'Shorts',
-                        ReelSource.tiktok => 'TikTok',
-                        ReelSource.instagram => 'Instagram',
-                      },
-                      style: const TextStyle(
+                    child: const Text(
+                      'Shorts',
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
@@ -471,62 +401,4 @@ class _Source extends StatelessWidget {
       ),
     ),
   );
-}
-
-/// La ventanita para pegar el enlace.
-class _PasteLinkDialog extends StatefulWidget {
-  const _PasteLinkDialog();
-
-  @override
-  State<_PasteLinkDialog> createState() => _PasteLinkDialogState();
-}
-
-class _PasteLinkDialogState extends State<_PasteLinkDialog> {
-  final TextEditingController _url = TextEditingController();
-
-  @override
-  void dispose() {
-    _url.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    return AlertDialog(
-      backgroundColor: const Color(0xFF1D1638),
-      title: Text(t.groupPlansAddLink),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            t.groupPlansLinkHelp,
-            style: const TextStyle(color: Color(0xFFD6CCF5), height: 1.4),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _url,
-            autofocus: true,
-            keyboardType: TextInputType.url,
-            decoration: const InputDecoration(
-              hintText: 'https://www.tiktok.com/…',
-              prefixIcon: Icon(Icons.link_rounded),
-            ),
-            onSubmitted: (String v) => Navigator.of(context).pop(v),
-          ),
-        ],
-      ),
-      actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(_url.text),
-          child: Text(t.groupPlansLinkAdd),
-        ),
-      ],
-    );
-  }
 }

@@ -1,7 +1,6 @@
 // Ver los reels a pantalla completa, deslizando hacia arriba para pasar al
 // siguiente (como en TikTok o Instagram). Cada vídeo es el reproductor
-// oficial de su red (YouTube, TikTok o Instagram) dentro de un WebView, que
-// solo puede abrir esas tres webs.
+// oficial de YouTube dentro de un WebView, que solo puede abrir YouTube.
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -82,11 +81,8 @@ class _ReelPlayerScreenState extends State<ReelPlayerScreen> {
 }
 
 /// Las únicas webs que puede abrir el reproductor.
-bool _allowed(String host) => <String>[
-  'youtube.com',
-  'tiktok.com',
-  'instagram.com',
-].any((String d) => host == d || host.endsWith('.$d'));
+bool _allowed(String host) =>
+    host == 'youtube.com' || host.endsWith('.youtube.com');
 
 class _Reel extends StatefulWidget {
   const _Reel({super.key, required this.reel});

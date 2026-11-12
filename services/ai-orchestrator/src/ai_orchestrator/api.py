@@ -90,13 +90,11 @@ from ai_orchestrator.nearby.domain import Nearby
 from ai_orchestrator.nearby.service import NearbyBusyError, NearbyService, NearbyUnavailableError
 from ai_orchestrator.places.domain import PlaceCard
 from ai_orchestrator.places.service import PlaceBusyError, PlaceService, PlaceUnavailableError
-from ai_orchestrator.plan_videos.domain import PlanVideo, PlanVideos
-from ai_orchestrator.plan_videos.links import BadLinkError
+from ai_orchestrator.plan_videos.domain import PlanVideos
 from ai_orchestrator.plan_videos.service import (
     PlanVideosBusyError,
     PlanVideoService,
     PlanVideosUnavailableError,
-    TooManyLinksError,
 )
 from ai_orchestrator.quota import QuotaExceededError
 from ai_orchestrator.radar.rain import RainBusyError, RainError, RainForecast, RainService
@@ -120,15 +118,6 @@ def _problem(status: int, title: str, detail: str | None = None) -> JSONResponse
     if detail:
         body["detail"] = detail
     return JSONResponse(body, status_code=status, media_type="application/problem+json")
-
-
-class PlanVideoLink(BaseModel):
-    """Un enlace de TikTok o Instagram pegado para un sitio."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    place: str = Field(min_length=1, max_length=60)
-    url: str = Field(min_length=10, max_length=300)
 
 
 class RecommendationView(BaseModel):
@@ -252,8 +241,8 @@ PLACE_CACHE = "public, max-age=86400"
 STREET_CACHE = "public, max-age=3600"
 # La foto de Google de un sitio: la app la guarda unas horas.
 SHOP_PHOTO_CACHE = "public, max-age=21600"
-# Los vídeos de planes de un sitio: 5 minutos (para ver pronto los enlaces nuevos).
-PLAN_VIDEO_CACHE = "public, max-age=300"
+# Los vídeos de planes de un sitio: un día.
+PLAN_VIDEO_CACHE = "public, max-age=86400"
 # Los tipos de cambio cambian una vez al día: una hora en cachés intermedias.
 FX_CACHE = "public, max-age=3600"
 # Los cajeros casi nunca cambian: seis horas en el móvil y en la CDN.
@@ -522,7 +511,6 @@ def create_api(
                 resp.headers["Retry-After"] = "60"
                 return resp
             # Sin vídeos también es 200 (lista vacía): la app ofrece TikTok/Instagram.
-            # Poco rato en cachés: un enlace recién pegado tiene que verse pronto.
             return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": PLAN_VIDEO_CACHE})
 
         @app.get("/v1/plan-videos/photo")
@@ -539,28 +527,6 @@ def create_api(
                 return resp
             return JSONResponse(
                 {"place": place, "photo": url}, headers={"Cache-Control": "public, max-age=86400"}
-            )
-
-        @app.post("/v1/plan-videos/links", response_model=PlanVideo, status_code=201)
-        async def add_plan_video_link(
-            principal: Annotated[Principal, Depends(current_principal)],
-            body: PlanVideoLink,
-        ) -> JSONResponse:
-            """Pegar el enlace de un TikTok o un reel de Instagram para un sitio."""
-            try:
-                video = await plan_videos.add_link(principal.user_id, " ".join(body.place.split()), body.url)
-            except BadLinkError:
-                return _problem(422, "Enlace no válido", "no es un vídeo de TikTok o Instagram")
-            except TooManyLinksError:
-                resp = _problem(429, "Demasiadas peticiones", "ya has pegado muchos enlaces hoy")
-                resp.headers["Retry-After"] = "3600"
-                return resp
-            except PlanVideosUnavailableError:
-                resp = _problem(503, "Servicio no disponible temporalmente", "vídeos ocupados")
-                resp.headers["Retry-After"] = "60"
-                return resp
-            return JSONResponse(
-                video.model_dump(mode="json"), status_code=201, headers={"Cache-Control": "no-store"}
             )
 
     if cravings is not None:

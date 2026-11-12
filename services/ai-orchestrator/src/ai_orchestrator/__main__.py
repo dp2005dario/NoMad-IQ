@@ -120,11 +120,7 @@ from ai_orchestrator.places.airports import Airports
 from ai_orchestrator.places.countries import bundled_countries
 from ai_orchestrator.places.service import PlaceService, PlaceSettings, RedisPlaceCache
 from ai_orchestrator.places.wikimedia import RateLimiter, WikimediaClient
-from ai_orchestrator.plan_videos.links import LinkResolver, RedisLinkStore
 from ai_orchestrator.plan_videos.photos import RedisPhotoCache, WikipediaPhotos
-from ai_orchestrator.plan_videos.service import (
-    LINK_QUOTA_PREFIX as PLAN_VIDEO_LINK_QUOTA_PREFIX,
-)
 from ai_orchestrator.plan_videos.service import (
     QUOTA_PREFIX as PLAN_VIDEO_QUOTA_PREFIX,
 )
@@ -396,8 +392,8 @@ def _google_client(settings: Settings, key: SecretStr, stack: AsyncExitStack) ->
 def _plan_videos(
     settings: Settings, key: SecretStr | None, redis: Redis, stack: AsyncExitStack
 ) -> PlanVideoService:
-    """Vídeos de planes: enlaces pegados de TikTok/Instagram y, con clave,
-    YouTube Shorts (tope diario + caché de 7 días en Redis)."""
+    """Vídeos de planes de YouTube Shorts (con clave; tope diario + caché de
+    7 días en Redis) y fotos de Wikipedia de cada sitio."""
     http = httpx.AsyncClient(
         timeout=httpx.Timeout(settings.youtube_timeout_seconds, connect=5.0),
         follow_redirects=False,
@@ -405,11 +401,8 @@ def _plan_videos(
     stack.push_async_callback(http.aclose)
     return PlanVideoService(
         youtube=YouTubeClient(http, key) if key is not None else None,
-        resolver=LinkResolver(http),
-        links=RedisLinkStore(redis),
         cache=RedisPlanVideoCache(redis),
         quota=RedisQuota(redis, prefix=PLAN_VIDEO_QUOTA_PREFIX),
-        link_quota=RedisQuota(redis, prefix=PLAN_VIDEO_LINK_QUOTA_PREFIX),
         photos=WikipediaPhotos(http),
         photo_cache=RedisPhotoCache(redis),
         settings=PlanVideoSettings(daily_limit=settings.youtube_daily_limit),

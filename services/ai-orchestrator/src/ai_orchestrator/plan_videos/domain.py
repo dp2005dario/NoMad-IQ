@@ -7,15 +7,11 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
-Source = Literal["youtube", "tiktok", "instagram"]
+# De qué red es el vídeo (por ahora solo YouTube Shorts).
+Source = Literal["youtube"]
 
-# El id de cada red: YouTube 11 letras, TikTok un número largo, Instagram
-# el código del reel ("C1a2B3c4D5e").
-VIDEO_ID = {
-    "youtube": re.compile(r"^[A-Za-z0-9_-]{11}$"),
-    "tiktok": re.compile(r"^[0-9]{15,25}$"),
-    "instagram": re.compile(r"^[A-Za-z0-9_-]{5,40}$"),
-}
+# El id de YouTube: 11 letras.
+VIDEO_ID = {"youtube": re.compile(r"^[A-Za-z0-9_-]{11}$")}
 
 
 class PlanVideo(BaseModel):
@@ -35,5 +31,5 @@ class PlanVideos(BaseModel):
 
     place: str
     videos: list[PlanVideo] = []
-    # ¿Hay búsqueda automática de YouTube? (si no, solo enlaces pegados).
+    # ¿Hay búsqueda de YouTube? (sin clave, la lista sale vacía).
     youtube: bool = True

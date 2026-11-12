@@ -12,6 +12,7 @@ import 'package:eclipta/core/money.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
 import 'package:eclipta/features/group/group_api.dart';
+import 'package:eclipta/features/group/group_extras.dart' show Celebration;
 import 'package:eclipta/features/route/flight3d.dart' show WebSceneBuilder;
 
 import 'helpers.dart';
@@ -39,6 +40,7 @@ Map<String, Object?> tripJson({
   String? code = '7K2M9QXD',
   Map<String, Object?>? prefs,
   Map<String, Object?>? result,
+  Map<String, Object?>? rules,
 }) => <String, Object?>{
   'negotiation_id': tripId,
   'title': 'Puente de mayo',
@@ -70,6 +72,7 @@ Map<String, Object?> tripJson({
   'invite_code': status == 'collecting' ? code : null,
   'my_preferences': prefs,
   'result': result,
+  'rules': rules,
 };
 
 /// Un ai-orchestrator falso para Grupo. Apunta lo que la app le manda.
@@ -122,13 +125,22 @@ class GroupBackend {
         ],
       });
     };
-    g.services['/v1/plan-videos/links'] = (http.Request r) {
-      pastedLinks.add(jsonDecode(r.body) as Map<String, Object?>);
-      return FakeGateway.json(<String, Object?>{
-        'source': 'tiktok',
-        'id': '7301234567890123456',
-        'title': 'TikTok',
-      }, 201);
+    g.services['$base/$tripId/tasks'] = (http.Request r) {
+      if (r.method == 'POST') {
+        tasks.add(<String, Object?>{
+          'task_id': 't${tasks.length + 1}',
+          'label': (jsonDecode(r.body) as Map<String, Object?>)['label'],
+          'owner': null,
+          'mine': false,
+          'added_by_me': true,
+          'done': false,
+        });
+      }
+      return FakeGateway.json(<String, Object?>{'tasks': tasks});
+    };
+    g.services['$base/$tripId/tasks/t1/take'] = (http.Request r) {
+      tasks[0] = <String, Object?>{...tasks[0], 'owner': 'Darío', 'mine': true};
+      return FakeGateway.json(<String, Object?>{'tasks': tasks});
     };
     g.services['$base/$tripId/start'] = (http.Request r) {
       starts++;
@@ -144,7 +156,7 @@ class GroupBackend {
   final List<Map<String, Object?>> sentPrefs = <Map<String, Object?>>[];
   int starts = 0;
   final List<Map<String, String>> videoSearches = <Map<String, String>>[];
-  final List<Map<String, Object?>> pastedLinks = <Map<String, Object?>>[];
+  final List<Map<String, Object?>> tasks = <Map<String, Object?>>[];
 }
 
 Future<GroupBackend> pumpGroup(
@@ -284,7 +296,7 @@ void main() {
     await tester.enterText(prices.at(0), '62');
     await tester.enterText(names.at(1), 'Hotel en Baixa');
     await tester.enterText(prices.at(1), '78');
-    await tester.tap(find.text('Fiesta').first);
+    await tester.tap(find.text('Fiesta').at(1));
     await tester.pump();
     await tester.tap(find.text('Crear y obtener el código'));
     await tester.pumpAndSettle();
@@ -319,8 +331,28 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Organizad vuestro viaje'), findsOneWidget);
 
+    await tester.tap(find.text('Playa y sol'));
+    await tester.pumpAndSettle();
+    final TextFormField title = tester.widget<TextFormField>(
+      find.widgetWithText(TextFormField, 'Nombre del viaje'),
+    );
+    expect(title.controller!.text, 'Playa y sol');
+    // Las dos opciones llevan "Playa" marcado.
+    expect(
+      tester
+          .widgetList<FilterChip>(find.widgetWithText(FilterChip, 'Playa'))
+          .where((FilterChip c) => c.selected),
+      hasLength(2),
+    );
+
     // "¿No se te ocurren planes?": al principio, ideas generales; al buscar
     // un sitio, sus vídeos. Y los botones abren TikTok con lo mismo.
+    await tester.scrollUntilVisible(
+      find.widgetWithText(TextField, 'ciudad o país'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Tranvía 28'), findsOneWidget);
     await tester.enterText(
       find.widgetWithText(TextField, 'ciudad o país'),
@@ -336,33 +368,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(opened.single.host, 'www.tiktok.com');
     expect(opened.single.queryParameters['q'], 'qué hacer en Lisboa');
-
-    // Pegar el enlace de un TikTok para Lisboa: se guarda y se vuelve a pedir.
-    final int before = b.videoSearches.length;
-    await tester.tap(find.text('Pegar enlace de TikTok o Instagram'));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byType(TextField).last,
-      'https://www.tiktok.com/@ana/video/7301234567890123456',
-    );
-    await tester.tap(find.text('Añadir'));
-    await tester.pumpAndSettle();
-    expect(b.pastedLinks.single['place'], 'Lisboa');
-    expect(find.text('¡Añadido! Ya sale en el carrusel.'), findsOneWidget);
-    expect(b.videoSearches.length, before + 1);
-    await tester.tap(find.text('Playa y sol'));
-    await tester.pumpAndSettle();
-    final TextFormField title = tester.widget<TextFormField>(
-      find.widgetWithText(TextFormField, 'Nombre del viaje'),
-    );
-    expect(title.controller!.text, 'Playa y sol');
-    // Las dos opciones llevan "Playa" marcado.
-    expect(
-      tester
-          .widgetList<FilterChip>(find.widgetWithText(FilterChip, 'Playa'))
-          .where((FilterChip c) => c.selected),
-      hasLength(2),
-    );
   });
 
   testWidgets('unirse con un código', (WidgetTester tester) async {
@@ -398,6 +403,51 @@ void main() {
     expect(find.text('Tú'), findsOneWidget);
     expect(find.textContaining('quien organiza pulsa Empezar'), findsOneWidget);
     expect(find.text('Empezar la negociación'), findsNothing);
+  });
+
+  testWidgets('tareas, reglas, invitar por WhatsApp y confeti', (
+    WidgetTester tester,
+  ) async {
+    final List<Uri> opened = <Uri>[];
+    final GroupBackend b = GroupBackend()
+      ..current = tripJson(
+        members: <Map<String, Object?>>[
+          member('Viajero 1', name: 'Darío', me: true, submitted: true),
+          member('Viajero 2', name: 'Noelia', submitted: true),
+        ],
+        rules: <String, Object?>{
+          'max_price_minor': 9000,
+          'avoid': <String>['early-starts'],
+        },
+      );
+    await pumpGroup(
+      tester,
+      backend: b,
+      opened: opened,
+      initialLocation: Routes.groupTrip(tripId),
+    );
+    // Ya estáis todos: confeti (una vez) y las reglas del organizador.
+    expect(find.byType(Celebration), findsOneWidget);
+    expect(find.text('Máx. 90\u00a0€ por persona'), findsOneWidget);
+    expect(find.textContaining('Madrugar'), findsWidgets);
+
+    await tester.tap(find.text('Invitar por WhatsApp'));
+    await tester.pumpAndSettle();
+    expect(opened.single.host, 'wa.me');
+    expect(opened.single.queryParameters['text'], contains('7K2M-9QXD'));
+
+    // Reparto de tareas: añadir una y quedársela.
+    expect(find.textContaining('Aún no hay tareas'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Añadir tarea (p. ej. reservar el hotel)'),
+      'Reservar el hotel',
+    );
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(find.text('Reservar el hotel'), findsOneWidget);
+    await tester.tap(find.byTooltip('Me encargo yo'));
+    await tester.pumpAndSettle();
+    expect(find.text('✓ Me encargo yo'), findsOneWidget);
   });
 
   testWidgets('preferencias privadas y Empezar', (WidgetTester tester) async {

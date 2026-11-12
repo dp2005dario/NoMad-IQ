@@ -23,6 +23,7 @@ import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
 import 'group_api.dart';
+import 'group_extras.dart';
 import 'group_hub.dart';
 import 'group_widgets.dart';
 import 'trip_create_screen.dart' show TagPicker;
@@ -51,6 +52,10 @@ class _TripScreenState extends State<TripScreen> {
   final DateTime _openedAt = DateTime.now();
   GroupTrip? _trip;
   ApiError? _error;
+
+  /// Viajes que ya celebraron "¡ya estáis todos!" (una vez por viaje).
+  static final Set<String> _celebrated = <String>{};
+  bool _party = false;
   Timer? _poll;
 
   @override
@@ -80,9 +85,15 @@ class _TripScreenState extends State<TripScreen> {
   /// Enseña [trip] y programa la siguiente pregunta si aún no ha terminado.
   void _show(GroupTrip trip) {
     if (!mounted) return;
+    final int total = trip.members.length;
+    final bool allIn =
+        trip.status == TripStatus.collecting &&
+        total > 1 &&
+        trip.ready == total;
     setState(() {
       _trip = trip;
       _error = null;
+      if (allIn && _celebrated.add(trip.id)) _party = true;
     });
     if (!trip.status.finished) {
       _schedule(trip.status.working ? pollWorking : pollCollecting);
@@ -115,6 +126,17 @@ class _TripScreenState extends State<TripScreen> {
       appBar: AppBar(
         title: Text(trip?.title ?? t.groupTitle),
         actions: <Widget>[
+          if (trip != null)
+            IconButton(
+              tooltip: t.groupBigScreen,
+              icon: const Icon(Icons.cast_rounded),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  fullscreenDialog: true,
+                  builder: (_) => BigScreen(trip: trip),
+                ),
+              ),
+            ),
           // El chat del viaje está abierto desde el principio (también
           // mientras se decide el destino).
           IconButton(
@@ -149,16 +171,29 @@ class _TripScreenState extends State<TripScreen> {
                         ),
                       ),
               )
-            : RefreshIndicator(
-                onRefresh: _load,
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-                  children: <Widget>[
-                    _Header(trip: trip),
-                    const SizedBox(height: 16),
-                    ..._body(t, trip),
-                  ],
-                ),
+            : Stack(
+                children: <Widget>[
+                  RefreshIndicator(
+                    onRefresh: _load,
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                      children: <Widget>[
+                        _Header(trip: trip),
+                        if (trip.rules != null) ...<Widget>[
+                          const SizedBox(height: 10),
+                          RulesChips(
+                            rules: trip.rules!,
+                            currency: trip.currency,
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        ..._body(t, trip),
+                      ],
+                    ),
+                  ),
+                  if (_party)
+                    Positioned.fill(child: Celebration(text: t.groupAllReady)),
+                ],
               ),
       ),
     );
@@ -172,6 +207,8 @@ class _TripScreenState extends State<TripScreen> {
             const SizedBox(height: 16),
           ],
           _Options(trip: trip),
+          const SizedBox(height: 20),
+          TripTasks(tripId: trip.id, organizer: trip.iOrganize),
           const SizedBox(height: 20),
           _PreferencesForm(trip: trip, onSaved: _show),
           const SizedBox(height: 20),
@@ -314,6 +351,8 @@ class _InviteCard extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            InviteActions(code: code),
           ],
         ),
       ),

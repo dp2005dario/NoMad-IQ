@@ -15,7 +15,9 @@ import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
+import '../reels/reels.dart';
 import 'group_api.dart';
+import 'group_extras.dart';
 import 'group_widgets.dart';
 
 class GroupScreen extends StatefulWidget {
@@ -156,6 +158,30 @@ class _GroupScreenState extends State<GroupScreen> {
                       const SizedBox(height: 12),
                     ],
                   const SizedBox(height: 10),
+                  // "¿No se te ocurren planes?": vídeos cortos de viajes.
+                  Row(
+                    children: <Widget>[
+                      const Text('🎬', style: TextStyle(fontSize: 20)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          t.groupPlansTitle,
+                          style: const TextStyle(
+                            fontFamily: NomadFonts.display,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  PlanReels(
+                    place: trips != null && trips.isNotEmpty
+                        ? _destination(trips.first)
+                        : '',
+                  ),
+                  const SizedBox(height: 22),
                   _TrailerBox(
                     title: t.groupTrailerTitle,
                     text: t.groupTrailerSoon,
@@ -169,6 +195,10 @@ class _GroupScreenState extends State<GroupScreen> {
     );
   }
 }
+
+/// A dónde va un viaje: la opción elegida o, mientras se decide, su nombre.
+String _destination(GroupTrip trip) =>
+    trip.option(trip.result?.chosenOptionId)?.label ?? trip.title;
 
 /// Entra deslizándose un poco (cada tarjeta un pelín después que la anterior).
 class _Appear extends StatelessWidget {
@@ -299,14 +329,48 @@ class _Intro extends StatelessWidget {
   );
 }
 
-class _TripCard extends StatelessWidget {
+/// La tarjeta de un viaje, con la foto del destino de fondo (Wikipedia) y
+/// las caras del grupo encima.
+class _TripCard extends StatefulWidget {
   const _TripCard({required this.trip, required this.onTap});
 
   final GroupTrip trip;
   final VoidCallback onTap;
 
   @override
+  State<_TripCard> createState() => _TripCardState();
+}
+
+class _TripCardState extends State<_TripCard> {
+  Uri? _photo;
+  String? _asked;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    unawaited(_loadPhoto());
+  }
+
+  @override
+  void didUpdateWidget(_TripCard old) {
+    super.didUpdateWidget(old);
+    unawaited(_loadPhoto());
+  }
+
+  Future<void> _loadPhoto() async {
+    final String place = _destination(widget.trip);
+    if (_asked == place) return;
+    _asked = place;
+    final Uri? photo = await ServicesScope.of(context).reels
+        .photo(place, Localizations.localeOf(context).languageCode);
+    if (mounted && _asked == place) setState(() => _photo = photo);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final GroupTrip trip = widget.trip;
+    final VoidCallback onTap = widget.onTap;
+    final Uri? photo = _photo;
     final TextTheme text = Theme.of(context).textTheme;
     final TripOption? chosen = trip.option(trip.result?.chosenOptionId);
     final int total = trip.members.length;
@@ -325,6 +389,18 @@ class _TripCard extends StatelessWidget {
               end: Alignment.bottomRight,
               colors: <Color>[Color(0xFF1F1A36), Color(0xFF141E25)],
             ),
+            // La foto del destino, oscurecida para que se lea el texto.
+            image: photo == null
+                ? null
+                : DecorationImage(
+                    image: NetworkImage(photo.toString()),
+                    fit: BoxFit.cover,
+                    onError: (Object _, StackTrace? _) {},
+                    colorFilter: const ColorFilter.mode(
+                      Color(0xAA0D0A1A),
+                      BlendMode.darken,
+                    ),
+                  ),
             border: Border.all(color: const Color(0xFF332A55)),
           ),
           padding: const EdgeInsets.all(16),
@@ -381,15 +457,7 @@ class _TripCard extends StatelessWidget {
               if (trip.status == TripStatus.collecting &&
                   total > 1) ...<Widget>[
                 const SizedBox(height: 12),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 6,
-                    color: NomadColors.money,
-                    backgroundColor: const Color(0xFF2A2440),
-                  ),
-                ),
+                PlaneProgress(value: progress),
               ],
             ],
           ),

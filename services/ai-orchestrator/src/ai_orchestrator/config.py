@@ -194,8 +194,8 @@ class Settings(BaseSettings):
     google_places_rate_per_second: float = Field(default=5.0, gt=0, le=50)
     google_places_timeout_seconds: float = Field(default=8.0, gt=0, le=60)
 
-    # --- Vídeos de planes (paquete plan_videos/): enlaces de TikTok/Instagram ---
-    # pegados por la gente (solo Redis) y, con clave, YouTube Shorts.
+    # --- Vídeos de planes (paquete plan_videos/): YouTube Shorts con clave y ---
+    # fotos de Wikipedia de cada sitio (sin clave).
     plan_videos_enabled: bool = True
     # Clave GRATIS de YouTube Data API v3. Sin ella, "¿No se te ocurren
     # planes?" solo ofrece abrir TikTok/Instagram/YouTube (la ruta no existe).

@@ -11364,25 +11364,88 @@
   "@groupPlansNone": {
     "description": "Shown when no in-app videos are available"
   },
-  "groupPlansAddLink": "Paste a TikTok or Instagram link",
-  "@groupPlansAddLink": {
-    "description": "Button to paste a TikTok or Instagram video link"
+  "groupRulesTitle": "Group rules",
+  "@groupRulesTitle": {
+    "description": "Section title: group rules set by organizer"
   },
-  "groupPlansLinkHelp": "Copy the video link in TikTok or Instagram (Share → Copy link) and paste it here. Everyone who searches this place will see it.",
-  "@groupPlansLinkHelp": {
-    "description": "Help text in the paste-link dialog"
+  "groupRulesHelp": "They apply to everyone: no option can go over the maximum, and nobody's agent will pick what you mark here.",
+  "@groupRulesHelp": {
+    "description": "Help text under group rules"
   },
-  "groupPlansLinkAdd": "Add",
-  "@groupPlansLinkAdd": {
-    "description": "Confirm button of the paste-link dialog"
+  "groupRulesMax": "Max per person",
+  "@groupRulesMax": {
+    "description": "Field: maximum price per person"
   },
-  "groupPlansLinkBad": "That link isn't a TikTok or Instagram video.",
-  "@groupPlansLinkBad": {
-    "description": "Error: pasted link is not a TikTok/Instagram video"
+  "groupRulesAvoid": "Nobody wants…",
+  "@groupRulesAvoid": {
+    "description": "Label above tags nobody wants"
   },
-  "groupPlansLinkDone": "Added! It's now in the carousel.",
-  "@groupPlansLinkDone": {
-    "description": "Snackbar after adding a link"
+  "groupPriceOverMax": "Over the max per person",
+  "@groupPriceOverMax": {
+    "description": "Validation error: option price above group max"
+  },
+  "groupRulesMaxShown": "Max {amount} per person",
+  "@groupRulesMaxShown": {
+    "description": "Chip showing the group max price",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "groupTasksTitle": "Who does what",
+  "@groupTasksTitle": {
+    "description": "Section title: who does what"
+  },
+  "groupTasksHint": "Add a task (e.g. book the hotel)",
+  "@groupTasksHint": {
+    "description": "Hint for adding a task"
+  },
+  "groupTasksEmpty": "No tasks yet. Write down who books what.",
+  "@groupTasksEmpty": {
+    "description": "Empty state for tasks"
+  },
+  "groupTaskTake": "I'll do it",
+  "@groupTaskTake": {
+    "description": "Button: I'll take care of it"
+  },
+  "groupTaskOwner": "{name} is on it",
+  "@groupTaskOwner": {
+    "description": "Who takes care of a task",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groupInviteWhatsApp": "Invite on WhatsApp",
+  "@groupInviteWhatsApp": {
+    "description": "Button: invite via WhatsApp"
+  },
+  "groupInviteQr": "Show QR",
+  "@groupInviteQr": {
+    "description": "Button: show the invite QR"
+  },
+  "groupInviteMessage": "Come on a trip with me! Open ECLIPTA → Group trips → Join with a code and type: {code}",
+  "@groupInviteMessage": {
+    "description": "WhatsApp invite text; keep {code}",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "groupAllReady": "Everyone's in!",
+  "@groupAllReady": {
+    "description": "Celebration when everyone sent preferences"
+  },
+  "groupBigScreen": "Big screen",
+  "@groupBigScreen": {
+    "description": "Button: big screen mode to show the plan on a TV"
+  },
+  "groupBigScreenHint": "Cast your phone's screen to the TV to see it all together.",
+  "@groupBigScreenHint": {
+    "description": "Hint in big screen mode"
   },
   "hoNearTitle": "Nearest places to stay",
   "@hoNearTitle": {

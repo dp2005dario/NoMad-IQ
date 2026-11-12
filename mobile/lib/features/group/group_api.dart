@@ -308,6 +308,7 @@ class GroupTrip {
     this.inviteCode,
     this.myPreferences,
     this.result,
+    this.rules,
   });
 
   final String id;
@@ -326,6 +327,9 @@ class GroupTrip {
   final String? inviteCode;
   final TripPreferences? myPreferences;
   final TripResult? result;
+
+  /// Reglas del organizador para todo el grupo (o null).
+  final TripRules? rules;
 
   int get ready => members.where((TripMember m) => m.submitted).length;
   TripMember? get me {
@@ -383,7 +387,79 @@ class GroupTrip {
       inviteCode: code as String?,
       myPreferences: prefs == null ? null : TripPreferences.parse(prefs),
       result: result == null ? null : TripResult.parse(result),
+      rules: TripRules.parse(m['rules']),
     );
+  }
+}
+
+/// Reglas del organizador para TODO el grupo: precio máximo por persona y
+/// lo que nadie quiere ("nada de madrugones"). Valen para todos los agentes.
+class TripRules {
+  const TripRules({this.maxPriceMinor, this.avoid = const <String>[]});
+
+  final int? maxPriceMinor;
+  final List<String> avoid;
+
+  bool get isEmpty => maxPriceMinor == null && avoid.isEmpty;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'max_price_minor': ?maxPriceMinor,
+    'avoid': avoid,
+  };
+
+  /// null si no hay reglas o vienen raras (las reglas son un extra: no
+  /// rompen la pantalla).
+  static TripRules? parse(Object? json) {
+    if (json is! Map) return null;
+    final Object? max = json['max_price_minor'];
+    final Object? avoid = json['avoid'];
+    final TripRules rules = TripRules(
+      maxPriceMinor: max is int && max > 0 ? max : null,
+      avoid: <String>[
+        if (avoid is List)
+          for (final Object? a in avoid)
+            if (a is String && a.length <= 40) a,
+      ],
+    );
+    return rules.isEmpty ? null : rules;
+  }
+}
+
+/// Una tarea del reparto ("Reservar el hotel").
+class TripTask {
+  const TripTask({
+    required this.id,
+    required this.label,
+    this.owner,
+    this.mine = false,
+    this.addedByMe = false,
+    this.done = false,
+  });
+
+  final String id;
+  final String label;
+
+  /// Quién se encarga (su nombre para el grupo) o null.
+  final String? owner;
+  final bool mine;
+  final bool addedByMe;
+  final bool done;
+
+  static List<TripTask> parseAll(Object? json) {
+    final Object? tasks = json is Map ? json['tasks'] : null;
+    if (tasks is! List) _bad();
+    return <TripTask>[
+      for (final Object? t in tasks)
+        if (t is Map && t['task_id'] is String && t['label'] is String)
+          TripTask(
+            id: t['task_id'] as String,
+            label: t['label'] as String,
+            owner: t['owner'] is String ? t['owner'] as String : null,
+            mine: t['mine'] == true,
+            addedByMe: t['added_by_me'] == true,
+            done: t['done'] == true,
+          ),
+    ];
   }
 }
 
@@ -395,6 +471,7 @@ class NewTrip {
     required this.language,
     required this.options,
     this.myName,
+    this.rules,
   });
 
   final String title;
@@ -402,6 +479,7 @@ class NewTrip {
   final String language;
   final List<TripOption> options;
   final String? myName;
+  final TripRules? rules;
 }
 
 /// "7K2M9QXD" → "7K2M-9QXD" (más fácil de leer y de dictar).
@@ -432,6 +510,8 @@ class GroupApi {
       // Sin miembros: los demás entran con el código de invitación.
       'members': <String>[],
       if (trip.myName != null) 'my_name': trip.myName,
+      if (trip.rules != null && !trip.rules!.isEmpty)
+        'rules': trip.rules!.toJson(),
     }),
   );
 
@@ -458,6 +538,39 @@ class GroupApi {
           '$_base/${Uri.encodeComponent(id)}/tastes',
           <String, Object?>{'tastes': tastes},
         ),
+      );
+
+  String _tasks(String id) => '$_base/${Uri.encodeComponent(id)}/tasks';
+
+  /// El reparto de tareas del viaje.
+  Future<List<TripTask>> tasks(String id) async =>
+      TripTask.parseAll(await _api.getJson(_tasks(id)));
+
+  Future<List<TripTask>> addTask(String id, String label) async =>
+      TripTask.parseAll(
+        await _api.postJson(_tasks(id), <String, Object?>{'label': label}),
+      );
+
+  /// "Me encargo yo" (si ya era tuya, la sueltas).
+  Future<List<TripTask>> takeTask(String id, String task) async =>
+      TripTask.parseAll(
+        await _api.putJson(
+          '${_tasks(id)}/${Uri.encodeComponent(task)}/take',
+          const <String, Object?>{},
+        ),
+      );
+
+  Future<List<TripTask>> doneTask(String id, String task, bool done) async =>
+      TripTask.parseAll(
+        await _api.putJson(
+          '${_tasks(id)}/${Uri.encodeComponent(task)}/done',
+          <String, Object?>{'done': done},
+        ),
+      );
+
+  Future<List<TripTask>> deleteTask(String id, String task) async =>
+      TripTask.parseAll(
+        await _api.delete('${_tasks(id)}/${Uri.encodeComponent(task)}'),
       );
 
   Future<GroupTrip> start(String id) async => GroupTrip.parse(
