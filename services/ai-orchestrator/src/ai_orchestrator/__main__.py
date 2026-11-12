@@ -170,6 +170,8 @@ from ai_orchestrator.store import (
 )
 from ai_orchestrator.streetview.mapillary import MapillaryBusyError, MapillaryClient
 from ai_orchestrator.streetview.service import RedisStreetCache, StreetSettings, StreetViewService
+from ai_orchestrator.trip_tasks.api import task_router
+from ai_orchestrator.trip_tasks.store import PostgresTasks
 
 log = logging.getLogger("ai_orchestrator")
 
@@ -921,6 +923,7 @@ async def run(settings: Settings) -> int:
 
         # --- Elegid planes (los viajes en grupo; solo PostgreSQL) ------------------------
         plans = plan_router(PostgresPlans(pool)) if settings.negotiations_enabled else None
+        tasks = task_router(PostgresTasks(pool)) if settings.negotiations_enabled else None
 
         # --- Quedadas con otros viajeros (solo PostgreSQL) -------------------------------
         meetups = (
@@ -989,6 +992,7 @@ async def run(settings: Settings) -> int:
                 shared_trips=shared_trips,
                 leagues=leagues,
                 plans=plans,
+                tasks=tasks,
                 group_chat=group_chat,
                 meetups=meetups,
                 places=places,
