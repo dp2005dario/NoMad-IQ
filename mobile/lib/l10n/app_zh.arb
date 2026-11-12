@@ -2339,6 +2339,7 @@
   "searchNearbyDays": "你所选日期前后每天的价格",
   "searchNoExactDay": "那天还没有价格。附近这些日子有：点一个试试。",
   "searchCheapest": "最便宜",
+  "searchElsewhere": "没找到你的航班？也可以在这里看看：",
   "flyraTraitLanguage": "说你的语言",
   "flyraTraitPrivate": "聊天只保存在你的手机上",
   "flyraTraitFree": "每天免费提问",

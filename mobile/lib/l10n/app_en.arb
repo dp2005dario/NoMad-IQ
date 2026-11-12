@@ -11223,6 +11223,10 @@
   "@searchCheapest": {
     "description": "Badge on the cheapest day"
   },
+  "searchElsewhere": "Don't see your flight? Also look on:",
+  "@searchElsewhere": {
+    "description": "Above links that open the same flight search on other big search engines"
+  },
   "flyraTraitLanguage": "Speaks your language",
   "@flyraTraitLanguage": {
     "description": "Chip on Flyra's profile"

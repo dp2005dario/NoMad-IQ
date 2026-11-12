@@ -2339,6 +2339,7 @@
   "searchNearbyDays": "ราคาต่อวันใกล้วันที่คุณเลือก",
   "searchNoExactDay": "วันนั้นยังไม่มีราคา วันใกล้ๆ เหล่านี้มี แตะเลือกได้เลย",
   "searchCheapest": "ถูกที่สุด",
+  "searchElsewhere": "ไม่เจอเที่ยวบินของคุณ? ลองดูที่:",
   "flyraTraitLanguage": "พูดภาษาของคุณ",
   "flyraTraitPrivate": "แชตอยู่ในมือถือของคุณเท่านั้น",
   "flyraTraitFree": "ถามฟรีทุกวัน",

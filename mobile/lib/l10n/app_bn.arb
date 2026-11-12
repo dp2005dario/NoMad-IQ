@@ -2339,6 +2339,7 @@
   "searchNearbyDays": "তোমার তারিখের কাছাকাছি প্রতিদিনের দাম",
   "searchNoExactDay": "ওই দিনের দাম এখনও নেই। কাছের এই দিনগুলোর আছে: একটিতে চাপো।",
   "searchCheapest": "সবচেয়ে সস্তা",
+  "searchElsewhere": "আপনার ফ্লাইট দেখছেন না? এখানেও খুঁজুন:",
   "flyraTraitLanguage": "তোমার ভাষায় কথা বলে",
   "flyraTraitPrivate": "তোমার চ্যাট তোমার ফোনেই থাকে",
   "flyraTraitFree": "প্রতিদিন বিনামূল্যে প্রশ্ন",

@@ -2339,6 +2339,7 @@
   "searchNearbyDays": "選んだ日付前後の1日ごとの料金",
   "searchNoExactDay": "その日の料金はまだありません。近くのこの日なら料金があります。タップしてください。",
   "searchCheapest": "最安",
+  "searchElsewhere": "探している便がない？こちらでも探せます：",
   "flyraTraitLanguage": "あなたの言語で話します",
   "flyraTraitPrivate": "チャットはあなたのスマホにだけ保存",
   "flyraTraitFree": "毎日無料で質問できます",

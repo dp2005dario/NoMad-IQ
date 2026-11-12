@@ -26,6 +26,7 @@ import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'airport_names.dart';
 import 'fares_api.dart';
+import 'other_searches.dart';
 import 'flight_format.dart';
 import 'watch_sheet.dart';
 
@@ -817,6 +818,8 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
           icon: Icons.event_busy_rounded,
           text: _days.isEmpty ? t.searchNoResults : t.searchNoExactDay,
         ),
+        const SizedBox(height: 12),
+        _elsewhere(result, t),
       ];
     }
     return <Widget>[
@@ -870,8 +873,45 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
           onBook: () => _book(result.offers[i].bookingUrl),
           onWatch: () => _watch(result, result.offers[i]),
         ),
+      const SizedBox(height: 8),
+      _elsewhere(result, t),
     ];
   }
+
+  /// La misma búsqueda en Google Flights, Skyscanner, Kayak y Trip.com.
+  Widget _elsewhere(SearchResult result, AppLocalizations t) => Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: _C.chip,
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(color: _C.line),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          t.searchElsewhere,
+          style: const TextStyle(fontWeight: FontWeight.w800, color: _C.ink),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: <Widget>[
+            for (final OtherSearch o in otherSearches(
+              result.route,
+              result.adults,
+            ))
+              ActionChip(
+                avatar: const Icon(Icons.open_in_new_rounded, size: 16),
+                label: Text(o.name),
+                onPressed: () => unawaited(_services.openLink(o.url)),
+              ),
+          ],
+        ),
+      ],
+    ),
+  );
 }
 
 class _Pill extends StatelessWidget {
