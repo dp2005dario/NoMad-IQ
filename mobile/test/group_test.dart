@@ -280,6 +280,28 @@ void main() {
     expect(find.text('Tus preferencias'), findsOneWidget);
   });
 
+  testWidgets('idea rápida: pone el nombre y los gustos de las opciones', (
+    WidgetTester tester,
+  ) async {
+    await pumpGroup(tester);
+    await tester.tap(find.text('Nuevo viaje en grupo'));
+    await tester.pumpAndSettle();
+    expect(find.text('Organizad vuestro viaje'), findsOneWidget);
+    await tester.tap(find.text('Playa y sol'));
+    await tester.pumpAndSettle();
+    final TextFormField title = tester.widget<TextFormField>(
+      find.widgetWithText(TextFormField, 'Nombre del viaje'),
+    );
+    expect(title.controller!.text, 'Playa y sol');
+    // Las dos opciones llevan "Playa" marcado.
+    expect(
+      tester
+          .widgetList<FilterChip>(find.widgetWithText(FilterChip, 'Playa'))
+          .where((FilterChip c) => c.selected),
+      hasLength(2),
+    );
+  });
+
   testWidgets('unirse con un código', (WidgetTester tester) async {
     final GroupBackend b = await pumpGroup(tester);
     await tester.tap(find.text('Unirme con un código'));

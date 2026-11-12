@@ -11299,6 +11299,38 @@
   "@groupPreviewEmpty": {
     "description": "Empty live preview"
   },
+  "groupCreateHeadline": "Plan your trip together",
+  "@groupCreateHeadline": {
+    "description": "Big headline at the top of the new group trip screen"
+  },
+  "groupQuickIdeas": "Quick ideas",
+  "@groupQuickIdeas": {
+    "description": "Title above template chips that pre-fill the trip"
+  },
+  "groupTplWeekend": "Weekend getaway",
+  "@groupTplWeekend": {
+    "description": "Template: weekend getaway"
+  },
+  "groupTplParty": "Party trip",
+  "@groupTplParty": {
+    "description": "Template: party trip (e.g. bachelor party)"
+  },
+  "groupTplBeach": "Beach and sun",
+  "@groupTplBeach": {
+    "description": "Template: beach and sun"
+  },
+  "groupTplCulture": "Culture and museums",
+  "@groupTplCulture": {
+    "description": "Template: culture and museums"
+  },
+  "groupTplAdventure": "Adventure",
+  "@groupTplAdventure": {
+    "description": "Template: adventure and nature"
+  },
+  "groupTplFood": "Food trip",
+  "@groupTplFood": {
+    "description": "Template: food trip"
+  },
   "hoNearTitle": "Nearest places to stay",
   "@hoNearTitle": {
     "description": "Title of the horizontal list of the nearest hotels (like Google Maps)"

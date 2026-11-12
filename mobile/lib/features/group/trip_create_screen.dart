@@ -144,8 +144,9 @@ class _TripCreateScreenState extends State<TripCreateScreen> {
     final AppLocalizations t = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: NomadColors.background,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: NomadColors.background,
+        backgroundColor: Colors.transparent,
         title: Text(
           t.groupCreateTitle,
           style: const TextStyle(
@@ -154,216 +155,405 @@ class _TripCreateScreenState extends State<TripCreateScreen> {
           ),
         ),
       ),
-      body: SafeArea(
-        child: Form(
-          key: _form,
-          // Cada letra puede cambiar el paso y la vista previa.
-          onChanged: () => setState(() {}),
-          child: Column(
-            children: <Widget>[
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                  children: <Widget>[
-                    _Appear(order: 0, child: _Hero(text: t.groupIntro)),
-                    const SizedBox(height: 14),
-                    _Appear(
-                      order: 1,
-                      child: _Steps(
-                        step: _step,
-                        labels: <String>[
-                          t.groupStepTrip,
-                          t.groupStepOptions,
-                          t.groupStepVote,
-                        ],
+      // Fondo violeta de "Viajes en grupo" que se funde con el negro.
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            stops: <double>[0, 0.55],
+            colors: <Color>[Color(0xFF1D1638), NomadColors.background],
+          ),
+        ),
+        child: SafeArea(
+          child: Form(
+            key: _form,
+            // Cada letra puede cambiar el paso y la vista previa.
+            onChanged: () => setState(() {}),
+            child: Column(
+              children: <Widget>[
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                    children: <Widget>[
+                      _Appear(
+                        order: 0,
+                        child: _Hero(
+                          title: t.groupCreateHeadline,
+                          text: t.groupIntro,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 18),
-                    _Appear(
-                      order: 2,
-                      child: _Section(
-                        icon: Icons.luggage_rounded,
-                        color: NomadColors.mint,
-                        title: t.groupStepTrip,
-                        children: <Widget>[
-                          TextFormField(
-                            controller: _title,
-                            maxLength: 120,
-                            textCapitalization: TextCapitalization.sentences,
-                            decoration: InputDecoration(
-                              labelText: t.groupTripName,
-                              hintText: t.groupTripNameHint,
-                              prefixIcon: const Icon(Icons.flag_rounded),
-                            ),
-                            validator: (String? v) => (v ?? '').trim().isEmpty
-                                ? t.groupRequired
-                                : null,
-                          ),
-                          const SizedBox(height: 4),
-                          TextFormField(
-                            controller: _name,
-                            maxLength: maxName,
-                            decoration: InputDecoration(
-                              labelText: t.groupYourName,
-                              helperText: t.groupYourNameHelp,
-                              helperMaxLines: 2,
-                              prefixIcon: const Icon(Icons.person_rounded),
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          Text(
-                            t.groupCurrency,
-                            style: const TextStyle(
-                              color: NomadColors.textMuted,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          _CurrencyRow(
-                            selected: _currency,
-                            onPick: (String c) => setState(() => _currency = c),
-                          ),
-                        ],
+                      const SizedBox(height: 16),
+                      _Appear(
+                        order: 1,
+                        child: _Steps(
+                          step: _step,
+                          labels: <String>[
+                            t.groupStepTrip,
+                            t.groupStepOptions,
+                            t.groupStepVote,
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 14),
-                    _Appear(
-                      order: 3,
-                      child: _Section(
-                        icon: Icons.how_to_vote_rounded,
-                        color: NomadColors.group,
-                        title: t.groupOptionsTitle,
-                        subtitle: t.groupOptionsHelp,
-                        children: <Widget>[
-                          for (int i = 0; i < _options.length; i++)
-                            _Appear(
-                              // La clave mantiene cada tarjeta con SU texto al
-                              // quitar otra.
-                              key: ObjectKey(_options[i]),
-                              order: 0,
-                              child: Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: _OptionCard(
-                                  index: i,
-                                  draft: _options[i],
-                                  currency: _currency,
-                                  onRemove: _options.length > minOptions
-                                      ? () => setState(
-                                          () => _options.removeAt(i).dispose(),
-                                        )
-                                      : null,
-                                  onTags: () => setState(() {}),
-                                ),
+                      const SizedBox(height: 16),
+                      _Appear(
+                        order: 2,
+                        child: _Templates(
+                          title: t.groupQuickIdeas,
+                          onPick: _useTemplate,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _Appear(
+                        order: 2,
+                        child: _Section(
+                          icon: Icons.luggage_rounded,
+                          color: _lilac,
+                          title: t.groupStepTrip,
+                          children: <Widget>[
+                            TextFormField(
+                              controller: _title,
+                              maxLength: 120,
+                              textCapitalization: TextCapitalization.sentences,
+                              decoration: InputDecoration(
+                                labelText: t.groupTripName,
+                                hintText: t.groupTripNameHint,
+                                prefixIcon: const Icon(Icons.flag_rounded),
+                              ),
+                              validator: (String? v) => (v ?? '').trim().isEmpty
+                                  ? t.groupRequired
+                                  : null,
+                            ),
+                            const SizedBox(height: 4),
+                            TextFormField(
+                              controller: _name,
+                              maxLength: maxName,
+                              decoration: InputDecoration(
+                                labelText: t.groupYourName,
+                                helperText: t.groupYourNameHelp,
+                                helperMaxLines: 2,
+                                prefixIcon: const Icon(Icons.person_rounded),
                               ),
                             ),
-                          if (_options.length < maxOptions)
-                            OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: NomadColors.group,
-                                side: BorderSide(
-                                  color: NomadColors.group.withValues(
-                                    alpha: 0.5,
+                            const SizedBox(height: 14),
+                            Text(
+                              t.groupCurrency,
+                              style: const TextStyle(
+                                color: NomadColors.textMuted,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            _CurrencyRow(
+                              selected: _currency,
+                              onPick: (String c) =>
+                                  setState(() => _currency = c),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      _Appear(
+                        order: 3,
+                        child: _Section(
+                          icon: Icons.how_to_vote_rounded,
+                          color: NomadColors.group,
+                          title: t.groupOptionsTitle,
+                          subtitle: t.groupOptionsHelp,
+                          children: <Widget>[
+                            for (int i = 0; i < _options.length; i++)
+                              _Appear(
+                                // La clave mantiene cada tarjeta con SU texto al
+                                // quitar otra.
+                                key: ObjectKey(_options[i]),
+                                order: 0,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: _OptionCard(
+                                    index: i,
+                                    draft: _options[i],
+                                    currency: _currency,
+                                    onRemove: _options.length > minOptions
+                                        ? () => setState(
+                                            () =>
+                                                _options.removeAt(i).dispose(),
+                                          )
+                                        : null,
+                                    onTags: () => setState(() {}),
                                   ),
                                 ),
-                                minimumSize: const Size.fromHeight(48),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                              ),
+                            if (_options.length < maxOptions)
+                              OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: _lilac,
+                                  backgroundColor: const Color(0x148A5CF6),
+                                  side: BorderSide(
+                                    color: _lilac.withValues(alpha: 0.5),
+                                  ),
+                                  minimumSize: const Size.fromHeight(48),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
                                 ),
+                                onPressed: () => setState(
+                                  () => _options.add(_OptionDraft()),
+                                ),
+                                icon: const Icon(Icons.add_rounded),
+                                label: Text(t.groupOptionAdd),
                               ),
-                              onPressed: () =>
-                                  setState(() => _options.add(_OptionDraft())),
-                              icon: const Icon(Icons.add_rounded),
-                              label: Text(t.groupOptionAdd),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 14),
-                    _Appear(
-                      order: 4,
-                      child: _Preview(
-                        title: t.groupPreviewTitle,
-                        empty: t.groupPreviewEmpty,
-                        trip: _title.text.trim(),
-                        currency: _currency,
-                        options: <(String, int)>[
-                          for (final _OptionDraft o in _options)
-                            if (o.label.text.trim().isNotEmpty)
-                              (
-                                o.label.text.trim(),
-                                int.tryParse(o.price.text) ?? 0,
-                              ),
-                        ],
+                      const SizedBox(height: 14),
+                      _Appear(
+                        order: 4,
+                        child: _Preview(
+                          title: t.groupPreviewTitle,
+                          empty: t.groupPreviewEmpty,
+                          trip: _title.text.trim(),
+                          currency: _currency,
+                          options: <(String, int)>[
+                            for (final _OptionDraft o in _options)
+                              if (o.label.text.trim().isNotEmpty)
+                                (
+                                  o.label.text.trim(),
+                                  int.tryParse(o.price.text) ?? 0,
+                                ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              // El botón, siempre a mano abajo.
-              Container(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-                decoration: const BoxDecoration(
-                  color: NomadColors.background,
-                  border: Border(top: BorderSide(color: NomadColors.outline)),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    if (_problem != null) ...<Widget>[
-                      Text(
-                        _problem!,
-                        style: const TextStyle(color: NomadColors.safety),
-                      ),
-                      const SizedBox(height: 8),
                     ],
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(18),
-                          gradient: const LinearGradient(
-                            colors: <Color>[
-                              NomadColors.group,
-                              NomadColors.mint,
+                  ),
+                ),
+                // El botón, siempre a mano abajo.
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF110E1C),
+                    border: Border(top: BorderSide(color: Color(0xFF2A2245))),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      if (_problem != null) ...<Widget>[
+                        Text(
+                          _problem!,
+                          style: const TextStyle(color: NomadColors.safety),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      SizedBox(
+                        width: double.infinity,
+                        height: 54,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(18),
+                            gradient: const LinearGradient(
+                              colors: <Color>[
+                                Color(0xFF8A5CF6),
+                                Color(0xFFB69CFF),
+                              ],
+                            ),
+                            boxShadow: const <BoxShadow>[
+                              BoxShadow(
+                                color: Color(0x558A5CF6),
+                                blurRadius: 18,
+                                offset: Offset(0, 6),
+                              ),
                             ],
                           ),
-                        ),
-                        child: TextButton(
-                          style: TextButton.styleFrom(
-                            foregroundColor: NomadColors.background,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18),
+                          child: TextButton(
+                            style: TextButton.styleFrom(
+                              foregroundColor: const Color(0xFF120C24),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
                             ),
+                            onPressed: _busy ? null : _create,
+                            child: _busy
+                                ? const SizedBox.square(
+                                    dimension: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.4,
+                                      color: Color(0xFF120C24),
+                                    ),
+                                  )
+                                : Text(
+                                    t.groupCreateAction,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 16,
+                                    ),
+                                  ),
                           ),
-                          onPressed: _busy ? null : _create,
-                          child: _busy
-                              ? const SizedBox.square(
-                                  dimension: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2.4,
-                                    color: NomadColors.background,
-                                  ),
-                                )
-                              : Text(
-                                  t.groupCreateAction,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 16,
-                                  ),
-                                ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+
+  /// Una idea rápida: pone el nombre (si no hay) y los gustos de cada
+  /// opción, para no empezar con la hoja en blanco.
+  void _useTemplate(_Template tpl, String name) {
+    setState(() {
+      if (_title.text.trim().isEmpty) _title.text = name;
+      for (final _OptionDraft o in _options) {
+        o.tags
+          ..clear()
+          ..addAll(tpl.tags);
+      }
+    });
+  }
+}
+
+/// El violeta claro de los viajes en grupo.
+const Color _lilac = Color(0xFFB69CFF);
+
+/// Ideas rápidas para empezar: emoji, gustos que pone a las opciones y su
+/// nombre (traducido).
+class _Template {
+  const _Template(this.emoji, this.tags, this.name);
+
+  final String emoji;
+  final List<String> tags;
+  final String Function(AppLocalizations t) name;
+}
+
+final List<_Template> _templates = <_Template>[
+  _Template('🏙️', const <String>[
+    'food',
+    'nightlife',
+    'history',
+  ], (AppLocalizations t) => t.groupTplWeekend),
+  _Template('🎉', const <String>[
+    'nightlife',
+    'food',
+    'adventure',
+  ], (AppLocalizations t) => t.groupTplParty),
+  _Template('🏖️', const <String>[
+    'beach',
+    'relax',
+    'food',
+  ], (AppLocalizations t) => t.groupTplBeach),
+  _Template('🏛️', const <String>[
+    'museums',
+    'history',
+    'shopping',
+  ], (AppLocalizations t) => t.groupTplCulture),
+  _Template('🧗', const <String>[
+    'adventure',
+    'nature',
+    'mountains',
+    'sport',
+  ], (AppLocalizations t) => t.groupTplAdventure),
+  _Template('🍝', const <String>[
+    'food',
+    'shopping',
+    'history',
+  ], (AppLocalizations t) => t.groupTplFood),
+];
+
+/// Fila de tarjetitas de ideas rápidas que se deslizan.
+class _Templates extends StatelessWidget {
+  const _Templates({required this.title, required this.onPick});
+
+  final String title;
+  final void Function(_Template tpl, String name) onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations t = AppLocalizations.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            const Icon(Icons.auto_awesome_rounded, size: 16, color: _lilac),
+            const SizedBox(width: 6),
+            Text(
+              title.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 11.5,
+                letterSpacing: 0.7,
+                fontWeight: FontWeight.w800,
+                color: _lilac,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          height: 92,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _templates.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 10),
+            itemBuilder: (BuildContext context, int i) {
+              final _Template tpl = _templates[i];
+              final String name = tpl.name(t);
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => onPick(tpl, name),
+                  child: Ink(
+                    width: 112,
+                    padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: <Color>[
+                          _tones[i % _tones.length],
+                          const Color(0xFF15182A),
+                        ],
+                      ),
+                      border: Border.all(color: const Color(0xFF3E3163)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        Text(tpl.emoji, style: const TextStyle(fontSize: 26)),
+                        Text(
+                          name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12.5,
+                            height: 1.15,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  static const List<Color> _tones = <Color>[
+    Color(0xFF3A2470),
+    Color(0xFF4A1F4F),
+    Color(0xFF123A4F),
+    Color(0xFF3A2E14),
+    Color(0xFF173F2E),
+    Color(0xFF4A2A1A),
+  ];
 }
 
 /// Entra deslizándose un poco hacia arriba (cada bloque un pelín después).
@@ -388,49 +578,102 @@ class _Appear extends StatelessWidget {
   );
 }
 
-/// Flyra explica cómo va esto (con su halo).
+/// La cabecera: Flyra con su halo, el título grande y cómo va esto, sobre
+/// un degradado violeta con "estrellitas".
 class _Hero extends StatelessWidget {
-  const _Hero({required this.text});
+  const _Hero({required this.title, required this.text});
 
+  final String title;
   final String text;
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(16),
+    padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
     decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(24),
-      border: Border.all(color: const Color(0xFF2B4A3F)),
+      borderRadius: BorderRadius.circular(28),
+      border: Border.all(color: const Color(0xFF5A46A0)),
       gradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: <Color>[Color(0xFF15302A), Color(0xFF1A1730)],
+        colors: <Color>[
+          Color(0xFF3A2470),
+          Color(0xFF1A1E4A),
+          Color(0xFF0F2A44),
+        ],
       ),
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: NomadColors.mint.withValues(alpha: 0.35),
-                blurRadius: 18,
-              ),
-            ],
-          ),
-          child: const FlyraAvatar(size: 52),
+      boxShadow: const <BoxShadow>[
+        BoxShadow(
+          color: Color(0x338A5CF6),
+          blurRadius: 30,
+          offset: Offset(0, 10),
         ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              color: NomadColors.text,
-              height: 1.45,
-              fontSize: 14,
+      ],
+    ),
+    child: Stack(
+      clipBehavior: Clip.none,
+      children: <Widget>[
+        // Puntitos de luz de adorno.
+        for (final (double, double, double) d
+            in const <(double, double, double)>[
+              (0.92, 0.05, 3),
+              (0.78, 0.30, 2),
+              (0.97, 0.55, 2.5),
+              (0.70, 0.08, 1.6),
+            ])
+          Positioned.fill(
+            child: Align(
+              alignment: Alignment(d.$1 * 2 - 1, d.$2 * 2 - 1),
+              child: Container(
+                width: d.$3 * 2,
+                height: d.$3 * 2,
+                decoration: const BoxDecoration(
+                  color: Color(0xCCE6DEFF),
+                  shape: BoxShape.circle,
+                ),
+              ),
             ),
           ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: _lilac, width: 2),
+                    boxShadow: const <BoxShadow>[
+                      BoxShadow(color: Color(0x668A5CF6), blurRadius: 20),
+                    ],
+                  ),
+                  child: const FlyraAvatar(size: 50),
+                ),
+                const SizedBox(width: 10),
+                const Text('✈️', style: TextStyle(fontSize: 22)),
+                const SizedBox(width: 4),
+                const Text('👥', style: TextStyle(fontSize: 22)),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              style: const TextStyle(
+                fontFamily: NomadFonts.display,
+                fontWeight: FontWeight.w800,
+                fontSize: 24,
+                height: 1.15,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              text,
+              style: const TextStyle(
+                color: Color(0xFFE6DEFF),
+                height: 1.45,
+                fontSize: 14,
+              ),
+            ),
+          ],
         ),
       ],
     ),
@@ -457,7 +700,7 @@ class _Steps extends StatelessWidget {
                 duration: const Duration(milliseconds: 300),
                 width: 14,
                 height: 2,
-                color: i <= step ? NomadColors.mint : NomadColors.outline,
+                color: i <= step ? _lilac : const Color(0xFF332A55),
               ),
             ),
           Expanded(
@@ -467,16 +710,16 @@ class _Steps extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
                 color: i < step
-                    ? NomadColors.mint.withValues(alpha: 0.14)
+                    ? const Color(0x338A5CF6)
                     : i == step
-                    ? NomadColors.group.withValues(alpha: 0.16)
-                    : NomadColors.surface,
+                    ? const Color(0x1F8A5CF6)
+                    : const Color(0xFF15182A),
                 border: Border.all(
                   color: i < step
-                      ? NomadColors.mint
+                      ? _lilac
                       : i == step
-                      ? NomadColors.group
-                      : NomadColors.outline,
+                      ? const Color(0xFF8A5CF6)
+                      : const Color(0xFF332A55),
                 ),
               ),
               // Arriba el círculo, debajo el nombre en hasta 2 líneas: así
@@ -490,9 +733,9 @@ class _Steps extends StatelessWidget {
                         : Icons.circle_outlined,
                     size: 16,
                     color: i < step
-                        ? NomadColors.mint
+                        ? _lilac
                         : i == step
-                        ? NomadColors.group
+                        ? const Color(0xFF8A5CF6)
                         : NomadColors.textMuted,
                   ),
                   const SizedBox(height: 4),
@@ -540,9 +783,13 @@ class _Section extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
     decoration: BoxDecoration(
-      color: NomadColors.surface,
       borderRadius: BorderRadius.circular(24),
-      border: Border.all(color: NomadColors.outline),
+      border: Border.all(color: const Color(0xFF332A55)),
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: <Color>[Color(0xFF1F1A36), Color(0xFF15182A)],
+      ),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -607,14 +854,14 @@ class _CurrencyRow extends StatelessWidget {
             c,
             style: TextStyle(
               fontWeight: FontWeight.w800,
-              color: on ? NomadColors.background : NomadColors.text,
+              color: on ? const Color(0xFF120C24) : NomadColors.text,
             ),
           ),
           selected: on,
           showCheckmark: false,
-          selectedColor: NomadColors.mint,
-          backgroundColor: NomadColors.surfaceHigh,
-          side: BorderSide(color: on ? NomadColors.mint : NomadColors.outline),
+          selectedColor: _lilac,
+          backgroundColor: const Color(0xFF221C3A),
+          side: BorderSide(color: on ? _lilac : const Color(0xFF3E3163)),
           onSelected: (_) => onPick(c),
         );
       },
@@ -660,7 +907,7 @@ class _Preview extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: <Color>[Color(0xFF151D2B), NomadColors.background],
+          colors: <Color>[Color(0xFF221A3E), Color(0xFF12101E)],
         ),
       ),
       child: Column(
@@ -816,11 +1063,22 @@ class _OptionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
+    final Color c = _Letter._colors[index % _Letter._colors.length];
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: NomadColors.surfaceHigh,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: NomadColors.outline),
+        border: Border.all(color: c.withValues(alpha: 0.45)),
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          stops: const <double>[0, 0.02, 0.02, 1],
+          colors: <Color>[
+            c,
+            c,
+            const Color(0xFF221C3A),
+            const Color(0xFF1A1830),
+          ],
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 8, 8, 14),
@@ -834,10 +1092,7 @@ class _OptionCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     t.groupOptionN(index + 1),
-                    style: const TextStyle(
-                      color: NomadColors.group,
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: TextStyle(color: c, fontWeight: FontWeight.w800),
                   ),
                 ),
                 if (onRemove != null)
