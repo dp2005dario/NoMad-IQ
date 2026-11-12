@@ -161,10 +161,13 @@ class Wikivoyage:
         for lang in dict.fromkeys([*langs, "en"]):
             data = await self._get(lang, {"action": "parse", "page": city, "prop": "sections"})
             parsed = data.get("parse") if isinstance(data, dict) else None
-            sections = parsed.get("sections") if isinstance(parsed, dict) else None
+            if not isinstance(parsed, dict):
+                continue
+            sections = parsed.get("sections")
             if not isinstance(sections, list):
                 continue
-            title = parsed.get("title") if isinstance(parsed.get("title"), str) else city
+            raw_title = parsed.get("title")
+            title = raw_title if isinstance(raw_title, str) else city
             index = next(
                 (
                     str(s.get("index"))
