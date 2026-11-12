@@ -27,6 +27,7 @@ import '../map/geo.dart';
 import '../map/location.dart';
 import '../nearby/nearby_api.dart' show ShopPhoto;
 import '../route/web_scene.dart';
+import '../sos/sos_store.dart' show telUri;
 import 'pick_point_screen.dart';
 import 'stays_api.dart';
 import 'stays_math.dart';
@@ -281,13 +282,29 @@ class _StaysScreenState extends State<StaysScreen> {
         } else {
           p.fare = v;
         }
-      case 'hotel' || 'hprice':
+      case 'hotel' || 'hprice' || 'hcall' || 'hweb' || 'hgo':
         final int? n = int.tryParse(a ?? '');
         final List<NearHotel> list = _hotels();
         if (n == null || n < 0 || n >= list.length) return;
         final NearHotel h = list[n];
-        if (part.first == 'hotel') {
-          // Como en Google Maps: ese hotel, con sus fotos y opiniones.
+        final String? phone = h.phone;
+        final Uri? site = h.website;
+        if (part.first == 'hcall' && phone != null) {
+          // Un toque y se abre el marcador con su número puesto.
+          unawaited(_services.openLink(telUri(phone)));
+          return;
+        }
+        if (part.first == 'hweb' && site != null) {
+          unawaited(_services.openLink(site));
+          return;
+        }
+        if (part.first == 'hgo') {
+          unawaited(_services.openLink(mapsDirections(h.point)));
+          return;
+        }
+        if (part.first != 'hprice') {
+          // Como en Google Maps: ese hotel, con sus fotos, opiniones y su
+          // teléfono (cuando OpenStreetMap no lo tiene).
           unawaited(_services.openBooking(mapsPlace(h.name, h.point)));
           return;
         }

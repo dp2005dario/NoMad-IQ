@@ -9,6 +9,7 @@ from typing import Any
 import httpx
 
 from ai_orchestrator.atms.overpass import OverpassBusyError, OverpassError, as_urls, post_query
+from ai_orchestrator.nearby.overpass import _https, _phone
 from ai_orchestrator.places.wikimedia import RateLimiter
 from ai_orchestrator.stays.domain import MAX_KM, STATION_RADIUS_M, WALK_KM, Lodging, Station
 
@@ -92,7 +93,17 @@ def parse(rows: list[Any]) -> tuple[list[Station], list[Lodging]]:
                 if isinstance(stars_raw, str) and stars_raw[:1] in "12345" and stars_raw
                 else None
             )
-            lodgings[rid] = Lodging(id=rid, lat=at[0], lon=at[1], name=_name(tags), kind=tourism, stars=stars)
+            lodgings[rid] = Lodging(
+                id=rid,
+                lat=at[0],
+                lon=at[1],
+                name=_name(tags),
+                kind=tourism,
+                stars=stars,
+                # Para "llamar con un toque" desde la ficha del hotel.
+                phone=_phone(tags),
+                website=_https(tags),
+            )
         elif tags.get("railway") in ("station", "halt"):
             name = _name(tags)
             if name is not None:

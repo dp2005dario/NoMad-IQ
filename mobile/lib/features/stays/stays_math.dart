@@ -81,3 +81,14 @@ Uri mapsPlace(String name, GeoPoint at) => Uri(
     '@${at.lat.toStringAsFixed(5)},${at.lon.toStringAsFixed(5)},17z',
   ],
 );
+
+/// Cómo llegar andando o en transporte hasta [at] (Google Maps lo abre en
+/// modo ruta desde donde estés).
+Uri mapsDirections(GeoPoint at) => Uri.https(
+  'www.google.com',
+  '/maps/dir/',
+  <String, String>{
+    'api': '1',
+    'destination': '${at.lat.toStringAsFixed(5)},${at.lon.toStringAsFixed(5)}',
+  },
+);

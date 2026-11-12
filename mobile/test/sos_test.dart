@@ -166,7 +166,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(opened.first.toString(), 'tel:110');
     expect(opened.last.scheme, 'sms');
-    expect(opened.last.queryParameters['body'], startsWith('🆘 EMERGENCIA: necesito ayuda urgente.'));
+    expect(
+      opened.last.queryParameters['body'],
+      startsWith('🆘 EMERGENCIA: necesito ayuda urgente.'),
+    );
   });
 
   test('la agenda: se limpia el número y sin número no vale', () {

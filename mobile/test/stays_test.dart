@@ -76,6 +76,8 @@ const Map<String, Object?> staysJson = <String, Object?>{
       'lat': 48.8590,
       'lon': 2.2945,
       'km': 0.9,
+      'phone': '+33 1 45 55 00 00',
+      'website': 'https://pension-tour.example',
     },
     // Sin id de OpenStreetMap válido: fuera.
     <String, Object?>{'id': 'x1', 'name': 'Raro', 'kind': 'hotel'},
@@ -158,6 +160,7 @@ void main() {
       return FakeGateway.json(staysJson);
     };
     final List<Uri> opened = <Uri>[];
+    final List<Uri> links = <Uri>[];
     final List<String> pages = <String>[];
     void Function(String)? send;
     final session = newSession()..continueAsGuest();
@@ -171,6 +174,10 @@ void main() {
         gateway: g,
         openBooking: (Uri u) async {
           opened.add(u);
+          return true;
+        },
+        openLink: (Uri u) async {
+          links.add(u);
           return true;
         },
         webScene: (String html, void Function(String) onMessage) {
@@ -245,6 +252,16 @@ void main() {
     expect(opened.last.queryParameters['latitude'], '48.85900');
     send!('hotel:9'); // no existe: nada
     expect(opened, hasLength(3));
+    // La ficha de arriba: llamar con un toque, su web y cómo llegar.
+    expect(first['tel'], isTrue);
+    expect(first['web'], isTrue);
+    send!('hcall:0');
+    expect(links.last.toString(), 'tel:+33%201%2045%2055%2000%2000');
+    send!('hweb:0');
+    expect(links.last.host, 'pension-tour.example');
+    send!('hgo:0');
+    expect(links.last.path, '/maps/dir/');
+    expect(links.last.queryParameters['destination'], '48.85900,2.29450');
 
     // Otro chip (la Torre Eiffel): se pide su zona y lo apuntado se guarda.
     final int before = pages.length;

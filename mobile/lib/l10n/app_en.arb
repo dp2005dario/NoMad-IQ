@@ -11307,6 +11307,22 @@
   "@hoHotelPrices": {
     "description": "Short button: see prices of this hotel on Booking"
   },
+  "hoCall": "Call",
+  "@hoCall": {
+    "description": "Hotel card button: call the hotel"
+  },
+  "hoFindPhone": "Phone in Maps",
+  "@hoFindPhone": {
+    "description": "Hotel card button when we don't know its phone: open it in Google Maps to see the phone"
+  },
+  "hoWeb": "Website",
+  "@hoWeb": {
+    "description": "Hotel card button: open the hotel's website"
+  },
+  "hoDirections": "Directions",
+  "@hoDirections": {
+    "description": "Hotel card button: how to get there (opens maps)"
+  },
   "routeAirportOf": "{city} airport",
   "@routeAirportOf": {
     "description": "Name of the airport of a city",

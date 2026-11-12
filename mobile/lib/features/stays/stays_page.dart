@@ -189,6 +189,10 @@ Map<String, String> staysTexts(AppLocalizations t) {
     'k_apartment': t.hoKindApartment,
     'openMaps': t.hoOpenMaps,
     'hotelPrices': t.hoHotelPrices,
+    'call': t.hoCall,
+    'findPhone': t.hoFindPhone,
+    'web': t.hoWeb,
+    'directions': t.hoDirections,
   };
 }
 
@@ -270,6 +274,8 @@ Map<String, Object?> staysPageData({
           'name': h.name,
           'kind': h.kind,
           'stars': h.stars,
+          'tel': h.phone != null,
+          'web': h.website != null,
           'm': (distanceMeters(center, h.point) / 10).round() * 10,
           'img': photos[h.id] ?? '',
         },
