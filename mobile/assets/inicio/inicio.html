@@ -227,8 +227,8 @@ body.red .rm .dg{fill:#ff3b30;animation:blink .25s steps(1) infinite}
 .pf::after{content:"";position:absolute;left:12%;right:12%;bottom:2px;height:18px;border-radius:50%;background:radial-gradient(#000c,transparent 70%);filter:blur(5px);animation:lsh 4.5s ease-in-out infinite}
 @keyframes lev{0%,100%{transform:translateY(0) rotateX(2deg)}50%{transform:translateY(-12px) rotateX(-1deg)}}
 @keyframes lsh{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(.82);opacity:.5}}
-.pass::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,#ffffff2e 50%,transparent 65%);background-size:260% 100%;animation:shine2 5s ease-in-out infinite;pointer-events:none}
-@keyframes shine2{0%{background-position:160% 0}60%,100%{background-position:-80% 0}}
+.pass::after{content:"";position:absolute;top:0;bottom:0;left:0;width:100%;background:linear-gradient(110deg,transparent 30%,#ffffff2e 50%,transparent 70%);transform:translateX(-110%);animation:shine2 5s ease-in-out infinite;pointer-events:none}
+@keyframes shine2{0%{transform:translateX(-110%)}60%,100%{transform:translateX(110%)}}
 .pf .gs{display:none}
 /* Pasaporte ya listo (pasaporte y DNI puestos): quieto, sin saltar ni brillar. */
 .pf.done .pass,.pf.done::after,.pass.done::after{animation:none}.pf.done::after{opacity:.6}
