@@ -212,4 +212,47 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('aún no está dibujado'), findsOneWidget);
   });
+
+  testWidgets('pide la ubicación al entrar y busca el aeropuerto por nombre', (
+    WidgetTester tester,
+  ) async {
+    final FakeGateway g = FakeGateway()..publicPrefixes.add('/v1/airports/');
+    final List<String> asked = <String>[];
+    g.services['/v1/airports/AGP/spots'] = (http.Request r) {
+      asked.add(r.url.path);
+      return FakeGateway.json(<String, Object?>{
+        'iata': 'AGP',
+        'lat': 36.67,
+        'lon': -4.49,
+        'spots': <Object?>[],
+      });
+    };
+    final FakeLocation gps = FakeLocation()
+      ..onRequest = LocationAccess.deniedForever;
+    final session = newSession()..continueAsGuest();
+    tester.view.physicalSize = const Size(1200, 4000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.airport(),
+      services: fakeServices(session, gateway: g, location: gps),
+    );
+    await tester.pumpAndSettle();
+    // La pregunta del sistema sale sola, sin botón "Activar ubicación".
+    expect(gps.requests, 1);
+    expect(find.text('Escribe abajo su ciudad o su nombre'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'aeropuerto de malaga');
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 300)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Málaga'), findsWidgets);
+    await tester.tap(find.text('España · AGP'));
+    await tester.pumpAndSettle();
+    expect(asked, <String>['/v1/airports/AGP/spots']);
+  });
 }

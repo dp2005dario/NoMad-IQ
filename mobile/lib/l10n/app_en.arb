@@ -8346,7 +8346,7 @@
   "@airportBusy": {
     "description": "Busy."
   },
-  "airportUnknown": "We do not know that airport. Check the 3-letter code.",
+  "airportUnknown": "I cannot find that airport. Try the city name.",
   "@airportUnknown": {
     "description": "Unknown airport."
   },

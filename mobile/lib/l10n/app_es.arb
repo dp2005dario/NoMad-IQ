@@ -1739,7 +1739,7 @@
   "airportOpen": "Abrir",
   "airportEmpty": "El interior de este aeropuerto aún no está dibujado en OpenStreetMap. Sigue los carteles del aeropuerto.",
   "airportBusy": "Mucha gente preguntando ahora. Prueba en un minuto.",
-  "airportUnknown": "No conocemos ese aeropuerto. Revisa el código de 3 letras.",
+  "airportUnknown": "No encuentro ese aeropuerto. Prueba con el nombre de la ciudad.",
   "airportGateField": "Tu puerta (p. ej. K42)",
   "airportGateNotFound": "La puerta {gate} no está en el mapa de este aeropuerto. Sigue los carteles hasta ella.",
   "airportKindGate": "Puerta",
