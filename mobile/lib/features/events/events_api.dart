@@ -25,6 +25,8 @@ class CityEvent {
     this.status,
     this.lat,
     this.lon,
+    this.image,
+    this.top = false,
   });
 
   final String id;
@@ -49,6 +51,13 @@ class CityEvent {
   final double? lat;
   final double? lon;
 
+  /// La foto real del evento (o su cartel), si la hay. Sin foto, la app
+  /// enseña el dibujo de siempre.
+  final Uri? image;
+
+  /// De los más conocidos de la ciudad en esas fechas.
+  final bool top;
+
   static CityEvent? parse(Object? json) {
     if (json is! Map<String, Object?>) return null;
     final Object? id = json['id'];
@@ -68,6 +77,7 @@ class CityEvent {
     }
 
     final Uri? url = Uri.tryParse(text('url') ?? '');
+    final Uri? image = Uri.tryParse(text('image') ?? '');
     final Object? price = json['price_min'];
     final String? currency = text('currency');
     return CityEvent(
@@ -92,6 +102,10 @@ class CityEvent {
         final num v when v >= -180 && v <= 180 => v.toDouble(),
         _ => null,
       },
+      image: image != null && image.scheme == 'https' && image.host.isNotEmpty
+          ? image
+          : null,
+      top: json['top'] == true,
     );
   }
 }

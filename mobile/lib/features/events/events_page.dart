@@ -236,6 +236,8 @@ Map<String, Object?> eventsPageData({
             'stCol': stCol,
             'start': start.millisecondsSinceEpoch,
             'url': e.url?.toString() ?? '',
+            'photo': e.image?.toString() ?? '',
+            'top': e.top,
           };
         }(),
     ],

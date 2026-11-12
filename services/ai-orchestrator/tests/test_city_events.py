@@ -127,6 +127,28 @@ def test_parsers_keep_only_real_fields() -> None:
     assert parse_ticketmaster({}) == []
 
 
+def test_ticketmaster_photo_and_famous_first() -> None:
+    images = [
+        {"ratio": "3_2", "url": "https://s1.ticketm.net/a_3_2.jpg", "width": 640},
+        {"ratio": "16_9", "url": "https://s1.ticketm.net/a_16_9_small.jpg", "width": 205},
+        {"ratio": "16_9", "url": "https://s1.ticketm.net/a_16_9.jpg", "width": 1024},
+        {"ratio": "16_9", "url": "https://s1.ticketm.net/a_16_9_huge.jpg", "width": 2048},
+        {"ratio": "16_9", "url": "http://inseguro/x.jpg", "width": 800},
+    ]
+    rows = [tm_event("f", "2026-06-12", images=images)]
+    rows += [tm_event(f"r{i}", "2026-06-12") for i in range(20)]
+    small = [{"ratio": "4_3", "url": "https://x/y.jpg", "width": 305}]
+    rows.append(tm_event("o", "2026-06-12", images=small))
+    ev = parse_ticketmaster({"_embedded": {"events": rows}})
+    # La foto 16:9 que se ve bien y pesa poco (ni la enorme ni la http).
+    assert ev[0].image == "https://s1.ticketm.net/a_16_9.jpg"
+    # Sin 16:9 grande: la más ancha que haya; sin fotos: nada (sale el dibujo).
+    assert ev[-1].image == "https://x/y.jpg"
+    assert ev[1].image is None
+    # Los primeros por relevancia son "de los más conocidos".
+    assert ev[0].top and ev[14].top and not ev[15].top
+
+
 def test_ticketmaster_status_and_place() -> None:
     ev = parse_ticketmaster(
         {

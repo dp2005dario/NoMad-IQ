@@ -220,7 +220,11 @@ void main() {
     (events[2]! as Map<String, Object?>).addAll(<String, Object?>{
       'lat': 38.7527,
       'lon': -9.1847,
+      // Foto real del cartel y de los más conocidos.
+      'image': 'https://s1.ticketm.net/dam/a/123/foto_16_9.jpg',
+      'top': true,
     });
+    (events[1]! as Map<String, Object?>)['image'] = 'http://inseguro/x.jpg';
     final FakeGateway g = FakeGateway()..publicPrefixes.add('/v1/events');
     g.services['/v1/events'] = (http.Request r) => FakeGateway.json(data);
     final MemorySettingsStore store = MemorySettingsStore('es');
@@ -254,6 +258,12 @@ void main() {
     final int walk = (hotel.distanceTo(const GeoPoint(38.768, -9.094)) / 80)
         .round();
     final List<Object?> ev = d['events']! as List<Object?>;
+    final Map<String, Object?> famous = ev[2]! as Map<String, Object?>;
+    expect(famous['photo'], 'https://s1.ticketm.net/dam/a/123/foto_16_9.jpg');
+    expect(famous['top'], isTrue);
+    // Sin https no hay foto: sale el dibujo.
+    expect((ev[1]! as Map<String, Object?>)['photo'], '');
+    expect((ev[0]! as Map<String, Object?>)['top'], isFalse);
     expect(
       (ev[1]! as Map<String, Object?>)['when'],
       endsWith('a $walk min andando de tu hotel'),

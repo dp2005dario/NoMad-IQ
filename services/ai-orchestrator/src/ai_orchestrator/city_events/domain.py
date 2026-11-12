@@ -47,6 +47,11 @@ class CityEvent(BaseModel):
     # Dónde está el sitio (el recinto de Ticketmaster), para el mapa.
     lat: float | None = None
     lon: float | None = None
+    # Foto real del evento o del cartel (https, de Ticketmaster).
+    image: str | None = None
+    # De los más conocidos de la ciudad en esas fechas (Ticketmaster los
+    # ordena por relevancia: los primeros son los famosos).
+    top: bool = False
 
 
 class CityEvents(BaseModel):

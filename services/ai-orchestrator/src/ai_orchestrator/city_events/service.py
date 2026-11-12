@@ -34,7 +34,7 @@ from ai_orchestrator.places.airports import Airports
 
 log = logging.getLogger(__name__)
 
-KEY_PREFIX = "ai:events:v1"
+KEY_PREFIX = "ai:events:v2"
 _LIST = TypeAdapter(list[CityEvent])
 
 SOURCE_HOLIDAYS = "Nager.Date"
@@ -169,7 +169,8 @@ class CityEventService:
             if got is not None:
                 events += got
                 sources.append(SOURCE_TICKETMASTER)
-        events.sort(key=lambda e: (e.date, e.kind != "holiday", e.time or "99:99", e.name))
+        # Cada día: festivos, luego los más conocidos, luego por hora.
+        events.sort(key=lambda e: (e.date, e.kind != "holiday", not e.top, e.time or "99:99", e.name))
         return CityEvents(
             iata=airport.iata,
             city=airport.city,
