@@ -46,6 +46,9 @@ enum LocalData {
   /// Los últimos cajeros que se encontraron (por si luego falla la red).
   atmsCache,
 
+  /// El clima y los datos de cada país de Explorar (para abrirla al instante).
+  exploreData,
+
   /// Las descargas de ciudades paradas a medias (para "Seguir").
   offlinePaused,
 

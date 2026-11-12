@@ -21,6 +21,7 @@ from ai_orchestrator.audioguides.cache import CacheError, SingleFlight
 from ai_orchestrator.climate.countries import COUNTRY_POINTS
 from ai_orchestrator.climate.domain import Climate, cell_of
 from ai_orchestrator.climate.nasa import NasaBusyError, NasaClient, NasaError
+from ai_orchestrator.climate.worldbank import CountryFacts, WorldBankFacts
 
 log = logging.getLogger(__name__)
 
@@ -78,9 +79,15 @@ class ClimateSettings:
 
 class ClimateService:
     def __init__(
-        self, *, nasa: NasaClient, cache: ClimateCache, settings: ClimateSettings | None = None
+        self,
+        *,
+        nasa: NasaClient,
+        cache: ClimateCache,
+        settings: ClimateSettings | None = None,
+        facts: WorldBankFacts | None = None,
     ) -> None:
         self._nasa = nasa
+        self._facts = facts
         self._cache = cache
         self._settings = settings or ClimateSettings()
         self._flight: SingleFlight[Climate] = SingleFlight()
@@ -134,12 +141,31 @@ class ClimateService:
             self._filler = asyncio.create_task(self._fill(missing))
         return found, not missing
 
+    async def facts(self) -> dict[str, CountryFacts]:
+        """Turistas, precios, seguridad... de cada país (Banco Mundial)."""
+        if self._facts is None:
+            return {}
+        return await self._facts.cached()
+
+    async def warm(self) -> None:
+        """Al arrancar el servidor: empieza a llenar la caché de todos los
+        países, para que Explorar ya lo tenga todo cuando alguien la abra."""
+        try:
+            await self.countries()
+            await self.facts()
+        except CacheError:
+            log.warning("sin Redis al preparar Explorar")
+
     async def _fill(self, missing: list[tuple[str, float, float]]) -> None:
         for _, lat, lon in missing:
-            try:
-                await self.at(lat, lon)
-            except ClimateBusyError:
-                # Hemos llegado al límite: se sigue en la próxima petición.
-                return
-            except (ClimateUnavailableError, CacheError):
-                continue
+            # Si la NASA pide calma (límite de ritmo), se espera y se reintenta
+            # el MISMO país. Antes se rendía y la mayoría de países se quedaban
+            # sin datos hasta que alguien volvía a abrir Explorar.
+            for wait in (2, 5, 15, 30, 60):
+                try:
+                    await self.at(lat, lon)
+                    break
+                except ClimateBusyError:
+                    await asyncio.sleep(wait)
+                except (ClimateUnavailableError, CacheError):
+                    break

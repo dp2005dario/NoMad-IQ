@@ -3284,6 +3284,46 @@
   "@exwYear": {
     "description": "Chart title: score through the year"
   },
+  "exwPerYear": "per year",
+  "@exwPerYear": {
+    "description": "Suffix after a number of tourists: per year"
+  },
+  "exwCheap": "Cheap",
+  "@exwCheap": {
+    "description": "Price level: cheap"
+  },
+  "exwMid": "Average",
+  "@exwMid": {
+    "description": "Price level: average"
+  },
+  "exwPricey": "Expensive",
+  "@exwPricey": {
+    "description": "Price level: expensive"
+  },
+  "exwSafe": "Safe",
+  "@exwSafe": {
+    "description": "Safety level: calm/safe"
+  },
+  "exwCareful": "Take care",
+  "@exwCareful": {
+    "description": "Safety level: take care"
+  },
+  "exwRisky": "Risky",
+  "@exwRisky": {
+    "description": "Safety level: risky"
+  },
+  "exwCapital": "Capital",
+  "@exwCapital": {
+    "description": "Stat: capital city"
+  },
+  "exwPopulation": "Population",
+  "@exwPopulation": {
+    "description": "Stat: population"
+  },
+  "exwFactsSource": "Tourists, prices, safety and population: World Bank (CC BY 4.0)",
+  "@exwFactsSource": {
+    "description": "Source line for tourists, prices, safety and population"
+  },
   "exwClose": "Close",
   "@exwClose": {
     "description": "Close button label"

@@ -6,8 +6,10 @@
 // WebView, sin datos de ejemplo: la app le pone los textos en tu idioma y el
 // clima REAL de cada país (NASA POWER, medias de 30 años: temperatura y
 // lluvia de cada mes). La puntuación de 0 a 100 sale de ahí: 22 °C y poca
-// lluvia es lo ideal. Lo que no tiene una fuente fiable y gratis (turistas,
-// coste diario, seguridad) dice "Sin datos".
+// lluvia es lo ideal. Turistas, precios, seguridad, habitantes y capital
+// salen del Banco Mundial (también por el servidor). Lo que un país no
+// tenga dice "Sin datos". Todo se guarda en el móvil: la siguiente vez la
+// página sale llena al instante.
 import 'dart:async';
 import 'dart:convert';
 
@@ -15,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/services.dart';
+import '../../core/settings.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../route/web_scene.dart';
@@ -61,6 +64,16 @@ Map<String, String> exploreTexts(AppLocalizations t) => <String, String>{
   'zoomOut': t.exwZoomOut,
   'zoomAll': t.exwZoomAll,
   'loadFail': t.exwLoadFail,
+  'perYear': t.exwPerYear,
+  'cheap': t.exwCheap,
+  'mid': t.exwMid,
+  'pricey': t.exwPricey,
+  'safe': t.exwSafe,
+  'careful': t.exwCareful,
+  'risky': t.exwRisky,
+  'capital': t.exwCapital,
+  'population': t.exwPopulation,
+  'factsSource': t.exwFactsSource,
 };
 
 /// La página lista para enseñar: [page] con los textos y el clima dentro.
@@ -75,9 +88,21 @@ String explorePageWith(
     'lang': language,
     't': texts,
     'climate': climate.byCountry,
+    'facts': factsJson(climate.facts),
   }).replaceAll('</', r'<\/');
   return page.replaceFirst(exploreMarker, data);
 }
+
+/// Los datos de cada país, como los lee la página.
+Map<String, Object> factsJson(Map<String, WorldFacts> facts) =>
+    <String, Object>{
+      for (final MapEntry<String, WorldFacts> e in facts.entries)
+        e.key: e.value.toJson(),
+    };
+
+/// Cuántas veces se vuelve a preguntar mientras el servidor aún va
+/// llenando países (cada 15 s: hasta ~10 minutos con la pantalla abierta).
+const int exploreMaxTries = 40;
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -115,24 +140,49 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   Future<void> _load() async {
     _page ??= await rootBundle.loadString(explorePage);
-    CountryClimate climate = _climate;
+    // Lo que se guardó la última vez: la página sale ya con datos, al
+    // instante, aunque el servidor tarde o no haya red.
+    if (_html == null) {
+      try {
+        final String? saved = _services.prefs.readData(LocalData.exploreData);
+        if (saved != null) _climate = CountryClimate.parse(jsonDecode(saved));
+      } on FormatException {
+        // Guardado roto: se empieza de cero.
+      }
+    }
+    CountryClimate fresh = const CountryClimate(
+      byCountry: <String, List<List<double>>>{},
+      complete: false,
+    );
+    bool answered = false;
     try {
-      climate = await _services.climate.countries();
+      fresh = await _services.climate.countries();
+      answered = true;
     } on Exception {
-      // Sin red: el mundo sale en gris ("Sin datos"); se reintenta.
+      // Sin red: se queda lo guardado; se reintenta.
     }
     if (!mounted) return;
     final CountryClimate before = _climate;
+    final CountryClimate climate = answered ? before.merge(fresh) : before;
     final Map<String, List<List<double>>> added = <String, List<List<double>>>{
       for (final MapEntry<String, List<List<double>>> e
           in climate.byCountry.entries)
         if (!before.byCountry.containsKey(e.key)) e.key: e.value,
     };
+    final bool newFacts = before.facts.isEmpty && climate.facts.isNotEmpty;
     final bool first = _html == null;
     setState(() {
       _climate = climate;
       if (first) _html = _build();
     });
+    if (answered && (added.isNotEmpty || newFacts)) {
+      unawaited(
+        _services.prefs.writeData(
+          LocalData.exploreData,
+          jsonEncode(climate.toJson()),
+        ),
+      );
+    }
     // Países nuevos con la página ya abierta: se le mandan sin recargarla
     // (recargar cerraba la ficha del país que estabas mirando y reiniciaba
     // el globo: por eso "salía muy rápido" o parecía pillado).
@@ -142,11 +192,17 @@ class _ExploreScreenState extends State<ExploreScreen> {
         '${jsonEncode(added).replaceAll('</', r'<\/')});',
       );
     }
-    // La primera vez el servidor va pidiendo los países poco a poco: se
-    // vuelve a preguntar unas cuantas veces.
-    if (!climate.complete && _tries < 4) {
+    if (!first && newFacts) {
+      await _bridge.run(
+        'window.__facts&&window.__facts('
+        '${jsonEncode(factsJson(climate.facts)).replaceAll('</', r'<\/')});',
+      );
+    }
+    // El servidor va pidiendo los países poco a poco (la NASA no deja ir
+    // más rápido): se vuelve a preguntar mientras la pantalla esté abierta.
+    if (!(answered && fresh.complete) && _tries < exploreMaxTries) {
       _tries++;
-      _again = Timer(const Duration(seconds: 20), () => unawaited(_load()));
+      _again = Timer(const Duration(seconds: 15), () => unawaited(_load()));
     }
   }
 

@@ -174,7 +174,7 @@ var TEXS={bm:'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/7QA4UGhvdG9zaG9
 (function(){
 "use strict";
 var ECL=/*ECLIPTA*/{"lang":"es","t":{},"climate":{}};
-var T=ECL.t,REAL=ECL.climate||{},LANG=ECL.lang||"es";
+var T=ECL.t,REAL=ECL.climate||{},LANG=ECL.lang||"es",FACTS=ECL.facts||{};
 function tx(k){return T[k]||k}
 var MES=[],MESL=[];(function(){for(var m=0;m<12;m++){var d=new Date(2026,m,15);var sh=d.toLocaleString(LANG,{month:"short"}).replace(".","");if(LANG.slice(0,2)==="es")sh=sh.slice(0,3);MES.push(sh.charAt(0).toUpperCase()+sh.slice(1));var lg=d.toLocaleString(LANG,{month:"long"});MESL.push(lg.charAt(0).toUpperCase()+lg.slice(1))}})();
 
@@ -290,12 +290,21 @@ function openSheet(i){if(sel>=0)paths[sel].classList.remove("sel");sel=i;paths[i
   paths[i].parentNode.appendChild(paths[i]);if(globeOn&&S)flyTo(C[i],900);renderSheet();sh.classList.add("on");scrim.classList.add("on");sh.setAttribute("aria-hidden","false");sh.scrollTop=0}
 function closeSheet(){if(sel>=0)paths[sel].classList.remove("sel");sel=-1;sh.classList.remove("on");scrim.classList.remove("on");sh.setAttribute("aria-hidden","true");pauseUntil=performance.now()+2500}
 scrim.onclick=closeSheet;document.addEventListener("keydown",function(e){if(e.key==="Escape")closeSheet()});
+function esc(v){return String(v).replace(/[&<>"]/g,function(ch){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]})}
+function big(n){try{return new Intl.NumberFormat(LANG,{notation:"compact",maximumFractionDigits:1}).format(n)}catch(e){return String(n)}}
+// Llegan los datos de los países con la página ya abierta.
+window.__facts=function(f){FACTS=f||{};if(sel>=0)renderSheet()};
 function lv(n,warn){var s='<div class="lv'+(warn?" warn":"")+'">';for(var k=1;k<=5;k++)s+='<i class="'+(k<=n?"on":"")+'"></i>';return s+"</div>"}
 function renderSheet(){var c=C[sel],s=c.s[cur],k=col(s);
   var circ=2*Math.PI*30,cols="",cl="",best=-1;
   c.s.forEach(function(v,m){if(v!==null&&(best<0||v>c.s[best]))best=m});
   c.s.forEach(function(v,m){cols+='<div class="'+(m===cur?"cur":"")+'" style="height:'+Math.max(6,(v||0)*0.64)+'px;background:'+col(v)+'"></div>';cl+="<span>"+MES[m].charAt(0)+"</span>"});
   var none='<div class="v" style="font-size:18px;color:var(--muted)">'+tx("noData")+'</div>';
+  // Datos del Banco Mundial: precios (EE. UU. = 1) y homicidios por 100 000
+  // pasados a 1-5 rayitas.
+  var F=FACTS[c.iso]||{},p=F.price,h=F.homicides;
+  var pl=p==null?0:p<.35?1:p<.5?2:p<.75?3:p<1?4:5;
+  var sf=h==null?0:h<1?5:h<2.5?4:h<5?3:h<10?2:1;
   var verdict=!c.has?tx("noData"):s>=70?tx("vGreat"):s>=50?tx("vGood"):s>=30?tx("vFair"):tx("vAvoid");
   sh.innerHTML='<div class="grab"></div><div class="sh-top"><div><div style="display:flex;align-items:center;gap:12px"><span id="shf" style="flex:none"></span><h3 id="shn"></h3></div></div><button class="x" id="sx" aria-label="'+tx("close")+'">&#10005;</button></div>'+
   '<div class="verdict"><div class="ring"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="30" fill="none" stroke="#22343f" stroke-width="7"/><circle cx="36" cy="36" r="30" fill="none" stroke="'+k+'" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+(circ*(s||0)/100)+' '+circ+'"/></svg><b>'+(c.has?s:"—")+'</b></div>'+
@@ -303,10 +312,13 @@ function renderSheet(){var c=C[sel],s=c.s[cur],k=col(s);
   '<div class="grid">'+
   '<div class="st"><div class="k">'+tx("temp")+'</div>'+(c.has?'<div class="v">'+Math.round(c.t[cur])+'°C</div>':none)+'</div>'+
   '<div class="st"><div class="k">'+tx("rain")+'</div>'+(c.has?'<div class="v">'+Math.round(c.r[cur])+'<small>mm</small></div>':none)+'</div>'+
-  '<div class="st"><div class="k">'+tx("tourists")+'</div>'+none+'</div>'+
-  '<div class="st"><div class="k">'+tx("cost")+'</div>'+none+'</div>'+
-  '<div class="st" style="grid-column:1/-1"><div class="k">'+tx("safety")+'</div>'+none+'</div></div>'+
-  '<div class="yr"><div class="k">'+tx("year")+'</div><div class="cols">'+cols+'</div><div class="cl">'+cl+'</div></div>';
+  '<div class="st"><div class="k">'+tx("tourists")+'</div>'+(F.arrivals!=null?'<div class="v">'+big(F.arrivals)+'<small>'+esc(tx("perYear"))+'</small></div>':none)+'</div>'+
+  '<div class="st"><div class="k">'+tx("cost")+'</div>'+(pl?'<div class="v" style="font-size:18px">'+esc(tx(pl<3?"cheap":pl<4?"mid":"pricey"))+'</div>'+lv(pl,pl>=4):none)+'</div>'+
+  '<div class="st"><div class="k">'+tx("safety")+'</div>'+(sf?'<div class="v" style="font-size:18px">'+esc(tx(sf>=4?"safe":sf>=3?"careful":"risky"))+'</div>'+lv(sf,sf<=2):none)+'</div>'+
+  '<div class="st"><div class="k">'+tx("population")+'</div>'+(F.population!=null?'<div class="v">'+big(F.population)+'</div>':none)+'</div>'+
+  (F.capital?'<div class="st" style="grid-column:1/-1"><div class="k">'+tx("capital")+'</div><div class="v" style="font-size:18px">'+esc(F.capital)+'</div></div>':'')+'</div>'+
+  '<div class="yr"><div class="k">'+tx("year")+'</div><div class="cols">'+cols+'</div><div class="cl">'+cl+'</div></div>'+
+  (F.arrivals!=null||pl||sf?'<p class="fsrc" style="font-size:11px;color:var(--muted);margin:10px 2px 0">'+esc(tx("factsSource"))+'</p>':'');
   $("shn").textContent=c.name;$("shf").appendChild(flag(c.iso,"big"));glabel.innerHTML="";glabel.appendChild(flag(c.iso));var gs=document.createElement("span");gs.textContent=c.name;glabel.appendChild(gs);$("sx").onclick=closeSheet}
 /* ---- Tierra realista: textura real NASA Blue Marble + relieve + tinte por mes ---- */
 var TW=2048,TH=1024,QW=1024,QH=512,Q=null,S=null,CL=null,tex=null;

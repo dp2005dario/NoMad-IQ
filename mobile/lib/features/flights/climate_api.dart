@@ -86,13 +86,85 @@ class ClimateApi {
   }
 }
 
+/// Datos de un país del Banco Mundial (Explorar). null = no lo tienen.
+class WorldFacts {
+  const WorldFacts({
+    this.arrivals,
+    this.price,
+    this.homicides,
+    this.population,
+    this.capital,
+  });
+
+  /// Turistas que llegan al año.
+  final int? arrivals;
+
+  /// Nivel de precios (EE. UU. = 1): 0,5 = la mitad de caro.
+  final double? price;
+
+  /// Homicidios por cada 100 000 habitantes (para la seguridad).
+  final double? homicides;
+  final int? population;
+  final String? capital;
+
+  static WorldFacts? parse(Object? json) {
+    if (json is! Map<String, Object?>) return null;
+    num? n(String k) {
+      final Object? v = json[k];
+      return v is num && v >= 0 && v.isFinite ? v : null;
+    }
+
+    final Object? cap = json['capital'];
+    final WorldFacts f = WorldFacts(
+      arrivals: n('arrivals')?.round(),
+      price: n('price')?.toDouble(),
+      homicides: n('homicides')?.toDouble(),
+      population: n('population')?.round(),
+      capital: cap is String && cap.isNotEmpty && cap.length <= 80 ? cap : null,
+    );
+    return f.toJson().isEmpty ? null : f;
+  }
+
+  Map<String, Object> toJson() => <String, Object>{
+    'arrivals': ?arrivals,
+    'price': ?price,
+    'homicides': ?homicides,
+    'population': ?population,
+    'capital': ?capital,
+  };
+}
+
 /// El clima de todos los países que tiene el servidor (ver [ClimateApi]).
 class CountryClimate {
-  const CountryClimate({required this.byCountry, required this.complete});
+  const CountryClimate({
+    required this.byCountry,
+    required this.complete,
+    this.facts = const <String, WorldFacts>{},
+  });
 
   /// "ES" → [[temperatura, lluvia], ...] de enero a diciembre.
   final Map<String, List<List<double>>> byCountry;
   final bool complete;
+
+  /// "ES" → turistas, precios, seguridad... (Banco Mundial).
+  final Map<String, WorldFacts> facts;
+
+  /// Junta lo guardado en el móvil ([this]) con lo nuevo del servidor.
+  CountryClimate merge(CountryClimate fresh) => CountryClimate(
+    byCountry: <String, List<List<double>>>{...byCountry, ...fresh.byCountry},
+    complete: fresh.complete,
+    facts: fresh.facts.isNotEmpty ? fresh.facts : facts,
+  );
+
+  /// Mismo formato que manda el servidor (para guardarlo en el móvil).
+  Map<String, Object?> toJson() => <String, Object?>{
+    'complete': complete,
+    'countries': byCountry,
+    'facts': <String, Object>{
+      for (final MapEntry<String, WorldFacts> e in facts.entries)
+        e.key: e.value.toJson(),
+    },
+  };
 
   static CountryClimate parse(Object? json) {
     final Map<String, List<List<double>>> out = <String, List<List<double>>>{};
@@ -126,6 +198,19 @@ class CountryClimate {
         if (rows.length == 12) out[e.key] = rows;
       }
     }
-    return CountryClimate(byCountry: out, complete: json['complete'] == true);
+    final Map<String, WorldFacts> facts = <String, WorldFacts>{};
+    final Object? rawFacts = json['facts'];
+    if (rawFacts is Map<String, Object?>) {
+      for (final MapEntry<String, Object?> e in rawFacts.entries) {
+        if (!RegExp(r'^[A-Z]{2}$').hasMatch(e.key)) continue;
+        final WorldFacts? f = WorldFacts.parse(e.value);
+        if (f != null) facts[e.key] = f;
+      }
+    }
+    return CountryClimate(
+      byCountry: out,
+      complete: json['complete'] == true,
+      facts: facts,
+    );
   }
 }

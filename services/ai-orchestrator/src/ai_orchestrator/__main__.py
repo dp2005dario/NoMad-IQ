@@ -74,6 +74,7 @@ from ai_orchestrator.city_events.service import CityEventService, EventSettings,
 from ai_orchestrator.city_events.sources import NagerClient, SourceBusyError, TicketmasterClient
 from ai_orchestrator.climate.nasa import NasaBusyError, NasaClient
 from ai_orchestrator.climate.service import ClimateService, ClimateSettings, RedisClimateCache
+from ai_orchestrator.climate.worldbank import WorldBankFacts
 from ai_orchestrator.config import Settings
 from ai_orchestrator.consumer import AlertProcessor, FareAlertConsumer
 from ai_orchestrator.drive.overpass import DriveOverpass
@@ -501,6 +502,7 @@ def _climate(settings: Settings, redis: Redis, stack: AsyncExitStack) -> Climate
         ),
         cache=RedisClimateCache(redis),
         settings=ClimateSettings(ttl_seconds=settings.climate_ttl_seconds),
+        facts=WorldBankFacts(http, redis),
     )
 
 
@@ -821,6 +823,9 @@ async def run(settings: Settings) -> int:
         climate: ClimateService | None = None
         if settings.climate_enabled and public_redis is not None:
             climate = _climate(settings, public_redis, stack)
+            # Explorar: se empieza a llenar ya la caché de todos los países.
+            warm = asyncio.create_task(climate.warm())
+            stack.callback(warm.cancel)
 
         # --- Radar local: lluvia (MET Norway con caché en Redis) --------------------------
         rain: RainService | None = None

@@ -66,6 +66,7 @@ from ai_orchestrator.city_events.service import BadDatesError, CityEventService
 from ai_orchestrator.city_events.service import UnknownAirportError as UnknownEventAirportError
 from ai_orchestrator.climate.domain import ATTRIBUTION, Climate
 from ai_orchestrator.climate.service import ClimateBusyError, ClimateService, ClimateUnavailableError
+from ai_orchestrator.climate.worldbank import FACTS_ATTRIBUTION
 from ai_orchestrator.domain import Recommendation, Verdict
 from ai_orchestrator.drive.domain import DriveArea
 from ai_orchestrator.drive.service import DriveBusyError, DriveService, DriveUnavailableError
@@ -573,6 +574,7 @@ def create_api(
             # medias de cada país (NASA POWER). "complete" = false mientras
             # se van pidiendo los que faltan (la app vuelve a preguntar).
             found, complete = await climate.countries()
+            facts = await climate.facts()
             body = {
                 "complete": complete,
                 "countries": {
@@ -580,7 +582,11 @@ def create_api(
                     for iso, c in found.items()
                 },
                 "attribution": ATTRIBUTION,
+                # Turistas, precios, seguridad, habitantes y capital.
+                "facts": {iso: f.model_dump(exclude_none=True) for iso, f in facts.items()},
+                "facts_attribution": FACTS_ATTRIBUTION,
             }
+            complete = complete and bool(facts)
             cache = "public, max-age=3600" if complete else "no-store"
             return JSONResponse(body, headers={"Cache-Control": cache})
 
