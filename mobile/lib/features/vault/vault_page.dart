@@ -45,6 +45,7 @@ Map<String, Object?> vaultPageData({
   List<String> found = const <String>[],
   String file = '',
   String? message,
+  bool denied = false,
 }) => <String, Object?>{
   'phase': phase.name,
   'scan': scan,
@@ -57,6 +58,8 @@ Map<String, Object?> vaultPageData({
   'found': found,
   'file': file,
   'msg': message ?? '',
+  // La huella no valió: la página la pinta en rojo y la hace temblar.
+  if (denied) 'deny': true,
 };
 
 /// La página lista para enseñar.

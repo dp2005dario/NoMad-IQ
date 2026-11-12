@@ -65,6 +65,8 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
     // La ventana de la huella también "pausa" la app en algunos móviles:
     // eso no cuenta como salir.
     if (_asking) return;
+    // Tampoco ir a la cámara o a la galería para guardar algo en la Bóveda.
+    if (ServicesScope.of(context).vault.away) return;
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden) {
       _left ??= DateTime.now();

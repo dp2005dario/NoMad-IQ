@@ -38,9 +38,13 @@ class FakeDocSource implements DocSource {
   final PickedDoc? doc;
   final List<DocOrigin> asked = <DocOrigin>[];
 
+  /// Lo que pasa mientras la cámara está abierta.
+  void Function()? onPick;
+
   @override
   Future<PickedDoc?> pick(DocOrigin origin) async {
     asked.add(origin);
+    onPick?.call();
     return doc;
   }
 }
@@ -149,6 +153,23 @@ void main() {
       u.answer = UnlockResult.ok;
       await v.open('x');
       expect(v.isOpen, isTrue);
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      expect(v.isOpen, isFalse);
+    });
+
+    test('ir a la cámara no la cierra (ni por el reloj)', () async {
+      final FakeUnlocker u = FakeUnlocker();
+      final Vault v = newVault(u, autoLock: const Duration(milliseconds: 20));
+      await v.open('x');
+      final bool stillOpen = await v.whileAway(() async {
+        expect(v.away, isTrue);
+        await Future<void>.delayed(const Duration(milliseconds: 60));
+        return v.isOpen;
+      });
+      expect(stillOpen, isTrue);
+      expect(v.away, isFalse);
+      expect(v.isOpen, isTrue);
+      // Al volver, los 2 minutos (aquí 20 ms) cuentan otra vez.
       await Future<void>.delayed(const Duration(milliseconds: 60));
       expect(v.isOpen, isFalse);
     });
@@ -357,11 +378,27 @@ void main() {
       expect(vaultData(pages.last)['phase'], 'locked');
       expect(pages.last, isNot(contains('ejemplo')));
 
+      // La huella no vale: sigue cerrada y la página la pinta en rojo.
+      u.answer = UnlockResult.cancelled;
+      send!('unlock');
+      await wait(() => vaultData(pages.last)['deny'] == true);
+      expect(vaultData(pages.last)['phase'], 'locked');
+      u.answer = UnlockResult.ok;
+
       send!('unlock');
       await wait(() => vaultData(pages.last)['phase'] == 'opening');
-      expect(u.asked, 1);
+      expect(u.asked, 2);
+      expect(vaultData(pages.last)['deny'], isNull);
 
       // Foto con la cámara en la tarjeta 1: se leen sus datos y se guarda.
+      // La cámara del sistema "esconde" la app: la Bóveda no se cierra.
+      source.onPick = () {
+        tester.binding
+          ..handleAppLifecycleStateChanged(AppLifecycleState.inactive)
+          ..handleAppLifecycleStateChanged(AppLifecycleState.hidden)
+          ..handleAppLifecycleStateChanged(AppLifecycleState.inactive)
+          ..handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      };
       send!('cam:1');
       await wait(() => v.docs.isNotEmpty);
       await wait(() => vaultData(pages.last)['msg'] != '');
