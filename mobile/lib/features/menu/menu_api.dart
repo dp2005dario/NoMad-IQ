@@ -90,6 +90,7 @@ class MenuApi {
         'language': language,
         'place_language': ?placeLanguage,
       },
+      timeout: aiTimeout,
     );
     if (json is! Map<String, Object?>) {
       throw const ApiException(ApiError.unavailable);

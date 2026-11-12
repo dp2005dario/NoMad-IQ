@@ -187,7 +187,7 @@ class GroupChatApi {
               ? text.substring(0, maxChatText)
               : text,
           'language': language,
-        }),
+        }, timeout: aiTimeout),
       );
 
   Future<void> setKind(String tripId, ChatTripKind kind) async => _api.putJson(

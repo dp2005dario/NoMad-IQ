@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/features/flyra/flyra_chat_screen.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:eclipta/core/api_client.dart';
 import 'package:eclipta/auth/session.dart';
 import 'package:eclipta/core/router.dart';
 import 'package:eclipta/core/settings.dart';
@@ -127,6 +129,45 @@ void main() {
         for (int i = 0; i < 100; i++) ChatTurn(ChatRole.user, '$i'),
       ]);
       expect(decodeHistory(saved).length, maxTurnsKept);
+    });
+  });
+
+  group('esperar a la IA', () {
+    // Un servidor que tarda en contestar (como Gemini con una respuesta larga).
+    Future<ApiClient> slowApi(Duration delay) async => ApiClient(
+      baseUrl: Uri.parse('http://gateway.test'),
+      session: await signedInSession(FakeGateway()),
+      timeout: const Duration(milliseconds: 50),
+      client: MockClient((http.Request r) async {
+        await Future<void>.delayed(delay);
+        return http.Response(
+          jsonEncode(<String, Object?>{'reply': 'hola', 'remaining_today': 3}),
+          200,
+          headers: <String, String>{'content-type': 'application/json'},
+        );
+      }),
+    );
+
+    test('Flyra espera más que las demás llamadas', () async {
+      final ApiClient api = await slowApi(const Duration(milliseconds: 200));
+      final FlyraReply reply = await FlyraApi(api).ask(const <ChatTurn>[
+        ChatTurn(ChatRole.user, '¿Qué eres?'),
+      ], language: 'es');
+      expect(reply.text, 'hola');
+    });
+
+    test('si el servidor no contesta a tiempo NO es "sin conexión"', () async {
+      final ApiClient api = await slowApi(const Duration(milliseconds: 200));
+      await expectLater(
+        api.getJson('/v1/lo-que-sea'),
+        throwsA(
+          isA<ApiException>().having(
+            (ApiException e) => e.error,
+            'error',
+            ApiError.unavailable,
+          ),
+        ),
+      );
     });
   });
 
