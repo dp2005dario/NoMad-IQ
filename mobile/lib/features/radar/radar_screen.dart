@@ -52,6 +52,25 @@ String scamAdvice(AppLocalizations t, ScamCategory c) => switch (c) {
   ScamCategory.exchange => t.radarScamExchangeWhy,
 };
 
+/// El tipo (color y dibujo) de un aviso de otros viajeros.
+String scamKind(ScamCategory c) => switch (c) {
+  ScamCategory.pickpockets || ScamCategory.atm => 'theft',
+  ScamCategory.taxi => 'transport',
+  _ => 'scam',
+};
+
+/// El título de un aviso de la guía de la ciudad según su tipo.
+String safetyTitle(AppLocalizations t, String kind) => switch (kind) {
+  'theft' => t.radarSafeTheft,
+  'scam' => t.radarSafeScam,
+  'area' => t.radarSafeArea,
+  'transport' => t.radarSafeTransport,
+  'night' => t.radarSafeNight,
+  'health' => t.radarSafeHealth,
+  'emergency' => t.radarSafeEmergency,
+  _ => t.radarSafeOther,
+};
+
 String priceItemLabel(AppLocalizations t, PriceItem i) => switch (i) {
   PriceItem.coffee => t.radarItemCoffee,
   PriceItem.beer => t.radarItemBeer,
@@ -92,6 +111,9 @@ class _RadarScreenState extends State<RadarScreen> {
 
   CityRadar? _radar;
   ApiError? _radarError;
+
+  /// Los avisos de la guía de la ciudad (robos, timos, zonas...).
+  CitySafety? _safety;
 
   PriceItem _item = PriceItem.coffee;
   String? _currency;
@@ -148,7 +170,7 @@ class _RadarScreenState extends State<RadarScreen> {
     }
     if (!mounted) return;
     setState(() => _locating = false);
-    await Future.wait(<Future<void>>[_loadRain(), _loadRadar()]);
+    await Future.wait(<Future<void>>[_loadRain(), _loadRadar(), _loadSafety()]);
   }
 
   Future<void> _loadRain() async {
@@ -174,6 +196,20 @@ class _RadarScreenState extends State<RadarScreen> {
       });
     } on ApiException catch (e) {
       if (mounted) setState(() => _radarError = e.error);
+    }
+  }
+
+  Future<void> _loadSafety() async {
+    final String? city = _city;
+    if (city == null) return;
+    try {
+      final CitySafety r = await _services.radar.safety(
+        city,
+        Localizations.localeOf(context).languageCode,
+      );
+      if (mounted) setState(() => _safety = r);
+    } on ApiException {
+      // Sin avisos de la guía: se quedan solo los de los viajeros.
     }
   }
 
@@ -348,8 +384,19 @@ class _RadarScreenState extends State<RadarScreen> {
     final String zone = place.isEmpty
         ? 'OJO EN ESTA ZONA'
         : 'OJO EN ESTA ZONA · $place';
-    Map<String, Object?> card(String title, String why, [String by = '']) =>
-        <String, Object?>{'lbl': zone, 'title': title, 'why': why, 'by': by};
+    Map<String, Object?> card(
+      String title,
+      String why, [
+      String by = '',
+      String kind = 'other',
+    ]) => <String, Object?>{
+      'lbl': zone,
+      'title': title,
+      'why': why,
+      'by': by,
+      // El color y el dibujo de la tarjeta (cartera, taxi, luna...).
+      'kind': kind,
+    };
     final List<Map<String, Object?>> scams = <Map<String, Object?>>[
       if (_locating)
         card(t.radarScamsTitle, '…')
@@ -361,15 +408,20 @@ class _RadarScreenState extends State<RadarScreen> {
         card(t.radarScamsTitle, t.radarSendFailed)
       else if (radar == null)
         card(t.radarScamsTitle, '…')
-      else if (radar.scams.isEmpty)
-        card(t.radarScamsTitle, t.radarNoScams)
-      else
+      else ...<Map<String, Object?>>[
         for (final MapEntry<ScamCategory, int> e in radar.scams.entries)
           card(
             scamTitle(t, e.key),
             scamAdvice(t, e.key),
             t.radarReportedBy(e.value),
+            scamKind(e.key),
           ),
+        // Lo que dice la guía de viajes de la ciudad (Wikivoyage).
+        for (final SafetyTip tip in _safety?.tips ?? const <SafetyTip>[])
+          card(safetyTitle(t, tip.kind), tip.text, t.radarFromGuide, tip.kind),
+        if (radar.scams.isEmpty && (_safety?.tips.isEmpty ?? true))
+          card(t.radarScamsTitle, t.radarNoScams),
+      ],
     ];
 
     // 3. ¿Me están cobrando de más?

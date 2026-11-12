@@ -10539,6 +10539,42 @@
   "@radarNoScams": {
     "description": "No scam reported by enough travellers."
   },
+  "radarSafeTheft": "Theft and pickpockets",
+  "@radarSafeTheft": {
+    "description": "Safety tip title: thefts and pickpockets"
+  },
+  "radarSafeScam": "Scams",
+  "@radarSafeScam": {
+    "description": "Safety tip title: scams"
+  },
+  "radarSafeArea": "Areas to be careful",
+  "@radarSafeArea": {
+    "description": "Safety tip title: areas where to be careful"
+  },
+  "radarSafeTransport": "Taxis and transport",
+  "@radarSafeTransport": {
+    "description": "Safety tip title: taxis and transport"
+  },
+  "radarSafeNight": "At night",
+  "@radarSafeNight": {
+    "description": "Safety tip title: at night"
+  },
+  "radarSafeHealth": "Health",
+  "@radarSafeHealth": {
+    "description": "Safety tip title: health"
+  },
+  "radarSafeEmergency": "Emergencies",
+  "@radarSafeEmergency": {
+    "description": "Safety tip title: emergencies"
+  },
+  "radarSafeOther": "Good to know",
+  "@radarSafeOther": {
+    "description": "Safety tip title: other things to keep in mind"
+  },
+  "radarFromGuide": "From the Wikivoyage guide",
+  "@radarFromGuide": {
+    "description": "Source label: the tip comes from the Wikivoyage travel guide"
+  },
   "radarReportedBy": "{count, plural, =1{Reported by 1 traveller (last 90 days)} other{Reported by {count} travellers (last 90 days)}}",
   "@radarReportedBy": {
     "description": "How many travellers reported a scam (last 90 days).",

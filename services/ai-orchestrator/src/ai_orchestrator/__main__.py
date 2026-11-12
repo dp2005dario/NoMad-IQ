@@ -138,6 +138,7 @@ from ai_orchestrator.queues.store import PostgresQueues
 from ai_orchestrator.quota import RedisQuota
 from ai_orchestrator.radar.api import radar_router
 from ai_orchestrator.radar.rain import MetClient, RainBusyError, RainService, RedisRainCache
+from ai_orchestrator.radar.safety import RedisSafetyCache, SafetyService, Wikivoyage
 from ai_orchestrator.radar.store import PostgresRadar
 from ai_orchestrator.recommender import FareRecommender, RecommenderSettings
 from ai_orchestrator.retrieval import KnowledgeBase, NoKnowledge, QdrantKnowledge
@@ -568,6 +569,13 @@ def _city_events(settings: Settings, redis: Redis, stack: AsyncExitStack) -> Cit
     )
 
 
+def _safety(redis: Redis, llm: LLMClient | None, stack: AsyncExitStack) -> SafetyService:
+    """Robos, timos y zonas de cada ciudad (Wikivoyage, resumido por la IA)."""
+    http = httpx.AsyncClient(timeout=httpx.Timeout(12.0, connect=5.0), follow_redirects=False)
+    stack.push_async_callback(http.aclose)
+    return SafetyService(Wikivoyage(http), RedisSafetyCache(redis), llm)
+
+
 def _rain(settings: Settings, redis: Redis, stack: AsyncExitStack) -> RainService:
     """Lluvia en las próximas horas: MET Norway con caché por casilla en Redis."""
     http = httpx.AsyncClient(timeout=httpx.Timeout(10.0, connect=5.0), follow_redirects=False)
@@ -867,8 +875,10 @@ async def run(settings: Settings) -> int:
 
         # --- Radar local: lluvia (MET Norway con caché en Redis) --------------------------
         rain: RainService | None = None
+        safety: SafetyService | None = None
         if settings.radar_enabled and public_redis is not None:
             rain = _rain(settings, public_redis, stack)
+            safety = _safety(public_redis, llm, stack)
 
         # --- Qué pasa en tus fechas (festivos + eventos con caché en Redis) -------------
         city_events: CityEventService | None = None
@@ -1004,7 +1014,7 @@ async def run(settings: Settings) -> int:
                 climate=climate,
                 city_events=city_events,
                 rain=rain,
-                radar=radar_router(PostgresRadar(pool), Airports.bundled())
+                radar=radar_router(PostgresRadar(pool), Airports.bundled(), safety)
                 if settings.radar_enabled
                 else None,
                 queues=queues_router(PostgresQueues(pool)) if settings.queues_enabled else None,

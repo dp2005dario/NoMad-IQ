@@ -129,6 +129,21 @@ void main() {
       return FakeGateway.json(rainJson());
     };
     g.services['/v1/radar/LIS'] = (_) => FakeGateway.json(radarJson);
+    final List<Uri> safetyAsked = <Uri>[];
+    g.services['/v1/radar/LIS/safety'] = (http.Request r) {
+      safetyAsked.add(r.url);
+      return FakeGateway.json(<String, Object?>{
+        'city': 'Lisbon',
+        'tips': <Object?>[
+          <String, Object?>{
+            'kind': 'theft',
+            'text': 'Carteristas en el tranvía 28.',
+          },
+          <String, Object?>{'kind': 'raro', 'text': 'Cuesta mucho subir.'},
+        ],
+        'source_url': 'https://es.wikivoyage.org/wiki/Lisboa',
+      });
+    };
     g.services['/v1/radar/LIS/scams'] = (http.Request r) {
       posts.add(jsonDecode(r.body) as Map<String, Object?>);
       return http.Response('', 204);
@@ -175,15 +190,23 @@ void main() {
     await tester.pump();
     expect(opened.single.path, startsWith('/maps/search/cafe/'));
 
-    final List<Object?> scams = data()['scams']! as List<Object?>;
-    expect(
-      (scams.single! as Map<String, Object?>)['title'],
-      'Pulsera o firma falsa',
+    await spy.wait(
+      tester,
+      () => (data()['scams']! as List<Object?>).length == 3,
     );
-    expect(
-      (scams.single! as Map<String, Object?>)['by'],
-      contains('Avisado por 4 viajeros'),
-    );
+    final List<Map<String, Object?>> scams = (data()['scams']! as List<Object?>)
+        .cast<Map<String, Object?>>();
+    expect(scams.first['title'], 'Pulsera o firma falsa');
+    expect(scams.first['by'], contains('Avisado por 4 viajeros'));
+    expect(scams.first['kind'], 'scam');
+    // Después, lo que dice la guía de la ciudad, en tu idioma.
+    expect(safetyAsked.single.queryParameters['lang'], 'es');
+    expect(scams[1]['title'], 'Robos y carteristas');
+    expect(scams[1]['kind'], 'theft');
+    expect(scams[1]['why'], 'Carteristas en el tranvía 28.');
+    expect(scams[1]['by'], 'Según la guía Wikivoyage');
+    expect(scams[2]['kind'], 'other');
+    expect(scams[2]['title'], 'Ten en cuenta');
 
     // El café: lo que pagaron otros (de 0,90 a 1,40) y la moneda.
     expect(data()['curTxt'], 'EUR');
