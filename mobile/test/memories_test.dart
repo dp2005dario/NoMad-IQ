@@ -13,6 +13,8 @@ import 'package:eclipta/features/memories/memories.dart';
 import 'package:eclipta/features/memories/memories_page.dart';
 import 'package:eclipta/features/memories/memories_screen.dart';
 import 'package:eclipta/features/memories/travel_camera.dart';
+import 'package:eclipta/features/memories/travel_camera_screen.dart';
+import 'package:eclipta/features/camera/camera_screen.dart';
 
 import 'package:eclipta/core/services.dart';
 import 'package:eclipta/l10n/generated/app_localizations.dart';
@@ -199,19 +201,20 @@ void main() {
     tester.view.physicalSize = const Size(1200, 3000);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
+    final AppServices app = fakeServices(
+      session,
+      prefs: store,
+      newTravelCamera: () => camera,
+      memoryFiles: files,
+      webScene: spy.build,
+      share: (List<String> paths, {String? text}) async => shared.add(paths),
+    );
     await pumpApp(
       tester,
       locale: 'es',
       session: session,
       initialLocation: Routes.memories,
-      services: fakeServices(
-        session,
-        prefs: store,
-        newTravelCamera: () => camera,
-        memoryFiles: files,
-        webScene: spy.build,
-        share: (List<String> paths, {String? text}) async => shared.add(paths),
-      ),
+      services: app,
     );
     Map<String, Object?> data() => spy.data(MemoriesScreen.lastBridge!);
     await spy.wait(tester, () => spy.pages.isNotEmpty);
@@ -226,19 +229,43 @@ void main() {
     spy.send!('camera');
     await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel('Hacer foto'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump();
     expect(camera.photos, 1);
-    expect(
-      find.text('Guardado en tus Recuerdos, solo en este móvil.'),
-      findsOneWidget,
-    );
-    expect(files.files, hasLength(1));
-    // Con la pegatina activada se guarda como PNG.
-    expect(files.files.keys.single, endsWith('.png'));
+    // Se queda en la cámara y lo dice un momento.
+    expect(find.text('Guardado en Recuerdos'), findsOneWidget);
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+    expect(find.text('Toca: foto · Mantén: vídeo'), findsOneWidget);
+    // Desde Recuerdos no hay escáner al lado.
+    expect(find.textContaining('escáner'), findsNothing);
 
+    // Mantener pulsado = vídeo; al soltar se guarda.
+    final TestGesture hold = await tester.startGesture(
+      tester.getCenter(find.bySemanticsLabel('Hacer foto')),
+    );
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pump();
+    expect(camera.recording, isTrue);
+    await hold.up();
+    await tester.pumpAndSettle(const Duration(seconds: 2));
+    expect(camera.recording, isFalse);
+    expect(files.files, hasLength(2));
+    final String videoFile = files.files.keys.firstWhere(
+      (String k) => k.endsWith('.mp4'),
+    );
+
+    // La miniatura de lo último (el vídeo) abre Compartir / Repetir.
+    await tester.tap(find.bySemanticsLabel('Compartir'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Compartir'));
     await tester.pumpAndSettle();
-    expect(shared.single.single, '/memories/${files.files.keys.single}');
+    expect(shared.single.single, '/memories/$videoFile');
+    // "Repetir" lo borra y vuelve a la cámara.
+    await tester.tap(find.text('Repetir'));
+    await tester.pumpAndSettle();
+    expect(app.memories.all(), hasLength(1));
+    // La foto, con la pegatina activada, se guarda como PNG.
+    expect(app.memories.all().single.file, endsWith('.png'));
 
     expect(find.byType(BackButton), findsOneWidget);
     await tester.tap(find.byType(BackButton));
@@ -392,5 +419,41 @@ void main() {
         grid.firstWhere((Object? g) => (g! as Map)['video'] == true)!
             as Map<String, Object?>;
     expect(vid['thumb'], endsWith('9-200'));
+  });
+
+  testWidgets('botón verde: la cámara normal y, deslizando, el escáner', (
+    WidgetTester tester,
+  ) async {
+    final FakeTravelCamera camera = FakeTravelCamera();
+    final session = newSession()..continueAsGuest();
+    tester.view.physicalSize = const Size(1200, 3000);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await pumpApp(
+      tester,
+      locale: 'es',
+      session: session,
+      initialLocation: Routes.camera,
+      settle: false,
+      services: fakeServices(session, newTravelCamera: () => camera),
+    );
+    for (int i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byType(TravelCameraScreen), findsOneWidget);
+    expect(find.bySemanticsLabel('Hacer foto'), findsOneWidget);
+    await tester.fling(
+      find.byType(TravelCameraScreen),
+      const Offset(300, 0),
+      1000,
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(TravelCameraScreen), findsNothing);
+    expect(find.byType(CameraScreen), findsOneWidget);
+    await tester.tap(
+      find.text('Desliza a la izquierda para volver a la cámara'),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(TravelCameraScreen), findsOneWidget);
   });
 }

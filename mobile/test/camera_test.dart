@@ -138,7 +138,7 @@ Future<void> pumpCamera(
     tester,
     locale: 'es',
     session: s,
-    initialLocation: Routes.camera,
+    initialLocation: Routes.cameraScan,
     settle: false,
     services: fakeServices(
       s,

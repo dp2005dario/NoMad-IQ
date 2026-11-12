@@ -7847,6 +7847,22 @@
       }
     }
   },
+  "memShutterHint": "Tap: photo · Hold: video",
+  "@memShutterHint": {
+    "description": "Hint under the camera shutter button"
+  },
+  "memSwipeScanner": "Swipe right for the landmark scanner",
+  "@memSwipeScanner": {
+    "description": "Hint on the camera: swipe right to open the landmark scanner"
+  },
+  "memSwipeCamera": "Swipe left to go back to the camera",
+  "@memSwipeCamera": {
+    "description": "Hint on the scanner: swipe left to return to the camera"
+  },
+  "memSavedFlash": "Saved to Memories",
+  "@memSavedFlash": {
+    "description": "Short flash after taking a photo or video"
+  },
   "memSavedHint": "Saved in your Memories, only on this phone.",
   "@memSavedHint": {
     "description": "Saved hint."

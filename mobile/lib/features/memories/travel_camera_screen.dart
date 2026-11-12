@@ -6,9 +6,9 @@
 // La música, los stickers y el texto se ponen en Instagram: ECLIPTA solo le
 // pasa la foto o el vídeo.
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/services.dart';
@@ -42,9 +42,17 @@ List<String> stickerLines(
 ];
 
 class TravelCameraScreen extends StatefulWidget {
-  const TravelCameraScreen({super.key, this.locate = whereabouts});
+  const TravelCameraScreen({
+    super.key,
+    this.locate = whereabouts,
+    this.onScanner,
+  });
 
   final Future<Whereabouts> Function(GeoPoint) locate;
+
+  /// En la pestaña Cámara: deslizar a la derecha abre el escáner de
+  /// monumentos (null = no hay escáner, p. ej. abierta desde Recuerdos).
+  final VoidCallback? onScanner;
 
   @override
   State<TravelCameraScreen> createState() => _TravelCameraScreenState();
@@ -52,13 +60,21 @@ class TravelCameraScreen extends StatefulWidget {
 
 enum _Phase { starting, live, recording, review, failed }
 
-class _TravelCameraScreenState extends State<TravelCameraScreen> {
+class _TravelCameraScreenState extends State<TravelCameraScreen>
+    with WidgetsBindingObserver {
   late final AppServices _services = ServicesScope.of(context);
   TravelCamera? _camera;
   _Phase _phase = _Phase.starting;
   CameraStart? _start;
-  bool _video = false;
   bool _sticker = true;
+
+  /// "Guardado en Recuerdos" un momento después de cada foto o vídeo.
+  bool _flash = false;
+
+  /// El dedo sigue en el botón (si lo suelta antes de que empiece el vídeo,
+  /// se para nada más empezar).
+  bool _holding = false;
+  Timer? _flashOff;
   String? _city;
 
   /// Lo último que hiciste (ya guardado en Recuerdos).
@@ -67,18 +83,67 @@ class _TravelCameraScreenState extends State<TravelCameraScreen> {
   int _seconds = 0;
   Timer? _tick;
 
+  // Como el escáner: la cámara solo está encendida mientras se ve esta
+  // pantalla (en la pestaña Cámara, las otras pestañas siguen vivas) y la app
+  // está delante. Así no gasta batería de fondo.
+  bool _visible = false;
+  bool _foreground = true;
+  bool _running = false;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(_open());
       unawaited(_findCity());
     });
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _visible = TickerMode.valuesOf(context).enabled;
+    _sync();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    _sync();
+  }
+
+  void _sync() {
+    final bool want = _visible && _foreground;
+    if (want && !_running) {
+      _running = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _running) unawaited(_open());
+      });
+    } else if (!want && _running) {
+      _running = false;
+      unawaited(_sleep());
+    }
+  }
+
+  /// Apaga la cámara (si estaba grabando, el vídeo se guarda antes).
+  Future<void> _sleep() async {
+    if (_phase == _Phase.recording) {
+      _holding = false;
+      await _stop();
+    }
+    final TravelCamera? camera = _camera;
+    _camera = null;
+    await camera?.dispose();
+    if (mounted && _phase != _Phase.review) {
+      setState(() => _phase = _Phase.starting);
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _tick?.cancel();
+    _flashOff?.cancel();
     unawaited(_camera?.dispose());
     super.dispose();
   }
@@ -93,7 +158,8 @@ class _TravelCameraScreenState extends State<TravelCameraScreen> {
       return;
     }
     final TravelCamera camera = _camera ??= make();
-    final CameraStart got = await camera.start(video: _video);
+    // Siempre con micrófono: mantener pulsado graba vídeo sin cambiar de modo.
+    final CameraStart got = await camera.start(video: true);
     if (!mounted) return;
     setState(() {
       _start = got;
@@ -117,14 +183,19 @@ class _TravelCameraScreenState extends State<TravelCameraScreen> {
     }
   }
 
-  Future<void> _mode(bool video) async {
-    if (video == _video || _phase == _Phase.recording) return;
+  /// Lo hecho ya está en Recuerdos: se dice un momento y se sigue con la
+  /// cámara (la miniatura de abajo abre "Compartir" y "Repetir").
+  void _saved(Memory m, Uint8List? photo) {
+    _flashOff?.cancel();
     setState(() {
-      _video = video;
-      _phase = _Phase.starting;
+      _last = m;
+      _lastPhoto = photo;
+      _phase = _Phase.live;
+      _flash = true;
     });
-    // Para vídeo hace falta el micrófono: se vuelve a encender la cámara.
-    await _open();
+    _flashOff = Timer(const Duration(milliseconds: 1800), () {
+      if (mounted) setState(() => _flash = false);
+    });
   }
 
   String _name(String ext) => 'm_${DateTime.now().microsecondsSinceEpoch}.$ext';
@@ -164,24 +235,19 @@ class _TravelCameraScreenState extends State<TravelCameraScreen> {
       );
       await _services.memories.add(m);
       if (!mounted) return;
-      setState(() {
-        _last = m;
-        _lastPhoto = bytes;
-        _phase = _Phase.review;
-      });
+      unawaited(HapticFeedback.lightImpact());
+      _saved(m, bytes);
     } on Object {
       _toast(t.memFailed);
     }
   }
 
+  /// Mantener pulsado: empieza el vídeo (al soltar, [_stop]).
   Future<void> _record() async {
     final AppLocalizations t = AppLocalizations.of(context);
     final TravelCamera? camera = _camera;
-    if (camera == null) return;
-    if (_phase == _Phase.recording) {
-      await _stop();
-      return;
-    }
+    if (camera == null || _phase != _Phase.live) return;
+    _holding = true;
     if (_services.memories.full) {
       _toast(t.memFull);
       return;
@@ -192,6 +258,8 @@ class _TravelCameraScreenState extends State<TravelCameraScreen> {
       _toast(t.memFailed);
       return;
     }
+    if (!mounted) return;
+    unawaited(HapticFeedback.mediumImpact());
     setState(() {
       _phase = _Phase.recording;
       _seconds = 0;
@@ -201,6 +269,12 @@ class _TravelCameraScreenState extends State<TravelCameraScreen> {
       setState(() => _seconds++);
       if (_seconds >= maxVideo.inSeconds) unawaited(_stop());
     });
+    if (!_holding) await _stop();
+  }
+
+  void _release() {
+    _holding = false;
+    unawaited(_stop());
   }
 
   Future<void> _stop() async {
@@ -220,11 +294,7 @@ class _TravelCameraScreenState extends State<TravelCameraScreen> {
       );
       await _services.memories.add(m);
       if (!mounted) return;
-      setState(() {
-        _last = m;
-        _lastPhoto = null;
-        _phase = _Phase.review;
-      });
+      _saved(m, null);
     } on Object {
       if (mounted) setState(() => _phase = _Phase.live);
       _toast(t.memFailed);
@@ -244,8 +314,9 @@ class _TravelCameraScreenState extends State<TravelCameraScreen> {
     setState(() {
       _last = null;
       _lastPhoto = null;
-      _phase = _Phase.live;
+      _phase = _camera == null ? _Phase.starting : _Phase.live;
     });
+    if (_camera == null) await _open();
   }
 
   void _toast(String text) {
@@ -286,17 +357,29 @@ class _TravelCameraScreenState extends State<TravelCameraScreen> {
           seconds: _seconds,
           onShare: () => unawaited(_share()),
           onRetake: () => unawaited(_retake()),
-          onAnother: () => setState(() => _phase = _Phase.live),
+          onAnother: () {
+            if (_camera == null) {
+              setState(() => _phase = _Phase.starting);
+              unawaited(_open());
+            } else {
+              setState(() => _phase = _Phase.live);
+            }
+          },
         ),
         _Phase.live || _Phase.recording => _Live(
           camera: _camera!,
-          video: _video,
           recording: _phase == _Phase.recording,
           seconds: _seconds,
           sticker: _sticker,
           onSticker: () => setState(() => _sticker = !_sticker),
-          onMode: (bool v) => unawaited(_mode(v)),
-          onShutter: () => unawaited(_video ? _record() : _shoot()),
+          onPhoto: () => unawaited(_shoot()),
+          onHold: () => unawaited(_record()),
+          onRelease: _release,
+          last: _last,
+          lastPhoto: _lastPhoto,
+          flash: _flash,
+          onLast: () => setState(() => _phase = _Phase.review),
+          onScanner: widget.onScanner,
         ),
       },
     );
@@ -338,103 +421,248 @@ String _mmss(int s) => '${s ~/ 60}:${(s % 60).toString().padLeft(2, '0')}';
 class _Live extends StatelessWidget {
   const _Live({
     required this.camera,
-    required this.video,
     required this.recording,
     required this.seconds,
     required this.sticker,
     required this.onSticker,
-    required this.onMode,
-    required this.onShutter,
+    required this.onPhoto,
+    required this.onHold,
+    required this.onRelease,
+    required this.last,
+    required this.lastPhoto,
+    required this.flash,
+    required this.onLast,
+    required this.onScanner,
   });
 
   final TravelCamera camera;
-  final bool video;
   final bool recording;
   final int seconds;
   final bool sticker;
   final VoidCallback onSticker;
-  final ValueChanged<bool> onMode;
-  final VoidCallback onShutter;
+  final VoidCallback onPhoto;
+  final VoidCallback onHold;
+  final VoidCallback onRelease;
+  final Memory? last;
+  final Uint8List? lastPhoto;
+  final bool flash;
+  final VoidCallback onLast;
+  final VoidCallback? onScanner;
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
-    return Stack(
-      fit: StackFit.expand,
-      children: <Widget>[
-        camera.preview(),
-        SafeArea(
-          child: Column(
-            children: <Widget>[
-              const SizedBox(height: 56),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  if (recording)
-                    Chip(
-                      backgroundColor: const Color(0xFFFF3B5C),
-                      label: Text(
-                        '● ${_mmss(seconds)} / ${_mmss(maxVideo.inSeconds)}',
+    final VoidCallback? scanner = onScanner;
+    final Uint8List? thumb = lastPhoto;
+    return GestureDetector(
+      // Deslizar a la derecha (el dedo va hacia la derecha) = escáner.
+      onHorizontalDragEnd: scanner == null || recording
+          ? null
+          : (DragEndDetails d) {
+              if ((d.primaryVelocity ?? 0) > 250) scanner();
+            },
+      child: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          camera.preview(),
+          SafeArea(
+            child: Column(
+              children: <Widget>[
+                const SizedBox(height: 56),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    if (recording)
+                      Chip(
+                        backgroundColor: const Color(0xFFFF3B5C),
+                        label: Text(
+                          '● ${_mmss(seconds)} / ${_mmss(maxVideo.inSeconds)}',
+                        ),
+                      )
+                    else
+                      FilterChip(
+                        selected: sticker,
+                        onSelected: (_) => onSticker(),
+                        label: Text(t.memSticker),
                       ),
-                    )
-                  else if (!video)
-                    FilterChip(
-                      selected: sticker,
-                      onSelected: (_) => onSticker(),
-                      label: Text(t.memSticker),
-                    ),
-                ],
-              ),
-              const Spacer(),
-              if (video && !recording)
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Text(
-                    t.memVideoNoSticker,
-                    style: const TextStyle(color: Colors.white70),
-                  ),
-                ),
-              if (!recording)
-                SegmentedButton<bool>(
-                  segments: <ButtonSegment<bool>>[
-                    ButtonSegment<bool>(value: false, label: Text(t.memPhoto)),
-                    ButtonSegment<bool>(value: true, label: Text(t.memVideo)),
                   ],
-                  selected: <bool>{video},
-                  onSelectionChanged: (Set<bool> s) => onMode(s.first),
                 ),
-              const SizedBox(height: 16),
-              Semantics(
-                button: true,
-                label: video
-                    ? (recording ? t.memStop : t.memRecord)
-                    : t.memShoot,
-                child: GestureDetector(
-                  onTap: onShutter,
+                const Spacer(),
+                AnimatedOpacity(
+                  opacity: flash ? 1 : 0,
+                  duration: const Duration(milliseconds: 250),
                   child: Container(
-                    width: 76,
-                    height: 76,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
                     ),
-                    padding: const EdgeInsets.all(6),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: video ? const Color(0xFFFF3B5C) : Colors.white,
-                        borderRadius: BorderRadius.circular(recording ? 8 : 40),
-                      ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xCC0B1217),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          size: 18,
+                          color: NomadColors.mint,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          t.memSavedFlash,
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 14),
+                Row(
+                  children: <Widget>[
+                    // La miniatura de lo último: abre Compartir / Repetir.
+                    Expanded(
+                      child: Align(
+                        child: last == null
+                            ? const SizedBox.shrink()
+                            : Semantics(
+                                button: true,
+                                label: t.memShare,
+                                child: GestureDetector(
+                                  onTap: onLast,
+                                  child: Container(
+                                    width: 52,
+                                    height: 52,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(14),
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 2,
+                                      ),
+                                      color: NomadColors.surface,
+                                    ),
+                                    clipBehavior: Clip.antiAlias,
+                                    child: thumb != null
+                                        ? Image.memory(
+                                            thumb,
+                                            fit: BoxFit.cover,
+                                            cacheWidth: 160,
+                                            errorBuilder: (_, _, _) =>
+                                                const SizedBox.shrink(),
+                                          )
+                                        : const Icon(
+                                            Icons.play_arrow_rounded,
+                                            color: Colors.white,
+                                          ),
+                                  ),
+                                ),
+                              ),
+                      ),
+                    ),
+                    _Shutter(
+                      recording: recording,
+                      label: recording ? t.memStop : t.memShoot,
+                      onTap: onPhoto,
+                      onHold: onHold,
+                      onRelease: onRelease,
+                    ),
+                    const Expanded(child: SizedBox.shrink()),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  t.memShutterHint,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    shadows: <Shadow>[Shadow(blurRadius: 6)],
+                  ),
+                ),
+                if (scanner != null) ...<Widget>[
+                  const SizedBox(height: 6),
+                  GestureDetector(
+                    onTap: scanner,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Flexible(
+                          child: Text(
+                            t.memSwipeScanner,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              shadows: <Shadow>[Shadow(blurRadius: 6)],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 16,
+                          color: Colors.white70,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 18),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
+}
+
+/// El botón blanco: tocar = foto; mantener = vídeo (se suelta = para). Al
+/// grabar se pone rojo y crece, con el anillo blanco alrededor.
+class _Shutter extends StatelessWidget {
+  const _Shutter({
+    required this.recording,
+    required this.label,
+    required this.onTap,
+    required this.onHold,
+    required this.onRelease,
+  });
+
+  final bool recording;
+  final String label;
+  final VoidCallback onTap;
+  final VoidCallback onHold;
+  final VoidCallback onRelease;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: label,
+    child: GestureDetector(
+      onTap: recording ? onRelease : onTap,
+      onLongPressStart: (_) => onHold(),
+      onLongPressEnd: (_) => onRelease(),
+      child: AnimatedScale(
+        scale: recording ? 1.18 : 1,
+        duration: const Duration(milliseconds: 200),
+        child: Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 5),
+          ),
+          padding: const EdgeInsets.all(6),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              color: recording ? const Color(0xFFFF3B5C) : Colors.white,
+              borderRadius: BorderRadius.circular(recording ? 12 : 40),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class _Review extends StatelessWidget {
