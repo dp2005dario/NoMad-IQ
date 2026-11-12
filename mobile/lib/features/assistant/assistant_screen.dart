@@ -15,7 +15,6 @@
 // vez de hablar (con ruido, o si el micro no va).
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:typed_data';
 import 'dart:ui' show PathMetric;
 
 import 'package:flutter/foundation.dart';
