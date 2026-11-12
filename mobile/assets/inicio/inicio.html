@@ -241,7 +241,7 @@ body.red .rm .dg{fill:#ff3b30;animation:blink .25s steps(1) infinite}
 .intro::before{animation:aurIn 1.4s ease both,aur 12s ease-in-out 1.6s infinite alternate}
 .intro::after{animation:aurIn 2s ease .3s both,spin 40s linear infinite}
 .intro .hint,.intro .sub{animation:fadeIn .8s ease 5s both}
-@keyframes coreIn{0%{transform:scale(.15);opacity:0;filter:blur(18px)}60%{opacity:1;filter:blur(2px)}100%{transform:scale(1);filter:none}}
+@keyframes coreIn{0%{transform:scale(.15);opacity:0}60%{opacity:1}100%{transform:scale(1)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes aurIn{from{opacity:0;transform:scale(.6)}to{opacity:1}}
 @keyframes flyIn{0%{opacity:0;transform:translate(-190px,150px) scale(.35) rotate(-28deg)}15%{opacity:1}45%{transform:translate(-70px,-70px) scale(.7) rotate(14deg)}75%{opacity:1;transform:translate(25px,-18px) scale(.95) rotate(-6deg)}100%{opacity:0;transform:translate(0,0) scale(1) rotate(0)}}
@@ -356,8 +356,8 @@ body.red .rm .dg{fill:#ff3b30;animation:blink .25s steps(1) infinite}
 .halo{position:absolute;left:50%;top:50%;width:176px;height:176px;margin:-88px 0 0 -88px;border-radius:50%;background:radial-gradient(circle,#3DDC9788,#9B7BFF55 55%,transparent 72%);opacity:0;pointer-events:none}
 .halo.go{animation:halo2 1.6s ease-out}
 @keyframes halo2{0%{opacity:.95;transform:scale(.8)}100%{opacity:0;transform:scale(2.3)}}
-.greet .w{display:inline-block;opacity:0;filter:blur(8px);transform:translateY(8px);animation:wd .7s cubic-bezier(.2,.8,.2,1) forwards}
-@keyframes wd{0%{opacity:0;filter:blur(8px);transform:translateY(8px);text-shadow:0 0 0 #3DDC97}55%{opacity:1;text-shadow:0 0 18px #3DDC97,0 0 34px #9B7BFF}100%{opacity:1;filter:none;transform:none;text-shadow:0 0 0 #3DDC9700}}
+.greet .w{display:inline-block;opacity:0;transform:translateY(8px) scale(.9);animation:wd .7s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes wd{0%{opacity:0;transform:translateY(8px) scale(.9)}100%{opacity:1;transform:none}}
 .tst{width:auto;border-radius:99px;padding:0 10px;font:700 11px var(--b);letter-spacing:.02em;margin-left:0}
 .mini{position:fixed;z-index:40;bottom:calc(18px + env(safe-area-inset-bottom,0px));right:max(16px,calc((100vw - 430px)/2 + 16px),env(safe-area-inset-right,0px));display:flex;align-items:flex-end;gap:8px;pointer-events:none;max-width:calc(100vw - 32px)}
 .mf{position:relative;width:44px;height:44px;flex:none;border-radius:50%;border:0;padding:0;pointer-events:auto;background:radial-gradient(circle at 35% 30%,#7CF0BC,#3DDC97 40%,#5A5BD9 85%,#9B7BFF);box-shadow:0 6px 18px #0009,0 0 22px #3DDC9788,0 0 34px #9B7BFF55;animation:mfl 4.5s ease-in-out infinite}
@@ -377,7 +377,7 @@ body.red .rm .dg{fill:#ff3b30;animation:blink .25s steps(1) infinite}
 .nb.n2{width:65vmax;height:55vmax;right:-28vmax;top:25vh;background:radial-gradient(#9B7BFF40,transparent 70%);animation:nbB 75s ease-in-out infinite alternate}
 .nb.n3{width:60vmax;height:45vmax;left:-10vmax;bottom:-20vmax;background:radial-gradient(#5A5BD938,transparent 70%);animation:nbC 90s ease-in-out infinite alternate}
 @keyframes nbA{to{transform:translate(18vmax,12vmax) scale(1.15)}}@keyframes nbB{to{transform:translate(-16vmax,-10vmax) scale(1.1)}}@keyframes nbC{to{transform:translate(14vmax,-14vmax) scale(1.2)}}
-.st2{position:absolute;border-radius:50%;background:#fff;animation:tw var(--d2,4s) ease-in-out var(--dl,0s) infinite}
+.st2{position:absolute;left:0;top:0;width:1.5px;height:1.5px;border-radius:50%;background:transparent;animation:tw var(--d2,4s) ease-in-out var(--dl,0s) infinite}
 @keyframes tw{0%,100%{opacity:.15}50%{opacity:var(--o,.8)}}
 .shoot{position:absolute;left:0;top:0;width:110px;height:2px;border-radius:2px;background:linear-gradient(90deg,#fff,transparent);opacity:0;transform:rotate(25deg);animation:shoot 19s linear 6s infinite}
 @keyframes shoot{0%{opacity:0;transform:translate(70vw,8vh) rotate(25deg)}2%{opacity:.9}8%{opacity:0;transform:translate(25vw,36vh) rotate(25deg)}100%{opacity:0;transform:translate(25vw,36vh) rotate(25deg)}}
@@ -743,7 +743,9 @@ setInterval(function(){var d=$('dg');if(!d)return;if(document.body.classList.con
 // Lienzos dibujados por el procesador, no por la tarjeta gráfica: son
 // pequeños y así no compiten con el globo 3D de Vuelos por la memoria de
 // vídeo (en el emulador de las capturas, eso lo hacía caerse).
-var SW={willReadFrequently:true};
+// En el emulador de GitHub (sin tarjeta gráfica de verdad) los lienzos van
+// mejor "por CPU". En un móvil real eso los hacía lentos: allí, por GPU.
+var SW=/sdk_gphone|Android SDK built for|Emulator/i.test(navigator.userAgent)?{willReadFrequently:true}:{alpha:true};
 (function(){var c=$('dust');if(!c||matchMedia('(prefers-reduced-motion:reduce)').matches)return;var x=c.getContext('2d',SW),W,H,dpr=Math.min(devicePixelRatio||1,2),P=[],C=['61,220,151','155,123,255','88,180,230','255,130,190'],SP={};
 // Punto con brillo ya hecho (igual que en la intro): sin shadowBlur.
 function sp(k){if(SP[k])return SP[k];var o=document.createElement('canvas'),R=12,q=o.getContext('2d',SW);o.width=o.height=R*2*dpr;q.scale(dpr,dpr);var gr=q.createRadialGradient(R,R,0,R,R,R);gr.addColorStop(0,'rgba('+k+',1)');gr.addColorStop(.2,'rgba('+k+',1)');gr.addColorStop(.28,'rgba('+k+',.45)');gr.addColorStop(.55,'rgba('+k+',.12)');gr.addColorStop(1,'rgba('+k+',0)');q.fillStyle=gr;q.fillRect(0,0,R*2,R*2);return SP[k]=o}
@@ -752,7 +754,11 @@ function mk(){var a=Math.random()*6.283,s=.15+Math.random()*.45,h=$('orb').class
 window.__emit=function(px,py){for(var k=0;k<2;k++){var a=Math.random()*6.283,s=.2+Math.random()*.5;P.push({x:W/2+px,y:H/2+py,vx:Math.cos(a)*s,vy:Math.sin(a)*s+.15,l:0,m:50+Math.random()*50,r:.8+Math.random()*1.6,c:C[Math.random()*4|0],t:Math.random()*6})}};
 function f(){x.clearRect(0,0,W,H);var q=$('orb').classList.contains('on')?.2:.1;if(Math.random()<q&&P.length<24)P.push(mk());
 for(var i=P.length-1;i>=0;i--){var p=P[i];p.l++;p.x+=p.vx+Math.sin(p.l*.03+p.t)*.15;p.y+=p.vy;if(p.l>p.m){P.splice(i,1);continue}var a=Math.sin(p.l/p.m*3.1416)*(.5+.5*Math.sin(p.l*.15+p.t));if(a>0){var s2=p.r*8;x.globalAlpha=a;x.drawImage(sp(p.c),p.x-s2/2,p.y-s2/2,s2,s2)}}x.globalAlpha=1;
-requestAnimationFrame(f)}f()})();
+if(!document.hidden&&vis)requestAnimationFrame(f);else run=false}
+// Solo se anima mientras se ve (arriba del todo y con la app delante).
+var vis=true,run=false;function wake(){if(!run&&vis&&!document.hidden){run=true;requestAnimationFrame(f)}}
+if('IntersectionObserver'in window)new IntersectionObserver(function(es){vis=es[0].isIntersecting;wake()}).observe(c);
+document.addEventListener('visibilitychange',wake);wake()})();
 (function(){var hero=document.querySelector('.hero'),cv=$('intro'),cx=cv.getContext('2d',SW),bird=$('bird'),g=$('greet'),halo=document.querySelector('.halo'),txt='Soy Flyra, ¿en qué puedo ayudarte?',W,H,dpr=Math.min(devicePixelRatio||1,2),raf=0,timers=[],pts=null;
 var COL=[[61,220,151],[155,123,255],[88,180,230],[255,130,190]];
 // Brillo YA HECHO: un punto con su halo dibujado una vez en un lienzo
@@ -787,8 +793,8 @@ function play(){clearT();size();g.innerHTML='';halo.classList.remove('go');hero.
   else if(fs>=1&&!landed){landed=true;bird.style.opacity=0;halo.classList.add('go');for(var k=0;k<3;k++)rip.push({t:t+k*200,c:COL[k%2]})}
   if(trail.length>46)trail.shift();
   if(fs>=1)trail.shift();
-  cx.lineCap='round';cx.lineJoin='round';// Brillo de la estela: un trazo difuminado por cada tramo de color (unos 6), no uno por cada trocito (46).
-for(var j=1;j<trail.length;j+=8){var e3=Math.min(j+8,trail.length-1),am=(j+e3)/2/trail.length,cc=COL[(j>>3)%4];cx.strokeStyle='rgba('+cc+','+(am*.8).toFixed(2)+')';cx.shadowColor='rgba('+cc+',.9)';cx.shadowBlur=10;cx.lineWidth=.6+am*4.2;cx.beginPath();cx.moveTo(trail[j-1][0],trail[j-1][1]);for(var k2=j;k2<=e3;k2++)cx.lineTo(trail[k2][0],trail[k2][1]);cx.stroke()}cx.shadowBlur=0;
+  cx.lineCap='round';cx.lineJoin='round';// Brillo de la estela: un trazo ancho y transparente por tramo (sin shadowBlur, que es lo más lento de un lienzo).
+for(var j=1;j<trail.length;j+=8){var e3=Math.min(j+8,trail.length-1),am=(j+e3)/2/trail.length,cc=COL[(j>>3)%4];cx.strokeStyle='rgba('+cc+','+(am*.22).toFixed(2)+')';cx.lineWidth=4+am*10;cx.beginPath();cx.moveTo(trail[j-1][0],trail[j-1][1]);for(var k2=j;k2<=e3;k2++)cx.lineTo(trail[k2][0],trail[k2][1]);cx.stroke()}
 for(var i=1;i<trail.length;i++){var a=i/trail.length,c=COL[(i>>3)%4];cx.strokeStyle='rgba('+c+','+(a*.8).toFixed(2)+')';cx.lineWidth=.6+a*4.2;cx.beginPath();cx.moveTo(trail[i-1][0],trail[i-1][1]);cx.lineTo(trail[i][0],trail[i][1]);cx.stroke()}
   // ripples
   rip.forEach(function(r){var u=(t-r.t)/1300;if(u<0||u>1)return;cx.strokeStyle='rgba('+r.c+','+((1-u)*.6).toFixed(2)+')';cx.lineWidth=2.2*(1-u)+.5;cx.beginPath();cx.arc(X,Y,92+u*80,0,6.283);cx.stroke()});
@@ -800,7 +806,10 @@ $('rep').onclick=play;addEventListener('resize',size);
 // fotos y los datos): así los primeros fotogramas no salen a saltos.
 function go(){requestAnimationFrame(function(){requestAnimationFrame(play)})}
 if(document.readyState==='complete')go();else{var once=false,st=function(){if(!once){once=true;go()}};addEventListener('load',st);setTimeout(st,400)}})();
-(function(){var s=$('space'),f=document.createDocumentFragment();for(var i=0;i<70;i++){var e=document.createElement('i');e.className='st2';var z=Math.random();e.style.cssText='left:'+(Math.random()*100)+'%;top:'+(Math.random()*100)+'%;width:'+(z<.8?1.3:2.2)+'px;height:'+(z<.8?1.3:2.2)+'px;--d2:'+(3+Math.random()*5).toFixed(1)+'s;--dl:-'+(Math.random()*6).toFixed(1)+'s;--o:'+(.4+Math.random()*.5).toFixed(2);f.appendChild(e)}s.appendChild(f)})();
+// Estrellas: 3 grupos que parpadean (cada uno con ~23 estrellas pintadas con
+// box-shadow). Antes eran 70 piezas animadas una a una: 70 capas que el móvil
+// tenía que mover a cada fotograma.
+(function(){var s=$('space'),w=innerWidth,h=innerHeight;for(var gI=0;gI<3;gI++){var e=document.createElement('i'),sh=[];e.className='st2';for(var i=0;i<23;i++){var z=Math.random()<.8?0:.7;sh.push((Math.random()*w|0)+'px '+(Math.random()*h|0)+'px 0 '+z+'px rgba(255,255,255,'+(.5+Math.random()*.5).toFixed(2)+')')}e.style.cssText='box-shadow:'+sh.join(',')+';--d2:'+(3.5+gI*1.7)+'s;--dl:-'+(gI*1.3)+'s;--o:.9';s.appendChild(e)}})();
 
 
 </script>
