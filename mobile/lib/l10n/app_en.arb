@@ -8605,6 +8605,34 @@
       }
     }
   },
+  "visaNeedTitle": "WHAT YOU NEED",
+  "@visaNeedTitle": {
+    "description": "Title of the list of things the traveller needs to enter the country"
+  },
+  "visaNeedPassport": "A passport valid for the whole trip",
+  "@visaNeedPassport": {
+    "description": "Requirement: a passport valid for the whole trip"
+  },
+  "visaNeedOnline": "Apply online before you fly",
+  "@visaNeedOnline": {
+    "description": "Requirement: apply online before flying"
+  },
+  "visaNeedEmbassy": "An appointment at the embassy or consulate",
+  "@visaNeedEmbassy": {
+    "description": "Requirement: book an appointment at the embassy or consulate"
+  },
+  "visaNeedArrival": "You get it on arrival at the airport",
+  "@visaNeedArrival": {
+    "description": "Requirement: the visa or stamp is given on arrival at the airport"
+  },
+  "visaNeedReturn": "They may ask for your return ticket",
+  "@visaNeedReturn": {
+    "description": "Requirement: border officers may ask for a return or onward ticket"
+  },
+  "visaNeedOfficial": "Double-check on the official website before you go",
+  "@visaNeedOfficial": {
+    "description": "Requirement: confirm on the official website before travelling"
+  },
   "visaGenericScheme": "visa",
   "@visaGenericScheme": {
     "description": "Generic name of the permit."

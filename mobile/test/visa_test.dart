@@ -128,6 +128,12 @@ void main() {
     expect(data()['fromTxt'], contains('México'));
     expect(data()['toTxt'], contains('Estados Unidos'));
     expect(verdict()['h'], 'Necesitas visado de la embajada');
+    // El sello del dibujo, las banderas y la lista de lo que hace falta.
+    expect(verdict()['rule'], 'embassy');
+    expect(verdict()['needs'], contains('Cita en la embajada o el consulado'));
+    expect(data()['fromCode'], 'MX');
+    expect(data()['toCode'], 'US');
+    expect(data()['toFlag'], '🇺🇸');
 
     // Leer el pasaporte de la Bóveda: es español → ESTA, 90 días.
     spy.send!('read');
