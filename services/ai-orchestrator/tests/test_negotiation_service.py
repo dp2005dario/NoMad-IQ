@@ -12,14 +12,19 @@ from conftest import FIXED_NOW, FakeLLM, InMemoryNegotiations, negotiation_turn_
 from ai_orchestrator.events import InvalidEventError
 from ai_orchestrator.negotiation.agents import AgentSettings
 from ai_orchestrator.negotiation.consumer import NegotiationRequestConsumer
-from ai_orchestrator.negotiation.domain import GroupOption, MemberPreferences, Outcome, Status
+from ai_orchestrator.negotiation.domain import GroupOption, MemberPreferences, Outcome, Status, TripRules
 from ai_orchestrator.negotiation.events import (
     CONCLUDED_TYPE,
     REQUESTED_TYPE,
     decode_request,
     request_message,
 )
-from ai_orchestrator.negotiation.service import NegotiationService, NegotiationSettings, RunOutcome
+from ai_orchestrator.negotiation.service import (
+    NegotiationService,
+    NegotiationSettings,
+    RunOutcome,
+    with_rules,
+)
 from ai_orchestrator.negotiation.store import NewNegotiation
 from ai_orchestrator.pseudonym import Pseudonymizer
 from nomadiq.ai.v1 import negotiation_pb2
@@ -264,3 +269,12 @@ async def test_a_queue_without_anyone_expires() -> None:
     assert await service(store).run(negotiation_id) is RunOutcome.EXPIRED
     assert store.records[negotiation_id].status is Status.EXPIRED
     assert all(m.preferences is None for m in store.records[negotiation_id].members)
+
+
+def test_group_rules_apply_to_everyone() -> None:
+    prefs = MemberPreferences(budget_max_minor=100000, interests=("nightlife", "beach"), avoid=("crowds",))
+    out = with_rules(prefs, TripRules(max_price_minor=50000, avoid=("nightlife", "early-starts")))
+    assert out.budget_max_minor == 50000
+    assert out.avoid == ("crowds", "nightlife", "early-starts")
+    assert out.interests == ("beach",)
+    assert with_rules(prefs, None) is prefs

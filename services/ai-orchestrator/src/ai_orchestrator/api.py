@@ -524,6 +524,22 @@ def create_api(
             # Poco rato en cachés: un enlace recién pegado tiene que verse pronto.
             return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": PLAN_VIDEO_CACHE})
 
+        @app.get("/v1/plan-videos/photo")
+        async def get_place_photo(
+            place: Annotated[str, Query(min_length=1, max_length=60)],
+            lang: Annotated[str, Query(pattern=r"^[a-z]{2,3}$")] = "en",
+        ) -> JSONResponse:
+            """La foto de Wikipedia de un sitio (fondo de la tarjeta de un viaje)."""
+            try:
+                url = await plan_videos.photo(" ".join(place.split()), lang)
+            except PlanVideosUnavailableError:
+                resp = _problem(503, "Servicio no disponible temporalmente", "fotos ocupadas")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            return JSONResponse(
+                {"place": place, "photo": url}, headers={"Cache-Control": "public, max-age=86400"}
+            )
+
         @app.post("/v1/plan-videos/links", response_model=PlanVideo, status_code=201)
         async def add_plan_video_link(
             principal: Annotated[Principal, Depends(current_principal)],

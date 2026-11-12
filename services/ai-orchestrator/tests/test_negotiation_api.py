@@ -150,6 +150,9 @@ async def test_late_preferences_are_rejected(store: InMemoryNegotiations) -> Non
         {"sorpresa": True},
         {"my_name": "   "},
         {"my_name": "x" * 41},
+        # Una opción por encima del máximo del grupo.
+        {"rules": {"max_price_minor": 35000}},
+        {"rules": {"max_price_minor": 0}},
     ],
 )
 async def test_invalid_creation_is_400(store: InMemoryNegotiations, bad: dict[str, Any]) -> None:
@@ -283,3 +286,11 @@ async def test_tastes_are_shared_with_the_group(store: InMemoryNegotiations) -> 
         bad = await c.put(url, json={"tastes": ["<script>"]}, headers=headers(FRIEND))
         assert bad.status_code in (400, 422)
         assert (await c.put(url, json={"tastes": []}, headers=headers(STRANGER))).status_code == 404
+
+
+async def test_rules_are_kept_and_shown(store: InMemoryNegotiations) -> None:
+    rules = {"max_price_minor": 45000, "avoid": ["early-starts"]}
+    async with client(store) as c:
+        resp = await c.post("/v1/group-negotiations", json=body(rules=rules), headers=headers(ORGANIZER))
+    assert resp.status_code == 201
+    assert resp.json()["rules"] == rules

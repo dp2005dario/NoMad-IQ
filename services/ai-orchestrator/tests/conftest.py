@@ -306,6 +306,7 @@ class InMemoryNegotiations:
             ),
             invites_open=draft.invites_open,
             invite_code=new_invite_code() if draft.invites_open else None,
+            rules=draft.rules,
         )
         self.records[negotiation_id] = record
         return record

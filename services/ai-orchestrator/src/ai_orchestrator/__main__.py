@@ -121,6 +121,7 @@ from ai_orchestrator.places.countries import bundled_countries
 from ai_orchestrator.places.service import PlaceService, PlaceSettings, RedisPlaceCache
 from ai_orchestrator.places.wikimedia import RateLimiter, WikimediaClient
 from ai_orchestrator.plan_videos.links import LinkResolver, RedisLinkStore
+from ai_orchestrator.plan_videos.photos import RedisPhotoCache, WikipediaPhotos
 from ai_orchestrator.plan_videos.service import (
     LINK_QUOTA_PREFIX as PLAN_VIDEO_LINK_QUOTA_PREFIX,
 )
@@ -407,6 +408,8 @@ def _plan_videos(
         cache=RedisPlanVideoCache(redis),
         quota=RedisQuota(redis, prefix=PLAN_VIDEO_QUOTA_PREFIX),
         link_quota=RedisQuota(redis, prefix=PLAN_VIDEO_LINK_QUOTA_PREFIX),
+        photos=WikipediaPhotos(http),
+        photo_cache=RedisPhotoCache(redis),
         settings=PlanVideoSettings(daily_limit=settings.youtube_daily_limit),
     )
 

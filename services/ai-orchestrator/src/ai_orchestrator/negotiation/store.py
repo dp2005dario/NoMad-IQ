@@ -29,6 +29,7 @@ from ai_orchestrator.negotiation.domain import (
     MemberPreferences,
     NegotiationResult,
     Status,
+    TripRules,
 )
 from ai_orchestrator.negotiation.events import request_message
 from ai_orchestrator.outbox import OutboxMessage, enqueue
@@ -104,6 +105,8 @@ class NewNegotiation:
     invites_open: bool = False
     # Nombre del organizador para su grupo (None = solo su alias).
     organizer_name: str | None = None
+    # Reglas del organizador para todo el grupo (ver 0022_trip_rules.sql).
+    rules: TripRules | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,6 +138,7 @@ class NegotiationRecord:
     members: tuple[MemberRecord, ...]
     invites_open: bool = False
     invite_code: str | None = None
+    rules: TripRules | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -181,7 +185,7 @@ def alias_for(seat: int) -> str:
 
 _NEGOTIATION_COLUMNS = (
     "negotiation_id, organizer_id, title, currency, language, options, max_rounds, status, "
-    "deadline, created_at, concluded_at, result, invites_open, invite_code"
+    "deadline, created_at, concluded_at, result, invites_open, invite_code, rules"
 )
 
 # Si el código al azar ya lo tiene otro grupo vivo (rarísimo), se prueba otro.
@@ -213,8 +217,8 @@ class PostgresNegotiations:
                 """
                 INSERT INTO ai.group_negotiations
                     (negotiation_id, organizer_id, title, currency, language, options, max_rounds,
-                     status, deadline, invites_open, invite_code)
-                VALUES ($1::uuid, $2, $3, $4, $5, $6::jsonb, $7, 'collecting', $8, $9, $10)
+                     status, deadline, invites_open, invite_code, rules)
+                VALUES ($1::uuid, $2, $3, $4, $5, $6::jsonb, $7, 'collecting', $8, $9, $10, $11::jsonb)
                 """,
                 negotiation_id,
                 draft.organizer_id,
@@ -226,6 +230,7 @@ class PostgresNegotiations:
                 draft.deadline,
                 draft.invites_open,
                 invite_code,
+                draft.rules.model_dump_json() if draft.rules is not None else None,
             )
             await conn.executemany(
                 "INSERT INTO ai.group_negotiation_members "
@@ -646,6 +651,7 @@ def _record(row: asyncpg.Record, members: tuple[MemberRecord, ...]) -> Negotiati
         members=members,
         invites_open=data["invites_open"],
         invite_code=data["invite_code"],
+        rules=TripRules.model_validate_json(data["rules"]) if data.get("rules") else None,
     )
 
 

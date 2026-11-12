@@ -12,6 +12,7 @@ from pydantic import SecretStr
 from ai_orchestrator.api import create_api
 from ai_orchestrator.plan_videos.domain import PlanVideo, PlanVideos
 from ai_orchestrator.plan_videos.links import LinkResolver, parse_link
+from ai_orchestrator.plan_videos.photos import WikipediaPhotos, lead_photo
 from ai_orchestrator.plan_videos.service import (
     PlanVideoService,
     PlanVideoSettings,
@@ -38,6 +39,7 @@ def item(vid: str, title: str = "Qué hacer en Lisboa &amp; más", thumb: str | 
 class FakeYouTube:
     def __init__(self) -> None:
         self.requests: list[httpx.Request] = []
+        self.wiki: list[str] = []
         self.status = 200
         self.items: list[dict[str, Any]] = [item("abcdefghijk"), item("ABCDEFGHIJK")]
 
@@ -45,6 +47,19 @@ class FakeYouTube:
         if request.url.host == "vm.tiktok.com":
             return httpx.Response(
                 301, headers={"location": "https://www.tiktok.com/@ana/video/7301234567890123456?lang=es"}
+            )
+        if request.url.host.endswith("wikipedia.org"):
+            self.wiki.append(str(request.url))
+            if request.url.host.startswith("es.") or "Nowhere" in str(request.url):
+                return httpx.Response(404)
+            return httpx.Response(
+                200,
+                json={
+                    "type": "standard",
+                    "thumbnail": {
+                        "source": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/b/Lisboa.jpg/320px-Lisboa.jpg"
+                    },
+                },
             )
         if request.url.path == "/oembed":
             return httpx.Response(
@@ -59,6 +74,17 @@ class FakeYouTube:
         if self.status != 200:
             return httpx.Response(self.status)
         return httpx.Response(200, json={"items": self.items})
+
+
+class MemoryPhotos:
+    def __init__(self) -> None:
+        self.items: dict[str, str | None] = {}
+
+    async def get(self, key: str) -> tuple[bool, str | None]:
+        return (key in self.items, self.items.get(key))
+
+    async def put(self, key: str, url: str | None, *, ttl_seconds: int) -> None:
+        self.items[key] = url
 
 
 class MemoryLinks:
@@ -106,6 +132,8 @@ def service(
         cache=cache,
         quota=MemoryQuota(),
         link_quota=MemoryQuota(),
+        photos=WikipediaPhotos(http),
+        photo_cache=MemoryPhotos(),
         settings=PlanVideoSettings(daily_limit=limit, links_per_day=2),
     )
     return svc, cache
@@ -210,3 +238,19 @@ async def test_api_validates_and_says_busy() -> None:
         )
         assert bad.status_code == 422
     assert busy.status_code == 503 and busy.headers["retry-after"] == "60"
+
+
+async def test_place_photo_from_wikipedia_with_fallback_and_cache() -> None:
+    fake = FakeYouTube()
+    svc, _ = service(fake)
+    url = await svc.photo("Lisboa", "es")
+    assert url is not None and url.startswith("https://upload.wikimedia.org/")
+    assert [u.split("/")[2] for u in fake.wiki] == ["es.wikipedia.org", "en.wikipedia.org"]
+    await svc.photo("lisboa", "es")
+    assert len(fake.wiki) == 2  # de la caché
+    assert await svc.photo("Nowhere", "en") is None
+    assert (
+        lead_photo({"type": "disambiguation", "thumbnail": {"source": "https://upload.wikimedia.org/x"}})
+        is None
+    )
+    assert lead_photo({"thumbnail": {"source": "https://evil.com/x.jpg"}}) is None

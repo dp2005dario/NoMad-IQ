@@ -48,6 +48,16 @@ class PlanVideoCache(Protocol):
     async def put(self, key: str, videos: PlanVideos, *, ttl_seconds: int) -> None: ...
 
 
+class PhotoCache(Protocol):
+    async def get(self, key: str) -> tuple[bool, str | None]: ...
+
+    async def put(self, key: str, url: str | None, *, ttl_seconds: int) -> None: ...
+
+
+class PhotoSource(Protocol):
+    async def photo_of(self, place: str, language: str) -> str | None: ...
+
+
 class LinkStore(Protocol):
     async def list(self, place_key: str) -> list[PlanVideo]: ...
 
@@ -114,8 +124,13 @@ class PlanVideoService:
         cache: PlanVideoCache,
         quota: DailyQuota,
         link_quota: DailyQuota,
+        photos: PhotoSource,
+        photo_cache: PhotoCache,
         settings: PlanVideoSettings | None = None,
     ) -> None:
+        self._photos = photos
+        self._photo_cache = photo_cache
+        self._photo_flight: SingleFlight[str | None] = SingleFlight()
         self._youtube = youtube
         self._resolver = resolver
         self._links = links
@@ -136,6 +151,27 @@ class PlanVideoService:
         if self._youtube is not None:
             found = await self._youtube_videos(place, query, language)
         return PlanVideos(place=place, videos=[*pasted, *found], youtube=self._youtube is not None)
+
+    async def photo(self, place: str, language: str) -> str | None:
+        """La foto de Wikipedia de un sitio (o None), guardada 30 días."""
+        key = cache_key(place, language)
+        try:
+            known, url = await self._photo_cache.get(key)
+        except CacheError as exc:
+            raise PlanVideosUnavailableError(str(exc)) from exc
+        if known:
+            return url
+        result, _ = await self._photo_flight.do(key, lambda: self._find_photo(key, place, language))
+        return result
+
+    async def _find_photo(self, key: str, place: str, language: str) -> str | None:
+        url = await self._photos.photo_of(place, language)
+        ttl = 30 * 24 * 3600 if url else 3 * 24 * 3600
+        try:
+            await self._photo_cache.put(key, url, ttl_seconds=ttl)
+        except CacheError:
+            log.warning("no se pudo guardar la foto del sitio")
+        return url
 
     async def add_link(self, user_id: str, place: str, url: str) -> PlanVideo:
         """Guarda el enlace pegado para ese sitio (lanza BadLinkError si no vale)."""

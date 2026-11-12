@@ -105,6 +105,18 @@ class GroupOption(BaseModel):
     tags: Tags = ()
 
 
+class TripRules(BaseModel):
+    """Reglas del organizador para TODO el grupo ("máx. 500 € por persona",
+    "nada de madrugones"). Son públicas: las ve todo el grupo."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    # Precio máximo por persona (céntimos). Ninguna opción puede pasarse.
+    max_price_minor: int | None = Field(default=None, gt=0, le=100_000_000)
+    # Lo que nadie quiere: se suma a lo que evita cada uno.
+    avoid: Tags = ()
+
+
 class MemberPreferences(BaseModel):
     """Lo que cada persona cuenta de sí misma. Es PRIVADO: ni los demás
     miembros ni los agentes de los demás lo ven nunca."""
