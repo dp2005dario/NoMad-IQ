@@ -14,6 +14,7 @@
 //   - Micro: dictas la pregunta en vez de escribirla (el reconocimiento de
 //     voz del propio móvil, gratis). Altavoz: Flyra te lee su respuesta.
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,11 +23,13 @@ import 'package:go_router/go_router.dart';
 import '../../auth/session.dart';
 import '../../core/api_client.dart';
 import '../../core/content_language.dart';
+import '../../core/motion.dart';
 import '../../core/router.dart';
 import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
+import '../../widgets/user_avatar.dart';
 import '../home/home_screen.dart' show displayName;
 import 'flyra_api.dart';
 
@@ -208,6 +211,7 @@ class _FlyraChatScreenState extends State<FlyraChatScreen> {
     final String initial = name == null || name.isEmpty
         ? ''
         : String.fromCharCodes(name.runes.take(1)).toUpperCase();
+    final String? photo = SessionScope.of(context).user?.photoUrl;
     final List<ChatTurn> turns = _history;
     final List<String> ideas = <String>[
       t.flyraSuggestion1,
@@ -216,9 +220,9 @@ class _FlyraChatScreenState extends State<FlyraChatScreen> {
       t.flyraSuggestion4,
     ];
     return Scaffold(
-      backgroundColor: NomadColors.background,
+      backgroundColor: const Color(0xFF0B1020),
       appBar: AppBar(
-        backgroundColor: NomadColors.background,
+        backgroundColor: const Color(0xFF0B1020),
         // Sin flecha de volver (pestaña): un poco de aire a la izquierda.
         titleSpacing: Navigator.of(context).canPop() ? 0 : 16,
         title: Semantics(
@@ -292,15 +296,7 @@ class _FlyraChatScreenState extends State<FlyraChatScreen> {
             ),
         ],
       ),
-      body: DecoratedBox(
-        // Un brillo suave de Flyra (menta y violeta) arriba del todo.
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment(-0.8, -1.1),
-            radius: 1.2,
-            colors: <Color>[Color(0x223DDC97), Color(0x00000000)],
-          ),
-        ),
+      body: _Aurora(
         child: SafeArea(
           child: Column(
             children: <Widget>[
@@ -327,6 +323,8 @@ class _FlyraChatScreenState extends State<FlyraChatScreen> {
                         key: ValueKey<String>('turn-$i'),
                         turn: turns[i],
                         initial: initial,
+                        name: name,
+                        photoUrl: photo,
                         typing: i == _typing,
                         listenLabel: t.cameraListen,
                         copyLabel: t.visaCopy,
@@ -519,7 +517,7 @@ class _AboutFlyra extends StatelessWidget {
       gradient: const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: <Color>[Color(0xFF15302A), NomadColors.surface],
+        colors: <Color>[Color(0xFF221A4A), NomadColors.surface],
       ),
     ),
     child: SafeArea(
@@ -557,8 +555,8 @@ class _AboutFlyra extends StatelessWidget {
               height: 52,
               child: FilledButton(
                 style: FilledButton.styleFrom(
-                  backgroundColor: NomadColors.mint,
-                  foregroundColor: NomadColors.background,
+                  backgroundColor: const Color(0xFF7B61FF),
+                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18),
                   ),
@@ -618,6 +616,8 @@ class _Bubble extends StatefulWidget {
     super.key,
     required this.turn,
     this.initial = '',
+    this.name,
+    this.photoUrl,
     this.typing = false,
     this.listenLabel,
     this.copyLabel,
@@ -628,8 +628,11 @@ class _Bubble extends StatefulWidget {
 
   final ChatTurn turn;
 
-  /// Tu inicial (en el circulito de tus mensajes).
+  /// Tu inicial (si no tienes foto) y tu foto (la que elegiste en el móvil
+  /// o la de tu cuenta de Google).
   final String initial;
+  final String? name;
+  final String? photoUrl;
   final bool typing;
 
   /// Texto del botón de altavoz ("Escuchar"); sin él, no hay botones.
@@ -711,16 +714,31 @@ class _BubbleState extends State<_Bubble> with TickerProviderStateMixin {
         child: Container(
           padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
           decoration: BoxDecoration(
-            color: mine ? const Color(0xFF22394A) : const Color(0xFF10261F),
+            // Tuyos: degradado azul → violeta. De Flyra: cristal oscuro
+            // con un filo violeta (sin el verde de antes).
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: mine
+                  ? const <Color>[Color(0xFF4F6BFF), Color(0xFF8A5CF6)]
+                  : const <Color>[Color(0xFF1D2340), Color(0xFF141A2C)],
+            ),
             borderRadius: BorderRadiusDirectional.only(
-              topStart: const Radius.circular(18),
-              topEnd: const Radius.circular(18),
-              bottomStart: Radius.circular(mine ? 18 : 4),
-              bottomEnd: Radius.circular(mine ? 4 : 18),
+              topStart: const Radius.circular(20),
+              topEnd: const Radius.circular(20),
+              bottomStart: Radius.circular(mine ? 20 : 6),
+              bottomEnd: Radius.circular(mine ? 6 : 20),
             ).resolve(Directionality.of(context)),
             border: Border.all(
-              color: mine ? const Color(0xFF2E4A5E) : const Color(0xFF1F4D3D),
+              color: mine ? const Color(0x55B9A4FF) : const Color(0x40A78BFA),
             ),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: mine ? const Color(0x405B6BFF) : const Color(0x33000000),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -731,9 +749,10 @@ class _BubbleState extends State<_Bubble> with TickerProviderStateMixin {
                   child: Text(
                     'Flyra',
                     style: TextStyle(
-                      color: NomadColors.mint,
+                      color: Color(0xFFC4B2FF),
                       fontWeight: FontWeight.w800,
                       fontSize: 12,
+                      letterSpacing: 0.3,
                     ),
                   ),
                 ),
@@ -747,8 +766,8 @@ class _BubbleState extends State<_Bubble> with TickerProviderStateMixin {
                     // El lector de pantalla lee siempre el texto completo.
                     semanticsLabel: text,
                     style: const TextStyle(
-                      color: Color(0xFFEAF2EF),
-                      height: 1.42,
+                      color: Color(0xFFF1F0FF),
+                      height: 1.45,
                       fontSize: 15,
                     ),
                   );
@@ -795,14 +814,18 @@ class _BubbleState extends State<_Bubble> with TickerProviderStateMixin {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
               if (!mine) ...<Widget>[
-                const FlyraAvatar(size: 30),
+                const _GlowAvatar(size: 30),
                 const SizedBox(width: 8),
               ] else
                 const SizedBox(width: 38),
               bubble,
               if (mine) ...<Widget>[
                 const SizedBox(width: 8),
-                _MeDot(initial: widget.initial),
+                _MeDot(
+                  initial: widget.initial,
+                  name: widget.name,
+                  photoUrl: widget.photoUrl,
+                ),
               ] else
                 const SizedBox(width: 24),
             ],
@@ -829,40 +852,39 @@ class _MiniAction extends StatelessWidget {
       radius: 20,
       child: Padding(
         padding: const EdgeInsetsDirectional.only(end: 12, top: 2, bottom: 2),
-        child: Icon(icon, size: 18, color: const Color(0xFF7FB8A3)),
+        child: Icon(icon, size: 18, color: const Color(0xFFA9A0F5)),
       ),
     ),
   );
 }
 
-/// Tu circulito con la inicial (menta, el color de "tú").
+/// Tu foto (la que elegiste en el móvil o la de Google) en un aro azul;
+/// sin foto, tu inicial.
 class _MeDot extends StatelessWidget {
-  const _MeDot({required this.initial});
+  const _MeDot({required this.initial, this.name, this.photoUrl});
 
   final String initial;
+  final String? name;
+  final String? photoUrl;
 
   @override
   Widget build(BuildContext context) => Container(
-    width: 30,
-    height: 30,
-    alignment: Alignment.center,
+    padding: const EdgeInsets.all(2),
     decoration: const BoxDecoration(
-      color: NomadColors.mint,
       shape: BoxShape.circle,
+      gradient: LinearGradient(
+        colors: <Color>[Color(0xFF4F6BFF), Color(0xFF8A5CF6)],
+      ),
     ),
-    child: initial.isEmpty
-        ? const Icon(
-            Icons.person_rounded,
-            size: 18,
-            color: NomadColors.background,
-          )
-        : Text(
-            initial,
-            style: const TextStyle(
-              color: NomadColors.background,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
+    child: ExcludeSemantics(
+      child: UserAvatar(
+        name: name ?? initial,
+        photoUrl: photoUrl,
+        size: 28,
+        color: NomadColors.flights,
+        isMe: true,
+      ),
+    ),
   );
 }
 
@@ -1013,8 +1035,8 @@ class _QuickIdeas extends StatelessWidget {
       itemCount: items.length,
       separatorBuilder: (_, _) => const SizedBox(width: 8),
       itemBuilder: (BuildContext context, int i) => ActionChip(
-        backgroundColor: const Color(0xFF10261F),
-        side: const BorderSide(color: Color(0xFF1F4D3D)),
+        backgroundColor: const Color(0xFF1A2036),
+        side: const BorderSide(color: Color(0xFF323C66)),
         shape: const StadiumBorder(),
         label: Text(
           items[i],
@@ -1068,7 +1090,7 @@ class _ThinkingState extends State<_Thinking>
     padding: const EdgeInsets.only(bottom: 10),
     child: Row(
       children: <Widget>[
-        const FlyraAvatar(size: 28),
+        const _GlowAvatar(size: 28),
         const SizedBox(width: 10),
         AnimatedBuilder(
           animation: _dots,
@@ -1084,7 +1106,7 @@ class _ThinkingState extends State<_Thinking>
                     height: 7,
                     margin: const EdgeInsets.symmetric(horizontal: 2),
                     decoration: const BoxDecoration(
-                      color: NomadColors.mint,
+                      color: NomadColors.group,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -1165,11 +1187,19 @@ class _Composer extends StatelessWidget {
     child: Container(
       padding: const EdgeInsetsDirectional.fromSTEB(6, 4, 4, 4),
       decoration: BoxDecoration(
-        color: NomadColors.surface,
-        borderRadius: BorderRadius.circular(26),
+        color: const Color(0xE6141A2C),
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: listening ? NomadColors.mint : NomadColors.outline,
+          color: listening ? const Color(0xFFB69CFF) : const Color(0xFF2C3558),
+          width: listening ? 1.6 : 1,
         ),
+        boxShadow: const <BoxShadow>[
+          BoxShadow(
+            color: Color(0x338A5CF6),
+            blurRadius: 18,
+            offset: Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -1182,7 +1212,7 @@ class _Composer extends StatelessWidget {
             icon: const Icon(Icons.mic_none_rounded),
             selectedIcon: const Icon(
               Icons.mic_rounded,
-              color: NomadColors.mint,
+              color: NomadColors.group,
             ),
           ),
           Expanded(
@@ -1220,8 +1250,8 @@ class _Composer extends StatelessWidget {
           IconButton.filled(
             tooltip: sendLabel,
             style: IconButton.styleFrom(
-              backgroundColor: NomadColors.mint,
-              foregroundColor: NomadColors.background,
+              backgroundColor: const Color(0xFF7B61FF),
+              foregroundColor: Colors.white,
               disabledBackgroundColor: NomadColors.surfaceHigh,
             ),
             onPressed: enabled ? () => onSend() : null,
@@ -1254,4 +1284,90 @@ class _SignIn extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// El fondo del chat: noche azul con tres luces suaves (violeta, azul y
+/// rosa) que se mueven muy despacio, como una aurora. Solo degradados (sin
+/// desenfoques), así no gasta batería ni hace que la lista vaya a tirones.
+class _Aurora extends StatefulWidget {
+  const _Aurora({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_Aurora> createState() => _AuroraState();
+}
+
+class _AuroraState extends State<_Aurora> with SingleTickerProviderStateMixin {
+  late final AnimationController _t = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 24),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _t.stop();
+    } else if (!_t.isAnimating) {
+      Motion.loop(_t, testCount: 1);
+    }
+  }
+
+  @override
+  void dispose() {
+    _t.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(
+    painter: _AuroraPainter(_t),
+    // La lista se pinta en su propia capa: la aurora no la redibuja.
+    child: RepaintBoundary(child: widget.child),
+  );
+}
+
+class _AuroraPainter extends CustomPainter {
+  _AuroraPainter(this.t) : super(repaint: t);
+
+  final Animation<double> t;
+
+  static const List<(Color, double, double, double)> _lights =
+      <(Color, double, double, double)>[
+        (Color(0x388A5CF6), -0.7, -0.9, 0.0),
+        (Color(0x2E4F6BFF), 0.9, -0.4, 0.33),
+        (Color(0x1FFF7AB6), -0.4, 0.9, 0.66),
+      ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[Color(0xFF0B1020), Color(0xFF0B1217)],
+        ).createShader(Offset.zero & size),
+    );
+    final double r = size.longestSide * 0.55;
+    for (final (Color c, double x, double y, double phase) in _lights) {
+      final double a = (t.value + phase) * 2 * math.pi;
+      final Offset center = Offset(
+        size.width * (0.5 + 0.5 * x + 0.08 * math.cos(a)),
+        size.height * (0.5 + 0.5 * y + 0.06 * math.sin(a)),
+      );
+      canvas.drawCircle(
+        center,
+        r,
+        Paint()
+          ..shader = RadialGradient(colors: <Color>[c, c.withValues(alpha: 0)])
+              .createShader(Rect.fromCircle(center: center, radius: r)),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_AuroraPainter old) => false;
 }
