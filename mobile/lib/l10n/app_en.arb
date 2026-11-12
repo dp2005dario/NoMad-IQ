@@ -5517,7 +5517,7 @@
   "@sosImOk": {
     "description": "Cancel / reset."
   },
-  "sosMessage": "I need help! I'm here:",
+  "sosMessage": "🆘 EMERGENCY: I need help urgently. This is where I am right now (tap to open it in Google Maps):",
   "@sosMessage": {
     "description": "SMS text before the map link."
   },
@@ -11187,7 +11187,7 @@
   "@nbClosedNow": {
     "description": "Nearby shop badge: closed right now"
   },
-  "sosMessageNoLocation": "I need help! (My phone couldn't get my location.)",
+  "sosMessageNoLocation": "🆘 EMERGENCY: I need help urgently. My phone couldn't get my location: please call me.",
   "@sosMessageNoLocation": {
     "description": "SOS text when the phone could not get the location (never say 'I'm here' without a location)"
   },

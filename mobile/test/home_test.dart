@@ -141,7 +141,7 @@ void main() {
     await tester.pumpAndSettle();
     // WhatsApp y SMS esperan a saber dónde estás: pueden abrirse después.
     final Uri wa = opened.firstWhere((Uri u) => u.host == 'wa.me');
-    expect(wa.queryParameters['text'], startsWith('¡Necesito ayuda!'));
+    expect(wa.queryParameters['text'], startsWith('🆘 EMERGENCIA: necesito ayuda urgente.'));
     // Sin GPS no dice "Estoy aquí:" (haría creer que mandó la ubicación).
     expect(wa.queryParameters['text'], isNot(contains('Estoy aquí')));
     expect(opened.where((Uri u) => u.scheme == 'sms'), hasLength(1));
