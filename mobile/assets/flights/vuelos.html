@@ -511,9 +511,13 @@ a{color:#9CC4FF}a:hover{color:#C6DCFF}
 .q-grid > a:nth-child(n+4){grid-column: span 3}
 /* La ficha del país, pequeña: la del origen a la izquierda y la del destino
    a la derecha (antes ocupaba toda la tarjeta). */
-.q-fic{width:76%;box-sizing:border-box;padding:14px 12px!important;gap:10px!important;border-radius:22px!important}
-.q-fic-o{margin-left:0!important;margin-right:auto!important;border-left:1px solid #2A4570!important}
-.q-fic-d{margin-right:0!important;margin-left:auto!important;border-right:1px solid #6A3A2A!important}
+/* Ficha del país: del mismo ancho que el recuadro del vuelo y pegada a él
+   (antes salía estrecha y movida a un lado, como fuera de sitio). */
+.q-fic{width:100%;box-sizing:border-box;padding:14px 12px!important;gap:10px!important;border-radius:22px!important;margin:10px 0 0!important}
+.q-fic>span[style*="rotate(45deg)"]{display:none}
+.q-fic-o{border:1px solid #2A4570!important;animation:q-ficin .45s cubic-bezier(.2,.8,.2,1) both!important}
+.q-fic-d{border:1px solid #6A3A2A!important;animation:q-ficin .45s cubic-bezier(.2,.8,.2,1) both!important}
+@keyframes q-ficin{from{opacity:0;transform:translateY(-12px) scale(.98)}to{opacity:1;transform:none}}
 .q-fic span[style*="font-size: 26px"]{font-size:19px!important}
 .q-fic span[role=img]{transform:scale(.72);transform-origin:left center;margin-right:-10px}
 .q-fic span[style*="font-size: 15px"]{font-size:13px!important}
