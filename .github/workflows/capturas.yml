@@ -66,6 +66,13 @@ jobs:
           arch: x86_64
           profile: pixel_6
           disable-animations: true
+          # Más memoria y núcleos para el móvil de mentira: con todas las
+          # pantallas abiertas a la vez (y sus animaciones), con la memoria
+          # por defecto el emulador se quedaba sin memoria y se caía.
+          ram-size: 6144M
+          heap-size: 1024M
+          cores: 4
+          disk-size: 6G
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated
           script: bash mobile/tool/capturas.sh mobile/build/app/outputs/flutter-apk/app-debug.apk capturas
       - name: Subir las capturas
