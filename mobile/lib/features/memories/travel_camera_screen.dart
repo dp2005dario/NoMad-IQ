@@ -9,6 +9,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/services.dart';
@@ -18,6 +19,7 @@ import '../camera/camera_device.dart' show CameraStart;
 import '../map/geo.dart';
 import '../map/location.dart';
 import '../sos/where_am_i.dart';
+import '../shell/app_shell.dart';
 import 'memories.dart';
 import 'travel_camera.dart';
 
@@ -332,6 +334,23 @@ class _TravelCameraScreenState extends State<TravelCameraScreen>
       appBar: AppBar(
         title: Text(t.memCameraTitle),
         backgroundColor: Colors.transparent,
+        // En la pestaña Cámara (a pantalla completa): la X vuelve a la
+        // pestaña de donde venías, como en el escáner.
+        leading: widget.onScanner == null
+            ? null
+            : IconButton(
+                tooltip: 'Cerrar la cámara',
+                icon: const Icon(Icons.close_rounded),
+                onPressed: () {
+                  final StatefulNavigationShellState? shell =
+                      StatefulNavigationShell.maybeOf(context);
+                  if (shell != null) {
+                    shell.goBranch(AppShell.lastTab);
+                  } else if (context.canPop()) {
+                    context.pop();
+                  }
+                },
+              ),
         actions: <Widget>[
           if (_phase == _Phase.live)
             IconButton(
@@ -345,43 +364,53 @@ class _TravelCameraScreenState extends State<TravelCameraScreen>
         ],
       ),
       extendBodyBehindAppBar: true,
-      body: switch (_phase) {
-        _Phase.starting => const Center(child: CircularProgressIndicator()),
-        _Phase.failed => _Failed(
-          denied: _start == CameraStart.denied,
-          onRetry: () => unawaited(_open()),
-        ),
-        _Phase.review => _Review(
-          photo: _lastPhoto,
-          video: _last?.kind == MemoryKind.video,
-          seconds: _seconds,
-          onShare: () => unawaited(_share()),
-          onRetake: () => unawaited(_retake()),
-          onAnother: () {
-            if (_camera == null) {
-              setState(() => _phase = _Phase.starting);
-              unawaited(_open());
-            } else {
-              setState(() => _phase = _Phase.live);
-            }
-          },
-        ),
-        _Phase.live || _Phase.recording => _Live(
-          camera: _camera!,
-          recording: _phase == _Phase.recording,
-          seconds: _seconds,
-          sticker: _sticker,
-          onSticker: () => setState(() => _sticker = !_sticker),
-          onPhoto: () => unawaited(_shoot()),
-          onHold: () => unawaited(_record()),
-          onRelease: _release,
-          last: _last,
-          lastPhoto: _lastPhoto,
-          flash: _flash,
-          onLast: () => setState(() => _phase = _Phase.review),
-          onScanner: widget.onScanner,
-        ),
-      },
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        // Deslizar a la derecha (el dedo va hacia la derecha) = escáner.
+        onHorizontalDragEnd:
+            widget.onScanner == null || _phase == _Phase.recording
+            ? null
+            : (DragEndDetails d) {
+                if ((d.primaryVelocity ?? 0) > 250) widget.onScanner!();
+              },
+        child: switch (_phase) {
+          _Phase.starting => const Center(child: CircularProgressIndicator()),
+          _Phase.failed => _Failed(
+            denied: _start == CameraStart.denied,
+            onRetry: () => unawaited(_open()),
+          ),
+          _Phase.review => _Review(
+            photo: _lastPhoto,
+            video: _last?.kind == MemoryKind.video,
+            seconds: _seconds,
+            onShare: () => unawaited(_share()),
+            onRetake: () => unawaited(_retake()),
+            onAnother: () {
+              if (_camera == null) {
+                setState(() => _phase = _Phase.starting);
+                unawaited(_open());
+              } else {
+                setState(() => _phase = _Phase.live);
+              }
+            },
+          ),
+          _Phase.live || _Phase.recording => _Live(
+            camera: _camera!,
+            recording: _phase == _Phase.recording,
+            seconds: _seconds,
+            sticker: _sticker,
+            onSticker: () => setState(() => _sticker = !_sticker),
+            onPhoto: () => unawaited(_shoot()),
+            onHold: () => unawaited(_record()),
+            onRelease: _release,
+            last: _last,
+            lastPhoto: _lastPhoto,
+            flash: _flash,
+            onLast: () => setState(() => _phase = _Phase.review),
+            onScanner: widget.onScanner,
+          ),
+        },
+      ),
     );
   }
 }
@@ -454,164 +483,156 @@ class _Live extends StatelessWidget {
     final AppLocalizations t = AppLocalizations.of(context);
     final VoidCallback? scanner = onScanner;
     final Uint8List? thumb = lastPhoto;
-    return GestureDetector(
-      // Deslizar a la derecha (el dedo va hacia la derecha) = escáner.
-      onHorizontalDragEnd: scanner == null || recording
-          ? null
-          : (DragEndDetails d) {
-              if ((d.primaryVelocity ?? 0) > 250) scanner();
-            },
-      child: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          camera.preview(),
-          SafeArea(
-            child: Column(
-              children: <Widget>[
-                const SizedBox(height: 56),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    if (recording)
-                      Chip(
-                        backgroundColor: const Color(0xFFFF3B5C),
-                        label: Text(
-                          '● ${_mmss(seconds)} / ${_mmss(maxVideo.inSeconds)}',
-                        ),
-                      )
-                    else
-                      FilterChip(
-                        selected: sticker,
-                        onSelected: (_) => onSticker(),
-                        label: Text(t.memSticker),
+    return Stack(
+      fit: StackFit.expand,
+      children: <Widget>[
+        camera.preview(),
+        SafeArea(
+          child: Column(
+            children: <Widget>[
+              const SizedBox(height: 56),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  if (recording)
+                    Chip(
+                      backgroundColor: const Color(0xFFFF3B5C),
+                      label: Text(
+                        '● ${_mmss(seconds)} / ${_mmss(maxVideo.inSeconds)}',
                       ),
-                  ],
-                ),
-                const Spacer(),
-                AnimatedOpacity(
-                  opacity: flash ? 1 : 0,
-                  duration: const Duration(milliseconds: 250),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
+                    )
+                  else
+                    FilterChip(
+                      selected: sticker,
+                      onSelected: (_) => onSticker(),
+                      label: Text(t.memSticker),
                     ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xCC0B1217),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        const Icon(
-                          Icons.check_circle_rounded,
-                          size: 18,
-                          color: NomadColors.mint,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          t.memSavedFlash,
-                          style: const TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                      ],
-                    ),
+                ],
+              ),
+              const Spacer(),
+              AnimatedOpacity(
+                opacity: flash ? 1 : 0,
+                duration: const Duration(milliseconds: 250),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xCC0B1217),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      const Icon(
+                        Icons.check_circle_rounded,
+                        size: 18,
+                        color: NomadColors.mint,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        t.memSavedFlash,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 14),
-                Row(
-                  children: <Widget>[
-                    // La miniatura de lo último: abre Compartir / Repetir.
-                    Expanded(
-                      child: Align(
-                        child: last == null
-                            ? const SizedBox.shrink()
-                            : Semantics(
-                                button: true,
-                                label: t.memShare,
-                                child: GestureDetector(
-                                  onTap: onLast,
-                                  child: Container(
-                                    width: 52,
-                                    height: 52,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(14),
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 2,
-                                      ),
-                                      color: NomadColors.surface,
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: <Widget>[
+                  // La miniatura de lo último: abre Compartir / Repetir.
+                  Expanded(
+                    child: Align(
+                      child: last == null
+                          ? const SizedBox.shrink()
+                          : Semantics(
+                              button: true,
+                              label: t.memShare,
+                              child: GestureDetector(
+                                onTap: onLast,
+                                child: Container(
+                                  width: 52,
+                                  height: 52,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
                                     ),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: thumb != null
-                                        ? Image.memory(
-                                            thumb,
-                                            fit: BoxFit.cover,
-                                            cacheWidth: 160,
-                                            errorBuilder: (_, _, _) =>
-                                                const SizedBox.shrink(),
-                                          )
-                                        : const Icon(
-                                            Icons.play_arrow_rounded,
-                                            color: Colors.white,
-                                          ),
+                                    color: NomadColors.surface,
                                   ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: thumb != null
+                                      ? Image.memory(
+                                          thumb,
+                                          fit: BoxFit.cover,
+                                          cacheWidth: 160,
+                                          errorBuilder: (_, _, _) =>
+                                              const SizedBox.shrink(),
+                                        )
+                                      : const Icon(
+                                          Icons.play_arrow_rounded,
+                                          color: Colors.white,
+                                        ),
                                 ),
                               ),
-                      ),
-                    ),
-                    _Shutter(
-                      recording: recording,
-                      label: recording ? t.memStop : t.memShoot,
-                      onTap: onPhoto,
-                      onHold: onHold,
-                      onRelease: onRelease,
-                    ),
-                    const Expanded(child: SizedBox.shrink()),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  t.memShutterHint,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    shadows: <Shadow>[Shadow(blurRadius: 6)],
-                  ),
-                ),
-                if (scanner != null) ...<Widget>[
-                  const SizedBox(height: 6),
-                  GestureDetector(
-                    onTap: scanner,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Flexible(
-                          child: Text(
-                            t.memSwipeScanner,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                              shadows: <Shadow>[Shadow(blurRadius: 6)],
                             ),
+                    ),
+                  ),
+                  _Shutter(
+                    recording: recording,
+                    label: recording ? t.memStop : t.memShoot,
+                    onTap: onPhoto,
+                    onHold: onHold,
+                    onRelease: onRelease,
+                  ),
+                  const Expanded(child: SizedBox.shrink()),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                t.memShutterHint,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  shadows: <Shadow>[Shadow(blurRadius: 6)],
+                ),
+              ),
+              if (scanner != null) ...<Widget>[
+                const SizedBox(height: 6),
+                GestureDetector(
+                  onTap: scanner,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Flexible(
+                        child: Text(
+                          t.memSwipeScanner,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            shadows: <Shadow>[Shadow(blurRadius: 6)],
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        const Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 16,
-                          color: Colors.white70,
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 16,
+                        color: Colors.white70,
+                      ),
+                    ],
                   ),
-                ],
-                const SizedBox(height: 18),
+                ),
               ],
-            ),
+              const SizedBox(height: 18),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
