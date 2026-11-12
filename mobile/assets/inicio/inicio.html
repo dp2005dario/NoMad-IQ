@@ -230,6 +230,8 @@ body.red .rm .dg{fill:#ff3b30;animation:blink .25s steps(1) infinite}
 .pass::after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,#ffffff2e 50%,transparent 65%);background-size:260% 100%;animation:shine2 5s ease-in-out infinite;pointer-events:none}
 @keyframes shine2{0%{background-position:160% 0}60%,100%{background-position:-80% 0}}
 .pf .gs{display:none}
+/* Pasaporte ya listo (pasaporte y DNI puestos): quieto, sin saltar ni brillar. */
+.pf.done .pass,.pf.done::after,.pass.done::after{animation:none}.pf.done::after{opacity:.6}
 .greet{min-height:44px;font:800 19px/1.2 var(--d);text-align:center;text-wrap:balance;color:var(--fg);padding:0 12px;margin-top:-4px}
 .greet .cur{display:inline-block;width:2px;height:1em;background:var(--mint);margin-left:2px;vertical-align:-2px;animation:blink .7s steps(1) infinite}
 .fly{position:absolute;left:50%;top:50%;width:104px;height:104px;margin:-52px 0 0 -52px;pointer-events:none;opacity:0;z-index:3}
@@ -842,7 +844,7 @@ function fill(){var P=E.pass||{},jobs=[];
   if(first||was===undefined){el.textContent=v;el.classList.remove('em');return}
   jobs.push([el,v])});
  var m=$('f-mrz');if(P.mrz){m.innerHTML=P.mrz.map(esc).join('<br>');m.classList.remove('em2')}else{m.textContent=E.mrzEmpty||'';m.classList.add('em2')}
- $('f-cta').querySelector('span').textContent=P.cta||'';pass.classList.toggle('done',!!P.done);
+ $('f-cta').querySelector('span').textContent=P.cta||'';pass.classList.toggle('done',!!P.done);pass.parentNode.classList.toggle('done',!!P.done);
  var ph=$('q-photo'),add=$('q-addph');if(P.photo){ph.src=P.photo;ph.style.display='';add.style.display='none'}else{ph.style.display='none';add.style.display=''}
  first=false;if(!jobs.length)return;
  pass.scrollIntoView({behavior:'smooth',block:'center'});
