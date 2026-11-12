@@ -22,6 +22,15 @@ adb shell settings put global window_animation_scale 0 || true
 adb shell settings put global transition_animation_scale 0 || true
 adb shell settings put global animator_duration_scale 0 || true
 
+# Cada 10 s, la memoria que usa el emulador en el robot (en MB): si se
+# cae por falta de memoria se verá cómo sube en el registro.
+( while sleep 10; do
+    ps -C qemu-system-x86_64 -o rss= 2>/dev/null | awk '{printf "MEMORIA emulador: %d MB\n", $1/1024}'
+    free -m | awk '/Mem:/{printf "MEMORIA libre robot: %d MB\n", $7}'
+  done ) &
+MEMPID=$!
+trap 'kill $MEMPID 2>/dev/null' EXIT
+
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null
 
 # Lee el registro hasta "FIN" (o como mucho 15 minutos).

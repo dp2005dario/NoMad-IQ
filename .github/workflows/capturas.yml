@@ -69,16 +69,18 @@ jobs:
           # Más memoria y núcleos para el móvil de mentira: con todas las
           # pantallas abiertas a la vez (y sus animaciones), con la memoria
           # por defecto el emulador se quedaba sin memoria y se caía.
-          ram-size: 6144M
-          heap-size: 1024M
+          ram-size: 4096M
+          heap-size: 512M
           cores: 4
           disk-size: 6G
-          # swangle_indirect: dibujo por software con ANGLE. Con
-          # swiftshader_indirect el propio emulador se cerraba de golpe al
-          # abrir pantallas con muchas animaciones (fallo del emulador, no de
-          # la app).
-          emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back emulated
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated
           script: bash mobile/tool/capturas.sh mobile/build/app/outputs/flutter-apk/app-debug.apk capturas
+      - name: Por qué se cayó el emulador (memoria del robot)
+        if: failure()
+        run: |
+          free -m || true
+          sudo dmesg | grep -iE "oom|killed process|qemu|segfault" | tail -n 30 || true
+          ls -la /tmp/android-runner/ 2>/dev/null || true
       - name: Subir las capturas
         if: always()
         uses: actions/upload-artifact@v4
