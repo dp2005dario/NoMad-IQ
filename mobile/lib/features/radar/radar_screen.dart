@@ -144,8 +144,9 @@ class _RadarScreenState extends State<RadarScreen> {
     if (access == LocationAccess.denied) access = await gps.request();
     if (access == LocationAccess.granted) {
       try {
-        final PositionFix fix = await gps.watch().first.timeout(
-          const Duration(seconds: 10),
+        final PositionFix fix = await positionNow(
+          gps,
+          wait: const Duration(seconds: 10),
         );
         _here = fix.point;
         if (_city == null) {

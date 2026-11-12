@@ -237,9 +237,8 @@ void main() {
       expect(find.byType(AtmsPanel), findsOneWidget);
     });
 
-    testWidgets('cajeros: sin permiso lo dice y lo pide al tocar', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('cajeros: pide la ubicación al entrar y, si dices que no '
+        'para siempre, lleva a Ajustes', (WidgetTester tester) async {
       final FakeLocation gps = FakeLocation()
         ..onRequest = LocationAccess.deniedForever;
       final PageSpy spy = PageSpy();
@@ -249,17 +248,40 @@ void main() {
         webScene: spy.build,
         initialLocation: Routes.money(tab: MoneyTab.abroad),
       );
-      await spy.wait(tester, () => spy.pages.isNotEmpty);
-      Map<String, Object?> d = spy.data(AbroadView.lastBridge!);
-      expect(d['atmBtn'], 'Usar mi ubicación');
-      expect(d['atmNote'], contains('ubicación'));
-      spy.send!('locate');
       await spy.wait(
         tester,
-        () => spy.data(AbroadView.lastBridge!)['atmNote'] != d['atmNote'],
+        () =>
+            spy.pages.isNotEmpty &&
+            spy.data(AbroadView.lastBridge!)['atmBtn'] == 'Abrir ajustes',
       );
-      d = spy.data(AbroadView.lastBridge!);
-      expect(d['atmNote'], contains('Activa la ubicación'));
+      expect(gps.requests, 1);
+      final Map<String, Object?> d = spy.data(AbroadView.lastBridge!);
+      expect(d['atmNote'], contains('Abrir ajustes'));
+      spy.send!('locate');
+      await spy.wait(tester, () => gps.settingsOpened > 0);
+    });
+
+    testWidgets('cajeros: con el GPS apagado lo dice', (
+      WidgetTester tester,
+    ) async {
+      final FakeLocation gps = FakeLocation()
+        ..access = LocationAccess.serviceOff;
+      final PageSpy spy = PageSpy();
+      await pumpMoney(
+        tester,
+        location: gps,
+        webScene: spy.build,
+        initialLocation: Routes.money(tab: MoneyTab.abroad),
+      );
+      await spy.wait(
+        tester,
+        () =>
+            spy.pages.isNotEmpty &&
+            '${spy.data(AbroadView.lastBridge!)['atmNote']}'.contains(
+              'apagada',
+            ),
+      );
+      expect(spy.data(AbroadView.lastBridge!)['atmBtn'], 'Usar mi ubicación');
     });
 
     testWidgets('gastos: elegir el bote del viaje, límite y añadir a mano', (
@@ -272,6 +294,8 @@ void main() {
         tester,
         backend: b,
         prefs: prefs,
+        // Sin GPS: aquí solo se miran los gastos.
+        location: FakeLocation()..access = LocationAccess.serviceOff,
         webScene: spy.build,
         initialLocation: Routes.money(tab: MoneyTab.abroad),
       );

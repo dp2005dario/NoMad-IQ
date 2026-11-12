@@ -106,8 +106,9 @@ class _TravelCameraScreenState extends State<TravelCameraScreen> {
     final LocationSource gps = _services.location;
     try {
       if (await gps.check() != LocationAccess.granted) return;
-      final PositionFix fix = await gps.watch().first.timeout(
-        const Duration(seconds: 10),
+      final PositionFix fix = await positionNow(
+        gps,
+        wait: const Duration(seconds: 10),
       );
       final String? city = (await widget.locate(fix.point)).city;
       if (mounted) setState(() => _city = city);

@@ -381,7 +381,7 @@ class _AssistantScreenState extends State<AssistantScreen>
     final LocationSource gps = _services.location;
     try {
       if (await gps.check() != LocationAccess.granted) return null;
-      return await gps.watch().first.timeout(const Duration(seconds: 8));
+      return await positionNow(gps, wait: const Duration(seconds: 8));
     } on Object {
       return null;
     }

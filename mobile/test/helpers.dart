@@ -380,7 +380,10 @@ class FakeLocation implements LocationSource {
   }
 
   @override
-  Future<void> openSettings() async {}
+  Future<void> openSettings() async => settingsOpened++;
+
+  /// Cuántas veces se abrieron los Ajustes del móvil.
+  int settingsOpened = 0;
 }
 
 /// Un mapa falso: no dibuja, pero apunta lo que la pantalla le pide.

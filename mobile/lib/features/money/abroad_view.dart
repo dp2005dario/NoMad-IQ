@@ -61,6 +61,7 @@ class _AbroadViewState extends State<AbroadView> {
 
   // Cajeros.
   AtmPhase _atmPhase = AtmPhase.idle;
+  LocationAccess? _access;
   GeoPoint? _me;
   List<Atm>? _atms;
   bool _atmsCached = false;
@@ -89,10 +90,9 @@ class _AbroadViewState extends State<AbroadView> {
     }
     if (mounted) setState(() {});
     unawaited(_load());
-    // Si ya diste permiso de ubicación, los cajeros se buscan solos.
-    if (await _services.location.check() == LocationAccess.granted) {
-      await _searchAtms();
-    }
+    // Los cajeros se buscan solos: si aún no diste permiso de ubicación,
+    // sale la pregunta del móvil nada más entrar (sin tener que tocar nada).
+    if (widget.part != AbroadPart.budget) await _searchAtms();
   }
 
   // --- Cajeros -------------------------------------------------------------
@@ -101,10 +101,12 @@ class _AbroadViewState extends State<AbroadView> {
     final LocationSource gps = _services.location;
     LocationAccess access = await gps.check();
     if (access == LocationAccess.denied) access = await gps.request();
+    _access = access;
     if (access != LocationAccess.granted) return null;
     try {
-      final PositionFix fix = await gps.watch().first.timeout(
-        const Duration(seconds: 15),
+      final PositionFix fix = await positionNow(
+        gps,
+        wait: const Duration(seconds: 15),
       );
       return fix.point;
     } on TimeoutException {
@@ -116,11 +118,22 @@ class _AbroadViewState extends State<AbroadView> {
 
   Future<void> _searchAtms() async {
     if (!mounted) return;
+    // Dijiste "no volver a preguntar": el permiso solo se da en Ajustes.
+    if (_atmPhase == AtmPhase.blocked) {
+      await _services.location.openSettings();
+      if (!mounted) return;
+    }
     setState(() => _atmPhase = AtmPhase.searching);
     final GeoPoint? me = await _position();
     if (!mounted) return;
     if (me == null) {
-      setState(() => _atmPhase = AtmPhase.noLocation);
+      setState(
+        () => _atmPhase = switch (_access) {
+          LocationAccess.serviceOff => AtmPhase.gpsOff,
+          LocationAccess.deniedForever => AtmPhase.blocked,
+          _ => AtmPhase.noLocation,
+        },
+      );
       return;
     }
     try {

@@ -1,5 +1,7 @@
 // De dónde sale tu posición. La pantalla del mapa habla con esta "interfaz"
 // y no directamente con el GPS: así en los tests se usa un GPS falso.
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -161,4 +163,25 @@ class DeviceLocationSource implements LocationSource {
     LocationPermission.denied ||
     LocationPermission.unableToDetermine => LocationAccess.denied,
   };
+}
+
+/// Tu posición ya, para pantallas que solo necesitan saber dónde estás una
+/// vez (cajeros, radar, SOS...). Primero la que el móvil recuerda (al
+/// momento y funciona dentro de casa); si no hay, el primer aviso del GPS.
+///
+/// Antes se esperaba solo al GPS de alta precisión: dentro de un edificio
+/// casi nunca llega a tiempo y la pantalla decía "sin ubicación".
+///
+/// Lanza [TimeoutException] si en [wait] no hay nada.
+Future<PositionFix> positionNow(
+  LocationSource gps, {
+  Duration wait = const Duration(seconds: 15),
+}) async {
+  try {
+    final PositionFix? known = await gps.current().timeout(wait);
+    if (known != null) return known;
+  } on Object {
+    // Sin posición recordada: se espera al GPS.
+  }
+  return gps.watch().first.timeout(wait);
 }

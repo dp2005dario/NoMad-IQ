@@ -71,8 +71,9 @@ class _SosScreenState extends State<SosScreen>
       LocationAccess access = await gps.check();
       if (access == LocationAccess.denied) access = await gps.request();
       if (access == LocationAccess.granted) {
-        final PositionFix fix = await gps.watch().first.timeout(
-          const Duration(seconds: 15),
+        final PositionFix fix = await positionNow(
+          gps,
+          wait: const Duration(seconds: 15),
         );
         final Whereabouts where = await widget.locate(fix.point);
         if (!mounted) return;

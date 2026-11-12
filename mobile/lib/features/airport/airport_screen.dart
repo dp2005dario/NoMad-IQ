@@ -218,8 +218,9 @@ class _AirportScreenState extends State<AirportScreen> {
     }
     if (iata == null && access == LocationAccess.granted) {
       try {
-        final PositionFix fix = await gps.watch().first.timeout(
-          const Duration(seconds: 8),
+        final PositionFix fix = await positionNow(
+          gps,
+          wait: const Duration(seconds: 8),
         );
         final Airports airports = await _services.loadAirports();
         final Airport? a = nearestAirport(
