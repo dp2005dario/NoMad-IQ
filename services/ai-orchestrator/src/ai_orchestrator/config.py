@@ -194,6 +194,14 @@ class Settings(BaseSettings):
     google_places_rate_per_second: float = Field(default=5.0, gt=0, le=50)
     google_places_timeout_seconds: float = Field(default=8.0, gt=0, le=60)
 
+    # --- Vídeos de planes de YouTube Shorts (paquete plan_videos/) ---
+    # Clave GRATIS de YouTube Data API v3. Sin ella, "¿No se te ocurren
+    # planes?" solo ofrece abrir TikTok/Instagram/YouTube (la ruta no existe).
+    youtube_api_key: SecretStr | None = None
+    # Búsquedas NUEVAS al día (cada una gasta 100 de las 10 000 unidades gratis).
+    youtube_daily_limit: int = Field(default=80, ge=0, le=100)
+    youtube_timeout_seconds: float = Field(default=8.0, gt=0, le=60)
+
     # --- Gastos compartidos (ver el paquete expenses/): solo necesita PostgreSQL ---
     expenses_enabled: bool = True
 

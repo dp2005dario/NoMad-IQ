@@ -120,6 +120,15 @@ from ai_orchestrator.places.airports import Airports
 from ai_orchestrator.places.countries import bundled_countries
 from ai_orchestrator.places.service import PlaceService, PlaceSettings, RedisPlaceCache
 from ai_orchestrator.places.wikimedia import RateLimiter, WikimediaClient
+from ai_orchestrator.plan_videos.service import (
+    QUOTA_PREFIX as PLAN_VIDEO_QUOTA_PREFIX,
+)
+from ai_orchestrator.plan_videos.service import (
+    PlanVideoService,
+    PlanVideoSettings,
+    RedisPlanVideoCache,
+)
+from ai_orchestrator.plan_videos.youtube import YouTubeClient
 from ai_orchestrator.plans.api import plan_router
 from ai_orchestrator.plans.store import PostgresPlans
 from ai_orchestrator.pseudonym import Pseudonymizer
@@ -374,6 +383,21 @@ def _google_client(settings: Settings, key: SecretStr, stack: AsyncExitStack) ->
             10,
             busy=lambda: GoogleBusyError("límite de peticiones a Google"),
         ),
+    )
+
+
+def _plan_videos(settings: Settings, key: SecretStr, redis: Redis, stack: AsyncExitStack) -> PlanVideoService:
+    """Vídeos de planes de YouTube: tope diario + caché de 7 días en Redis."""
+    http = httpx.AsyncClient(
+        timeout=httpx.Timeout(settings.youtube_timeout_seconds, connect=5.0),
+        follow_redirects=False,
+    )
+    stack.push_async_callback(http.aclose)
+    return PlanVideoService(
+        youtube=YouTubeClient(http, key),
+        cache=RedisPlanVideoCache(redis),
+        quota=RedisQuota(redis, prefix=PLAN_VIDEO_QUOTA_PREFIX),
+        settings=PlanVideoSettings(daily_limit=settings.youtube_daily_limit),
     )
 
 
@@ -749,6 +773,7 @@ async def run(settings: Settings) -> int:
             or settings.landmarks_enabled
             or settings.mapillary_token is not None
             or settings.google_places_api_key is not None
+            or settings.youtube_api_key is not None
             or (settings.flyra_enabled and llm is not None)
             or (settings.menu_enabled and llm is not None)
             or (settings.shared_trips_enabled and llm is not None)
@@ -783,6 +808,11 @@ async def run(settings: Settings) -> int:
         shop_photos: ShopPhotoService | None = None
         if settings.google_places_api_key is not None and public_redis is not None:
             shop_photos = _shop_photos(settings, settings.google_places_api_key, public_redis, stack)
+
+        # --- Vídeos de planes (YouTube Shorts) --------------------------------------------
+        plan_videos: PlanVideoService | None = None
+        if settings.youtube_api_key is not None and public_redis is not None:
+            plan_videos = _plan_videos(settings, settings.youtube_api_key, public_redis, stack)
 
         # --- OpenStreetMap (Overpass): cajeros, guía del aeropuerto y "cerca de ti" ------
         overpass = (
@@ -956,6 +986,7 @@ async def run(settings: Settings) -> int:
                 atms=atms,
                 nearby=nearby,
                 shop_photos=shop_photos,
+                plan_videos=plan_videos,
                 cravings=cravings,
                 drive=drive,
                 stays=stays,

@@ -11352,6 +11352,18 @@
       }
     }
   },
+  "groupPlansDefault": "group travel plans with friends",
+  "@groupPlansDefault": {
+    "description": "Default video search when the user hasn't typed a place"
+  },
+  "groupPlansMoreOn": "More on:",
+  "@groupPlansMoreOn": {
+    "description": "Label before TikTok / Instagram / YouTube buttons"
+  },
+  "groupPlansNone": "No videos here yet. Watch them on:",
+  "@groupPlansNone": {
+    "description": "Shown when no in-app videos are available"
+  },
   "hoNearTitle": "Nearest places to stay",
   "@hoNearTitle": {
     "description": "Title of the horizontal list of the nearest hotels (like Google Maps)"

@@ -34,6 +34,7 @@ import '../features/group_chat/chat_api.dart';
 import '../features/plans/plans_api.dart';
 import '../features/events/events_api.dart';
 import '../features/radar/radar_api.dart';
+import '../features/reels/reels.dart';
 import '../features/stays/stays_api.dart';
 import '../features/help/help_contacts.dart';
 import '../features/sos/phone_contacts.dart';
@@ -326,6 +327,7 @@ class AppServices {
 
   /// Festivos y eventos de una ciudad en unas fechas (público).
   late final EventsApi events = EventsApi(api);
+  late final ReelsApi reels = ReelsApi(api);
   late final GeocodeApi geocode = GeocodeApi(api);
 
   /// «¿Qué os apetece?» de Grupo: sitios de OSM para un antojo (público).

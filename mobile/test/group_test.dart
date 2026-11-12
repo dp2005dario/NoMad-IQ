@@ -112,6 +112,16 @@ class GroupBackend {
       );
       return FakeGateway.json(current!);
     };
+    g.services['/v1/plan-videos'] = (http.Request r) {
+      videoSearches.add(r.url.queryParameters);
+      return FakeGateway.json(<String, Object?>{
+        'place': r.url.queryParameters['place'],
+        'videos': <Object?>[
+          <String, Object?>{'id': 'abcdefghijk', 'title': 'Tranvía 28'},
+          <String, Object?>{'id': 'ABCDEFGHIJK', 'title': 'Miradores'},
+        ],
+      });
+    };
     g.services['$base/$tripId/start'] = (http.Request r) {
       starts++;
       current = tripJson(status: 'queued');
@@ -125,6 +135,7 @@ class GroupBackend {
   final List<Map<String, Object?>> joins = <Map<String, Object?>>[];
   final List<Map<String, Object?>> sentPrefs = <Map<String, Object?>>[];
   int starts = 0;
+  final List<Map<String, String>> videoSearches = <Map<String, String>>[];
 }
 
 Future<GroupBackend> pumpGroup(
@@ -294,17 +305,25 @@ void main() {
     WidgetTester tester,
   ) async {
     final List<Uri> opened = <Uri>[];
-    await pumpGroup(tester, opened: opened);
+    final GroupBackend b = await pumpGroup(tester, opened: opened);
     await tester.tap(find.text('Nuevo viaje en grupo'));
     await tester.pumpAndSettle();
     expect(find.text('Organizad vuestro viaje'), findsOneWidget);
 
-    // "¿No se te ocurren planes?": busca vídeos de ese sitio.
+    // "¿No se te ocurren planes?": al principio, ideas generales; al buscar
+    // un sitio, sus vídeos. Y los botones abren TikTok con lo mismo.
+    expect(find.text('Tranvía 28'), findsOneWidget);
     await tester.enterText(
       find.widgetWithText(TextField, 'ciudad o país'),
       'Lisboa',
     );
     await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+    expect(b.videoSearches.last['q'], 'qué hacer en Lisboa');
+    expect(b.videoSearches.last['place'], 'Lisboa');
+    await tester.ensureVisible(find.text('TikTok'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('TikTok'));
     await tester.pumpAndSettle();
     expect(opened.single.host, 'www.tiktok.com');
     expect(opened.single.queryParameters['q'], 'qué hacer en Lisboa');

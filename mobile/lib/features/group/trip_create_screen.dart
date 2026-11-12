@@ -16,6 +16,7 @@ import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/flyra_avatar.dart';
+import '../reels/reels.dart';
 import 'group_api.dart';
 import 'group_widgets.dart';
 
@@ -306,17 +307,7 @@ class _TripCreateScreenState extends State<TripCreateScreen> {
                         ),
                       ),
                       const SizedBox(height: 14),
-                      _Appear(
-                        order: 4,
-                        child: _PlansBox(
-                          onSearch: (String place) => _services.openLink(
-                            plansSearchUri(
-                              AppLocalizations.of(context)
-                                  .groupPlansQuery(place),
-                            ),
-                          ),
-                        ),
-                      ),
+                      _Appear(order: 4, child: const _PlansBox()),
                       const SizedBox(height: 14),
                       _Appear(
                         order: 4,
@@ -426,17 +417,10 @@ class _TripCreateScreenState extends State<TripCreateScreen> {
   }
 }
 
-/// Dónde se buscan vídeos de planes para un sitio (TikTok, que abre su
-/// app si la tienes).
-Uri plansSearchUri(String query) =>
-    Uri.https('www.tiktok.com', '/search/video', <String, String>{'q': query});
-
 /// "¿No se te ocurren planes?": escribes una ciudad o país y te enseña
 /// vídeos cortos de cosas que hacer allí.
 class _PlansBox extends StatefulWidget {
-  const _PlansBox({required this.onSearch});
-
-  final ValueChanged<String> onSearch;
+  const _PlansBox();
 
   @override
   State<_PlansBox> createState() => _PlansBoxState();
@@ -445,6 +429,9 @@ class _PlansBox extends StatefulWidget {
 class _PlansBoxState extends State<_PlansBox> {
   final TextEditingController _place = TextEditingController();
 
+  /// El sitio buscado ("" = ideas generales).
+  String _searched = '';
+
   @override
   void dispose() {
     _place.dispose();
@@ -452,8 +439,8 @@ class _PlansBoxState extends State<_PlansBox> {
   }
 
   void _go() {
-    final String place = _place.text.trim();
-    if (place.isNotEmpty) widget.onSearch(place);
+    FocusScope.of(context).unfocus();
+    setState(() => _searched = _place.text.trim());
   }
 
   @override
@@ -523,6 +510,8 @@ class _PlansBoxState extends State<_PlansBox> {
               ),
             ),
           ),
+          const SizedBox(height: 14),
+          PlanReels(place: _searched),
         ],
       ),
     );

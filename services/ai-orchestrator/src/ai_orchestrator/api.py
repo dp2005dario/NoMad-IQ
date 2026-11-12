@@ -90,6 +90,12 @@ from ai_orchestrator.nearby.domain import Nearby
 from ai_orchestrator.nearby.service import NearbyBusyError, NearbyService, NearbyUnavailableError
 from ai_orchestrator.places.domain import PlaceCard
 from ai_orchestrator.places.service import PlaceBusyError, PlaceService, PlaceUnavailableError
+from ai_orchestrator.plan_videos.domain import PlanVideos
+from ai_orchestrator.plan_videos.service import (
+    PlanVideosBusyError,
+    PlanVideoService,
+    PlanVideosUnavailableError,
+)
 from ai_orchestrator.quota import QuotaExceededError
 from ai_orchestrator.radar.rain import RainBusyError, RainError, RainForecast, RainService
 from ai_orchestrator.shop_photos.domain import ShopPhoto
@@ -235,6 +241,8 @@ PLACE_CACHE = "public, max-age=86400"
 STREET_CACHE = "public, max-age=3600"
 # La foto de Google de un sitio: la app la guarda unas horas.
 SHOP_PHOTO_CACHE = "public, max-age=21600"
+# Los vídeos de planes de un sitio: un día.
+PLAN_VIDEO_CACHE = "public, max-age=86400"
 # Los tipos de cambio cambian una vez al día: una hora en cachés intermedias.
 FX_CACHE = "public, max-age=3600"
 # Los cajeros casi nunca cambian: seis horas en el móvil y en la CDN.
@@ -276,6 +284,7 @@ def create_api(
     atms: AtmService | None = None,
     nearby: NearbyService | None = None,
     shop_photos: ShopPhotoService | None = None,
+    plan_videos: PlanVideoService | None = None,
     cravings: CravingService | None = None,
     drive: DriveService | None = None,
     stays: StayService | None = None,
@@ -483,6 +492,25 @@ def create_api(
                 return resp
             # Sin foto también es 200 (photo_url vacío): la app deja el dibujo.
             return JSONResponse(photo.model_dump(mode="json"), headers={"Cache-Control": SHOP_PHOTO_CACHE})
+
+    if plan_videos is not None:
+
+        @app.get("/v1/plan-videos", response_model=PlanVideos)
+        async def get_plan_videos(
+            # El sitio ("Lisboa") y la búsqueda ya en tu idioma ("qué hacer en Lisboa").
+            place: Annotated[str, Query(min_length=1, max_length=60)],
+            q: Annotated[str, Query(min_length=1, max_length=100)],
+            lang: Annotated[str, Query(pattern=r"^[a-z]{2,3}$")] = "en",
+        ) -> JSONResponse:
+            """«¿No se te ocurren planes?»: vídeos cortos de YouTube de un sitio."""
+            try:
+                found = await plan_videos.videos(" ".join(place.split()), " ".join(q.split()), lang)
+            except (PlanVideosBusyError, PlanVideosUnavailableError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "vídeos ocupados")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            # Sin vídeos también es 200 (lista vacía): la app ofrece TikTok/Instagram.
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": PLAN_VIDEO_CACHE})
 
     if cravings is not None:
 

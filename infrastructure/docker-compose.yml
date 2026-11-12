@@ -339,6 +339,7 @@ services:
       TICKETMASTER_API_KEY: ${TICKETMASTER_API_KEY:-}
       # Fotos de Google Maps de las tiendas de "Cerca de ti". Vacía = dibujo.
       GOOGLE_PLACES_API_KEY: ${GOOGLE_PLACES_API_KEY:-}
+      YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
       # IA de Google para Flyra cuando no hay Ollama. Vacía = Ollama.
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       EXPOSE_API_DOCS: "true"

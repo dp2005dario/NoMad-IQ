@@ -150,6 +150,11 @@ SERVICES = [
             "TICKETMASTER_API_KEY": secret("TICKETMASTER_API_KEY"),
             # Fotos de Google Maps de las tiendas de "Cerca de ti".
             "GOOGLE_PLACES_API_KEY": secret("GOOGLE_PLACES_API_KEY", optional=True),
+            # Vídeos de planes de YouTube Shorts.
+            # IA de Flyra con Gemini (si no hay Ollama en el servidor).
+            "GEMINI_API_KEY": secret("GEMINI_API_KEY", optional=True),
+            "GEMINI_MODEL": {"configMapKeyRef": {"name": "nomadiq-config", "key": "GEMINI_MODEL", "optional": True}},
+            "YOUTUBE_API_KEY": secret("YOUTUBE_API_KEY", optional=True),
             "EXPOSE_API_DOCS": "false",
         },
     },

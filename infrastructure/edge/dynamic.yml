@@ -120,6 +120,14 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 
+    # «¿No se te ocurren planes?»: vídeos cortos de YouTube de un sitio (la
+    # clave se queda en el servidor, con caché y tope diario). Público.
+    plan-videos:
+      entryPoints: [web]
+      rule: Method(`GET`) && Path(`/v1/plan-videos`)
+      middlewares: [strip-identity, rate-limit]
+      service: ai-orchestrator
+
     # «¿Qué os apetece?» de la pantalla Grupo (OpenStreetMap): tapas,
     # pescado, vegetariano, café o vistas cerca. Público como "Cerca de ti".
     cravings:
