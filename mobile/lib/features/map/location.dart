@@ -107,8 +107,8 @@ class DeviceLocationSource implements LocationSource {
     );
   }
 
-  // Solo avisa cuando te has movido 20 m: andando, una posición cada 15 s
-  // más o menos. Más a menudo gastaría batería sin aportar nada.
+  // Con la app en pantalla avisa cada 5 m (unos 3-4 s andando): así tu
+  // punto del mapa se mueve contigo en directo, como en Google Maps.
   //
   // En modo viaje (app cerrada) se pide algo menos de precisión y se espera
   // 50 m: basta para saber en qué barrio estás y la batería dura el día.
@@ -118,8 +118,8 @@ class DeviceLocationSource implements LocationSource {
           accuracy: background == null
               ? LocationAccuracy.high
               : LocationAccuracy.medium,
-          distanceFilter: background == null ? 20 : 50,
-          intervalDuration: Duration(seconds: background == null ? 10 : 30),
+          distanceFilter: background == null ? 5 : 50,
+          intervalDuration: Duration(seconds: background == null ? 2 : 30),
           foregroundNotificationConfig: background == null
               ? null
               : ForegroundNotificationConfig(
@@ -135,7 +135,7 @@ class DeviceLocationSource implements LocationSource {
           accuracy: background == null
               ? LocationAccuracy.high
               : LocationAccuracy.medium,
-          distanceFilter: background == null ? 20 : 50,
+          distanceFilter: background == null ? 5 : 50,
           // "Andando": iOS ajusta el GPS a ese ritmo y ahorra batería.
           activityType: ActivityType.fitness,
           pauseLocationUpdatesAutomatically: true,

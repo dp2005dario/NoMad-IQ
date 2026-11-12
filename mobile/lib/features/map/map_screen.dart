@@ -81,6 +81,10 @@ class _MapScreenState extends State<MapScreen> {
   /// un momento para no preguntar letra a letra.
   Timer? _typing;
 
+  /// Tu punto se desliza de la posición vieja a la nueva (no salta).
+  Timer? _glide;
+  GeoPoint? _shownMe;
+
   /// La luz (día, tarde, noche) va sola por la hora, como en la maqueta.
   static const MapLook _chosenLook = MapLook.auto;
   bool _tilted = true;
@@ -168,6 +172,7 @@ class _MapScreenState extends State<MapScreen> {
     _idleDebounce?.cancel();
     _lookTimer?.cancel();
     _typing?.cancel();
+    _glide?.cancel();
     _model?.removeListener(_onModel);
     _model?.dispose();
     _search.dispose();
@@ -220,6 +225,7 @@ class _MapScreenState extends State<MapScreen> {
     _map = controller;
     _sentZones = -1;
     _sentMe = null;
+    _shownMe = null;
     _syncMap();
     unawaited(_updateMeImage(force: true));
     // Si el GPS te encontró mientras el mapa cargaba, ahora sí se va allí.
@@ -260,8 +266,55 @@ class _MapScreenState extends State<MapScreen> {
     }
     if (_m.me != _sentMe) {
       _sentMe = _m.me;
-      unawaited(map.showMe(_m.me));
+      _moveMe(map, _m.me);
     }
+  }
+
+  /// Tu punto (con tu foto) va hasta tu nueva posición en un segundo, en
+  /// 20 pasitos, como en Google Maps. Si el mapa estaba centrado en ti, la
+  /// cámara te sigue.
+  void _moveMe(MapSurfaceController map, GeoPoint? to) {
+    _glide?.cancel();
+    final GeoPoint? from = _shownMe;
+    _shownMe = to;
+    if (to == null || from == null || from.distanceTo(to) > 2000) {
+      // Primera vez (o un salto enorme): directamente allí.
+      unawaited(map.showMe(to));
+      return;
+    }
+    unawaited(_follow(map, from, to));
+    const int steps = 20;
+    int i = 0;
+    _glide = Timer.periodic(const Duration(milliseconds: 50), (Timer t) {
+      i++;
+      final double f = Curves.easeInOut.transform(i / steps);
+      unawaited(
+        map.showMe(
+          GeoPoint(
+            from.lat + (to.lat - from.lat) * f,
+            from.lon + (to.lon - from.lon) * f,
+          ),
+        ),
+      );
+      if (i >= steps) t.cancel();
+    });
+  }
+
+  /// Si tu punto viejo estaba en el centro de la pantalla (no te has ido a
+  /// mirar otra zona), la cámara va con él.
+  Future<void> _follow(
+    MapSurfaceController map,
+    GeoPoint from,
+    GeoPoint to,
+  ) async {
+    final GeoBox? box = await map.visibleBox();
+    if (box == null || !mounted) return;
+    final double cx = (box.minLon + box.maxLon) / 2;
+    final double cy = (box.minLat + box.maxLat) / 2;
+    final bool centered =
+        (from.lon - cx).abs() < box.lonSpan * 0.2 &&
+        (from.lat - cy).abs() < box.latSpan * 0.2;
+    if (centered) unawaited(map.flyTo(to));
   }
 
   /// Espera a que el mapa se quede quieto un momento antes de pedir zonas:
