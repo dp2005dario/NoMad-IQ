@@ -120,6 +120,10 @@ from ai_orchestrator.places.airports import Airports
 from ai_orchestrator.places.countries import bundled_countries
 from ai_orchestrator.places.service import PlaceService, PlaceSettings, RedisPlaceCache
 from ai_orchestrator.places.wikimedia import RateLimiter, WikimediaClient
+from ai_orchestrator.plan_videos.links import LinkResolver, RedisLinkStore
+from ai_orchestrator.plan_videos.service import (
+    LINK_QUOTA_PREFIX as PLAN_VIDEO_LINK_QUOTA_PREFIX,
+)
 from ai_orchestrator.plan_videos.service import (
     QUOTA_PREFIX as PLAN_VIDEO_QUOTA_PREFIX,
 )
@@ -386,17 +390,23 @@ def _google_client(settings: Settings, key: SecretStr, stack: AsyncExitStack) ->
     )
 
 
-def _plan_videos(settings: Settings, key: SecretStr, redis: Redis, stack: AsyncExitStack) -> PlanVideoService:
-    """Vídeos de planes de YouTube: tope diario + caché de 7 días en Redis."""
+def _plan_videos(
+    settings: Settings, key: SecretStr | None, redis: Redis, stack: AsyncExitStack
+) -> PlanVideoService:
+    """Vídeos de planes: enlaces pegados de TikTok/Instagram y, con clave,
+    YouTube Shorts (tope diario + caché de 7 días en Redis)."""
     http = httpx.AsyncClient(
         timeout=httpx.Timeout(settings.youtube_timeout_seconds, connect=5.0),
         follow_redirects=False,
     )
     stack.push_async_callback(http.aclose)
     return PlanVideoService(
-        youtube=YouTubeClient(http, key),
+        youtube=YouTubeClient(http, key) if key is not None else None,
+        resolver=LinkResolver(http),
+        links=RedisLinkStore(redis),
         cache=RedisPlanVideoCache(redis),
         quota=RedisQuota(redis, prefix=PLAN_VIDEO_QUOTA_PREFIX),
+        link_quota=RedisQuota(redis, prefix=PLAN_VIDEO_LINK_QUOTA_PREFIX),
         settings=PlanVideoSettings(daily_limit=settings.youtube_daily_limit),
     )
 
@@ -773,7 +783,7 @@ async def run(settings: Settings) -> int:
             or settings.landmarks_enabled
             or settings.mapillary_token is not None
             or settings.google_places_api_key is not None
-            or settings.youtube_api_key is not None
+            or settings.plan_videos_enabled
             or (settings.flyra_enabled and llm is not None)
             or (settings.menu_enabled and llm is not None)
             or (settings.shared_trips_enabled and llm is not None)
@@ -811,7 +821,7 @@ async def run(settings: Settings) -> int:
 
         # --- Vídeos de planes (YouTube Shorts) --------------------------------------------
         plan_videos: PlanVideoService | None = None
-        if settings.youtube_api_key is not None and public_redis is not None:
+        if settings.plan_videos_enabled and public_redis is not None:
             plan_videos = _plan_videos(settings, settings.youtube_api_key, public_redis, stack)
 
         # --- OpenStreetMap (Overpass): cajeros, guía del aeropuerto y "cerca de ti" ------

@@ -11364,6 +11364,26 @@
   "@groupPlansNone": {
     "description": "Shown when no in-app videos are available"
   },
+  "groupPlansAddLink": "Paste a TikTok or Instagram link",
+  "@groupPlansAddLink": {
+    "description": "Button to paste a TikTok or Instagram video link"
+  },
+  "groupPlansLinkHelp": "Copy the video link in TikTok or Instagram (Share → Copy link) and paste it here. Everyone who searches this place will see it.",
+  "@groupPlansLinkHelp": {
+    "description": "Help text in the paste-link dialog"
+  },
+  "groupPlansLinkAdd": "Add",
+  "@groupPlansLinkAdd": {
+    "description": "Confirm button of the paste-link dialog"
+  },
+  "groupPlansLinkBad": "That link isn't a TikTok or Instagram video.",
+  "@groupPlansLinkBad": {
+    "description": "Error: pasted link is not a TikTok/Instagram video"
+  },
+  "groupPlansLinkDone": "Added! It's now in the carousel.",
+  "@groupPlansLinkDone": {
+    "description": "Snackbar after adding a link"
+  },
   "hoNearTitle": "Nearest places to stay",
   "@hoNearTitle": {
     "description": "Title of the horizontal list of the nearest hotels (like Google Maps)"

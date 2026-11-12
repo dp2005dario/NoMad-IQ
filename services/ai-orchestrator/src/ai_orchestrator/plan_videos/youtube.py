@@ -7,18 +7,16 @@ acaba en registros ni en mensajes de error).
 from __future__ import annotations
 
 import html
-import re
 from typing import Any
 from urllib.parse import urlparse
 
 import httpx
 from pydantic import SecretStr
 
-from ai_orchestrator.plan_videos.domain import PlanVideo
+from ai_orchestrator.plan_videos.domain import VIDEO_ID, PlanVideo
 
 SEARCH_URL = "https://www.googleapis.com/youtube/v3/search"
 MAX_RESULTS = 40
-_VIDEO_ID = re.compile(r"^[A-Za-z0-9_-]{11}$")
 THUMB_HOSTS = ("i.ytimg.com", "i9.ytimg.com")
 
 
@@ -63,7 +61,7 @@ def parse_videos(data: Any) -> list[PlanVideo]:
         ref = item.get("id")
         vid = ref.get("videoId") if isinstance(ref, dict) else None
         snippet = item.get("snippet")
-        if not isinstance(vid, str) or not _VIDEO_ID.match(vid) or vid in seen:
+        if not isinstance(vid, str) or not VIDEO_ID["youtube"].match(vid) or vid in seen:
             continue
         if not isinstance(snippet, dict):
             continue

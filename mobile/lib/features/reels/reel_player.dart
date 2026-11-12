@@ -1,6 +1,7 @@
 // Ver los reels a pantalla completa, deslizando hacia arriba para pasar al
 // siguiente (como en TikTok o Instagram). Cada vídeo es el reproductor
-// oficial de YouTube dentro de un WebView: solo puede abrir YouTube.
+// oficial de su red (YouTube, TikTok o Instagram) dentro de un WebView, que
+// solo puede abrir esas tres webs.
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -38,7 +39,7 @@ class _ReelPlayerScreenState extends State<ReelPlayerScreen> {
           onPageChanged: (int i) => setState(() => _current = i),
           // Solo suena el que estás viendo: los demás no se cargan.
           itemBuilder: (BuildContext context, int i) => i == _current
-              ? _YouTubeReel(
+              ? _Reel(
                   key: ValueKey<String>(widget.reels[i].id),
                   reel: widget.reels[i],
                 )
@@ -80,41 +81,37 @@ class _ReelPlayerScreenState extends State<ReelPlayerScreen> {
   );
 }
 
-class _YouTubeReel extends StatefulWidget {
-  const _YouTubeReel({super.key, required this.reel});
+/// Las únicas webs que puede abrir el reproductor.
+bool _allowed(String host) => <String>[
+  'youtube.com',
+  'tiktok.com',
+  'instagram.com',
+].any((String d) => host == d || host.endsWith('.$d'));
+
+class _Reel extends StatefulWidget {
+  const _Reel({super.key, required this.reel});
 
   final PlanReel reel;
 
   @override
-  State<_YouTubeReel> createState() => _YouTubeReelState();
+  State<_Reel> createState() => _ReelState();
 }
 
-class _YouTubeReelState extends State<_YouTubeReel> {
+class _ReelState extends State<_Reel> {
   late final WebViewController _controller = WebViewController()
     ..setJavaScriptMode(JavaScriptMode.unrestricted)
     ..setBackgroundColor(Colors.black)
     ..setNavigationDelegate(
       NavigationDelegate(
-        // Solo el reproductor de YouTube: nada de salir a otras webs.
-        onNavigationRequest: (NavigationRequest r) {
-          final String host = Uri.tryParse(r.url)?.host ?? '';
-          return host == 'www.youtube.com' ||
-                  host == 'youtube.com' ||
-                  host == 'm.youtube.com' ||
-                  host.endsWith('.youtube.com')
-              ? NavigationDecision.navigate
-              : NavigationDecision.prevent;
-        },
+        // Solo los reproductores oficiales: nada de salir a otras webs.
+        onNavigationRequest: (NavigationRequest r) =>
+            _allowed(Uri.tryParse(r.url)?.host ?? '')
+            ? NavigationDecision.navigate
+            : NavigationDecision.prevent,
       ),
     )
     ..loadRequest(
-      Uri.https('www.youtube.com', '/embed/${widget.reel.id}', <String, String>{
-        'autoplay': '1',
-        'playsinline': '1',
-        'rel': '0',
-        'loop': '1',
-        'playlist': widget.reel.id,
-      }),
+      widget.reel.player,
       // YouTube pide saber desde qué app se ve (si no, "error 153").
       headers: const <String, String>{'Referer': 'https://com.eclipta.app'},
     );

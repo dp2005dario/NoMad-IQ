@@ -122,6 +122,14 @@ class GroupBackend {
         ],
       });
     };
+    g.services['/v1/plan-videos/links'] = (http.Request r) {
+      pastedLinks.add(jsonDecode(r.body) as Map<String, Object?>);
+      return FakeGateway.json(<String, Object?>{
+        'source': 'tiktok',
+        'id': '7301234567890123456',
+        'title': 'TikTok',
+      }, 201);
+    };
     g.services['$base/$tripId/start'] = (http.Request r) {
       starts++;
       current = tripJson(status: 'queued');
@@ -136,6 +144,7 @@ class GroupBackend {
   final List<Map<String, Object?>> sentPrefs = <Map<String, Object?>>[];
   int starts = 0;
   final List<Map<String, String>> videoSearches = <Map<String, String>>[];
+  final List<Map<String, Object?>> pastedLinks = <Map<String, Object?>>[];
 }
 
 Future<GroupBackend> pumpGroup(
@@ -327,6 +336,20 @@ void main() {
     await tester.pumpAndSettle();
     expect(opened.single.host, 'www.tiktok.com');
     expect(opened.single.queryParameters['q'], 'qué hacer en Lisboa');
+
+    // Pegar el enlace de un TikTok para Lisboa: se guarda y se vuelve a pedir.
+    final int before = b.videoSearches.length;
+    await tester.tap(find.text('Pegar enlace de TikTok o Instagram'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(TextField).last,
+      'https://www.tiktok.com/@ana/video/7301234567890123456',
+    );
+    await tester.tap(find.text('Añadir'));
+    await tester.pumpAndSettle();
+    expect(b.pastedLinks.single['place'], 'Lisboa');
+    expect(find.text('¡Añadido! Ya sale en el carrusel.'), findsOneWidget);
+    expect(b.videoSearches.length, before + 1);
     await tester.tap(find.text('Playa y sol'));
     await tester.pumpAndSettle();
     final TextFormField title = tester.widget<TextFormField>(

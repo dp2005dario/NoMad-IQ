@@ -128,6 +128,13 @@ http:
       middlewares: [strip-identity, rate-limit]
       service: ai-orchestrator
 
+    # Pegar el enlace de un TikTok o reel de Instagram para un sitio: con sesión.
+    plan-video-links:
+      entryPoints: [web]
+      rule: Method(`POST`) && Path(`/v1/plan-videos/links`)
+      middlewares: [strip-identity, rate-limit, small-body, authenticated]
+      service: ai-orchestrator
+
     # «¿Qué os apetece?» de la pantalla Grupo (OpenStreetMap): tapas,
     # pescado, vegetariano, café o vistas cerca. Público como "Cerca de ti".
     cravings:
