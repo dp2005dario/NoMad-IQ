@@ -1934,6 +1934,8 @@
   "assistantType": "টাইপ",
   "assistantTranslate": "অনুবাদ",
   "assistantSpeak": "বলুন",
+  "assistantTapWhenDone": "শেষ হলে আবার ট্যাপ করুন",
+  "assistantTapToAsk": "মাইকে ট্যাপ করে Flyra-কে জিজ্ঞেস করুন",
   "assistantHint": "মাইক ট্যাপ করে বলুন। অন্যজন স্ক্রিনের তার অর্ধেকে অনুবাদ পড়েন ও শোনেন।",
   "assistantAskTitle": "এটা কী?",
   "assistantAskBody": "কোনো ভবন বা স্মৃতিস্তম্ভের দিকে ক্যামেরা ধরুন, Flyra আপনাকে এর কথা বলবে। অথবা তাকে যেকোনো কিছু জিজ্ঞেস করুন।",

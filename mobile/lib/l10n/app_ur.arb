@@ -1934,6 +1934,8 @@
   "assistantType": "ٹائپ",
   "assistantTranslate": "ترجمہ",
   "assistantSpeak": "بولیں",
+  "assistantTapWhenDone": "ختم ہونے پر دوبارہ ٹیپ کریں",
+  "assistantTapToAsk": "مائیک ٹیپ کریں اور Flyra سے پوچھیں",
   "assistantHint": "مائیک ٹیپ کر کے بولیں۔ دوسرا شخص اسکرین کے اپنے آدھے حصے پر ترجمہ پڑھتا اور سنتا ہے۔",
   "assistantAskTitle": "یہ کیا ہے؟",
   "assistantAskBody": "کیمرا کسی عمارت یا یادگار کی طرف کریں اور Flyra آپ کو اس کے بارے میں بتائے گی۔ یا اس سے کچھ بھی پوچھیں۔",

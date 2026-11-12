@@ -1934,6 +1934,8 @@
   "assistantType": "입력",
   "assistantTranslate": "번역",
   "assistantSpeak": "말하기",
+  "assistantTapWhenDone": "다 말하면 다시 탭하세요",
+  "assistantTapToAsk": "마이크를 탭하고 Flyra에게 물어보세요",
   "assistantHint": "마이크를 누르고 말하세요. 상대방은 화면의 자기 쪽에서 번역을 읽고 듣습니다.",
   "assistantAskTitle": "이게 뭐예요?",
   "assistantAskBody": "건물이나 기념물에 카메라를 비추면 Flyra가 설명해 줍니다. 아니면 무엇이든 물어보세요.",

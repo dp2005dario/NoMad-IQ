@@ -1934,6 +1934,8 @@
   "assistantType": "Ketik",
   "assistantTranslate": "Terjemahkan",
   "assistantSpeak": "Bicara",
+  "assistantTapWhenDone": "Ketuk lagi jika sudah selesai",
+  "assistantTapToAsk": "Ketuk mikrofon dan tanya Flyra",
   "assistantHint": "Ketuk mikrofon dan bicara. Orang lain membaca dan mendengar terjemahannya di separuh layarnya.",
   "assistantAskTitle": "Apa ini?",
   "assistantAskBody": "Arahkan kamera ke bangunan atau monumen dan Flyra akan menceritakannya. Atau tanyakan apa saja padanya.",

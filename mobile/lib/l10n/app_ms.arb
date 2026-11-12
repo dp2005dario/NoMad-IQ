@@ -1934,6 +1934,8 @@
   "assistantType": "Taip",
   "assistantTranslate": "Terjemah",
   "assistantSpeak": "Cakap",
+  "assistantTapWhenDone": "Ketik lagi apabila selesai",
+  "assistantTapToAsk": "Ketik mikrofon dan tanya Flyra",
   "assistantHint": "Ketik mikrofon dan bercakap. Orang lain membaca dan mendengar terjemahan pada separuh skrinnya.",
   "assistantAskTitle": "Apakah ini?",
   "assistantAskBody": "Halakan kamera ke bangunan atau monumen dan Flyra akan bercerita tentangnya. Atau tanya dia apa sahaja.",

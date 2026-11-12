@@ -1934,6 +1934,8 @@
   "assistantType": "I-type",
   "assistantTranslate": "Isalin",
   "assistantSpeak": "Magsalita",
+  "assistantTapWhenDone": "I-tap ulit kapag tapos ka na",
+  "assistantTapToAsk": "I-tap ang mic at magtanong kay Flyra",
   "assistantHint": "I-tap ang mic at magsalita. Binabasa at naririnig ng kausap mo ang salin sa kalahati niya ng screen.",
   "assistantAskTitle": "Ano ito?",
   "assistantAskBody": "Itutok ang camera sa isang gusali o monumento at ikukuwento ito ni Flyra. O tanungin siya ng kahit ano.",

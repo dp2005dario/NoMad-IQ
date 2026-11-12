@@ -1934,6 +1934,8 @@
   "assistantType": "تایپ",
   "assistantTranslate": "ترجمه",
   "assistantSpeak": "صحبت کنید",
+  "assistantTapWhenDone": "وقتی تمام شد دوباره بزنید",
+  "assistantTapToAsk": "میکروفون را بزنید و از Flyra بپرسید",
   "assistantHint": "میکروفون را لمس کنید و صحبت کنید. طرف مقابل ترجمه را در نیمهٔ خودش از صفحه می‌خواند و می‌شنود.",
   "assistantAskTitle": "این چیست؟",
   "assistantAskBody": "دوربین را به سمت یک ساختمان یا بنای تاریخی بگیرید تا Flyra دربارهٔ آن بگوید. یا هر چیزی از او بپرسید.",

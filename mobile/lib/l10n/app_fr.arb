@@ -1934,6 +1934,8 @@
   "assistantType": "Écrire",
   "assistantTranslate": "Traduire",
   "assistantSpeak": "Parler",
+  "assistantTapWhenDone": "Touche encore quand tu as fini",
+  "assistantTapToAsk": "Touche le micro et demande à Flyra",
   "assistantHint": "Touchez le micro et parlez. L'autre personne lit et entend la traduction sur sa moitié de l'écran.",
   "assistantAskTitle": "Qu'est-ce que c'est ?",
   "assistantAskBody": "Pointez l'appareil photo vers un bâtiment ou un monument et Flyra vous le raconte. Ou posez-lui n'importe quelle question.",

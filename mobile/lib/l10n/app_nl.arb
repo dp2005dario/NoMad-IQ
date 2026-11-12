@@ -1934,6 +1934,8 @@
   "assistantType": "Typen",
   "assistantTranslate": "Vertalen",
   "assistantSpeak": "Spreken",
+  "assistantTapWhenDone": "Tik nog eens als je klaar bent",
+  "assistantTapToAsk": "Tik op de microfoon en vraag het Flyra",
   "assistantHint": "Tik op de microfoon en spreek. De ander leest en hoort de vertaling op diens helft van het scherm.",
   "assistantAskTitle": "Wat is dit?",
   "assistantAskBody": "Richt de camera op een gebouw of monument en Flyra vertelt je erover. Of vraag haar wat je maar wilt.",

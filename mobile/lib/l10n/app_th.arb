@@ -1934,6 +1934,8 @@
   "assistantType": "พิมพ์",
   "assistantTranslate": "แปล",
   "assistantSpeak": "พูด",
+  "assistantTapWhenDone": "แตะอีกครั้งเมื่อพูดจบ",
+  "assistantTapToAsk": "แตะไมค์แล้วถาม Flyra",
   "assistantHint": "แตะไมค์แล้วพูด อีกฝ่ายจะอ่านและฟังคำแปลบนครึ่งจอของเขา",
   "assistantAskTitle": "นี่คืออะไร?",
   "assistantAskBody": "หันกล้องไปที่อาคารหรืออนุสรณ์สถาน แล้ว Flyra จะเล่าให้ฟัง หรือถามเธอได้ทุกเรื่อง",

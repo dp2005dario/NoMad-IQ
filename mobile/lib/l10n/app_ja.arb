@@ -1934,6 +1934,8 @@
   "assistantType": "入力",
   "assistantTranslate": "翻訳",
   "assistantSpeak": "話す",
+  "assistantTapWhenDone": "話し終えたらもう一度タップ",
+  "assistantTapToAsk": "マイクをタップしてFlyraに質問",
   "assistantHint": "マイクを押して話してください。相手は画面の自分側で翻訳を読み、聞くことができます。",
   "assistantAskTitle": "これは何?",
   "assistantAskBody": "建物や名所にカメラを向けると Flyra が説明します。何でも質問もできます。",

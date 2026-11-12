@@ -1934,6 +1934,8 @@
   "assistantType": "Scrie",
   "assistantTranslate": "Tradu",
   "assistantSpeak": "Vorbește",
+  "assistantTapWhenDone": "Atinge din nou când ai terminat",
+  "assistantTapToAsk": "Atinge microfonul și întreab-o pe Flyra",
   "assistantHint": "Atinge microfonul și vorbește. Cealaltă persoană citește și aude traducerea pe jumătatea ei de ecran.",
   "assistantAskTitle": "Ce e asta?",
   "assistantAskBody": "Îndreaptă camera spre o clădire sau un monument și Flyra îți povestește despre el. Sau întreab-o orice.",

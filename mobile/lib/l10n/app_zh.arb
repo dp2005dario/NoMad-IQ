@@ -1934,6 +1934,8 @@
   "assistantType": "输入",
   "assistantTranslate": "翻译",
   "assistantSpeak": "说话",
+  "assistantTapWhenDone": "说完后再点一下",
+  "assistantTapToAsk": "点麦克风，问问 Flyra",
   "assistantHint": "点按麦克风说话。对方会在自己那半屏上看到并听到翻译。",
   "assistantAskTitle": "这是什么?",
   "assistantAskBody": "把相机对准建筑或古迹,Flyra 会给你讲解。也可以随便问她。",

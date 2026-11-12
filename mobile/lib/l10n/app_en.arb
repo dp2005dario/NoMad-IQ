@@ -9319,6 +9319,14 @@
   "@assistantSpeak": {
     "description": "Mic tooltip."
   },
+  "assistantTapWhenDone": "Tap again when you're done",
+  "@assistantTapWhenDone": {
+    "description": "Voice assistant: hint while listening; tapping the mic again means the user finished speaking"
+  },
+  "assistantTapToAsk": "Tap the mic and ask Flyra",
+  "@assistantTapToAsk": {
+    "description": "Voice assistant Ask tab: hint under the big microphone button"
+  },
   "assistantHint": "Tap the mic and speak. The other person reads and hears the translation on their half of the screen.",
   "@assistantHint": {
     "description": "Empty conversation hint."

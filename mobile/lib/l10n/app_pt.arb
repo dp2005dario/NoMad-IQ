@@ -1934,6 +1934,8 @@
   "assistantType": "Escrever",
   "assistantTranslate": "Traduzir",
   "assistantSpeak": "Falar",
+  "assistantTapWhenDone": "Toca outra vez quando acabares",
+  "assistantTapToAsk": "Toca no micro e pergunta à Flyra",
   "assistantHint": "Toca no microfone e fala. A outra pessoa lê e ouve a tradução na sua metade do ecrã.",
   "assistantAskTitle": "O que é isto?",
   "assistantAskBody": "Aponta a câmara a um edifício ou monumento e a Flyra conta-te. Ou pergunta-lhe o que quiseres.",

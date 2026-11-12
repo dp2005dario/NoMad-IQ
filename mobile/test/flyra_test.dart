@@ -2,6 +2,7 @@
 // "Flyra ocupada", el modo invitado y que la conversación solo viva en el móvil.
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/features/flyra/flyra_chat_screen.dart';
@@ -40,13 +41,16 @@ class OneMic implements SpeechInput {
   final List<String> langs = <String>[];
 
   @override
-  Future<String?> listen(String lang) async {
+  Future<String?> listen(String lang, {ValueChanged<String>? onPartial}) async {
     langs.add(lang);
     return phrase;
   }
 
   @override
   Future<void> stop() async {}
+
+  @override
+  ValueListenable<double> get level => ValueNotifier<double>(0);
 }
 
 /// Un ai-orchestrator falso para Flyra: apunta lo que recibe.

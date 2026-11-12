@@ -1934,6 +1934,8 @@
   "assistantType": "Gõ",
   "assistantTranslate": "Dịch",
   "assistantSpeak": "Nói",
+  "assistantTapWhenDone": "Chạm lần nữa khi nói xong",
+  "assistantTapToAsk": "Chạm micro và hỏi Flyra",
   "assistantHint": "Chạm vào mic và nói. Người kia đọc và nghe bản dịch ở nửa màn hình của họ.",
   "assistantAskTitle": "Đây là gì?",
   "assistantAskBody": "Hướng camera vào một tòa nhà hoặc công trình và Flyra sẽ kể cho bạn. Hoặc hỏi cô ấy bất cứ điều gì.",

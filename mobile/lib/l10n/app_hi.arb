@@ -1934,6 +1934,8 @@
   "assistantType": "लिखें",
   "assistantTranslate": "अनुवाद करें",
   "assistantSpeak": "बोलें",
+  "assistantTapWhenDone": "बोलना ख़त्म हो तो फिर से टैप करें",
+  "assistantTapToAsk": "माइक टैप करें और Flyra से पूछें",
   "assistantHint": "माइक दबाकर बोलें। दूसरा व्यक्ति स्क्रीन के अपने आधे हिस्से में अनुवाद पढ़ता और सुनता है।",
   "assistantAskTitle": "यह क्या है?",
   "assistantAskBody": "कैमरा किसी इमारत या स्मारक की ओर करें, Flyra उसके बारे में बताएगी। या कुछ भी पूछें।",

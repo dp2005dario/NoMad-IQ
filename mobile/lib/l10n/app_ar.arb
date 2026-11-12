@@ -1934,6 +1934,8 @@
   "assistantType": "اكتب",
   "assistantTranslate": "ترجم",
   "assistantSpeak": "تحدّث",
+  "assistantTapWhenDone": "اضغط مرة أخرى عند الانتهاء",
+  "assistantTapToAsk": "اضغط على الميكروفون واسأل فلايرا",
   "assistantHint": "اضغط على الميكروفون وتحدّث. يقرأ الشخص الآخر الترجمة ويسمعها في نصفه من الشاشة.",
   "assistantAskTitle": "ما هذا؟",
   "assistantAskBody": "وجّه الكاميرا نحو مبنى أو معلم وستخبرك Flyra عنه. أو اسألها ما تشاء.",

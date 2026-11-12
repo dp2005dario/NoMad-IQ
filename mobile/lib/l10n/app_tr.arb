@@ -1934,6 +1934,8 @@
   "assistantType": "Yaz",
   "assistantTranslate": "Çevir",
   "assistantSpeak": "Konuş",
+  "assistantTapWhenDone": "Bitince tekrar dokun",
+  "assistantTapToAsk": "Mikrofona dokun ve Flyra'ya sor",
   "assistantHint": "Mikrofona dokun ve konuş. Karşındaki kişi çeviriyi ekranın kendi yarısında okur ve duyar.",
   "assistantAskTitle": "Bu ne?",
   "assistantAskBody": "Kamerayı bir binaya veya anıta tut, Flyra sana anlatsın. Ya da ona istediğini sor.",

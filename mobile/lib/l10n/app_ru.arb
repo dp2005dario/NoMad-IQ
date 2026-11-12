@@ -1934,6 +1934,8 @@
   "assistantType": "Написать",
   "assistantTranslate": "Перевести",
   "assistantSpeak": "Говорить",
+  "assistantTapWhenDone": "Нажмите ещё раз, когда закончите",
+  "assistantTapToAsk": "Нажмите на микрофон и спросите Flyra",
   "assistantHint": "Нажмите на микрофон и говорите. Собеседник читает и слышит перевод на своей половине экрана.",
   "assistantAskTitle": "Что это?",
   "assistantAskBody": "Наведите камеру на здание или памятник, и Flyra расскажет о нём. Или спросите её о чём угодно.",

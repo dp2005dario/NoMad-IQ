@@ -1934,6 +1934,8 @@
   "assistantType": "Wpisz",
   "assistantTranslate": "Przetłumacz",
   "assistantSpeak": "Mów",
+  "assistantTapWhenDone": "Dotknij ponownie, gdy skończysz",
+  "assistantTapToAsk": "Dotknij mikrofonu i zapytaj Flyrę",
   "assistantHint": "Dotknij mikrofonu i mów. Druga osoba czyta i słyszy tłumaczenie na swojej połowie ekranu.",
   "assistantAskTitle": "Co to jest?",
   "assistantAskBody": "Skieruj aparat na budynek lub zabytek, a Flyra ci o nim opowie. Albo zapytaj ją o cokolwiek.",

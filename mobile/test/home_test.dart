@@ -1,6 +1,7 @@
 // Inicio: la maqueta dentro de un WebView. Aquí se prueba lo que la app
 // hace con lo que manda la página: hablar a Flyra, los cuadrados del
 // carrusel, el SOS (WhatsApp, SMS, llamar) y los contactos.
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/core/router.dart';
@@ -20,13 +21,16 @@ class HeardMic implements SpeechInput {
   final List<String> langs = <String>[];
 
   @override
-  Future<String?> listen(String lang) async {
+  Future<String?> listen(String lang, {ValueChanged<String>? onPartial}) async {
     langs.add(lang);
     return '¿Qué visito hoy?';
   }
 
   @override
   Future<void> stop() async {}
+
+  @override
+  ValueListenable<double> get level => ValueNotifier<double>(0);
 }
 
 void main() {

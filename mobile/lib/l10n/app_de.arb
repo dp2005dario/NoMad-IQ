@@ -1934,6 +1934,8 @@
   "assistantType": "Tippen",
   "assistantTranslate": "Übersetzen",
   "assistantSpeak": "Sprechen",
+  "assistantTapWhenDone": "Tippe nochmal, wenn du fertig bist",
+  "assistantTapToAsk": "Tippe aufs Mikro und frag Flyra",
   "assistantHint": "Tipp aufs Mikro und sprich. Die andere Person liest und hört die Übersetzung auf ihrer Bildschirmhälfte.",
   "assistantAskTitle": "Was ist das?",
   "assistantAskBody": "Richte die Kamera auf ein Gebäude oder Denkmal und Flyra erzählt dir davon. Oder frag sie, was du willst.",
