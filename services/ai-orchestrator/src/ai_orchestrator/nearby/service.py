@@ -6,6 +6,7 @@ Lo gratis de una ciudad cambia muy poco: una semana de caché por casilla.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from dataclasses import dataclass
 from typing import Protocol
@@ -98,12 +99,22 @@ class NearbyService:
         self._cache = cache
         self._settings = settings or NearbySettings()
         self._flight: SingleFlight[Nearby] = SingleFlight()
+        # Las puestas al día en segundo plano (se guardan para que no se pierdan).
+        self._background: set[asyncio.Task[None]] = set()
 
     async def near(self, lat: float, lon: float) -> Nearby:
         c_lat, c_lon = cell_of(lat, lon)
         cached = await self._cache.get(c_lat, c_lon)
         if cached is not None:
             return cached
+        # Ya caducada pero guardada: se da AL MOMENTO y se pone al día por
+        # detrás (Overpass puede tardar un minuto; nadie tiene que esperarlo).
+        old = await self._stale(c_lat, c_lon)
+        if old is not None:
+            task = asyncio.create_task(self._refresh(c_lat, c_lon))
+            self._background.add(task)
+            task.add_done_callback(self._background.discard)
+            return old
         try:
             result, _ = await self._flight.do(f"{c_lat:.2f}:{c_lon:.2f}", lambda: self._build(c_lat, c_lon))
         except OverpassBusyError as exc:
@@ -119,6 +130,13 @@ class NearbyService:
                 return stale
             raise NearbyUnavailableError(str(exc)) from exc
         return result
+
+    async def _refresh(self, lat: float, lon: float) -> None:
+        """Pone al día una casilla vieja sin que nadie espere (si falla, otra vez será)."""
+        try:
+            await self._flight.do(f"{lat:.2f}:{lon:.2f}", lambda: self._build(lat, lon))
+        except (OverpassError, OverpassBusyError, CacheError) as exc:
+            log.info("no se pudo poner al día 'cerca de ti'", extra={"error": type(exc).__name__})
 
     async def _stale(self, lat: float, lon: float) -> Nearby | None:
         """La copia vieja de la casilla, si existe: mejor algo antiguo que un error."""

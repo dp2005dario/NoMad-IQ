@@ -205,17 +205,32 @@ class NearbyApi {
   final ApiClient _api;
 
   /// Lo que hay en la zona (~3 km alrededor de tu casilla de ~1 km).
-  Future<NearbyList> near(GeoPoint me) async => NearbyList.parse(
-    await _api.getJson(
-      '/v1/nearby',
-      query: <String, String>{
-        'lat': me.lat.toStringAsFixed(2),
-        'lon': me.lon.toStringAsFixed(2),
-      },
-      public: true,
-      timeout: ApiClient.verySlow,
-    ),
-  );
+  /// Se recuerda 30 minutos mientras la app está abierta: volver a entrar
+  /// en "Cerca de ti" en la misma zona es inmediato.
+  Future<NearbyList> near(GeoPoint me) async {
+    final String lat = me.lat.toStringAsFixed(2);
+    final String lon = me.lon.toStringAsFixed(2);
+    final String key = '$lat:$lon';
+    final (DateTime, NearbyList)? seen = _recent[key];
+    if (seen != null && DateTime.now().difference(seen.$1) < _keep) {
+      return seen.$2;
+    }
+    final NearbyList found = NearbyList.parse(
+      await _api.getJson(
+        '/v1/nearby',
+        query: <String, String>{'lat': lat, 'lon': lon},
+        public: true,
+        timeout: ApiClient.verySlow,
+      ),
+    );
+    if (_recent.length > 20) _recent.clear();
+    _recent[key] = (DateTime.now(), found);
+    return found;
+  }
+
+  static const Duration _keep = Duration(minutes: 30);
+  final Map<String, (DateTime, NearbyList)> _recent =
+      <String, (DateTime, NearbyList)>{};
 
   /// La foto de Google Maps de una tienda (la busca el servidor, que es
   /// quien tiene la clave de Google). null = no tiene foto.
