@@ -793,6 +793,8 @@
   "nbStraight": "Geradeaus",
   "nbInMeters": "in {m} m",
   "nbPause": "Pause",
+  "nbLiveGps": "Live-GPS",
+  "nbWaitGps": "Warte auf GPS…",
   "nbResume": "Weiter",
   "nbExit": "Beenden",
   "nbRoute": "Route",

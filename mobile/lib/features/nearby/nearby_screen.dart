@@ -13,6 +13,7 @@
 //     en su dirección reales. "Ruta" abre el camino de verdad en Google Maps.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -42,6 +43,42 @@ class _NearbyScreenState extends State<NearbyScreen> {
   Map<int, Uri> _routes = const <int, Uri>{};
   Map<int, NearbySpot> _shops = const <int, NearbySpot>{};
   final WebSceneBridge _bridge = WebSceneBridge();
+
+  /// Desde dónde se buscó (el centro del mapa de la página).
+  GeoPoint? _origin;
+
+  /// Tu posición en directo mientras vas andando hacia un sitio.
+  StreamSubscription<PositionFix>? _walkGps;
+
+  @override
+  void dispose() {
+    unawaited(_walkGps?.cancel());
+    super.dispose();
+  }
+
+  /// "Ir": la app sigue tu GPS y mueve tu punto por la ruta en la página.
+  void _startWalkGps() {
+    final GeoPoint? origin = _origin;
+    if (origin == null || _walkGps != null) return;
+    _walkGps = _services.location.watch().listen((PositionFix fix) {
+      final double east =
+          (fix.point.lon - origin.lon) *
+          111320 *
+          math.cos(origin.lat * math.pi / 180);
+      final double north = (fix.point.lat - origin.lat) * 110540;
+      unawaited(
+        _bridge.run(
+          'window.__pos&&window.__pos(${east.toStringAsFixed(1)},'
+          '${(-north).toStringAsFixed(1)})',
+        ),
+      );
+    }, onError: (Object _) {});
+  }
+
+  void _stopWalkGps() {
+    unawaited(_walkGps?.cancel());
+    _walkGps = null;
+  }
 
   /// El servidor no tiene fotos de Google (sin clave): no se piden más.
   bool _photosOff = false;
@@ -122,6 +159,7 @@ class _NearbyScreenState extends State<NearbyScreen> {
     }
     try {
       final NearbyList found = await _services.nearby.near(me);
+      _origin = me;
       _show(me: me, found: found);
     } on ApiException catch (e) {
       _show(
@@ -140,6 +178,10 @@ class _NearbyScreenState extends State<NearbyScreen> {
     } else if (message == 'retry') {
       _show(message: AppLocalizations.of(context).nbLoading);
       unawaited(_search());
+    } else if (message == 'walk:on') {
+      _startWalkGps();
+    } else if (message == 'walk:off') {
+      _stopWalkGps();
     } else if (message.startsWith('photo:')) {
       final int n = int.tryParse(message.substring(6)) ?? -1;
       final NearbySpot? spot = _shops[n];

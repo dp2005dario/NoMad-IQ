@@ -793,6 +793,8 @@
   "nbStraight": "Düz devam et",
   "nbInMeters": "{m} m sonra",
   "nbPause": "Duraklat",
+  "nbLiveGps": "Canlı GPS",
+  "nbWaitGps": "GPS bekleniyor…",
   "nbResume": "Devam",
   "nbExit": "Çık",
   "nbRoute": "Rota",

@@ -793,6 +793,8 @@
   "nbStraight": "सीधे चलें",
   "nbInMeters": "{m} मी में",
   "nbPause": "रोकें",
+  "nbLiveGps": "लाइव GPS",
+  "nbWaitGps": "GPS का इंतज़ार…",
   "nbResume": "जारी रखें",
   "nbExit": "बाहर",
   "nbRoute": "रास्ता",

@@ -793,6 +793,8 @@
   "nbStraight": "سیدھا چلیں",
   "nbInMeters": "{m} میٹر بعد",
   "nbPause": "روکیں",
+  "nbLiveGps": "لائیو GPS",
+  "nbWaitGps": "GPS کا انتظار…",
   "nbResume": "جاری رکھیں",
   "nbExit": "باہر",
   "nbRoute": "راستہ",

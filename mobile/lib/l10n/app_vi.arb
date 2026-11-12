@@ -793,6 +793,8 @@
   "nbStraight": "Đi thẳng",
   "nbInMeters": "sau {m} m",
   "nbPause": "Tạm dừng",
+  "nbLiveGps": "GPS trực tiếp",
+  "nbWaitGps": "Đang chờ GPS…",
   "nbResume": "Tiếp tục",
   "nbExit": "Thoát",
   "nbRoute": "Lộ trình",

@@ -793,6 +793,8 @@
   "nbStraight": "ตรงไป",
   "nbInMeters": "อีก {m} ม.",
   "nbPause": "หยุด",
+  "nbLiveGps": "GPS สด",
+  "nbWaitGps": "กำลังรอ GPS…",
   "nbResume": "ไปต่อ",
   "nbExit": "ออก",
   "nbRoute": "เส้นทาง",

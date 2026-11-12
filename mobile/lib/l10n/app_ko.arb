@@ -793,6 +793,8 @@
   "nbStraight": "직진",
   "nbInMeters": "{m}m 후",
   "nbPause": "일시정지",
+  "nbLiveGps": "실시간 GPS",
+  "nbWaitGps": "GPS 기다리는 중…",
   "nbResume": "계속",
   "nbExit": "나가기",
   "nbRoute": "경로",

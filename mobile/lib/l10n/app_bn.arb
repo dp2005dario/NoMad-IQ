@@ -793,6 +793,8 @@
   "nbStraight": "সোজা যাও",
   "nbInMeters": "{m} মি পরে",
   "nbPause": "থামাও",
+  "nbLiveGps": "লাইভ GPS",
+  "nbWaitGps": "GPS সংকেতের অপেক্ষায়…",
   "nbResume": "চালাও",
   "nbExit": "বের হও",
   "nbRoute": "রুট",

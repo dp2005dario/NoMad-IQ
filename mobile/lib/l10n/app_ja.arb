@@ -793,6 +793,8 @@
   "nbStraight": "まっすぐ進む",
   "nbInMeters": "{m} m先",
   "nbPause": "一時停止",
+  "nbLiveGps": "GPS ライブ",
+  "nbWaitGps": "GPS を待っています…",
   "nbResume": "再開",
   "nbExit": "終了",
   "nbRoute": "ルート",

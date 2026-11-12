@@ -793,6 +793,8 @@
   "nbStraight": "مستقیم برو",
   "nbInMeters": "{m} متر دیگر",
   "nbPause": "مکث",
+  "nbLiveGps": "GPS زنده",
+  "nbWaitGps": "در انتظار GPS…",
   "nbResume": "ادامه",
   "nbExit": "خروج",
   "nbRoute": "مسیر",

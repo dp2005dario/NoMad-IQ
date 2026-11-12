@@ -793,6 +793,8 @@
   "nbStraight": "直行",
   "nbInMeters": "{m}米后",
   "nbPause": "暂停",
+  "nbLiveGps": "实时 GPS",
+  "nbWaitGps": "正在等待 GPS…",
   "nbResume": "继续",
   "nbExit": "退出",
   "nbRoute": "路线",

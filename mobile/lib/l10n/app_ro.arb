@@ -793,6 +793,8 @@
   "nbStraight": "Mergi drept",
   "nbInMeters": "peste {m} m",
   "nbPause": "Pauză",
+  "nbLiveGps": "GPS în direct",
+  "nbWaitGps": "Se așteaptă GPS-ul…",
   "nbResume": "Continuă",
   "nbExit": "Ieși",
   "nbRoute": "Traseu",

@@ -793,6 +793,8 @@
   "nbStraight": "Terus lurus",
   "nbInMeters": "dalam {m} m",
   "nbPause": "Jeda",
+  "nbLiveGps": "GPS langsung",
+  "nbWaitGps": "Menunggu GPS…",
   "nbResume": "Teruskan",
   "nbExit": "Keluar",
   "nbRoute": "Laluan",

@@ -793,6 +793,8 @@
   "nbStraight": "Ga rechtdoor",
   "nbInMeters": "over {m} m",
   "nbPause": "Pauze",
+  "nbLiveGps": "Live-gps",
+  "nbWaitGps": "Wachten op gps…",
   "nbResume": "Verder",
   "nbExit": "Stoppen",
   "nbRoute": "Route",

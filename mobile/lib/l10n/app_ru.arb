@@ -793,6 +793,8 @@
   "nbStraight": "Иди прямо",
   "nbInMeters": "через {m} м",
   "nbPause": "Пауза",
+  "nbLiveGps": "GPS в реальном времени",
+  "nbWaitGps": "Ждём GPS…",
   "nbResume": "Дальше",
   "nbExit": "Выйти",
   "nbRoute": "Маршрут",

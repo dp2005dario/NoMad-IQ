@@ -793,6 +793,8 @@
   "nbStraight": "Vai dritto",
   "nbInMeters": "tra {m} m",
   "nbPause": "Pausa",
+  "nbLiveGps": "GPS in diretta",
+  "nbWaitGps": "In attesa del GPS…",
   "nbResume": "Continua",
   "nbExit": "Esci",
   "nbRoute": "Percorso",

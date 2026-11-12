@@ -793,6 +793,8 @@
   "nbStraight": "Dumiretso",
   "nbInMeters": "sa {m} m",
   "nbPause": "I-pause",
+  "nbLiveGps": "Live GPS",
+  "nbWaitGps": "Hinihintay ang GPS…",
   "nbResume": "Ituloy",
   "nbExit": "Lumabas",
   "nbRoute": "Ruta",

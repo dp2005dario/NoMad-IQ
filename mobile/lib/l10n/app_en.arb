@@ -3541,6 +3541,14 @@
   "@nbPause": {
     "description": "Walk: pause"
   },
+  "nbLiveGps": "Live GPS",
+  "@nbLiveGps": {
+    "description": "Walking mode: your position comes from the real GPS"
+  },
+  "nbWaitGps": "Waiting for GPS…",
+  "@nbWaitGps": {
+    "description": "Walking mode: still no GPS position"
+  },
   "nbResume": "Continue",
   "@nbResume": {
     "description": "Walk: continue"

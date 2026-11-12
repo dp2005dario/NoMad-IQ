@@ -793,6 +793,8 @@
   "nbStraight": "Lurus terus",
   "nbInMeters": "dalam {m} m",
   "nbPause": "Jeda",
+  "nbLiveGps": "GPS langsung",
+  "nbWaitGps": "Menunggu GPS…",
   "nbResume": "Lanjut",
   "nbExit": "Keluar",
   "nbRoute": "Rute",

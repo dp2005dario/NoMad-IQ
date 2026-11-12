@@ -793,6 +793,8 @@
   "nbStraight": "تابع مباشرة",
   "nbInMeters": "بعد {m} م",
   "nbPause": "إيقاف",
+  "nbLiveGps": "GPS مباشر",
+  "nbWaitGps": "في انتظار إشارة GPS…",
   "nbResume": "متابعة",
   "nbExit": "خروج",
   "nbRoute": "المسار",
