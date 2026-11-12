@@ -92,6 +92,7 @@ dependencies:
   google_mlkit_barcode_scanning: ^0.16.1
   qr_flutter: ^4.1.0
   flutter_native_contact_picker: ^0.0.13
+  get_thumbnail_video: ^0.7.3
 
 dev_dependencies:
   flutter_test:

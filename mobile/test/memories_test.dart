@@ -14,6 +14,9 @@ import 'package:eclipta/features/memories/memories_page.dart';
 import 'package:eclipta/features/memories/memories_screen.dart';
 import 'package:eclipta/features/memories/travel_camera.dart';
 
+import 'package:eclipta/core/services.dart';
+import 'package:eclipta/l10n/generated/app_localizations.dart';
+
 import 'helpers.dart';
 import 'money_test.dart' as m;
 
@@ -88,17 +91,23 @@ void main() {
     expect(s.stamps, 1);
   });
 
-  test('la historia coge 6 fotos repartidas, no las 6 últimas', () {
+  test('la historia coge 6 recuerdos repartidos (vídeos también)', () {
     final DateTime start = DateTime(2026, 10, 1);
     final List<Memory> all = <Memory>[
       for (int i = 0; i < 11; i++)
         photo('p$i.jpg', DateTime(2026, 10, 1 + i, 12)),
       Memory(file: 'v.mp4', kind: MemoryKind.video, at: DateTime(2026, 10, 5)),
+      // Una historia ya guardada no sale dentro de la nueva.
+      Memory(
+        file: 'story_1.mp4',
+        kind: MemoryKind.video,
+        at: DateTime(2026, 10, 6),
+      ),
     ];
     expect(storyPhotos(all, start).map((Memory m) => m.file), <String>[
       'p0.jpg',
       'p2.jpg',
-      'p4.jpg',
+      'v.mp4',
       'p6.jpg',
       'p8.jpg',
       'p10.jpg',
@@ -320,5 +329,68 @@ void main() {
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();
     expect(find.byType(StoryPlayer), findsNothing);
+  });
+
+  testWidgets('los vídeos salen en la historia y tus fotos en la portada', (
+    WidgetTester tester,
+  ) async {
+    final MemoryMemoryFiles files = MemoryMemoryFiles();
+    final m.PageSpy spy = m.PageSpy();
+    final services = fakeServices(
+      newSession()..continueAsGuest(),
+      memoryFiles: files,
+      webScene: spy.build,
+    );
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day, 10);
+    await files.write('a.jpg', Uint8List.fromList(<int>[1]));
+    await files.write('b.mp4', Uint8List.fromList(<int>[2]));
+    await services.memories.add(photo('a.jpg', today, city: 'Roma'));
+    await services.memories.add(
+      Memory(
+        file: 'b.mp4',
+        kind: MemoryKind.video,
+        at: today.add(const Duration(hours: 1)),
+      ),
+    );
+    final List<String> framed = <String>[];
+    await tester.pumpWidget(
+      ServicesScope(
+        services: services,
+        child: MaterialApp(
+          locale: const Locale('es'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: MemoriesScreen(
+            image: (Uint8List bytes, int width) async =>
+                'data:image/png;base64,${bytes.first}-$width',
+            frame: (String path) async {
+              framed.add(path);
+              return Uint8List.fromList(<int>[9]);
+            },
+          ),
+        ),
+      ),
+    );
+    Map<String, Object?> data() => spy.data(MemoriesScreen.lastBridge!);
+    await spy.wait(tester, () {
+      if (spy.pages.isEmpty) return false;
+      return (data()['shots']! as List<Object?>).length == 2;
+    });
+    expect(framed, <String>['/memories/b.mp4']);
+    final List<Object?> shots = data()['shots']! as List<Object?>;
+    expect((shots[0]! as Map<String, Object?>)['video'], isNull);
+    expect((shots[1]! as Map<String, Object?>)['video'], isTrue);
+    expect((shots[1]! as Map<String, Object?>)['src'], endsWith('9-540'));
+    expect(data()['cover'], <String>[
+      'data:image/png;base64,1-540',
+      'data:image/png;base64,9-540',
+    ]);
+    expect(data()['videoTxt'], 'VÍDEO');
+    final List<Object?> grid = data()['grid']! as List<Object?>;
+    final Map<String, Object?> vid =
+        grid.firstWhere((Object? g) => (g! as Map)['video'] == true)!
+            as Map<String, Object?>;
+    expect(vid['thumb'], endsWith('9-200'));
   });
 }

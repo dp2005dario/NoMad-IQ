@@ -298,19 +298,22 @@ TripStats statsOf(
   );
 }
 
-/// Las fotos que salen en la historia: hasta 6, repartidas por el viaje
-/// (no las 6 últimas del mismo sitio).
+/// Las fotos y vídeos que salen en la historia: hasta 6, repartidos por el
+/// viaje (no los 6 últimos del mismo sitio). Las historias ya guardadas
+/// ("story_...") no: serían una historia dentro de otra.
 List<Memory> storyPhotos(List<Memory> memories, DateTime start) {
   final List<Memory> all = <Memory>[
+    // Fotos y vídeos: los vídeos salen en la historia con su primer
+    // fotograma y, a pantalla completa, se reproducen.
     for (final Memory m in memories)
-      if (m.kind == MemoryKind.photo) m,
+      if (!m.file.startsWith('story_')) m,
   ]..sort((Memory a, Memory b) => a.at.compareTo(b.at));
   List<Memory> photos = <Memory>[
     for (final Memory m in all)
       if (!m.at.toLocal().isBefore(start)) m,
   ];
-  // Ninguna foto desde el "inicio del viaje" (por ejemplo, la fecha quedó
-  // mal puesta): mejor tus últimas fotos que una historia sin fotos.
+  // Ningún recuerdo desde el "inicio del viaje" (por ejemplo, la fecha quedó
+  // mal puesta): mejor tus últimos recuerdos que una historia vacía.
   if (photos.isEmpty) {
     photos = all.length <= 6 ? all : all.sublist(all.length - 6);
   }

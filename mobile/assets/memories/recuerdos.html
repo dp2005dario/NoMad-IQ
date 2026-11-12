@@ -377,6 +377,7 @@ a{color:#7FE8B9}a:hover{color:#B5F3D6}
 @keyframes nq-kb{from{transform:scale(1)}to{transform:scale(1.12) translate(-6px,-4px)}}
 @keyframes nq-fly{from{offset-distance:0%}to{offset-distance:100%}}
 @keyframes nq-draw{from{stroke-dashoffset:520}to{stroke-dashoffset:0}}
+@keyframes nq-pop{from{transform:translateY(-30px) rotate(var(--r)) scale(.6);opacity:0}to{transform:rotate(var(--r));opacity:1}}
 @keyframes nq-up{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
 @keyframes nq-glow{0%,100%{box-shadow:0 10px 30px rgba(221,42,123,0.35)}50%{box-shadow:0 10px 40px rgba(221,42,123,0.6)}}
 @keyframes nq-petal{0%{transform:translateY(-20px) rotate(0deg);opacity:0}10%{opacity:1}100%{transform:translateY(520px) rotate(300deg);opacity:0}}
@@ -407,6 +408,7 @@ a{color:#7FE8B9}a:hover{color:#B5F3D6}
 </svg>
 <span style="position: absolute; left: 70px; top: 245px; font-size: 14px; font-weight: 800; color: #F2F5F3; white-space: nowrap">{{from}}</span>
 <span style="position: absolute; right: 40px; top: 225px; font-size: 14px; font-weight: 800; color: #FFB86B; white-space: nowrap">{{to}}</span>
+<sc-for list="{{covers}}" as="c" hint-placeholder-count="0"><div style="{{c.style}}"><img src="{{c.src}}" alt="" style="width: 100%; height: 86px; object-fit: cover; display: block; border-radius: 2px"></div></sc-for>
 <div style="position: absolute; left: 20px; right: 20px; bottom: 26px; display: flex; flex-direction: column; gap: 2px; {{upSt}}">
 <span style="font-size: 12px; font-weight: 800; letter-spacing: 0.1em; color: #FFB86B">{{dates}}</span>
 <span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 40px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; overflow-wrap: anywhere">{{route}}</span>
@@ -416,6 +418,7 @@ a{color:#7FE8B9}a:hover{color:#B5F3D6}
 <sc-for list="{{shots}}" as="p" hint-placeholder-count="2">
 <div style="{{p.show}}">
 <div style="{{p.frame}}"><img src="{{p.src}}" alt="" style="{{p.img}}"></div>
+<span style="{{p.vidSt}}"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="#0B1217"></path></svg>{{videoTxt}}</span>
 <div style="{{p.capBox}}">
 <span style="{{p.lblSt}}">{{p.lbl}}</span>
 <span style="{{p.subSt}}">{{p.sub}}</span>
@@ -581,6 +584,24 @@ c.restore();
 }
 c.font = font('800', 14); c.fillStyle = '#F2F5F3'; c.textAlign = 'left'; c.fillText(E.from || '', 70, 258);
 c.fillStyle = '#FFB86B'; c.textAlign = 'right'; c.fillText(E.to || '', 318, 238); c.textAlign = 'left';
+// Tus 3 primeros recuerdos, como fotos de papel que caen sobre el dibujo.
+const POS = [[14, 60, -9], [127, 48, 3], [238, 68, 9]];
+(E.cover || []).slice(0, 3).forEach((src, i) => {
+const im = imgs[i];
+if (!im) return;
+const a = Math.min(1, Math.max(0, (ms - 500 - 250 * i) / 700));
+if (a <= 0) return;
+c.save();
+c.globalAlpha = a;
+c.translate(POS[i][0] + 52, POS[i][1] + 56 - (1 - a) * 30);
+c.rotate(POS[i][2] * Math.PI / 180);
+c.scale(0.6 + 0.4 * a, 0.6 + 0.4 * a);
+c.fillStyle = '#FFFFFF'; c.fillRect(-52, -56, 104, 112);
+const sc = Math.max(92 / im.width, 86 / im.height);
+c.beginPath(); c.rect(-46, -50, 92, 86); c.clip();
+c.drawImage(im, -im.width * sc / 2, -7 - im.height * sc / 2, im.width * sc, im.height * sc);
+c.restore();
+});
 c.setTransform(1, 0, 0, 1, 0, 0);
 const up = Math.min(1, Math.max(0, (ms - 400) / 600));
 c.globalAlpha = up;
@@ -600,6 +621,12 @@ const iw = im.width * sc, ih = im.height * sc;
 c.save(); c.beginPath(); c.rect(box.x, box.y, box.w, box.h); c.clip();
 c.drawImage(im, box.x + (box.w - iw) / 2 - (comic ? 0 : 8 * f), box.y + (box.h - ih) / 2 - (comic ? 0 : 6 * f), iw, ih);
 c.restore();
+}
+if (sh.video) {
+// La etiqueta "▶ VÍDEO".
+c.fillStyle = 'rgba(255,255,255,0.9)'; rr(comic ? 42 : 27, comic ? 125 : 54, 112, 34, 12); c.fill();
+c.fillStyle = '#0B1217'; c.fill(new Path2D('M' + (comic ? 56 : 41) + ' ' + (comic ? 133 : 62) + ' v18 l14 -9 z'));
+c.font = font('800', 16); c.fillText(E.videoTxt || '', comic ? 76 : 61, comic ? 148 : 77);
 }
 const up = Math.min(1, ms / 600);
 c.globalAlpha = up;
@@ -659,9 +686,17 @@ capBox: comic
 ? 'position: absolute; left: 20px; bottom: 30px; max-width: 300px; background: #FFE066; padding: 8px 12px; display: flex; flex-direction: column; gap: 1px; ' + (on ? 'animation: nq-up 0.6s ease 0.3s both' : '')
 : 'position: absolute; left: 18px; bottom: 22px; max-width: 300px; border-radius: 14px; background: rgba(11,18,23,0.75); padding: 8px 12px; display: flex; flex-direction: column; gap: 1px; ' + (on ? 'animation: nq-up 0.6s ease 0.3s both' : ''),
 lblSt: 'font-size: 11px; font-weight: 800; letter-spacing: 0.06em; color: ' + (comic ? '#0B1217' : p.color),
-subSt: 'font-size: 16px; font-weight: 800' + (comic ? '; color: #0B1217' : '')
+subSt: 'font-size: 16px; font-weight: 800' + (comic ? '; color: #0B1217' : ''),
+// Los vídeos llevan su etiqueta "▶ VÍDEO" arriba a la izquierda.
+vidSt: p.video ? 'position: absolute; left: ' + (comic ? 30 : 16) + 'px; top: ' + (comic ? 56 : 30) + 'px; display: flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 10px; background: rgba(255,255,255,0.9); color: #0B1217; font-size: 11px; font-weight: 800; letter-spacing: 0.06em' : 'display: none'
 };
 });
+// Portada: hasta 3 recuerdos como fotos de papel encima del dibujo.
+const POS = [[14, 60, -9], [127, 48, 3], [238, 68, 9]];
+const covers = (E.cover || []).slice(0, 3).map((src, i) => ({
+src,
+style: 'position: absolute; left: ' + POS[i][0] + 'px; top: ' + POS[i][1] + 'px; width: 104px; box-sizing: border-box; padding: 6px 6px 20px; background: #FFFFFF; border-radius: 4px; box-shadow: 0 8px 18px rgba(0,0,0,0.45); --r: ' + POS[i][2] + 'deg; transform: rotate(' + POS[i][2] + 'deg); ' + (slide === 0 ? 'animation: nq-pop 0.7s cubic-bezier(.2,1.4,.4,1) ' + (0.5 + 0.25 * i) + 's both' : '')
+}));
 const stats = (E.stats || []).map((s, i) => ({ v: s.v, k: s.k, style: 'border-radius: 20px; background: rgba(255,255,255,0.06); border: 1px solid rgba(61,220,151,0.25); padding: 16px 14px; display: flex; flex-direction: column; gap: 6px; ' + (slide === n - 1 ? 'animation: nq-up 0.5s ease ' + (0.15 * i) + 's both' : '') }));
 const Y = E.styles || ['', '', ''];
 const styles = Y.map((label, i) => ({ label, on: (E.style || 0) === i, pick: () => { E.style = i; toApp('style:' + i); this.setState({ slide: 0 }); this.next(); }, style: 'flex: 1; height: 40px; border-radius: 14px; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer; ' + ((E.style || 0) === i ? 'border: none; background: ' + accent + '; color: #0B1217' : 'border: 1px solid #26363F; background: #141E25; color: #F2F5F3') }));
@@ -673,7 +708,7 @@ open: () => toApp('open:' + i),
 style: 'aspect-ratio: 1; border-radius: 14px; border: 1px solid #26363F; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; background: ' + (m.thumb ? 'url(' + m.thumb + ') center / cover no-repeat, #141E25' : '#141E25')
 }));
 return {
-accent, segs, stats, styles, shots,
+accent, segs, stats, styles, shots, covers, videoTxt: E.videoTxt || '',
 back: () => toApp('back'), backTxt: E.backTxt || '',
 title: E.title || '', sub: E.sub || '',
 from: E.from || '', to: E.to || '', dates: E.dates || '', route: E.route || '',

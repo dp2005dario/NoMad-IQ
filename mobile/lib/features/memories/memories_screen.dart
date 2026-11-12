@@ -15,8 +15,11 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get_thumbnail_video/index.dart';
+import 'package:get_thumbnail_video/video_thumbnail.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:video_player/video_player.dart';
 
 import '../../core/router.dart';
 import '../../core/services.dart';
@@ -95,10 +98,34 @@ Future<String?> memoryImage(Uint8List bytes, int width) async {
   }
 }
 
+/// Saca un fotograma de un vídeo (por la ruta del archivo en el móvil), para
+/// enseñarlo en la cuadrícula y en la historia. null si no se puede.
+typedef VideoFrame = Future<Uint8List?> Function(String path);
+
+/// La de verdad: el fotograma del primer segundo, en JPG.
+Future<Uint8List?> videoFrame(String path) async {
+  try {
+    return await VideoThumbnail.thumbnailData(
+      video: path,
+      imageFormat: ImageFormat.JPEG,
+      maxWidth: 540,
+      timeMs: 800,
+      quality: 75,
+    );
+  } on Object {
+    return null;
+  }
+}
+
 class MemoriesScreen extends StatefulWidget {
-  const MemoriesScreen({super.key, this.image = memoryImage});
+  const MemoriesScreen({
+    super.key,
+    this.image = memoryImage,
+    this.frame = videoFrame,
+  });
 
   final MemoryPicture image;
+  final VideoFrame frame;
 
   /// La última conexión con la página (para las pruebas).
   static WebSceneBridge? lastBridge;
@@ -158,19 +185,27 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
   }
 
   /// Hace las fotos que faltan: pequeñas para la cuadrícula y algo más
-  /// grandes para las de la historia.
+  /// grandes para las de la historia. De los vídeos, un fotograma.
   Future<void> _images() async {
     final Set<String> story = <String>{
       for (final Memory m in storyPhotos(_items, _start)) m.file,
     };
     bool changed = false;
     for (final Memory m in _items) {
-      if (m.kind != MemoryKind.photo) continue;
       final bool needThumb = !_thumbs.containsKey(m.file);
       final bool needBig = story.contains(m.file) && !_big.containsKey(m.file);
       if (!needThumb && !needBig) continue;
-      final Uint8List? bytes = await _services.memoryFiles.read(m.file);
-      if (bytes == null) continue;
+      final Uint8List? bytes = m.kind == MemoryKind.photo
+          ? await _services.memoryFiles.read(m.file)
+          : switch (_paths[m.file]) {
+              final String path => await widget.frame(path),
+              null => null,
+            };
+      // Sin imagen: se apunta vacía para no volver a intentarlo cada vez.
+      if (bytes == null) {
+        _thumbs[m.file] = '';
+        continue;
+      }
       if (needThumb) {
         final String? t = await widget.image(bytes, 200);
         if (t != null) _thumbs[m.file] = t;
@@ -401,6 +436,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
         ].join(' · '),
         'sub': '${long.format(at)} · ${part(at)}',
         'color': storyCaptionColors[shots.length % storyCaptionColors.length],
+        if (m.kind == MemoryKind.video) 'video': true,
       });
     }
     return <String, Object?>{
@@ -412,6 +448,12 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       'dates': s.dates.toUpperCase(),
       'route': s.title,
       'shots': shots,
+      // En la portada (el dibujo con la ruta entre ciudades) salen tus 3
+      // primeros recuerdos como fotos de papel.
+      'cover': <String>[
+        for (final Map<String, Object?> shot in shots.take(3)) '${shot['src']}',
+      ],
+      'videoTxt': t.memVideo.toUpperCase(),
       'stats': <Object?>[
         <String, Object?>{'v': '${s.stats.days}', 'k': t.memDays},
         <String, Object?>{'v': '${s.stats.cities.length}', 'k': t.memCities},
@@ -725,6 +767,63 @@ class _StoryPlayerState extends State<StoryPlayer>
   }
 }
 
+/// Un vídeo de tus recuerdos dentro de la historia: suena y se repite
+/// mientras dura su diapositiva.
+class _VideoView extends StatefulWidget {
+  const _VideoView({required this.path});
+
+  final String path;
+
+  @override
+  State<_VideoView> createState() => _VideoViewState();
+}
+
+class _VideoViewState extends State<_VideoView> {
+  late final VideoPlayerController _c = VideoPlayerController.file(
+    File(widget.path),
+  );
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_start());
+  }
+
+  Future<void> _start() async {
+    try {
+      await _c.initialize();
+      await _c.setLooping(true);
+      await _c.play();
+      if (mounted) setState(() => _ready = true);
+    } on Object {
+      // Un vídeo que no se abre: se queda el fondo oscuro.
+    }
+  }
+
+  @override
+  void dispose() {
+    unawaited(_c.dispose());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_ready) return const ColoredBox(color: NomadColors.surface);
+    final Size size = _c.value.size;
+    return ClipRect(
+      child: FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: size.width,
+          height: size.height,
+          child: VideoPlayer(_c),
+        ),
+      ),
+    );
+  }
+}
+
 class _Cover extends StatelessWidget {
   const _Cover({required this.story});
 
@@ -732,6 +831,12 @@ class _Cover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Tus 3 primeras fotos, como fotos de papel encima del título.
+    final List<String> covers = <String>[
+      for (final Memory m in story.photos)
+        if (m.kind == MemoryKind.photo)
+          if (story.paths[m.file] case final String p) p,
+    ].take(3).toList();
     return DecoratedBox(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -746,6 +851,40 @@ class _Cover extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
+              if (covers.isNotEmpty) ...<Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    for (int i = 0; i < covers.length; i++)
+                      Transform.rotate(
+                        angle: const <double>[-0.15, 0.05, 0.15][i],
+                        child: Container(
+                          width: 96,
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          padding: const EdgeInsets.fromLTRB(5, 5, 5, 18),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(4),
+                            boxShadow: const <BoxShadow>[
+                              BoxShadow(color: Colors.black54, blurRadius: 14),
+                            ],
+                          ),
+                          child: Image.file(
+                            File(covers[i]),
+                            height: 84,
+                            fit: BoxFit.cover,
+                            cacheWidth: 300,
+                            errorBuilder: (_, _, _) => const SizedBox(
+                              height: 84,
+                              child: ColoredBox(color: NomadColors.surface),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 28),
+              ],
               const Icon(
                 Icons.flight_rounded,
                 size: 48,
@@ -788,6 +927,8 @@ class _PhotoSlide extends StatelessWidget {
     final String? p = path;
     final Widget photo = p == null
         ? const ColoredBox(color: NomadColors.surface)
+        : memory.kind == MemoryKind.video
+        ? _VideoView(path: p)
         : Image.file(
             File(p),
             fit: BoxFit.cover,
