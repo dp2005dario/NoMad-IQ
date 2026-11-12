@@ -180,6 +180,11 @@ const List<String> _months = <String>[
   'diciembre',
 ];
 
+/// Con qué se recuerda una ganga quitada: la ruta, el día y el precio. Si
+/// el precio baja, vuelve a salir (ya es otra ganga).
+String skipKey(Deal deal) =>
+    '${deal.fare.route.key}|${deal.fare.price.amountMinor}';
+
 /// Un chollo para la página ([i] = su número en la lista).
 Map<String, Object?> dealJson(
   int i,

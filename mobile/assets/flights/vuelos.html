@@ -593,6 +593,12 @@ a{color:#9CC4FF}a:hover{color:#C6DCFF}
 <button type="button" onClick="{{bar.pick}}" aria-label="{{bar.label}}" style="{{bar.style}}"></button>
 </sc-for>
 </div>
+<sc-if value="{{manyDeals}}" hint-placeholder-val="{{ true }}"><div style="display: flex; align-items: center; gap: 8px">
+<button type="button" onClick="{{prevDeal}}" aria-label="Chollo anterior" style="width: 44px; height: 40px; border-radius: 14px; border: 1px solid #3A5584; background: #0F1B30; color: #F2F5F3; font-size: 18px; font-weight: 800; cursor: pointer">‹</button>
+<span style="flex-grow: 1; text-align: center; font-size: 12px; font-weight: 700; color: #A9BEDF">Chollo {{dealPos}}</span>
+<button type="button" onClick="{{nextDeal}}" style="height: 40px; padding: 0 14px; border-radius: 14px; border: none; background: linear-gradient(120deg,#FF8A65,#B69CFF); color: #0B1217; font-family: inherit; font-size: 13px; font-weight: 800; cursor: pointer">Otra ganga ›</button>
+</div></sc-if>
+<button type="button" onClick="{{skipDeal}}" style="height: 34px; border-radius: 12px; border: 1px dashed #3A5584; background: transparent; color: #A9BEDF; font-family: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer">✕ No me interesa: quitar esta ganga</button>
 <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
 <button type="button" onClick="{{book}}" style="height: 48px; border-radius: 16px; border: none; background: #6CA8FF; color: #0B1217; font-family: inherit; font-size: 15px; font-weight: 800; cursor: pointer">Reservar ya</button>
 <button type="button" onClick="{{watch}}" style="height: 48px; border-radius: 16px; border: 1px solid #3A5584; background: transparent; color: #F2F5F3; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer">Avisar si baja</button>
@@ -1102,10 +1108,36 @@ if (this.fichas[side] || this['f_' + side]) return;
 this['f_' + side] = 1;
 toApp('ficha:' + (side === 'o' ? 0 : 1));
 }
+// ---- Pasar de una ganga a otra, o quitar la que no te interesa.
+liveDeals() { const sk = this.skipped || {}; return (this.E.deals || []).filter((x) => !sk[x.i]); }
+setHunt(x) {
+this.stopFlight();
+this.fichas = {}; this.f_o = 0; this.f_d = 0;
+if (!x) { this.setState({ hunt: null, bars: [], showHunt: false }); return; }
+this.setState({ hunt: x, bars: x.bars, day: x.sel, view: 'world', t: 0, dealAnim: (this.state.dealAnim || 0) + 1 });
+toApp('hunt:' + x.i);
+this.askCal(x.o, x.d, x.ow, x.y, x.m);
+}
+stepDeal(dir) {
+const L = this.liveDeals(), h = this.state.hunt;
+if (!L.length) return;
+const k = h ? L.indexOf(h) : -1;
+this.setHunt(L[((k < 0 ? 0 : k + dir) % L.length + L.length) % L.length]);
+}
+skipDeal() {
+const h = this.state.hunt;
+if (!h) return;
+const before = this.liveDeals(), k = before.indexOf(h);
+this.skipped = this.skipped || {};
+this.skipped[h.i] = 1;
+toApp('skip:' + h.i);
+const L = this.liveDeals();
+this.setHunt(L.length ? L[Math.min(Math.max(k, 0), L.length - 1)] : null);
+}
 // ---- Ganga a medida: el chollo más bajado que no pase de tu máximo.
 gaStop() { clearTimeout(this.gaT1); clearTimeout(this.gaT2); clearTimeout(this.gaT3); }
 gaFind(max) {
-const deals = this.E.deals || [];
+const deals = this.liveDeals();
 const ok = deals.filter((x) => x.pm <= max * Math.pow(10, (this.E.exp || {})[x.cur] ?? 2));
 ok.sort((a, b) => b.drop - a.drop || a.pm - b.pm);
 return ok[0] || null;
@@ -1552,7 +1584,10 @@ userAvatarStyle: 'width: 44px; height: 44px; border-radius: 22px; background: #B
 openSettings: () => toApp('settings'),
 shareTrip: () => toApp(E.guest ? 'signin' : 'share'),
 tile0: () => toApp('tile:0'), tile1: () => toApp('tile:1'), tile2: () => toApp('tile:2'), tile3: () => toApp('tile:3'), tile4: () => toApp('tile:4'),
-hasHunt: !!h, noHunt: !h, noHuntMsg: (E.empty || '').replace('{city}', E.fromCity || E.origin || ''),
+hasHunt: !!h, noHunt: !h,
+manyDeals: this.liveDeals().length > 1,
+dealPos: (h ? this.liveDeals().indexOf(h) + 1 : 0) + ' de ' + this.liveDeals().length,
+prevDeal: () => this.stepDeal(-1), nextDeal: () => this.stepDeal(1), skipDeal: () => this.skipDeal(), noHuntMsg: (E.empty || '').replace('{city}', E.fromCity || E.origin || ''),
 huntKind: h ? h.kind : '', huntAgo: h ? h.ago : '',
 huntO: h ? h.o : '', huntD: h ? h.d : '', huntOPlace: h ? h.oPlace : '', huntDPlace: h ? h.dPlace : '',
 huntOFlag: this.flag(h ? h.occ : '', 36, 24, 4) + '; box-shadow: 0 3px 8px rgba(0,0,0,0.35)',

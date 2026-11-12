@@ -338,14 +338,24 @@ class _FlightSearchScreenState extends State<FlightSearchScreen> {
         _to.code(_names) != to) {
       return;
     }
+    // Un mismo día solo una vez (si llega en dos meses, el más barato).
+    final Map<DateTime, DayFare> byDay = <DateTime, DayFare>{};
+    for (final DayFare d in all) {
+      final DayFare? had = byDay[d.day];
+      if (had == null ||
+          d.pricePerAdult.amountMinor < had.pricePerAdult.amountMinor) {
+        byDay[d.day] = d;
+      }
+    }
     final List<DayFare> near =
-        all.where((DayFare d) => !d.day.isBefore(today)).toList()..sort(
-          (DayFare a, DayFare b) => a.day
-              .difference(around)
-              .inDays
-              .abs()
-              .compareTo(b.day.difference(around).inDays.abs()),
-        );
+        byDay.values.where((DayFare d) => !d.day.isBefore(today)).toList()
+          ..sort(
+            (DayFare a, DayFare b) => a.day
+                .difference(around)
+                .inDays
+                .abs()
+                .compareTo(b.day.difference(around).inDays.abs()),
+          );
     setState(() {
       _days = near.take(9).toList()
         ..sort((DayFare a, DayFare b) => a.day.compareTo(b.day));

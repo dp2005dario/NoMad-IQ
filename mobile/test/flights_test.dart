@@ -379,6 +379,41 @@ void main() {
     expect(page.pages.last, isNot(contains('Inicio.dc.html')));
   });
 
+  testWidgets('"no me interesa": esa ganga no vuelve a salir', (
+    WidgetTester tester,
+  ) async {
+    final MemorySettingsStore prefs = MemorySettingsStore('es');
+    final PageSpy page = PageSpy();
+    await pumpFlights(tester, page: page, prefs: prefs);
+    await page.wait(tester, () => page.pages.isNotEmpty);
+    final List<Object?> before =
+        flightsData(page.pages.last)['deals']! as List<Object?>;
+    expect((before.first! as Map<String, Object?>)['d'], 'HND');
+    page.send!('skip:0');
+    await tester.pumpAndSettle();
+    expect(prefs.readData(LocalData.skippedDeals), contains('HND'));
+  });
+
+  testWidgets('una ganga quitada no sale al volver a abrir Vuelos', (
+    WidgetTester tester,
+  ) async {
+    final MemorySettingsStore prefs = MemorySettingsStore('es');
+    await prefs.writeData(
+      LocalData.skippedDeals,
+      jsonEncode(<String>['$tokyo|38900']),
+    );
+    final PageSpy page = PageSpy();
+    await pumpFlights(tester, page: page, prefs: prefs);
+    await page.wait(tester, () => page.pages.isNotEmpty);
+    final List<Object?> deals =
+        flightsData(page.pages.last)['deals']! as List<Object?>;
+    expect(deals, isNotEmpty);
+    expect(
+      deals.map((Object? d) => (d! as Map<String, Object?>)['d']),
+      isNot(contains('HND')),
+    );
+  });
+
   testWidgets('reservar el día elegido y abrir tus alertas', (
     WidgetTester tester,
   ) async {
