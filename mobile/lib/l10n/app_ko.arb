@@ -303,9 +303,9 @@
   "routeBackToOrigin": "출발지로 돌아가기",
   "routePickDestination": "어디로 가나요?",
   "routeDestinationHint": "도착 공항 코드 (예: NRT)",
-  "routeUnknownAirport": "모르는 공항이에요. 3글자 코드를 사용하세요: NRT, JFK…",
+  "routeUnknownAirport": "그 공항을 찾을 수 없어요. 도시 이름을 입력하세요: 말라가, 도쿄…",
   "routeShowRoute": "경로 보기",
-  "routeCredits": "지도: Natural Earth · 공항: OpenFlights (ODbL)",
+  "routeCredits": "지도: © OpenStreetMap · OpenFreeMap · Natural Earth · 공항: OpenFlights (ODbL)",
   "routeLoadFailed": "지도를 불러올 수 없어요.",
   "placeAbout": "{city} 소개",
   "placeWhyFamous": "유명한 이유",
@@ -2377,6 +2377,11 @@
   "routeArrivedShort": "도착했어요",
   "routePassTitle": "내 항공편",
   "routeNowThere": "지금 그곳",
+  "routeSpeed": "속도",
+  "routeAltitude": "고도",
+  "routeChangeOrigin": "출발지 변경",
+  "routeChangeDest": "목적지 변경",
+  "routeNightThere": "어두운 곳: 지금 밤인 곳",
   "cityPickPopular": "많이 찾는 도시",
   "cityPickNone": "그 도시를 찾을 수 없어요. 다른 이름으로 해 보세요."
 }

@@ -303,9 +303,9 @@
   "routeBackToOrigin": "Înapoi la plecare",
   "routePickDestination": "Unde zbori?",
   "routeDestinationHint": "Codul aeroportului de destinație (ex. NRT)",
-  "routeUnknownAirport": "Nu cunoaștem acest aeroport. Folosește codul de 3 litere: NRT, JFK…",
+  "routeUnknownAirport": "Nu cunoaștem acest aeroport. Scrie orașul: Málaga, Tokyo…",
   "routeShowRoute": "Arată ruta",
-  "routeCredits": "Hartă: Natural Earth · Aeroporturi: OpenFlights (ODbL)",
+  "routeCredits": "Hartă: © OpenStreetMap · OpenFreeMap · Natural Earth · Aeroporturi: OpenFlights (ODbL)",
   "routeLoadFailed": "Harta nu a putut fi încărcată.",
   "placeAbout": "Despre {city}",
   "placeWhyFamous": "De ce e celebru",
@@ -2377,6 +2377,11 @@
   "routeArrivedShort": "ai ajuns",
   "routePassTitle": "Zborul tău",
   "routeNowThere": "Acum acolo",
+  "routeSpeed": "Viteză",
+  "routeAltitude": "Altitudine",
+  "routeChangeOrigin": "Schimbă plecarea",
+  "routeChangeDest": "Schimbă destinația",
+  "routeNightThere": "Umbrit: unde acum e noapte",
   "cityPickPopular": "Cele mai căutate",
   "cityPickNone": "Nu găsim acest oraș. Încearcă alt nume."
 }

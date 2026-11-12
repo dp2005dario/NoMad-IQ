@@ -139,6 +139,9 @@ flutter:
     - assets/radar/radar.html
     - assets/memories/recuerdos.html
     - assets/route/ruta.html
+    # El mapa de verdad de la Ruta del vuelo (MapLibre GL JS 5.24.0, BSD-3).
+    - assets/route/maplibre-gl.js
+    - assets/route/LICENSE-maplibre.txt
     - assets/offline/sinconexion.html
     - assets/travel_with/viajocon.html
     - assets/visa/visado.html

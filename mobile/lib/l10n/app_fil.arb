@@ -303,9 +303,9 @@
   "routeBackToOrigin": "Bumalik sa pinagmulan",
   "routePickDestination": "Saan ka lilipad?",
   "routeDestinationHint": "Code ng destinasyong paliparan (hal. NRT)",
-  "routeUnknownAirport": "Hindi namin kilala ang paliparang iyon. Gamitin ang 3-letrang code nito: NRT, JFK…",
+  "routeUnknownAirport": "Hindi namin kilala ang paliparang iyan. I-type ang lungsod: Málaga, Tokyo…",
   "routeShowRoute": "Ipakita ang ruta",
-  "routeCredits": "Mapa: Natural Earth · Mga paliparan: OpenFlights (ODbL)",
+  "routeCredits": "Mapa: © OpenStreetMap · OpenFreeMap · Natural Earth · Mga paliparan: OpenFlights (ODbL)",
   "routeLoadFailed": "Hindi ma-load ang mapa.",
   "placeAbout": "Tungkol sa {city}",
   "placeWhyFamous": "Bakit ito sikat",
@@ -2377,6 +2377,11 @@
   "routeArrivedShort": "nakarating ka na",
   "routePassTitle": "Ang lipad mo",
   "routeNowThere": "Ngayon doon",
+  "routeSpeed": "Bilis",
+  "routeAltitude": "Taas",
+  "routeChangeOrigin": "Palitan ang pinanggalingan",
+  "routeChangeDest": "Palitan ang destinasyon",
+  "routeNightThere": "Madilim: kung saan gabi ngayon",
   "cityPickPopular": "Pinakahinahanap",
   "cityPickNone": "Hindi namin makita ang lungsod na iyan. Subukan ang ibang pangalan."
 }

@@ -303,9 +303,9 @@
   "routeBackToOrigin": "กลับไปต้นทาง",
   "routePickDestination": "คุณจะบินไปไหน",
   "routeDestinationHint": "รหัสสนามบินปลายทาง (เช่น NRT)",
-  "routeUnknownAirport": "เราไม่รู้จักสนามบินนั้น ใช้รหัส 3 ตัวอักษร: NRT, JFK…",
+  "routeUnknownAirport": "ไม่รู้จักสนามบินนี้ พิมพ์ชื่อเมือง: มาลากา, โตเกียว…",
   "routeShowRoute": "แสดงเส้นทาง",
-  "routeCredits": "แผนที่: Natural Earth · สนามบิน: OpenFlights (ODbL)",
+  "routeCredits": "แผนที่: © OpenStreetMap · OpenFreeMap · Natural Earth · สนามบิน: OpenFlights (ODbL)",
   "routeLoadFailed": "โหลดแผนที่ไม่ได้",
   "placeAbout": "เกี่ยวกับ {city}",
   "placeWhyFamous": "ทำไมถึงมีชื่อเสียง",
@@ -2377,6 +2377,11 @@
   "routeArrivedShort": "ถึงแล้ว",
   "routePassTitle": "เที่ยวบินของคุณ",
   "routeNowThere": "ตอนนี้ที่นั่น",
+  "routeSpeed": "ความเร็ว",
+  "routeAltitude": "ระดับความสูง",
+  "routeChangeOrigin": "เปลี่ยนต้นทาง",
+  "routeChangeDest": "เปลี่ยนปลายทาง",
+  "routeNightThere": "ส่วนมืด: ที่ที่เป็นกลางคืนตอนนี้",
   "cityPickPopular": "ค้นหามากที่สุด",
   "cityPickNone": "ไม่พบเมืองนี้ ลองชื่ออื่น"
 }

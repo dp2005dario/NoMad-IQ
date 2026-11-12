@@ -318,6 +318,8 @@ GoRouter buildRouter({
           places: services.places.get,
           openLink: services.openBooking,
           scene3d: services.scene3d ?? services.webScene,
+          tilesUrl: services.tilesUrl,
+          glyphsUrl: services.glyphsUrl,
         );
       },
     ),

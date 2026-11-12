@@ -303,9 +303,9 @@
   "routeBackToOrigin": "Terug naar vertrek",
   "routePickDestination": "Waar vlieg je naartoe?",
   "routeDestinationHint": "Code bestemmingsluchthaven (bijv. NRT)",
-  "routeUnknownAirport": "Die luchthaven kennen we niet. Gebruik de code van 3 letters: NRT, JFK…",
+  "routeUnknownAirport": "Dat vliegveld kennen we niet. Typ de stad: Málaga, Tokio…",
   "routeShowRoute": "Route tonen",
-  "routeCredits": "Kaart: Natural Earth · Luchthavens: OpenFlights (ODbL)",
+  "routeCredits": "Kaart: © OpenStreetMap · OpenFreeMap · Natural Earth · Luchthavens: OpenFlights (ODbL)",
   "routeLoadFailed": "De kaart kon niet worden geladen.",
   "placeAbout": "Over {city}",
   "placeWhyFamous": "Waarom het beroemd is",
@@ -2377,6 +2377,11 @@
   "routeArrivedShort": "je bent er",
   "routePassTitle": "Jouw vlucht",
   "routeNowThere": "Nu daar",
+  "routeSpeed": "Snelheid",
+  "routeAltitude": "Hoogte",
+  "routeChangeOrigin": "Vertrek wijzigen",
+  "routeChangeDest": "Bestemming wijzigen",
+  "routeNightThere": "Donker: waar het nu nacht is",
   "cityPickPopular": "Meest gezocht",
   "cityPickNone": "We vinden die stad niet. Probeer een andere naam."
 }

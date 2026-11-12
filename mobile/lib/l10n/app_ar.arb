@@ -303,9 +303,9 @@
   "routeBackToOrigin": "العودة إلى البداية",
   "routePickDestination": "إلى أين تسافر؟",
   "routeDestinationHint": "رمز مطار الوصول (مثل NRT)",
-  "routeUnknownAirport": "لا نعرف هذا المطار. استخدم رمزه المكوّن من 3 أحرف: NRT وJFK…",
+  "routeUnknownAirport": "لا نعرف هذا المطار. اكتب اسم المدينة: مالقة، طوكيو…",
   "routeShowRoute": "اعرض المسار",
-  "routeCredits": "الخريطة: Natural Earth · المطارات: OpenFlights (ODbL)",
+  "routeCredits": "الخريطة: © OpenStreetMap · OpenFreeMap · Natural Earth · المطارات: OpenFlights (ODbL)",
   "routeLoadFailed": "تعذّر تحميل الخريطة.",
   "placeAbout": "عن {city}",
   "placeWhyFamous": "لماذا هي مشهورة",
@@ -2377,6 +2377,11 @@
   "routeArrivedShort": "لقد وصلت",
   "routePassTitle": "رحلتك",
   "routeNowThere": "الآن هناك",
+  "routeSpeed": "السرعة",
+  "routeAltitude": "الارتفاع",
+  "routeChangeOrigin": "تغيير المغادرة",
+  "routeChangeDest": "تغيير الوجهة",
+  "routeNightThere": "الجزء المظلل: حيث الليل الآن",
   "cityPickPopular": "الأكثر بحثًا",
   "cityPickNone": "لم نجد هذه المدينة. جرّب اسمًا آخر."
 }

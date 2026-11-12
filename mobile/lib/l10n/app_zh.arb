@@ -303,9 +303,9 @@
   "routeBackToOrigin": "返回出发地",
   "routePickDestination": "你要飞往哪里？",
   "routeDestinationHint": "目的地机场代码（如 NRT）",
-  "routeUnknownAirport": "找不到该机场。请使用三字代码：NRT、JFK…",
+  "routeUnknownAirport": "我们不认识这个机场。请输入城市：马拉加、东京……",
   "routeShowRoute": "查看航线",
-  "routeCredits": "地图：Natural Earth · 机场：OpenFlights (ODbL)",
+  "routeCredits": "地图：© OpenStreetMap · OpenFreeMap · Natural Earth · 机场：OpenFlights (ODbL)",
   "routeLoadFailed": "无法加载地图。",
   "placeAbout": "关于{city}",
   "placeWhyFamous": "为何闻名",
@@ -2377,6 +2377,11 @@
   "routeArrivedShort": "你已到达",
   "routePassTitle": "你的航班",
   "routeNowThere": "当地现在",
+  "routeSpeed": "速度",
+  "routeAltitude": "高度",
+  "routeChangeOrigin": "更改出发地",
+  "routeChangeDest": "更改目的地",
+  "routeNightThere": "阴影处：此刻是夜晚的地方",
   "cityPickPopular": "热门搜索",
   "cityPickNone": "找不到这个城市，换个名字试试。"
 }

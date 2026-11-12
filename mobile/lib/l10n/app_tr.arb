@@ -303,9 +303,9 @@
   "routeBackToOrigin": "Başlangıca dön",
   "routePickDestination": "Nereye uçuyorsun?",
   "routeDestinationHint": "Varış havalimanı kodu (ör. NRT)",
-  "routeUnknownAirport": "Bu havalimanını tanımıyoruz. 3 harfli kodunu kullan: NRT, JFK…",
+  "routeUnknownAirport": "Bu havalimanını tanımıyoruz. Şehri yaz: Málaga, Tokyo…",
   "routeShowRoute": "Rotayı göster",
-  "routeCredits": "Harita: Natural Earth · Havalimanları: OpenFlights (ODbL)",
+  "routeCredits": "Harita: © OpenStreetMap · OpenFreeMap · Natural Earth · Havalimanları: OpenFlights (ODbL)",
   "routeLoadFailed": "Harita yüklenemedi.",
   "placeAbout": "{city} hakkında",
   "placeWhyFamous": "Neden ünlü",
@@ -2377,6 +2377,11 @@
   "routeArrivedShort": "vardın",
   "routePassTitle": "Uçuşun",
   "routeNowThere": "Şu an orada",
+  "routeSpeed": "Hız",
+  "routeAltitude": "İrtifa",
+  "routeChangeOrigin": "Kalkışı değiştir",
+  "routeChangeDest": "Varışı değiştir",
+  "routeNightThere": "Gölgeli: şu an gece olan yerler",
   "cityPickPopular": "En çok arananlar",
   "cityPickNone": "Bu şehri bulamadık. Başka bir ad dene."
 }

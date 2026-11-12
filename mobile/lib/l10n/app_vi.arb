@@ -303,9 +303,9 @@
   "routeBackToOrigin": "Về điểm đi",
   "routePickDestination": "Bạn bay đến đâu?",
   "routeDestinationHint": "Mã sân bay đến (vd: NRT)",
-  "routeUnknownAirport": "Chúng tôi không biết sân bay đó. Dùng mã 3 chữ: NRT, JFK…",
+  "routeUnknownAirport": "Chúng tôi không biết sân bay đó. Hãy gõ tên thành phố: Málaga, Tokyo…",
   "routeShowRoute": "Xem lộ trình",
-  "routeCredits": "Bản đồ: Natural Earth · Sân bay: OpenFlights (ODbL)",
+  "routeCredits": "Bản đồ: © OpenStreetMap · OpenFreeMap · Natural Earth · Sân bay: OpenFlights (ODbL)",
   "routeLoadFailed": "Không tải được bản đồ.",
   "placeAbout": "Về {city}",
   "placeWhyFamous": "Vì sao nổi tiếng",
@@ -2377,6 +2377,11 @@
   "routeArrivedShort": "bạn đã đến",
   "routePassTitle": "Chuyến bay của bạn",
   "routeNowThere": "Bây giờ ở đó",
+  "routeSpeed": "Tốc độ",
+  "routeAltitude": "Độ cao",
+  "routeChangeOrigin": "Đổi nơi đi",
+  "routeChangeDest": "Đổi nơi đến",
+  "routeNightThere": "Vùng tối: nơi đang là ban đêm",
   "cityPickPopular": "Được tìm nhiều nhất",
   "cityPickNone": "Không tìm thấy thành phố đó. Hãy thử tên khác."
 }

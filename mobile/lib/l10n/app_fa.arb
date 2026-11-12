@@ -303,9 +303,9 @@
   "routeBackToOrigin": "بازگشت به مبدأ",
   "routePickDestination": "به کجا پرواز می‌کنید؟",
   "routeDestinationHint": "کد فرودگاه مقصد (مثلاً NRT)",
-  "routeUnknownAirport": "این فرودگاه را نمی‌شناسیم. کد سه‌حرفی‌اش را بنویسید: NRT، JFK…",
+  "routeUnknownAirport": "این فرودگاه را نمی‌شناسیم. نام شهر را بنویسید: مالاگا، توکیو…",
   "routeShowRoute": "نمایش مسیر",
-  "routeCredits": "نقشه: Natural Earth · فرودگاه‌ها: OpenFlights (ODbL)",
+  "routeCredits": "نقشه: © OpenStreetMap · OpenFreeMap · Natural Earth · فرودگاه‌ها: OpenFlights (ODbL)",
   "routeLoadFailed": "نقشه بارگیری نشد.",
   "placeAbout": "درباره {city}",
   "placeWhyFamous": "چرا مشهور است",
@@ -2377,6 +2377,11 @@
   "routeArrivedShort": "رسیدی",
   "routePassTitle": "پرواز تو",
   "routeNowThere": "اکنون آنجا",
+  "routeSpeed": "سرعت",
+  "routeAltitude": "ارتفاع",
+  "routeChangeOrigin": "تغییر مبدأ",
+  "routeChangeDest": "تغییر مقصد",
+  "routeNightThere": "بخش تیره: جایی که الان شب است",
   "cityPickPopular": "پرجست‌وجوترین‌ها",
   "cityPickNone": "این شهر را پیدا نکردیم. نام دیگری را امتحان کن."
 }

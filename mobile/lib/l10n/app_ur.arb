@@ -303,9 +303,9 @@
   "routeBackToOrigin": "روانگی پر واپس",
   "routePickDestination": "آپ کہاں جا رہے ہیں؟",
   "routeDestinationHint": "منزل کے ہوائی اڈے کا کوڈ (مثلاً NRT)",
-  "routeUnknownAirport": "ہم اس ہوائی اڈے کو نہیں جانتے۔ اس کا 3 حرفی کوڈ استعمال کریں: NRT, JFK…",
+  "routeUnknownAirport": "ہم یہ ہوائی اڈہ نہیں جانتے۔ شہر کا نام لکھیں: مالاگا، ٹوکیو…",
   "routeShowRoute": "راستہ دکھائیں",
-  "routeCredits": "نقشہ: Natural Earth · ہوائی اڈے: OpenFlights (ODbL)",
+  "routeCredits": "نقشہ: © OpenStreetMap · OpenFreeMap · Natural Earth · ہوائی اڈے: OpenFlights (ODbL)",
   "routeLoadFailed": "نقشہ لوڈ نہیں ہو سکا۔",
   "placeAbout": "{city} کے بارے میں",
   "placeWhyFamous": "یہ کیوں مشہور ہے",
@@ -2377,6 +2377,11 @@
   "routeArrivedShort": "آپ پہنچ گئے",
   "routePassTitle": "آپ کی پرواز",
   "routeNowThere": "ابھی وہاں",
+  "routeSpeed": "رفتار",
+  "routeAltitude": "بلندی",
+  "routeChangeOrigin": "روانگی بدلیں",
+  "routeChangeDest": "منزل بدلیں",
+  "routeNightThere": "تاریک حصہ: جہاں ابھی رات ہے",
   "cityPickPopular": "سب سے زیادہ تلاش",
   "cityPickNone": "یہ شہر نہیں ملا۔ کوئی اور نام آزمائیں۔"
 }

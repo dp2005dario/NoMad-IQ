@@ -303,9 +303,9 @@
   "routeBackToOrigin": "Назад до початку",
   "routePickDestination": "Куди ви летите?",
   "routeDestinationHint": "Код аеропорту призначення (напр. NRT)",
-  "routeUnknownAirport": "Ми не знаємо такого аеропорту. Використайте трилітерний код: NRT, JFK…",
+  "routeUnknownAirport": "Ми не знаємо такого аеропорту. Напишіть місто: Малага, Токіо…",
   "routeShowRoute": "Показати маршрут",
-  "routeCredits": "Карта: Natural Earth · Аеропорти: OpenFlights (ODbL)",
+  "routeCredits": "Карта: © OpenStreetMap · OpenFreeMap · Natural Earth · Аеропорти: OpenFlights (ODbL)",
   "routeLoadFailed": "Не вдалося завантажити карту.",
   "placeAbout": "Про місто {city}",
   "placeWhyFamous": "Чим відоме",
@@ -2377,6 +2377,11 @@
   "routeArrivedShort": "ти на місці",
   "routePassTitle": "Твій рейс",
   "routeNowThere": "Зараз там",
+  "routeSpeed": "Швидкість",
+  "routeAltitude": "Висота",
+  "routeChangeOrigin": "Змінити виліт",
+  "routeChangeDest": "Змінити пункт призначення",
+  "routeNightThere": "Темне: там зараз ніч",
   "cityPickPopular": "Найчастіше шукають",
   "cityPickNone": "Не знайшли такого міста. Спробуй іншу назву."
 }

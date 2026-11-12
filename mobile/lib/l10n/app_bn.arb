@@ -303,9 +303,9 @@
   "routeBackToOrigin": "উৎসে ফিরে যান",
   "routePickDestination": "আপনি কোথায় উড়ছেন?",
   "routeDestinationHint": "গন্তব্য বিমানবন্দরের কোড (যেমন NRT)",
-  "routeUnknownAirport": "এই বিমানবন্দর আমরা চিনি না। এর ৩ অক্ষরের কোড ব্যবহার করুন: NRT, JFK…",
+  "routeUnknownAirport": "এই বিমানবন্দরটি চিনি না। শহরের নাম লিখুন: মালাগা, টোকিও…",
   "routeShowRoute": "রুট দেখান",
-  "routeCredits": "মানচিত্র: Natural Earth · বিমানবন্দর: OpenFlights (ODbL)",
+  "routeCredits": "মানচিত্র: © OpenStreetMap · OpenFreeMap · Natural Earth · বিমানবন্দর: OpenFlights (ODbL)",
   "routeLoadFailed": "মানচিত্র লোড করা যায়নি।",
   "placeAbout": "{city} সম্পর্কে",
   "placeWhyFamous": "কেন বিখ্যাত",
@@ -2377,6 +2377,11 @@
   "routeArrivedShort": "পৌঁছে গেছ",
   "routePassTitle": "তোমার ফ্লাইট",
   "routeNowThere": "এখন সেখানে",
+  "routeSpeed": "গতি",
+  "routeAltitude": "উচ্চতা",
+  "routeChangeOrigin": "ছাড়ার জায়গা বদলান",
+  "routeChangeDest": "গন্তব্য বদলান",
+  "routeNightThere": "ছায়াযুক্ত অংশে এখন রাত",
   "cityPickPopular": "সবচেয়ে বেশি খোঁজা",
   "cityPickNone": "এই শহর পাওয়া যায়নি। অন্য নাম চেষ্টা করো।"
 }

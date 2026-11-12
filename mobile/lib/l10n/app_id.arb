@@ -303,9 +303,9 @@
   "routeBackToOrigin": "Kembali ke asal",
   "routePickDestination": "Kamu terbang ke mana?",
   "routeDestinationHint": "Kode bandara tujuan (mis. NRT)",
-  "routeUnknownAirport": "Kami tidak mengenal bandara itu. Gunakan kode 3 huruf: NRT, JFK…",
+  "routeUnknownAirport": "Kami tidak mengenal bandara itu. Ketik kotanya: Málaga, Tokyo…",
   "routeShowRoute": "Tampilkan rute",
-  "routeCredits": "Peta: Natural Earth · Bandara: OpenFlights (ODbL)",
+  "routeCredits": "Peta: © OpenStreetMap · OpenFreeMap · Natural Earth · Bandara: OpenFlights (ODbL)",
   "routeLoadFailed": "Peta tidak bisa dimuat.",
   "placeAbout": "Tentang {city}",
   "placeWhyFamous": "Mengapa terkenal",
@@ -2377,6 +2377,11 @@
   "routeArrivedShort": "kamu sudah tiba",
   "routePassTitle": "Penerbanganmu",
   "routeNowThere": "Sekarang di sana",
+  "routeSpeed": "Kecepatan",
+  "routeAltitude": "Ketinggian",
+  "routeChangeOrigin": "Ganti asal",
+  "routeChangeDest": "Ganti tujuan",
+  "routeNightThere": "Bagian gelap: tempat yang sedang malam",
   "cityPickPopular": "Paling dicari",
   "cityPickNone": "Kota itu tidak ditemukan. Coba nama lain."
 }

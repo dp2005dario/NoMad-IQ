@@ -303,9 +303,9 @@
   "routeBackToOrigin": "Wróć na start",
   "routePickDestination": "Dokąd lecisz?",
   "routeDestinationHint": "Kod lotniska docelowego (np. NRT)",
-  "routeUnknownAirport": "Nie znamy tego lotniska. Użyj kodu 3-literowego: NRT, JFK…",
+  "routeUnknownAirport": "Nie znamy tego lotniska. Wpisz miasto: Malaga, Tokio…",
   "routeShowRoute": "Pokaż trasę",
-  "routeCredits": "Mapa: Natural Earth · Lotniska: OpenFlights (ODbL)",
+  "routeCredits": "Mapa: © OpenStreetMap · OpenFreeMap · Natural Earth · Lotniska: OpenFlights (ODbL)",
   "routeLoadFailed": "Nie udało się wczytać mapy.",
   "placeAbout": "O mieście {city}",
   "placeWhyFamous": "Z czego słynie",
@@ -2377,6 +2377,11 @@
   "routeArrivedShort": "jesteś na miejscu",
   "routePassTitle": "Twój lot",
   "routeNowThere": "Teraz tam",
+  "routeSpeed": "Prędkość",
+  "routeAltitude": "Wysokość",
+  "routeChangeOrigin": "Zmień wylot",
+  "routeChangeDest": "Zmień cel",
+  "routeNightThere": "Ciemne: tam teraz jest noc",
   "cityPickPopular": "Najczęściej wyszukiwane",
   "cityPickNone": "Nie znaleźliśmy tego miasta. Spróbuj innej nazwy."
 }

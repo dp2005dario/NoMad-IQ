@@ -1087,7 +1087,7 @@
   "@routeDestinationHint": {
     "description": "Flight route map screen."
   },
-  "routeUnknownAirport": "We don’t know that airport. Use its 3-letter code: NRT, JFK…",
+  "routeUnknownAirport": "We don't know that airport. Type the city: Málaga, Tokyo…",
   "@routeUnknownAirport": {
     "description": "Flight route map screen."
   },
@@ -1095,7 +1095,7 @@
   "@routeShowRoute": {
     "description": "Flight route map screen."
   },
-  "routeCredits": "Map: Natural Earth · Airports: OpenFlights (ODbL)",
+  "routeCredits": "Map: © OpenStreetMap · OpenFreeMap · Natural Earth · Airports: OpenFlights (ODbL)",
   "@routeCredits": {
     "description": "Flight route map screen."
   },
@@ -11379,6 +11379,26 @@
   "routeNowThere": "Now there",
   "@routeNowThere": {
     "description": "Flight route screen"
+  },
+  "routeSpeed": "Speed",
+  "@routeSpeed": {
+    "description": "Flight route HUD: label for the plane's speed"
+  },
+  "routeAltitude": "Altitude",
+  "@routeAltitude": {
+    "description": "Flight route HUD: label for the plane's altitude"
+  },
+  "routeChangeOrigin": "Change origin",
+  "@routeChangeOrigin": {
+    "description": "Flight route: button to choose another departure airport"
+  },
+  "routeChangeDest": "Change destination",
+  "@routeChangeDest": {
+    "description": "Flight route: button to choose another arrival airport"
+  },
+  "routeNightThere": "Shaded: where it's night right now",
+  "@routeNightThere": {
+    "description": "Flight route: small note on the map that the shaded part of the globe is where it is night now"
   },
   "cityPickPopular": "Most searched",
   "@cityPickPopular": {
