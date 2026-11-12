@@ -235,15 +235,31 @@ async def test_consumer_runs_orders_and_dead_letters_garbage() -> None:
     assert dict(producer.sent[0]["headers"])["dlq_reason"]
 
 
-async def test_a_queue_without_enough_people_expires() -> None:
+async def test_one_person_travels_with_flyra() -> None:
     store = InMemoryNegotiations()
     negotiation_id = await queued(
         store, MemberPreferences(budget_max_minor=100000), MemberPreferences(budget_max_minor=100000)
     )
-    # Simula una orden que llega con un solo miembro con preferencias.
+    # Solo una persona mandó sus gustos: Flyra hace de compañera y sale plan.
     record = store.records[negotiation_id]
     store.records[negotiation_id] = replace(
         record, members=(record.members[0], replace(record.members[1], preferences=None))
+    )
+    assert await service(store).run(negotiation_id) is RunOutcome.CONCLUDED
+    result = store.records[negotiation_id].result
+    assert result is not None
+    # El plan es tuyo: Flyra no sale como miembro del resultado.
+    assert [m.alias for m in result.members] == [record.members[0].alias]
+
+
+async def test_a_queue_without_anyone_expires() -> None:
+    store = InMemoryNegotiations()
+    negotiation_id = await queued(
+        store, MemberPreferences(budget_max_minor=100000), MemberPreferences(budget_max_minor=100000)
+    )
+    record = store.records[negotiation_id]
+    store.records[negotiation_id] = replace(
+        record, members=tuple(replace(m, preferences=None) for m in record.members)
     )
     assert await service(store).run(negotiation_id) is RunOutcome.EXPIRED
     assert store.records[negotiation_id].status is Status.EXPIRED

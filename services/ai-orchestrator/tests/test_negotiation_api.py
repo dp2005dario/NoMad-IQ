@@ -226,19 +226,23 @@ async def test_invite_flow(store: InMemoryNegotiations) -> None:
         assert twice.status_code == 409
 
 
-async def test_start_needs_two_ready(store: InMemoryNegotiations) -> None:
+async def test_start_alone_with_flyra(store: InMemoryNegotiations) -> None:
     async with client(store) as c:
         created = await c.post("/v1/group-negotiations", json=body(members=[]), headers=headers(ORGANIZER))
         negotiation_id = created.json()["negotiation_id"]
+        stranger = await c.post(f"/v1/group-negotiations/{negotiation_id}/start", headers=headers(STRANGER))
+        assert stranger.status_code == 404
+        # Nadie ha mandado sus gustos todavía: aún no.
+        empty = await c.post(f"/v1/group-negotiations/{negotiation_id}/start", headers=headers(ORGANIZER))
+        assert empty.status_code == 409
         await c.put(
             f"/v1/group-negotiations/{negotiation_id}/preferences",
             json=INVITE_PREFS,
             headers=headers(ORGANIZER),
         )
+        # Tú solo (con Flyra de compañera): ya se puede empezar.
         alone = await c.post(f"/v1/group-negotiations/{negotiation_id}/start", headers=headers(ORGANIZER))
-        assert alone.status_code == 409
-        stranger = await c.post(f"/v1/group-negotiations/{negotiation_id}/start", headers=headers(STRANGER))
-        assert stranger.status_code == 404
+        assert alone.status_code == 200
 
 
 async def test_join_rejects_bad_codes_and_full_groups(store: InMemoryNegotiations) -> None:

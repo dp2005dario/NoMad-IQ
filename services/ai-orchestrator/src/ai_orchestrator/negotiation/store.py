@@ -24,7 +24,7 @@ from pydantic import TypeAdapter
 
 from ai_orchestrator.negotiation.domain import (
     MAX_MEMBERS,
-    MIN_MEMBERS,
+    MIN_READY_TO_START,
     GroupOption,
     MemberPreferences,
     NegotiationResult,
@@ -56,7 +56,7 @@ class NotOrganizerError(Exception):
 
 
 class NotEnoughReadyError(Exception):
-    """Para negociar hacen falta al menos dos personas con sus preferencias enviadas."""
+    """Para negociar hace falta al menos una persona con sus preferencias enviadas."""
 
 
 # Alfabeto de Crockford: 32 símbolos sin O, I, L ni U. Al dictar un código
@@ -317,7 +317,7 @@ class PostgresNegotiations:
                     raise NotOrganizerError(negotiation_id)
                 if row["status"] != Status.COLLECTING or row["late"]:
                     raise NegotiationClosedError(negotiation_id)
-                if row["ready"] < MIN_MEMBERS:
+                if row["ready"] < MIN_READY_TO_START:
                     raise NotEnoughReadyError(negotiation_id)
                 await self._queue(conn, negotiation_id)
                 record = await self._load(conn, negotiation_id)
@@ -505,8 +505,9 @@ class PostgresNegotiations:
 
         1. Negociaciones "running" cuyo préstamo caducó (el proceso murió):
            vuelven a la cola con una orden nueva.
-        2. Plazo vencido: con al menos dos miembros listos, se negocia con
-           ellos; si no, caduca ("expired") y se borran sus preferencias.
+        2. Plazo vencido: con al menos un miembro listo, se negocia con
+           ellos (si es uno solo, con Flyra de compañera); si no, caduca
+           ("expired") y se borran sus preferencias.
         3. Las terminadas hace más de retention_days se borran.
         """
         try:
@@ -540,7 +541,7 @@ class PostgresNegotiations:
                          LIMIT 100
                            FOR UPDATE SKIP LOCKED)
                     UPDATE ai.group_negotiations n
-                       SET status = CASE WHEN due.ready >= 2 THEN 'queued' ELSE 'expired' END,
+                       SET status = CASE WHEN due.ready >= 1 THEN 'queued' ELSE 'expired' END,
                            invites_open = false, invite_code = NULL, updated_at = now()
                       FROM due
                      WHERE n.negotiation_id = due.negotiation_id

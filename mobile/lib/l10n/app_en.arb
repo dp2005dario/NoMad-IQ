@@ -1782,9 +1782,21 @@
   "@groupStartHelp": {
     "description": "Explains start."
   },
-  "groupStartNeedsTwo": "At least two people need to send their preferences.",
+  "groupStartNeedsTwo": "Send your preferences to start (if you're alone, Flyra is your companion).",
   "@groupStartNeedsTwo": {
     "description": "Need 2 ready members."
+  },
+  "groupWithFlyra": "You and Flyra",
+  "@groupWithFlyra": {
+    "description": "Group trips: status label when the user is alone in the trip and Flyra (the AI) acts as travel companion"
+  },
+  "groupTrailerTitle": "Your trip trailer",
+  "@groupTrailerTitle": {
+    "description": "Group trips: title of the box where the trip trailer video will appear"
+  },
+  "groupTrailerSoon": "Coming soon: Flyra will make a short video of your trip.",
+  "@groupTrailerSoon": {
+    "description": "Group trips: text in the trailer box explaining it is coming soon"
   },
   "groupWaitingOrganizer": "When everyone's ready, the organiser presses Start (or it starts on its own at the deadline).",
   "@groupWaitingOrganizer": {

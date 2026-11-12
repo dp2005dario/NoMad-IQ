@@ -2,8 +2,10 @@
 // gustos en cada idioma, las "caritas" de los miembros y el estado de un viaje.
 import 'package:flutter/material.dart';
 
+import '../../auth/session.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../widgets/flyra_avatar.dart';
 import '../../widgets/user_avatar.dart';
 import 'group_api.dart';
 
@@ -82,11 +84,17 @@ class MemberFace extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: NomadColors.background, width: 3),
               ),
+              // La tuya es TU foto (la que elegiste en el móvil o la de
+              // Google), no una letra.
               child: UserAvatar(
                 name: name,
-                photoUrl: member.photoUrl,
+                photoUrl: member.me
+                    ? member.photoUrl ??
+                          SessionScope.read(context).user?.photoUrl
+                    : member.photoUrl,
                 size: size - 6,
                 color: _faces[index % _faces.length],
+                isMe: member.me,
               ),
             ),
             if (member.submitted)
@@ -123,15 +131,29 @@ class MemberFaces extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double step = size * 0.72;
+    // Si vas solo, Flyra sale a tu lado: es tu compañera de viaje.
+    final bool withFlyra = members.length == 1;
+    final int faces = members.length + (withFlyra ? 1 : 0);
     return SizedBox(
       height: size,
-      width: size + step * (members.length - 1),
+      width: size + step * (faces - 1),
       child: Stack(
         children: <Widget>[
           for (int i = 0; i < members.length; i++)
             PositionedDirectional(
               start: step * i,
               child: MemberFace(member: members[i], index: i, size: size),
+            ),
+          if (withFlyra)
+            PositionedDirectional(
+              start: step,
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: NomadColors.background, width: 3),
+                ),
+                child: FlyraAvatar(size: size - 6),
+              ),
             ),
         ],
       ),
@@ -149,6 +171,10 @@ class TripStatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final AppLocalizations t = AppLocalizations.of(context);
     final (String label, Color color) = switch (trip.status) {
+      TripStatus.collecting when trip.members.length == 1 => (
+        '${t.groupWithFlyra} ✨',
+        NomadColors.group,
+      ),
       TripStatus.collecting => (
         t.groupStatusCollecting(trip.ready, trip.members.length),
         NomadColors.money,

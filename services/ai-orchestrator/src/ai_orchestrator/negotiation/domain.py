@@ -29,6 +29,11 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 # 10 opciones ya es mucho trabajo para un LLM local, y estos números acotan
 # cuántas llamadas al modelo puede provocar UNA petición (rondas x miembros).
 MIN_MEMBERS = 2
+# Para EMPEZAR basta una persona: si va sola, Flyra hace de compañera de
+# viaje (un agente más que quiere lo mismo que ella) y la negociación sale
+# igual, con su plan.
+MIN_READY_TO_START = 1
+FLYRA_ALIAS = "Flyra"
 MAX_MEMBERS = 8
 MIN_OPTIONS = 2
 MAX_OPTIONS = 10

@@ -331,11 +331,9 @@ void main() {
     expect(find.text('Piso en Alfama'), findsOneWidget);
     // (formatMoney pone un espacio que no se parte entre 62 y €.)
     expect(find.text('62\u00a0€/persona'), findsOneWidget);
-    // Con un solo listo, Empezar está apagado y se explica por qué.
+    // Con uno listo ya se puede empezar (si fuera solo, con Flyra).
     expect(
-      find.text(
-        'Hace falta que al menos dos personas envíen sus preferencias.',
-      ),
+      find.textContaining('Negociarán los agentes de quienes ya'),
       findsOneWidget,
     );
 

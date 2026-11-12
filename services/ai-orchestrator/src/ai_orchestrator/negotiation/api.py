@@ -13,7 +13,7 @@ Flujo para la app:
    miembros y recibe un código ("7K2M9QXD") que comparte con su grupo:
            POST /v1/group-negotiations/join  {"code": ...}   -> 200
        Mientras el grupo admite gente, NO arranca sola: el organizador pulsa
-       "Empezar" (con al menos dos preferencias enviadas) o vence el plazo:
+       "Empezar" (con al menos una preferencia enviada; si va sola, con Flyra) o vence el plazo:
            POST /v1/group-negotiations/{id}/start            -> 200
     3. Todos consultan cómo va y, al final, el resultado:
            GET  /v1/group-negotiations/{id}                  -> 200
@@ -289,7 +289,7 @@ def negotiation_router(
             raise HTTPException(status_code=409, detail="la negociación ya no está esperando") from None
         except NotEnoughReadyError:
             raise HTTPException(
-                status_code=409, detail="hacen falta al menos dos personas con sus preferencias enviadas"
+                status_code=409, detail="hace falta al menos una persona con sus preferencias enviadas"
             ) from None
         _kick()
         return NegotiationView.of(record, principal.user_id)

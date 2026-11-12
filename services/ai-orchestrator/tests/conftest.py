@@ -341,7 +341,7 @@ class InMemoryNegotiations:
             raise NotOrganizerError(negotiation_id)
         if record.status is not Status.COLLECTING or record.deadline < self.now:
             raise NegotiationClosedError(negotiation_id)
-        if sum(1 for m in record.members if m.submitted_at) < 2:
+        if sum(1 for m in record.members if m.submitted_at) < 1:
             raise NotEnoughReadyError(negotiation_id)
         return self._queue(record)
 

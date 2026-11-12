@@ -22,6 +22,7 @@ from enum import StrEnum
 from ai_orchestrator.llm.client import LLMClient
 from ai_orchestrator.negotiation.agents import AgentSettings, LLMAgent, RuleAgent
 from ai_orchestrator.negotiation.domain import (
+    FLYRA_ALIAS,
     MIN_MEMBERS,
     AgentPosition,
     GroupOption,
@@ -87,6 +88,16 @@ class NegotiationService:
                 Seat(self._agent(member, record.currency, record.language), m.preferences.budget_max_minor)
             )
 
+        aliases = [s.agent.agent_id for s in seats]
+        if len(seats) == 1:
+            # Viaje "en grupo" de una persona y Flyra: Flyra se sienta como
+            # compañera que quiere lo mismo que tú (sus gustos y su
+            # presupuesto), sin LLM. No sale en el resultado: el plan es tuyo.
+            only = next(m for m in record.members if m.preferences is not None)
+            assert only.preferences is not None  # noqa: S101
+            flyra = Member(alias=FLYRA_ALIAS, preferences=only.preferences)
+            seats.append(Seat(RuleAgent(flyra, language=record.language), only.preferences.budget_max_minor))
+
         if len(seats) < MIN_MEMBERS:
             # No debería pasar (solo se pone en cola con dos o más listos),
             # pero si pasa no hay grupo que negociar: se caduca, sin romper nada.
@@ -103,7 +114,7 @@ class NegotiationService:
             total_timeout_seconds=self._settings.total_timeout_seconds,
         )
         outcome = await engine.run(record.options, seats)
-        result = build_result(outcome, record.options, [s.agent.agent_id for s in seats], record.language)
+        result = build_result(outcome, record.options, aliases, record.language)
 
         recipients = (
             [self._pseudonymizer.recipient(m.user_id) for m in record.members] if self._pseudonymizer else []

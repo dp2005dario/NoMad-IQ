@@ -624,7 +624,8 @@ class _StartBoxState extends State<_StartBox> {
         style: const TextStyle(color: NomadColors.textMuted),
       );
     }
-    final bool enough = trip.ready >= 2;
+    // Basta con una persona: si vas solo, Flyra es tu compañera.
+    final bool enough = trip.ready >= 1;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
