@@ -73,7 +73,11 @@ jobs:
           heap-size: 1024M
           cores: 4
           disk-size: 6G
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back emulated
+          # swangle_indirect: dibujo por software con ANGLE. Con
+          # swiftshader_indirect el propio emulador se cerraba de golpe al
+          # abrir pantallas con muchas animaciones (fallo del emulador, no de
+          # la app).
+          emulator-options: -no-window -gpu swangle_indirect -noaudio -no-boot-anim -camera-back emulated
           script: bash mobile/tool/capturas.sh mobile/build/app/outputs/flutter-apk/app-debug.apk capturas
       - name: Subir las capturas
         if: always()
