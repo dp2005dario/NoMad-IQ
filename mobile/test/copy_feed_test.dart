@@ -47,6 +47,7 @@ Map<String, Object?> tripJson({
   'rating_avg': 4.5,
   'rating_count': 2,
   'my_rating': myRating,
+  'author_photo': 'https://lh3.googleusercontent.com/a/laura=s96',
 };
 
 void main() {
@@ -89,6 +90,22 @@ void main() {
     ]);
     expect(one['copied'], isTrue);
     expect(one['votes'], 2);
+    // Su foto de perfil (no un dibujo); los enlaces raros, fuera.
+    expect(one['ph'], 'https://lh3.googleusercontent.com/a/laura=s96');
+    expect(googlePhoto('https://evil.com/x.png'), isNull);
+    expect(googlePhoto('http://lh3.googleusercontent.com/a'), isNull);
+    expect(
+      const NewSharedTrip(
+        title: 'x',
+        author: 'y',
+        destination: 'z',
+        days: 1,
+        currency: 'EUR',
+        lines: <TripLine>[],
+        authorPhoto: 'https://lh3.googleusercontent.com/a/me',
+      ).toJson()['author_photo'],
+      'https://lh3.googleusercontent.com/a/me',
+    );
     final Map<String, Object?> tx = data['t']! as Map<String, Object?>;
     expect(tx['votesN'], '{n} votos');
 

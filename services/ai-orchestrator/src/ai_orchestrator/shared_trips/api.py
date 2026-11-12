@@ -63,6 +63,7 @@ def view(record: TripRecord, user_id: str, my_rating: int | None = None) -> Shar
         rating_avg=round(record.rating_sum / record.rating_count, 2) if record.rating_count else None,
         rating_count=record.rating_count,
         my_rating=my_rating,
+        author_photo=record.author_photo,
     )
 
 

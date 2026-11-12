@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../auth/session.dart';
 import '../../core/api_client.dart';
 import '../../core/money.dart';
 import '../../core/services.dart';
@@ -159,6 +160,8 @@ class _ShareTripScreenState extends State<ShareTripScreen> {
           lines: List<TripLine>.of(_lines),
           isPublic: _public,
           note: _note.text.trim(),
+          // Tu foto de Google para tu tarjeta del muro (no un dibujo).
+          authorPhoto: SessionScope.of(context).user?.photoUrl,
         ),
       );
       if (!mounted) return;

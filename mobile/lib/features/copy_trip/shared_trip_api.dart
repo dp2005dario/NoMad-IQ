@@ -77,6 +77,7 @@ class SharedTrip {
     this.ratingAvg,
     this.ratingCount = 0,
     this.myRating,
+    this.authorPhoto,
   });
 
   final String code;
@@ -109,6 +110,9 @@ class SharedTrip {
   final int ratingCount;
   final int? myRating;
 
+  /// La foto de perfil de quien lo publicó (solo de Google, por https).
+  final Uri? authorPhoto;
+
   int get totalMinor => linesTotal(lines);
 
   static SharedTrip parse(Object? json) {
@@ -138,6 +142,7 @@ class SharedTrip {
       copies: copies is int && copies >= 0 ? copies : 0,
       mine: json['mine'] == true,
       createdAt: DateTime.tryParse('${json['created_at']}'),
+      authorPhoto: googlePhoto(json['author_photo']),
       note: note is String ? note : '',
       isPublic: json['public'] == true,
       ratingAvg: avg is num ? avg.toDouble() : null,
@@ -234,6 +239,7 @@ class NewSharedTrip {
     required this.lines,
     this.isPublic = false,
     this.note = '',
+    this.authorPhoto,
   });
 
   final String title;
@@ -247,6 +253,9 @@ class NewSharedTrip {
   final bool isPublic;
   final String note;
 
+  /// Tu foto de perfil (la de tu cuenta de Google) para la tarjeta del muro.
+  final String? authorPhoto;
+
   Map<String, Object?> toJson() => <String, Object?>{
     'title': title,
     'author': author,
@@ -256,7 +265,19 @@ class NewSharedTrip {
     'items': <Object?>[for (final TripLine l in lines) l.toJson()],
     'public': isPublic,
     if (note.isNotEmpty) 'note': note,
+    if (googlePhoto(authorPhoto) case final Uri p) 'author_photo': p.toString(),
   };
+}
+
+/// Una foto de perfil de Google por https, o null (nada de enlaces raros).
+Uri? googlePhoto(Object? raw) {
+  if (raw is! String || raw.length > 500) return null;
+  final Uri? u = Uri.tryParse(raw);
+  return u != null &&
+          u.isScheme('https') &&
+          u.host.endsWith('.googleusercontent.com')
+      ? u
+      : null;
 }
 
 Never _bad() => throw const ApiException(ApiError.unavailable);

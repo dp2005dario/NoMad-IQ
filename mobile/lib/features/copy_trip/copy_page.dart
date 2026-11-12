@@ -112,6 +112,8 @@ Map<String, Object?> copyTripJson(
   return <String, Object?>{
     'a': trip.author,
     'u': authorSeed(trip.author),
+    // Su foto de perfil (si no tiene, la página pone su inicial).
+    'ph': trip.authorPhoto?.toString() ?? '',
     'ago': agoText(t, trip.createdAt, now),
     'city': trip.destination,
     'ill': illustrationFor(trip.destination),

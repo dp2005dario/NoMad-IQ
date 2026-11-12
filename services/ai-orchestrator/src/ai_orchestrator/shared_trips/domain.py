@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from typing import Annotated, Literal
+from urllib.parse import urlparse
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
@@ -38,6 +39,16 @@ def _clean(value: str) -> str:
 Title = Annotated[str, Field(min_length=1, max_length=80), AfterValidator(_clean)]
 
 
+def _photo(url: str | None) -> str | None:
+    """Solo fotos de perfil de Google por https (nada de enlaces raros)."""
+    if url is None:
+        return None
+    u = urlparse(url)
+    if len(url) > 500 or u.scheme != "https" or not (u.hostname or "").endswith(".googleusercontent.com"):
+        raise ValueError("foto de perfil no válida")
+    return url
+
+
 class TripItem(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
@@ -63,6 +74,8 @@ class ShareTrip(BaseModel):
     public: bool = False
     # Unas líneas contando el viaje (opcional, sale en la tarjeta del muro).
     note: Annotated[str, Field(max_length=280), AfterValidator(clean_text)] = ""
+    # Tu foto de perfil (la de tu cuenta de Google) para la tarjeta del muro.
+    author_photo: Annotated[str | None, AfterValidator(_photo)] = None
 
 
 class SharedTrip(BaseModel):
@@ -90,6 +103,7 @@ class SharedTrip(BaseModel):
     rating_avg: float | None = None
     rating_count: int = 0
     my_rating: int | None = None
+    author_photo: str | None = None
 
 
 class MySharedTrips(BaseModel):

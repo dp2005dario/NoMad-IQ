@@ -71,6 +71,7 @@ class MemoryTrips:
             created_at=NOW,
             public=trip.public,
             note=trip.note,
+            author_photo=trip.author_photo,
         )
         self.trips[code] = record
         return record
@@ -181,6 +182,12 @@ def test_share_validation() -> None:
         ShareTrip.model_validate({**JAPAN, "items": [{"kind": "rocket", "title": "x", "price_minor": 1}]})
     with pytest.raises(ValidationError):
         ShareTrip.model_validate({**JAPAN, "author": "   "})
+    # La foto de perfil: solo la de Google por https.
+    ok = ShareTrip.model_validate({**JAPAN, "author_photo": "https://lh3.googleusercontent.com/a/x=s96"})
+    assert ok.author_photo == "https://lh3.googleusercontent.com/a/x=s96"
+    for bad in ("http://lh3.googleusercontent.com/a", "https://evil.com/a.png", "javascript:alert(1)"):
+        with pytest.raises(ValidationError):
+            ShareTrip.model_validate({**JAPAN, "author_photo": bad})
 
 
 def test_alternatives_never_cost_more() -> None:
@@ -327,12 +334,18 @@ async def test_feed_only_public_and_stars_once_per_person() -> None:
         public = (
             await c.post(
                 "/v1/shared-trips",
-                json={**JAPAN, "public": True, "note": " Ramen\nbarato "},
+                json={
+                    **JAPAN,
+                    "public": True,
+                    "note": " Ramen\nbarato ",
+                    "author_photo": "https://lh3.googleusercontent.com/a/laura",
+                },
                 headers=h(LAURA),
             )
         ).json()
         assert public["public"] and public["rating_avg"] is None
         assert public["note"] == "Ramen barato"
+        assert public["author_photo"] == "https://lh3.googleusercontent.com/a/laura"
         code = public["code"]
         wall = (await c.get("/v1/shared-trips/feed", headers=h(DARIO))).json()["items"]
         assert [t["code"] for t in wall] == [code] and hidden != code
