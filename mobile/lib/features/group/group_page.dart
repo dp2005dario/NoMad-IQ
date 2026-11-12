@@ -89,6 +89,7 @@ String _kindName(EventKind k) => switch (k) {
   EventKind.sports => 'Deporte',
   EventKind.arts => 'Arte y teatro',
   EventKind.family => 'En familia',
+  EventKind.festival => 'Fiesta famosa',
   EventKind.other => 'Evento',
 };
 

@@ -70,6 +70,7 @@ from ai_orchestrator.audioguides.service import AudioguideService, ServiceSettin
 from ai_orchestrator.audioguides.speech import PiperOpusSynthesizer, SpeechError, discover_voices
 from ai_orchestrator.audioguides.versions import ZoneVersionCache
 from ai_orchestrator.audioguides.writer import AudioguideWriter, WriterSettings
+from ai_orchestrator.city_events.festivals import WikidataFestivals
 from ai_orchestrator.city_events.service import CityEventService, EventSettings, RedisEventCache
 from ai_orchestrator.city_events.sources import NagerClient, SourceBusyError, TicketmasterClient
 from ai_orchestrator.climate.nasa import NasaBusyError, NasaClient
@@ -540,7 +541,8 @@ def _climate(settings: Settings, redis: Redis, stack: AsyncExitStack) -> Climate
 
 
 def _city_events(settings: Settings, redis: Redis, stack: AsyncExitStack) -> CityEventService:
-    """Qué pasa en tus fechas: festivos (Nager.Date) y eventos (Ticketmaster, si hay clave)."""
+    """Qué pasa en tus fechas: festivos (Nager.Date), eventos (Ticketmaster, si hay clave)
+    y fiestas famosas (Wikidata)."""
     http = httpx.AsyncClient(
         timeout=httpx.Timeout(settings.events_timeout_seconds, connect=5.0),
         follow_redirects=False,
@@ -554,6 +556,8 @@ def _city_events(settings: Settings, redis: Redis, stack: AsyncExitStack) -> Cit
             busy=lambda: SourceBusyError("límite de peticiones de eventos"),
         )
 
+    wikidata = httpx.AsyncClient(timeout=httpx.Timeout(40.0, connect=5.0), follow_redirects=False)
+    stack.push_async_callback(wikidata.aclose)
     key = settings.ticketmaster_api_key
     return CityEventService(
         airports=Airports.bundled(),
@@ -564,6 +568,9 @@ def _city_events(settings: Settings, redis: Redis, stack: AsyncExitStack) -> Cit
         else TicketmasterClient(
             http, api_key=key.get_secret_value(), limiter=limiter(), url=settings.ticketmaster_url
         ),
+        # Fiestas y festivales famosos de la ciudad (Wikidata, gratis): su
+        # buscador tarda más, así que va con su propio tiempo de espera.
+        festivals=WikidataFestivals(wikidata),
         cache=RedisEventCache(redis),
         settings=EventSettings(ticketmaster_daily_limit=settings.ticketmaster_daily_limit),
     )

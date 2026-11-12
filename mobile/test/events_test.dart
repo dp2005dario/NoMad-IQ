@@ -12,6 +12,7 @@ import 'package:eclipta/features/easy/easy_mode.dart';
 import 'package:eclipta/features/events/event_reminders.dart';
 import 'package:eclipta/features/flights/airport_names.dart';
 import 'package:eclipta/features/events/events_api.dart';
+import 'package:eclipta/features/events/events_page.dart';
 import 'package:eclipta/features/events/events_screen.dart';
 import 'package:eclipta/features/route/web_scene.dart';
 import 'package:eclipta/features/map/geo.dart';
@@ -81,6 +82,36 @@ void main() {
     ],
   };
 
+  test('fiesta famosa de un mes: "Durante junio", sin día inventado', () {
+    final CityEvent? f = CityEvent.parse(<String, Object?>{
+      'id': 'w-Q1-m6-2026',
+      'kind': 'festival',
+      'name': 'Fiestas de San Antonio',
+      'date': '2026-06-15',
+      'month_only': true,
+      'url': 'https://es.wikipedia.org/wiki/Fiestas',
+      'top': true,
+    });
+    expect(f!.kind, EventKind.festival);
+    expect(f.monthOnly, isTrue);
+    final Map<String, Object?> data = eventsPageData(
+      iata: 'LIS',
+      from: DateTime(2026, 6, 15),
+      to: DateTime(2026, 6, 18),
+      found: CityEvents(
+        city: 'Lisboa',
+        events: <CityEvent>[f],
+        sources: const <String>['Wikidata'],
+      ),
+    );
+    final Map<String, Object?> ev =
+        (data['events']! as List<Object?>).single! as Map<String, Object?>;
+    expect(ev['when'], 'Durante junio');
+    expect(ev['stTxt'], 'FIESTA FAMOSA');
+    expect(ev['src'], 'Wikidata');
+    expect(data['src'], 'FESTIVOS Y FIESTAS');
+  });
+
   test('solo enlaces https y precios con moneda', () {
     final CityEvents e = CityEvents.parse(json());
     expect(e.events[1].priceMin, 45);
@@ -139,6 +170,8 @@ void main() {
       'iata': 'LIS',
       'from': day(start),
       'to': day(start.add(const Duration(days: 4))),
+      // Los nombres de las fiestas famosas, en tu idioma.
+      'lang': 'es',
     });
     final Map<String, Object?> d = spy.data(bridge());
     expect(d['sub'], startsWith('Lisbon · '));

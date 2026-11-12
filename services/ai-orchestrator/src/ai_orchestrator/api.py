@@ -669,11 +669,14 @@ def create_api(
             iata: Annotated[str, Query(pattern="^[A-Za-z]{3}$")],
             start: Annotated[date, Query(alias="from")],
             end: Annotated[date, Query(alias="to")],
+            lang: Annotated[str, Query(pattern="^[a-z]{2,3}$")] = "en",
         ) -> JSONResponse:
             # Pública (también para invitados): festivos y eventos de una
             # ciudad, iguales para todos. No dice nada de quién pregunta.
             try:
-                found = await city_events.between(iata.upper(), start, end, today=datetime.now(UTC).date())
+                found = await city_events.between(
+                    iata.upper(), start, end, today=datetime.now(UTC).date(), lang=lang
+                )
             except UnknownEventAirportError:
                 return _problem(404, "No encontrado", "ese aeropuerto no está en la lista")
             except BadDatesError as exc:

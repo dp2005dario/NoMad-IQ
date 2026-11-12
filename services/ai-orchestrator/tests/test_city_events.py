@@ -273,3 +273,90 @@ async def test_api_is_public() -> None:
                 "/v1/events", params={"iata": "LISBOA", "from": "2026-06-10", "to": "2026-06-14"}
             )
         ).status_code in (400, 422)
+
+
+# --- Fiestas famosas de Wikidata -------------------------------------------------
+
+
+def wd_row(qid: str, label: str, links: int, **extra: str) -> dict[str, Any]:
+    row: dict[str, Any] = {
+        "item": {"value": f"http://www.wikidata.org/entity/{qid}"},
+        "itemLabel": {"value": label},
+        "links": {"value": str(links)},
+    }
+    for k, v in extra.items():
+        row[k] = {"value": v}
+    return row
+
+
+WD = {
+    "results": {
+        "bindings": [
+            # Santo António: cada año en junio (Q120), muy conocida.
+            wd_row(
+                "Q1",
+                "Fiestas de San Antonio",
+                40,
+                month="http://www.wikidata.org/entity/Q120",
+                article="https://es.wikipedia.org/wiki/Fiestas",
+            ),
+            wd_row("Q2", "Rock in Rio Lisboa 2026", 5, start="2026-06-20T00:00:00Z"),
+            wd_row("Q3", "Q3", 9, start="2026-06-21T00:00:00Z"),  # sin nombre: fuera
+            wd_row("Q4", "Fiesta de diciembre", 9, month="http://www.wikidata.org/entity/Q126"),
+            wd_row("Q5", "Mala fecha", 9, start="nada"),
+        ]
+    }
+}
+
+
+def test_wikidata_festivals_query_and_parse() -> None:
+    from ai_orchestrator.city_events.festivals import build_query, parse_festivals
+
+    q = build_query(38.774, -9.134, "es")
+    assert '"Point(-9.1340 38.7740)"' in q and "https://es.wikipedia.org/" in q
+    with pytest.raises(ValueError):
+        build_query(1, 1, 'es"')
+    got = parse_festivals(WD)
+    assert [e.id for e in got] == ["w-Q1-m6", "w-Q2-2026-06-20", "w-Q4-m12"]
+    assert got[0].month_only and got[0].top and got[0].kind == "festival"
+    assert got[0].url == "https://es.wikipedia.org/wiki/Fiestas"
+    assert not got[1].month_only and not got[1].top
+
+
+async def test_famous_festivals_join_the_city_events() -> None:
+    from ai_orchestrator.city_events.festivals import WikidataFestivals
+
+    fake = Fake()
+    asked: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "query.wikidata.org":
+            asked.append(request)
+            return httpx.Response(200, json=WD)
+        return fake.handler(request)
+
+    http = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    cache = MemoryCache()
+    svc = CityEventService(
+        airports=AIRPORTS,
+        countries=COUNTRIES,
+        holidays=NagerClient(
+            http, limiter=RateLimiter(1000, 1000), url="https://nager.test/api/v3/PublicHolidays"
+        ),
+        festivals=WikidataFestivals(http),
+        cache=cache,
+    )
+    got = await svc.between("LIS", date(2026, 6, 15), date(2026, 6, 25), today=TODAY, lang="es")
+    fest = [e for e in got.events if e.kind == "festival"]
+    # La de junio sale el primer día de tus fechas (y la app dice "en junio");
+    # la de diciembre, no.
+    assert [(e.name, e.date) for e in fest] == [
+        ("Fiestas de San Antonio", date(2026, 6, 15)),
+        ("Rock in Rio Lisboa 2026", date(2026, 6, 20)),
+    ]
+    assert fest[0].month_only and fest[0].id == "w-Q1-m6-2026"
+    assert "Wikidata" in got.sources
+    assert cache.ttls["wd:LIS:es"] == 30 * 24 * 3600
+    # La segunda vez, de la caché.
+    await svc.between("LIS", date(2026, 6, 15), date(2026, 6, 25), today=TODAY, lang="es")
+    assert len(asked) == 1

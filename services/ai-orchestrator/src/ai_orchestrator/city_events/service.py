@@ -39,6 +39,7 @@ _LIST = TypeAdapter(list[CityEvent])
 
 SOURCE_HOLIDAYS = "Nager.Date"
 SOURCE_TICKETMASTER = "Ticketmaster"
+SOURCE_WIKIDATA = "Wikidata"
 
 
 class HolidaySource(Protocol):
@@ -47,6 +48,10 @@ class HolidaySource(Protocol):
 
 class EventSource(Protocol):
     async def events(self, lat: float, lon: float, start: date, end: date) -> list[CityEvent]: ...
+
+
+class FestivalSource(Protocol):
+    async def festivals(self, lat: float, lon: float, lang: str) -> list[CityEvent]: ...
 
 
 class EventCache(Protocol):
@@ -106,6 +111,7 @@ class BadDatesError(Exception):
 class EventSettings:
     holidays_ttl_seconds: int = 30 * 24 * 3600
     events_ttl_seconds: int = 12 * 3600
+    festivals_ttl_seconds: int = 30 * 24 * 3600
     # El cupo gratis de Ticketmaster es mayor; se deja margen.
     ticketmaster_daily_limit: int = 4000
 
@@ -133,8 +139,10 @@ class CityEventService:
         holidays: HolidaySource,
         cache: EventCache,
         tickets: EventSource | None = None,
+        festivals: FestivalSource | None = None,
         settings: EventSettings | None = None,
     ) -> None:
+        self._festivals = festivals
         self._airports = airports
         self._countries = countries
         self._holidays = holidays
@@ -143,7 +151,9 @@ class CityEventService:
         self._settings = settings or EventSettings()
         self._flight: SingleFlight[list[CityEvent]] = SingleFlight()
 
-    async def between(self, iata: str, start: date, end: date, *, today: date) -> CityEvents:
+    async def between(
+        self, iata: str, start: date, end: date, *, today: date, lang: str = "en"
+    ) -> CityEvents:
         airport = self._airports.get(iata)
         if airport is None:
             raise UnknownAirportError(iata)
@@ -169,6 +179,16 @@ class CityEventService:
             if got is not None:
                 events += got
                 sources.append(SOURCE_TICKETMASTER)
+        festivals = self._festivals
+        if festivals is not None:
+            got = await self._safe(
+                lambda: self._festivals_between(
+                    festivals, airport.iata, airport.lat, airport.lon, start, end, lang
+                )
+            )
+            if got:
+                events += got
+                sources.append(SOURCE_WIKIDATA)
         # Cada día: festivos, luego los más conocidos, luego por hora.
         events.sort(key=lambda e: (e.date, e.kind != "holiday", not e.top, e.time or "99:99", e.name))
         return CityEvents(
@@ -233,6 +253,34 @@ class CityEventService:
 
             rows = await self._cached(f"tm:{iata}:{first:%Y-%m}", self._settings.events_ttl_seconds, fetch)
             out += [e for e in rows if start <= e.date <= end]
+        return out
+
+    async def _festivals_between(
+        self,
+        festivals: FestivalSource,
+        iata: str,
+        lat: float,
+        lon: float,
+        start: date,
+        end: date,
+        lang: str,
+    ) -> list[CityEvent]:
+        rows = await self._cached(
+            f"wd:{iata}:{lang}",
+            self._settings.festivals_ttl_seconds,
+            functools.partial(festivals.festivals, lat, lon, lang),
+        )
+        out: list[CityEvent] = []
+        for e in rows:
+            if not e.month_only:
+                if start <= e.date <= end:
+                    out.append(e)
+                continue
+            # "En julio": el primer día de julio que cae en tus fechas.
+            for first in _months(start, end):
+                if first.month == e.date.month:
+                    day = max(start, first)
+                    out.append(e.model_copy(update={"date": day, "id": f"{e.id}-{day.year}"}))
         return out
 
 

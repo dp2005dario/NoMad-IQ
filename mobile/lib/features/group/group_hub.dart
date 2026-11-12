@@ -312,6 +312,7 @@ class _TripHubState extends State<TripHub> {
         best.iata,
         today,
         today.add(const Duration(days: 14)),
+        language: Localizations.localeOf(context).languageCode,
       );
       if (mounted) setState(() => _events = found.events);
     } on ApiException {

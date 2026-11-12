@@ -12,7 +12,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-EventKind = Literal["holiday", "music", "sports", "arts", "family", "other"]
+EventKind = Literal["holiday", "music", "sports", "arts", "family", "festival", "other"]
 # Cómo están las entradas, según Ticketmaster (dates.status.code):
 # "onsale" a la venta, "offsale" no se venden ahora, "cancelled" cancelado,
 # "rescheduled" cambiado de fecha (o aplazado).
@@ -52,6 +52,9 @@ class CityEvent(BaseModel):
     # De los más conocidos de la ciudad en esas fechas (Ticketmaster los
     # ordena por relevancia: los primeros son los famosos).
     top: bool = False
+    # Fiesta que se celebra "en julio" (Wikidata no dice qué días): la fecha
+    # es el primer día de ese mes que cae en tus fechas, y la app dice el mes.
+    month_only: bool = False
 
 
 class CityEvents(BaseModel):

@@ -207,6 +207,7 @@ class _EventsScreenState extends State<EventsScreen> {
         iata,
         _dates.start,
         _dates.end,
+        language: Localizations.localeOf(context).languageCode,
       );
       if (!mounted) return;
       // La cuenta atrás la lleva la página (cada segundo).

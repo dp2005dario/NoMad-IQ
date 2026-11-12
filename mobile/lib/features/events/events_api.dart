@@ -5,7 +5,7 @@
 // pone). La app no estima nada.
 import '../../core/api_client.dart';
 
-enum EventKind { holiday, music, sports, arts, family, other }
+enum EventKind { holiday, music, sports, arts, family, festival, other }
 
 /// Cómo están las entradas, según Ticketmaster.
 enum SaleStatus { onsale, offsale, cancelled, rescheduled }
@@ -27,6 +27,7 @@ class CityEvent {
     this.lon,
     this.image,
     this.top = false,
+    this.monthOnly = false,
   });
 
   final String id;
@@ -57,6 +58,10 @@ class CityEvent {
 
   /// De los más conocidos de la ciudad en esas fechas.
   final bool top;
+
+  /// Fiesta que se celebra "en julio" (no se sabe el día exacto): la app
+  /// enseña el mes en vez de la hora.
+  final bool monthOnly;
 
   static CityEvent? parse(Object? json) {
     if (json is! Map<String, Object?>) return null;
@@ -106,6 +111,7 @@ class CityEvent {
           ? image
           : null,
       top: json['top'] == true,
+      monthOnly: json['month_only'] == true,
     );
   }
 }
@@ -150,16 +156,24 @@ class EventsApi {
 
   final ApiClient _api;
 
-  Future<CityEvents> between(String iata, DateTime from, DateTime to) async =>
-      CityEvents.parse(
-        await _api.getJson(
-          '/v1/events',
-          query: <String, String>{
-            'iata': iata.toUpperCase(),
-            'from': _day(from),
-            'to': _day(to),
-          },
-          public: true,
-        ),
-      );
+  /// [language]: el idioma de los nombres de las fiestas (Wikidata).
+  Future<CityEvents> between(
+    String iata,
+    DateTime from,
+    DateTime to, {
+    String language = 'en',
+  }) async => CityEvents.parse(
+    await _api.getJson(
+      '/v1/events',
+      query: <String, String>{
+        'iata': iata.toUpperCase(),
+        'from': _day(from),
+        'to': _day(to),
+        'lang': language,
+      },
+      public: true,
+      // La primera vez en una ciudad, las fiestas de Wikidata tardan más.
+      timeout: ApiClient.slow,
+    ),
+  );
 }
