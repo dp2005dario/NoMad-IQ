@@ -802,7 +802,7 @@
   "nbYou": "Sen",
   "nbNoOffers": "Yakınında mağaza veya yer yok",
   "nbNoPlans": "2 saatlik plan için yeterince yakın bilinen yer yok.",
-  "nbLoading": "Yakında ne var bakılıyor…",
+  "nbLoading": "Yakında ne var bakılıyor… (Yeni bir bölgede ilk seferde bir dakika sürebilir.)",
   "nbMuseum": "Müze",
   "nbGallery": "Galeri",
   "nbViewpoint": "Seyir noktası",

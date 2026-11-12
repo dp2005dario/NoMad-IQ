@@ -802,7 +802,7 @@
   "nbYou": "Tú",
   "nbNoOffers": "No hay tiendas ni sitios cerca de ti",
   "nbNoPlans": "No hay sitios conocidos lo bastante cerca para un plan de 2 h.",
-  "nbLoading": "Buscando qué hay cerca…",
+  "nbLoading": "Buscando qué hay cerca… (La primera vez en una zona nueva puede tardar un minuto.)",
   "nbMuseum": "Museo",
   "nbGallery": "Galería",
   "nbViewpoint": "Mirador",

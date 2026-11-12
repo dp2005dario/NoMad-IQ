@@ -802,7 +802,7 @@
   "nbYou": "나",
   "nbNoOffers": "근처에 가게나 장소가 없어요",
   "nbNoPlans": "2시간 일정에 맞는 유명한 장소가 근처에 없어요.",
-  "nbLoading": "근처를 찾는 중…",
+  "nbLoading": "근처를 찾는 중… (새로운 지역에서는 처음에 1분 정도 걸릴 수 있어요.)",
   "nbMuseum": "박물관",
   "nbGallery": "갤러리",
   "nbViewpoint": "전망대",

@@ -3577,7 +3577,7 @@
   "@nbNoPlans": {
     "description": "Empty plans tab"
   },
-  "nbLoading": "Looking for what's nearby…",
+  "nbLoading": "Looking for what's nearby… (The first time in a new area it can take a minute.)",
   "@nbLoading": {
     "description": "Nearby: searching"
   },
