@@ -12,6 +12,9 @@ import 'package:eclipta/features/settings/language_screen.dart';
 import 'package:eclipta/l10n/generated/app_localizations.dart';
 
 import 'money_test.dart' as m;
+
+import 'package:eclipta/features/memories/travel_camera_screen.dart';
+
 import 'helpers.dart';
 
 /// La Bienvenida solo se ve sin sesión.
@@ -110,6 +113,15 @@ void main() {
     expect(find.byType(FlightsScreen), findsOneWidget);
 
     await tester.tap(find.byTooltip('Cámara'));
+    await tester.pumpAndSettle();
+    // Primero la cámara normal (fotos y vídeos a Recuerdos); deslizando a
+    // la derecha, el escáner de monumentos.
+    expect(find.byType(TravelCameraScreen), findsOneWidget);
+    await tester.fling(
+      find.byType(TravelCameraScreen),
+      const Offset(300, 0),
+      1000,
+    );
     await tester.pumpAndSettle();
     // El modo cámara necesita cuenta (cada una tiene sus escaneos diarios).
     expect(

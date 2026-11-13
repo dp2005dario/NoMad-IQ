@@ -276,7 +276,9 @@ Map<String, Object?> tripJson(
 }
 
 /// Qué pasa con los cajeros.
-enum AtmPhase { idle, searching, noLocation, failed, done }
+/// gpsOff = el GPS del móvil está apagado; blocked = dijiste "no volver a
+/// preguntar" (solo se arregla en Ajustes).
+enum AtmPhase { idle, searching, noLocation, gpsOff, blocked, failed, done }
 
 /// Todo lo que necesita la página.
 Map<String, Object?> abroadPageData({
@@ -299,8 +301,9 @@ Map<String, Object?> abroadPageData({
     AtmPhase.idle =>
       'Para ver los cajeros que tienes cerca necesito tu ubicación.',
     AtmPhase.searching => 'Buscando cajeros cerca de ti…',
-    AtmPhase.noLocation =>
-      'No sé dónde estás. Activa la ubicación para ver los cajeros cerca.',
+    AtmPhase.noLocation => 'No me llega tu ubicación. Sal a un sitio abierto o toca para probar otra vez.',
+    AtmPhase.gpsOff => 'La ubicación del móvil está apagada. Enciéndela (arriba, en el menú rápido) y toca otra vez.',
+    AtmPhase.blocked => 'ECLIPTA no tiene permiso de ubicación. Toca "Abrir ajustes" y en Permisos → Ubicación elige "Mientras se usa la app".',
     AtmPhase.failed => 'No he podido traer los cajeros. Comprueba la conexión y vuelve a probar.',
     AtmPhase.done when found.isEmpty =>
       'No hay cajeros en OpenStreetMap a menos de 1 km.',
@@ -317,7 +320,10 @@ Map<String, Object?> abroadPageData({
         : found.where((Atm a) => a.point.distanceTo(me) <= 1000).length,
     'atmNote': atmNote,
     'atmBtn': switch (atmPhase) {
-      AtmPhase.idle || AtmPhase.noLocation => 'Usar mi ubicación',
+      AtmPhase.idle ||
+      AtmPhase.noLocation ||
+      AtmPhase.gpsOff => 'Usar mi ubicación',
+      AtmPhase.blocked => 'Abrir ajustes',
       AtmPhase.failed => 'Reintentar',
       AtmPhase.done when atmsCached => 'Reintentar',
       _ => '',

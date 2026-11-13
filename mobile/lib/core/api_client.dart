@@ -63,6 +63,10 @@ class ApiClient {
   /// Antes la app se rendía a los 10 s y decía "Sin conexión" sin serlo.
   static const Duration slow = Duration(seconds: 45);
 
+  /// "Cerca de ti" la primera vez en una zona: el servidor pregunta a
+  /// OpenStreetMap por todo lo que hay en 3 km y puede tardar un minuto.
+  static const Duration verySlow = Duration(seconds: 90);
+
   /// Convierte una ruta del servidor ("/v1/audio/...") en dirección completa.
   /// Si ya es completa (https://cdn...), se deja tal cual.
   Uri resolve(String pathOrUrl) => _base.resolve(pathOrUrl);

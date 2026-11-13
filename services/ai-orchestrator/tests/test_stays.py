@@ -95,6 +95,36 @@ def test_parse_keeps_only_ours() -> None:
     assert hostel.name == "Hostal Nation" and hostel.stars == 3 and hostel.kind == "hostel"
 
 
+def test_parse_keeps_phone_and_web_for_calling() -> None:
+    _, lodgings = parse(
+        [
+            {
+                "type": "node",
+                "id": 7,
+                "lat": 48.0,
+                "lon": 2.0,
+                "tags": {
+                    "tourism": "hotel",
+                    "name": "Hôtel Lumière",
+                    "contact:phone": "+33 1 23 45 67 89;+33 6 00 00 00 00",
+                    "website": "https://lumiere.example",
+                },
+            },
+            {
+                "type": "node",
+                "id": 8,
+                "lat": 48.0,
+                "lon": 2.0,
+                "tags": {"tourism": "hotel", "phone": "llámame"},
+            },
+        ]
+    )
+    by_id = {x.id: x for x in lodgings}
+    assert by_id["n7"].phone == "+33 1 23 45 67 89"
+    assert by_id["n7"].website == "https://lumiere.example"
+    assert by_id["n8"].phone is None
+
+
 def test_query_has_fixed_numbers() -> None:
     near = build_near_query(48.88, 2.78)
     assert "around:2000,48.88000,2.78000" in near

@@ -155,6 +155,11 @@ class _HomeScreenState extends State<HomeScreen> {
       if (await _services.location.check() != LocationAccess.granted) return;
       final PositionFix? fix = await _services.location.current();
       if (fix == null) return;
+      // "Cerca de ti" se prepara ya en el servidor (la primera vez en una
+      // zona tarda): cuando la abras, saldrá al instante. Sin esperar.
+      unawaited(
+        _services.nearby.near(fix.point).then((_) {}, onError: (Object _) {}),
+      );
       final Airports airports = await _services.loadAirports();
       final Airport? a = nearestAirport(
         airports.all,

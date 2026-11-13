@@ -150,6 +150,9 @@ async def test_late_preferences_are_rejected(store: InMemoryNegotiations) -> Non
         {"sorpresa": True},
         {"my_name": "   "},
         {"my_name": "x" * 41},
+        # Una opción por encima del máximo del grupo.
+        {"rules": {"max_price_minor": 35000}},
+        {"rules": {"max_price_minor": 0}},
     ],
 )
 async def test_invalid_creation_is_400(store: InMemoryNegotiations, bad: dict[str, Any]) -> None:
@@ -226,19 +229,23 @@ async def test_invite_flow(store: InMemoryNegotiations) -> None:
         assert twice.status_code == 409
 
 
-async def test_start_needs_two_ready(store: InMemoryNegotiations) -> None:
+async def test_start_alone_with_flyra(store: InMemoryNegotiations) -> None:
     async with client(store) as c:
         created = await c.post("/v1/group-negotiations", json=body(members=[]), headers=headers(ORGANIZER))
         negotiation_id = created.json()["negotiation_id"]
+        stranger = await c.post(f"/v1/group-negotiations/{negotiation_id}/start", headers=headers(STRANGER))
+        assert stranger.status_code == 404
+        # Nadie ha mandado sus gustos todavía: aún no.
+        empty = await c.post(f"/v1/group-negotiations/{negotiation_id}/start", headers=headers(ORGANIZER))
+        assert empty.status_code == 409
         await c.put(
             f"/v1/group-negotiations/{negotiation_id}/preferences",
             json=INVITE_PREFS,
             headers=headers(ORGANIZER),
         )
+        # Tú solo (con Flyra de compañera): ya se puede empezar.
         alone = await c.post(f"/v1/group-negotiations/{negotiation_id}/start", headers=headers(ORGANIZER))
-        assert alone.status_code == 409
-        stranger = await c.post(f"/v1/group-negotiations/{negotiation_id}/start", headers=headers(STRANGER))
-        assert stranger.status_code == 404
+        assert alone.status_code == 200
 
 
 async def test_join_rejects_bad_codes_and_full_groups(store: InMemoryNegotiations) -> None:
@@ -279,3 +286,11 @@ async def test_tastes_are_shared_with_the_group(store: InMemoryNegotiations) -> 
         bad = await c.put(url, json={"tastes": ["<script>"]}, headers=headers(FRIEND))
         assert bad.status_code in (400, 422)
         assert (await c.put(url, json={"tastes": []}, headers=headers(STRANGER))).status_code == 404
+
+
+async def test_rules_are_kept_and_shown(store: InMemoryNegotiations) -> None:
+    rules = {"max_price_minor": 45000, "avoid": ["early-starts"]}
+    async with client(store) as c:
+        resp = await c.post("/v1/group-negotiations", json=body(rules=rules), headers=headers(ORGANIZER))
+    assert resp.status_code == 201
+    assert resp.json()["rules"] == rules

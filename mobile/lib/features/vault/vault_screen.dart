@@ -105,8 +105,14 @@ class _VaultScreenState extends State<VaultScreen> {
   void initState() {
     super.initState();
     unawaited(SecureWindow.set(secure: true));
-    // Al salir de la app (o bloquear el móvil), se cierra.
-    _life = AppLifecycleListener(onHide: () => _vault.close());
+    // Al salir de la app (o bloquear el móvil), se cierra. Pero no al abrir
+    // la cámara, la galería o los archivos para guardar algo aquí: antes la
+    // foto de la cámara te sacaba de la Bóveda y no se guardaba.
+    _life = AppLifecycleListener(
+      onHide: () {
+        if (!_vault.away) _vault.close();
+      },
+    );
     _vault.addListener(_vaultChanged);
   }
 
@@ -153,6 +159,7 @@ class _VaultScreenState extends State<VaultScreen> {
     String file = '',
     String? message,
     bool opening = false,
+    bool denied = false,
   }) {
     if (!mounted || _page == null) return;
     final VaultPhase phase = !_vault.isOpen
@@ -169,6 +176,7 @@ class _VaultScreenState extends State<VaultScreen> {
       found: found,
       file: file,
       message: message,
+      denied: denied,
     );
     setState(() => _html = vaultPageWith(_page!, data));
   }
@@ -200,7 +208,11 @@ class _VaultScreenState extends State<VaultScreen> {
         _shownOpening = true;
         _show(opening: true);
       case UnlockResult.cancelled:
-        _show(message: t.vaultUnlockFailed);
+        // No te reconoció (o cerraste la ventana): la huella se pone en
+        // rojo, tiembla y el móvil vibra.
+        unawaited(HapticFeedback.heavyImpact());
+        unawaited(HapticFeedback.vibrate());
+        _show(message: t.vaultUnlockFailed, denied: true);
       case UnlockResult.unavailable:
         _show(message: t.vaultNoLock);
     }
@@ -217,7 +229,9 @@ class _VaultScreenState extends State<VaultScreen> {
   /// Foto con la cámara o de la galería: se lee y se guarda en su tarjeta.
   Future<void> _photo(int slot, DocOrigin origin) async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final PickedDoc? picked = await _services.docSource.pick(origin);
+    final PickedDoc? picked = await _vault.whileAway(
+      () => _services.docSource.pick(origin),
+    );
     if (picked == null || !mounted || !_vault.isOpen) return;
     if (picked.bytes.isEmpty || picked.bytes.length > maxDocBytes) {
       _show(message: t.vaultTooBig);
@@ -237,7 +251,9 @@ class _VaultScreenState extends State<VaultScreen> {
   /// PDF: se lee en el móvil y se enseña lo encontrado para confirmarlo.
   Future<void> _pdf(int slot) async {
     final AppLocalizations t = AppLocalizations.of(context);
-    final PickedDoc? picked = await _services.docSource.pick(DocOrigin.pdf);
+    final PickedDoc? picked = await _vault.whileAway(
+      () => _services.docSource.pick(DocOrigin.pdf),
+    );
     if (picked == null || !mounted || !_vault.isOpen) return;
     if (picked.bytes.isEmpty || picked.bytes.length > maxDocBytes) {
       _show(message: t.vaultTooBig);

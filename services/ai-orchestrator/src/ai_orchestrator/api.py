@@ -66,6 +66,7 @@ from ai_orchestrator.city_events.service import BadDatesError, CityEventService
 from ai_orchestrator.city_events.service import UnknownAirportError as UnknownEventAirportError
 from ai_orchestrator.climate.domain import ATTRIBUTION, Climate
 from ai_orchestrator.climate.service import ClimateBusyError, ClimateService, ClimateUnavailableError
+from ai_orchestrator.climate.worldbank import FACTS_ATTRIBUTION
 from ai_orchestrator.domain import Recommendation, Verdict
 from ai_orchestrator.drive.domain import DriveArea
 from ai_orchestrator.drive.service import DriveBusyError, DriveService, DriveUnavailableError
@@ -89,6 +90,12 @@ from ai_orchestrator.nearby.domain import Nearby
 from ai_orchestrator.nearby.service import NearbyBusyError, NearbyService, NearbyUnavailableError
 from ai_orchestrator.places.domain import PlaceCard
 from ai_orchestrator.places.service import PlaceBusyError, PlaceService, PlaceUnavailableError
+from ai_orchestrator.plan_videos.domain import PlanVideos
+from ai_orchestrator.plan_videos.service import (
+    PlanVideosBusyError,
+    PlanVideoService,
+    PlanVideosUnavailableError,
+)
 from ai_orchestrator.quota import QuotaExceededError
 from ai_orchestrator.radar.rain import RainBusyError, RainError, RainForecast, RainService
 from ai_orchestrator.shop_photos.domain import ShopPhoto
@@ -234,6 +241,8 @@ PLACE_CACHE = "public, max-age=86400"
 STREET_CACHE = "public, max-age=3600"
 # La foto de Google de un sitio: la app la guarda unas horas.
 SHOP_PHOTO_CACHE = "public, max-age=21600"
+# Los vídeos de planes de un sitio: un día.
+PLAN_VIDEO_CACHE = "public, max-age=86400"
 # Los tipos de cambio cambian una vez al día: una hora en cachés intermedias.
 FX_CACHE = "public, max-age=3600"
 # Los cajeros casi nunca cambian: seis horas en el móvil y en la CDN.
@@ -264,6 +273,7 @@ def create_api(
     shared_trips: APIRouter | None = None,
     leagues: APIRouter | None = None,
     plans: APIRouter | None = None,
+    tasks: APIRouter | None = None,
     group_chat: APIRouter | None = None,
     meetups: APIRouter | None = None,
     places: PlaceService | None = None,
@@ -275,6 +285,7 @@ def create_api(
     atms: AtmService | None = None,
     nearby: NearbyService | None = None,
     shop_photos: ShopPhotoService | None = None,
+    plan_videos: PlanVideoService | None = None,
     cravings: CravingService | None = None,
     drive: DriveService | None = None,
     stays: StayService | None = None,
@@ -483,6 +494,41 @@ def create_api(
             # Sin foto también es 200 (photo_url vacío): la app deja el dibujo.
             return JSONResponse(photo.model_dump(mode="json"), headers={"Cache-Control": SHOP_PHOTO_CACHE})
 
+    if plan_videos is not None:
+
+        @app.get("/v1/plan-videos", response_model=PlanVideos)
+        async def get_plan_videos(
+            # El sitio ("Lisboa") y la búsqueda ya en tu idioma ("qué hacer en Lisboa").
+            place: Annotated[str, Query(min_length=1, max_length=60)],
+            q: Annotated[str, Query(min_length=1, max_length=100)],
+            lang: Annotated[str, Query(pattern=r"^[a-z]{2,3}$")] = "en",
+        ) -> JSONResponse:
+            """«¿No se te ocurren planes?»: vídeos cortos de YouTube de un sitio."""
+            try:
+                found = await plan_videos.videos(" ".join(place.split()), " ".join(q.split()), lang)
+            except (PlanVideosBusyError, PlanVideosUnavailableError):
+                resp = _problem(503, "Servicio no disponible temporalmente", "vídeos ocupados")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            # Sin vídeos también es 200 (lista vacía): la app ofrece TikTok/Instagram.
+            return JSONResponse(found.model_dump(mode="json"), headers={"Cache-Control": PLAN_VIDEO_CACHE})
+
+        @app.get("/v1/plan-videos/photo")
+        async def get_place_photo(
+            place: Annotated[str, Query(min_length=1, max_length=60)],
+            lang: Annotated[str, Query(pattern=r"^[a-z]{2,3}$")] = "en",
+        ) -> JSONResponse:
+            """La foto de Wikipedia de un sitio (fondo de la tarjeta de un viaje)."""
+            try:
+                url = await plan_videos.photo(" ".join(place.split()), lang)
+            except PlanVideosUnavailableError:
+                resp = _problem(503, "Servicio no disponible temporalmente", "fotos ocupadas")
+                resp.headers["Retry-After"] = "60"
+                return resp
+            return JSONResponse(
+                {"place": place, "photo": url}, headers={"Cache-Control": "public, max-age=86400"}
+            )
+
     if cravings is not None:
 
         @app.get("/v1/cravings", response_model=Cravings)
@@ -573,6 +619,7 @@ def create_api(
             # medias de cada país (NASA POWER). "complete" = false mientras
             # se van pidiendo los que faltan (la app vuelve a preguntar).
             found, complete = await climate.countries()
+            facts = await climate.facts()
             body = {
                 "complete": complete,
                 "countries": {
@@ -580,7 +627,11 @@ def create_api(
                     for iso, c in found.items()
                 },
                 "attribution": ATTRIBUTION,
+                # Turistas, precios, seguridad, habitantes y capital.
+                "facts": {iso: f.model_dump(exclude_none=True) for iso, f in facts.items()},
+                "facts_attribution": FACTS_ATTRIBUTION,
             }
+            complete = complete and bool(facts)
             cache = "public, max-age=3600" if complete else "no-store"
             return JSONResponse(body, headers={"Cache-Control": cache})
 
@@ -618,11 +669,14 @@ def create_api(
             iata: Annotated[str, Query(pattern="^[A-Za-z]{3}$")],
             start: Annotated[date, Query(alias="from")],
             end: Annotated[date, Query(alias="to")],
+            lang: Annotated[str, Query(pattern="^[a-z]{2,3}$")] = "en",
         ) -> JSONResponse:
             # Pública (también para invitados): festivos y eventos de una
             # ciudad, iguales para todos. No dice nada de quién pregunta.
             try:
-                found = await city_events.between(iata.upper(), start, end, today=datetime.now(UTC).date())
+                found = await city_events.between(
+                    iata.upper(), start, end, today=datetime.now(UTC).date(), lang=lang
+                )
             except UnknownEventAirportError:
                 return _problem(404, "No encontrado", "ese aeropuerto no está en la lista")
             except BadDatesError as exc:
@@ -769,6 +823,9 @@ def create_api(
     if plans is not None:
         # "Elegid planes" (/v1/group-negotiations/{id}/plans) vive en plans/api.py.
         app.include_router(plans)
+    if tasks is not None:
+        # "Reparto de tareas" (/v1/group-negotiations/{id}/tasks) vive en trip_tasks/.
+        app.include_router(tasks)
 
     if group_chat is not None:
         # El chat del viaje (/v1/group-negotiations/{id}/chat) vive en group_chat/api.py.

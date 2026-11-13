@@ -79,6 +79,8 @@ Map<String, String> nearbyTexts(AppLocalizations t) {
     'noPlans': t.nbNoPlans,
     'retry': t.guideRetry,
     'pause': t.nbPause,
+    'liveGps': t.nbLiveGps,
+    'waitGps': t.nbWaitGps,
     'resume': t.nbResume,
     'route': t.nbRoute,
     'exit': t.nbExit,

@@ -150,3 +150,95 @@ async def test_country_climate_api_lists_temp_and_rain() -> None:
     assert body["countries"]["ES"][0] == [5.0, 62.0]
     assert len(body["countries"]["ES"]) == 12
     assert "NASA" in body["attribution"]
+
+
+# --- Datos de cada país (Banco Mundial) ------------------------------------------
+
+
+def wb_handler(request: httpx.Request) -> httpx.Response:
+    path = request.url.path
+    if path == "/v2/country":
+        rows = [
+            {"iso2Code": "ES", "capitalCity": "Madrid"},
+            {"iso2Code": "1A", "capitalCity": ""},  # una región: sin capital
+        ]
+        return httpx.Response(200, json=[{"page": 1}, rows])
+    code = path.rsplit("/", 1)[-1]
+    value = {
+        "ST.INT.ARVL": 83_700_000,
+        "PA.NUS.PPPC.RF": 0.62,
+        "VC.IHR.PSRC.P5": 0.6,
+        "SP.POP.TOTL": 48_000_000,
+    }[code]
+    rows = [
+        {"country": {"id": "ES"}, "value": value},
+        {"country": {"id": "EU"}, "value": None},
+        {"country": {"id": "1W"}, "value": 5},  # "el mundo": no es un país
+    ]
+    return httpx.Response(200, json=[{"page": 1}, rows])
+
+
+async def test_world_bank_facts_are_parsed_and_kept() -> None:
+    from ai_orchestrator.climate.worldbank import WorldBankFacts
+
+    http = httpx.AsyncClient(transport=httpx.MockTransport(wb_handler))
+    facts = WorldBankFacts(http, None)
+    assert await facts.cached() == {}  # la primera vez se piden en segundo plano
+    assert facts._task is not None
+    await facts._task
+    es = (await facts.cached())["ES"]
+    assert (es.arrivals, es.price, es.homicides, es.population, es.capital) == (
+        83_700_000,
+        0.62,
+        0.6,
+        48_000_000,
+        "Madrid",
+    )
+    assert set(await facts.cached()) == {"ES"}
+
+
+async def test_world_bank_down_keeps_explore_working() -> None:
+    from ai_orchestrator.climate.worldbank import WorldBankFacts
+
+    http = httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(503)))
+    facts = WorldBankFacts(http, None)
+    await facts.refresh()
+    assert await facts.cached() == {}
+
+
+async def test_country_api_includes_facts() -> None:
+    from ai_orchestrator.climate.worldbank import WorldBankFacts
+
+    wb = WorldBankFacts(httpx.AsyncClient(transport=httpx.MockTransport(wb_handler)), None)
+    await wb.refresh()
+    http = httpx.AsyncClient(transport=httpx.MockTransport(FakeNasa().handler))
+    svc = ClimateService(
+        nasa=NasaClient(http, limiter=RateLimiter(1000, 1000)), cache=MemoryClimateCache(), facts=wb
+    )
+    async with api(svc) as client:
+        body = (await client.get("/v1/climate/countries")).json()
+    assert svc._filler is not None
+    svc._filler.cancel()
+    assert body["facts"]["ES"]["capital"] == "Madrid"
+    assert body["facts"]["ES"]["arrivals"] == 83_700_000
+    assert "Banco Mundial" in body["facts_attribution"]
+
+
+async def test_fill_waits_when_nasa_asks_for_calm(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake = FakeNasa()
+    calls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        # La primera vez, "demasiadas peticiones"; luego, bien.
+        return httpx.Response(429) if calls["n"] == 1 else fake.handler(request)
+
+    async def no_sleep(_: float) -> None:
+        return None
+
+    monkeypatch.setattr(asyncio, "sleep", no_sleep)
+    http = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    svc = ClimateService(nasa=NasaClient(http, limiter=RateLimiter(1000, 1000)), cache=MemoryClimateCache())
+    await svc._fill([("ES", 40.2, -3.6)])
+    found, complete = await svc.countries((("ES", 40.2, -3.6),))
+    assert complete and "ES" in found

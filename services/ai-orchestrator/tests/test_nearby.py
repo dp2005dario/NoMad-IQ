@@ -187,6 +187,24 @@ async def test_serves_stale_copy_when_overpass_fails() -> None:
         await svc.near(48.85, 2.35)
 
 
+async def test_old_cell_is_given_at_once_and_refreshed_behind() -> None:
+    fake = FakeOverpass()
+    svc, cache = service(fake)
+    first = await svc.near(40.4168, -3.7038)
+    assert len(fake.requests) == 1
+    cache.expired = True  # caducó: se da la vieja sin esperar a Overpass...
+    fake.rows = [node(9, amenity="toilets")]
+    assert await svc.near(40.4168, -3.7038) == first
+    # ...y por detrás se pide la nueva y se guarda.
+    for _ in range(50):
+        if len(fake.requests) == 2 and len(cache.ttls) == 2:
+            break
+        await asyncio.sleep(0.01)
+    assert len(fake.requests) == 2
+    cache.expired = False
+    assert [s.id for s in (await svc.near(40.4168, -3.7038)).spots] == ["n9"]
+
+
 def test_sight_types_and_place_names() -> None:
     q = build_query(40.4, -3.71, 40.43, -3.69)
     assert '["leisure"="park"]' in q and "place_of_worship" in q

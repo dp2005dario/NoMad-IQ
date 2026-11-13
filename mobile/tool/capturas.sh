@@ -22,10 +22,22 @@ adb shell settings put global window_animation_scale 0 || true
 adb shell settings put global transition_animation_scale 0 || true
 adb shell settings put global animator_duration_scale 0 || true
 
+# Cada 10 s, la memoria que usa el emulador en el robot (en MB): si se
+# cae por falta de memoria se verá cómo sube en el registro.
+( while sleep 10; do
+    ps -C qemu-system-x86_64 -o rss= 2>/dev/null | awk '{printf "MEMORIA emulador: %d MB\n", $1/1024}'
+    free -m | awk '/Mem:/{printf "MEMORIA libre robot: %d MB\n", $7}'
+  done ) &
+MEMPID=$!
+trap 'kill $MEMPID 2>/dev/null' EXIT
+
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null
 
 # Lee el registro hasta "FIN" (o como mucho 15 minutos).
-timeout 900 adb logcat -v raw -s flutter:I | while IFS= read -r line; do
+# Además de los avisos de la app (flutter), los errores graves de Android
+# (cierres, WebView, gráficos): si el emulador se cae, en el registro del
+# robot queda lo último que pasó (el .zip no siempre se puede abrir).
+timeout 900 adb logcat -v raw -s flutter:I AndroidRuntime:E chromium:E cr_*:E libc:F DEBUG:F OpenGLRenderer:E EGL_emulation:E | while IFS= read -r line; do
   case "$line" in
     *ECLIPTA_SHOT:FIN*)
       echo "Fin del recorrido"
@@ -43,6 +55,10 @@ timeout 900 adb logcat -v raw -s flutter:I | while IFS= read -r line; do
         break
       fi
       echo "Captura: $name"
+      ;;
+    *)
+      # Cualquier otra línea: al registro del robot (recortada).
+      printf 'LOG: %.300s\n' "$line"
       ;;
   esac
 done

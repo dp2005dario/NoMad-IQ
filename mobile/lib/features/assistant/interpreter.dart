@@ -11,6 +11,8 @@
 // 0 € y privado: lo que dices nunca pasa por nuestros servidores.
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:google_mlkit_language_id/google_mlkit_language_id.dart';
 import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
@@ -75,9 +77,15 @@ abstract interface class PhraseTranslator {
 
 abstract interface class SpeechInput {
   /// Escucha una frase en [lang] y devuelve lo que entendió (null = nada).
-  Future<String?> listen(String lang);
+  /// [onPartial] recibe lo que va entendiendo mientras hablas (para
+  /// enseñarlo en pantalla en directo).
+  Future<String?> listen(String lang, {ValueChanged<String>? onPartial});
 
+  /// "Ya he terminado": deja de escuchar y [listen] devuelve YA lo oído.
   Future<void> stop();
+
+  /// Lo fuerte que hablas ahora (0 = silencio), para las ondas animadas.
+  ValueListenable<double> get level;
 }
 
 /// Para los tests y los aparatos sin ML Kit: no traduce nada.
@@ -102,10 +110,29 @@ class NoSpeechInput implements SpeechInput {
   const NoSpeechInput();
 
   @override
-  Future<String?> listen(String lang) async => null;
+  Future<String?> listen(
+    String lang, {
+    ValueChanged<String>? onPartial,
+  }) async => null;
 
   @override
   Future<void> stop() async {}
+
+  @override
+  ValueListenable<double> get level => const _Silence();
+}
+
+class _Silence implements ValueListenable<double> {
+  const _Silence();
+
+  @override
+  double get value => 0;
+
+  @override
+  void addListener(VoidCallback listener) {}
+
+  @override
+  void removeListener(VoidCallback listener) {}
 }
 
 /// Adivina el idioma de una frase escrita (o ya pasada a texto).
@@ -193,21 +220,37 @@ class MlKitTranslator implements PhraseTranslator {
 }
 
 /// El reconocimiento de voz del sistema (Android).
+///
+/// Para que no tarde en darse cuenta de que has acabado:
+///   - Se da por terminada la frase tras 1,5 s de silencio (antes, 3 s).
+///   - Si el sistema dice "he terminado" sin resultado final, vale lo
+///     último que entendió (antes se esperaban hasta 35 s).
+///   - Volver a tocar el micro (= [stop]) devuelve lo oído al instante.
 class DeviceSpeechInput implements SpeechInput {
   final SpeechToText _speech = SpeechToText();
   bool _ready = false;
+  Completer<String?>? _done;
+  String _last = '';
+  final ValueNotifier<double> _level = ValueNotifier<double>(0);
 
   @override
-  Future<String?> listen(String lang) async {
-    _ready = _ready || await _speech.initialize();
+  ValueListenable<double> get level => _level;
+
+  @override
+  Future<String?> listen(String lang, {ValueChanged<String>? onPartial}) async {
+    _ready = _ready || await _speech.initialize(onStatus: _onStatus);
     if (!_ready) return null;
-    final Completer<String?> done = Completer<String?>();
-    String last = '';
+    final Completer<String?> done = _done = Completer<String?>();
+    _last = '';
     await _speech.listen(
       onResult: (SpeechRecognitionResult r) {
-        last = r.recognizedWords;
-        if (r.finalResult && !done.isCompleted) done.complete(last);
+        _last = r.recognizedWords;
+        onPartial?.call(_last);
+        if (r.finalResult) _finish();
       },
+      // Android da de -2 a 10 (dB aproximados): se pasa a 0..1.
+      onSoundLevelChange: (double db) =>
+          _level.value = ((db + 2) / 12).clamp(0.0, 1.0),
       listenOptions: SpeechListenOptions(
         partialResults: true,
         // No se fuerza "solo en el móvil": si el idioma no está instalado,
@@ -215,18 +258,33 @@ class DeviceSpeechInput implements SpeechInput {
         // idioma instalado en el móvil, funciona sin internet.
         onDevice: false,
         localeId: lang,
-        listenFor: const Duration(seconds: 30),
-        pauseFor: const Duration(seconds: 3),
+        listenMode: ListenMode.dictation,
+        listenFor: const Duration(seconds: 60),
+        pauseFor: const Duration(milliseconds: 1500),
       ),
     );
-    // Si el sistema se calla sin "resultado final", vale lo último oído.
     final String? heard = await done.future.timeout(
-      const Duration(seconds: 35),
-      onTimeout: () => last,
+      const Duration(seconds: 65),
+      onTimeout: () => _last,
     );
+    _level.value = 0;
+    _done = null;
     return heard == null || heard.trim().isEmpty ? null : heard.trim();
   }
 
+  /// "done" = el sistema ha dejado de escuchar del todo.
+  void _onStatus(String status) {
+    if (status == 'done') _finish();
+  }
+
+  void _finish() {
+    final Completer<String?>? c = _done;
+    if (c != null && !c.isCompleted) c.complete(_last);
+  }
+
   @override
-  Future<void> stop() => _speech.stop();
+  Future<void> stop() async {
+    _finish();
+    await _speech.stop();
+  }
 }

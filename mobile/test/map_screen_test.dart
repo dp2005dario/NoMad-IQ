@@ -237,6 +237,19 @@ void main() {
       g.calls.where((String c) => c == 'POST /v1/positions'),
       hasLength(1),
     );
+    // Andas 30 m: tu punto se desliza hasta allí (no salta de golpe).
+    final GeoPoint ahead = GeoPoint(solCenter.lat + 0.00027, solCenter.lon);
+    loc.fixes.add(
+      PositionFix(point: ahead, accuracyM: 5, recordedAt: DateTime.now()),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(map.me!.lat, greaterThan(solCenter.lat));
+    expect(map.me!.lat, lessThan(ahead.lat));
+    await tester.pump(const Duration(seconds: 1));
+    expect(map.me, ahead);
+    // La nueva posición sale en el siguiente lote (como mucho en 1 minuto).
+    await tester.pump(const Duration(minutes: 1));
   });
 
   testWidgets('tocar un aviso de audioguía abre la audioguía', (

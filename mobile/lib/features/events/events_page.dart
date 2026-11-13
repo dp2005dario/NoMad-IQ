@@ -59,6 +59,7 @@ String eventCat(EventKind k) => switch (k) {
   EventKind.sports => 'dep',
   EventKind.arts => 'tea',
   EventKind.family => 'fam',
+  EventKind.festival => 'fie',
   EventKind.other => 'otr',
 };
 
@@ -69,6 +70,7 @@ String eventIcon(EventKind k) => switch (k) {
   EventKind.sports => 'ball',
   EventKind.arts => 'masks',
   EventKind.family => 'bag',
+  EventKind.festival => 'masks',
   EventKind.other => 'ticket',
 };
 
@@ -136,6 +138,11 @@ String _price(CityEvent e) {
         ? 'Festivo solo en parte del país'
         : 'Festivo: algunas tiendas y museos pueden cerrar';
   }
+  if (e.kind == EventKind.festival) {
+    return e.url != null
+        ? 'Fiesta famosa de la ciudad: toca para leer de qué va'
+        : 'Fiesta famosa de la ciudad';
+  }
   final double? p = e.priceMin;
   final String? cur = e.currency;
   if (p == null || cur == null) return 'Precio en Ticketmaster';
@@ -149,6 +156,8 @@ String _price(CityEvent e) {
 
 (String, String) _status(CityEvent e) => e.kind == EventKind.holiday
     ? ('FESTIVO', '#3DDC97')
+    : e.kind == EventKind.festival
+    ? ('FIESTA FAMOSA', '#FF5FA2')
     : switch (e.status) {
         SaleStatus.onsale => ('A LA VENTA', '#6CA8FF'),
         SaleStatus.offsale => ('SIN VENTA AHORA', '#FFD27A'),
@@ -191,7 +200,11 @@ Map<String, Object?> eventsPageData({
         : '${city.isEmpty ? iata : city} · ${rangeText(from, to)}'
               '${hotel != null ? ' · cerca de tu hotel' : ''}',
     'src': sources.contains('Ticketmaster')
-        ? 'TICKETMASTER'
+        ? (sources.contains('Wikidata')
+              ? 'TICKETMASTER · WIKIDATA'
+              : 'TICKETMASTER')
+        : sources.contains('Wikidata')
+        ? 'FESTIVOS Y FIESTAS'
         : sources.isNotEmpty
         ? 'FESTIVOS OFICIALES'
         : '',
@@ -222,20 +235,28 @@ Map<String, Object?> eventsPageData({
             'ik': eventIcon(e.kind),
             'name': e.name,
             'when': <String>[
-              '${_weekdays[e.date.weekday - 1]} ${e.date.day}',
+              // "Durante junio": la fiesta es ese mes, sin día exacto.
+              if (e.monthOnly)
+                'Durante ${_months[e.date.month - 1]}'
+              else
+                '${_weekdays[e.date.weekday - 1]} ${e.date.day}',
               ?e.time,
               ?e.venue,
               ?near,
             ].join(' · '),
             'price': _price(e),
             'free': e.kind == EventKind.holiday,
-            'src': e.kind == EventKind.holiday
-                ? 'Festivo oficial'
-                : 'Ticketmaster',
+            'src': switch (e.kind) {
+              EventKind.holiday => 'Festivo oficial',
+              EventKind.festival => 'Wikidata',
+              _ => 'Ticketmaster',
+            },
             'stTxt': stTxt,
             'stCol': stCol,
             'start': start.millisecondsSinceEpoch,
             'url': e.url?.toString() ?? '',
+            'photo': e.image?.toString() ?? '',
+            'top': e.top,
           };
         }(),
     ],

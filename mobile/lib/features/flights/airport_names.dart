@@ -133,7 +133,7 @@ class AirportNames {
   /// Busca por ciudad, país, otro nombre o código. Primero lo que EMPIEZA
   /// por lo escrito; a igualdad, el aeropuerto más importante.
   List<AirportName> search(String query, {int limit = 8}) {
-    final String q = fold(query.trim());
+    final String q = withoutAirportWords(fold(query.trim()));
     if (q.isEmpty) return const <AirportName>[];
     final List<(int, AirportName)> hits = <(int, AirportName)>[];
     for (final AirportName a in all) {
@@ -148,6 +148,55 @@ class AirportNames {
       for (final (int, AirportName) h in hits.take(limit)) h.$2,
     ];
   }
+
+  /// Quita las palabras que la gente añade y no son el sitio: "aeropuerto
+  /// de Málaga", "malaga airport", "Flughafen München"... → "malaga".
+  /// Si solo queda eso (escribiste "aeropuerto"), se deja como está.
+  static String withoutAirportWords(String q) {
+    final List<String> words = q.split(RegExp(r'\s+'));
+    final List<String> kept = <String>[];
+    for (int i = 0; i < words.length; i++) {
+      if (!_airportWords.contains(words[i])) {
+        kept.add(words[i]);
+        continue;
+      }
+      // "aeropuerto DE Málaga": el "de" de detrás también sobra (pero el
+      // de "Río de Janeiro" no, porque no va detrás de "aeropuerto").
+      if (i + 1 < words.length && _joiners.contains(words[i + 1])) i++;
+    }
+    return kept.isEmpty ? q : kept.join(' ');
+  }
+
+  static const Set<String> _airportWords = <String>{
+    'aeropuerto',
+    'aeropuertos',
+    'airport',
+    'airports',
+    'aeroport',
+    'aeroporto',
+    'aeroporti',
+    'flughafen',
+    'luchthaven',
+    'lotnisko',
+    'havalimani',
+    'aeroportul',
+    'letiste',
+    'international',
+    'internacional',
+    'internazionale',
+    'intl',
+  };
+  static const Set<String> _joiners = <String>{
+    'de',
+    'del',
+    'of',
+    'di',
+    'da',
+    'do',
+    'du',
+    'von',
+    'van',
+  };
 
   /// 0 = el código exacto; 1 = la ciudad empieza así; 2 = otro nombre
   /// empieza así; 3 = el país empieza así; 4 = lo lleva dentro; -1 = no.

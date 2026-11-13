@@ -19,8 +19,10 @@ import 'package:intl/intl.dart';
 import 'package:timezone/data/latest_10y.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../core/config.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../flights/airport_names.dart';
+import '../flights/origin_sheet.dart';
 import '../flights/booking.dart';
 import '../flights/flight_format.dart';
 import '../money/currency_info.dart' show flagOf;
@@ -41,7 +43,14 @@ class FlightRouteScreen extends StatefulWidget {
     this.places,
     this.openLink = openInBrowser,
     this.scene3d,
+    this.tilesUrl,
+    this.glyphsUrl,
   });
+
+  /// De dónde salen las teselas del mapa de verdad y sus letras (por
+  /// defecto, las de la app: OpenFreeMap).
+  final Uri? tilesUrl;
+  final String? glyphsUrl;
 
   /// Códigos IATA ("MAD", "NRT"). Sin destino, primero se pregunta.
   final String from;
@@ -72,14 +81,17 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
   final WebSceneBridge _bridge = FlightRouteScreen.lastBridge =
       WebSceneBridge();
 
-  // La página se lee una vez y se guarda (como String, no como Future).
+  // La página (con la librería del mapa y la tierra) se hace una vez por
+  // idioma y se guarda (como String, no como Future).
   static String? _pageCache;
+  static String? _pageLang;
   String? _html;
   String? _sent;
 
   WorldData? _world;
   bool _failed = false;
   late String? _to = widget.to;
+  late String _from = widget.from;
 
   Airport? _origin;
   Airport? _dest;
@@ -108,12 +120,34 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
 
   Future<void> _load() async {
     try {
-      _pageCache ??= await rootBundle.loadString(routePage, cache: false);
       final WorldData world = await (widget.loadWorld ?? WorldData.load)();
+      if (!mounted) return;
+      final String lang = Localizations.localeOf(context).languageCode;
+      if (_pageCache == null || _pageLang != lang) {
+        final String page = await rootBundle.loadString(
+          routePage,
+          cache: false,
+        );
+        final String lib = await rootBundle.loadString(
+          routeMapLib,
+          cache: false,
+        );
+        _pageCache = routePageWithMap(page, lib, <String, Object?>{
+          'style': routeMapStyle(
+            tilesUrl: widget.tilesUrl ?? AppConfig.tilesUrl,
+            glyphsUrl: widget.glyphsUrl ?? AppConfig.glyphsUrl,
+            language: lang,
+          ),
+          'land': landGeoJson(world.shapes),
+        });
+        _pageLang = lang;
+      }
       if (!mounted) return;
       _world = world;
       _setRoute();
-      if (_to == null && mounted) {
+      if (mounted && world.airports[_from] == null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _askOrigin());
+      } else if (_to == null && mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) => _askDestination());
       }
     } catch (_) {
@@ -142,7 +176,7 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
   void _setRoute() {
     final WorldData? world = _world;
     if (world == null) return;
-    final Airport? origin = world.airports[widget.from];
+    final Airport? origin = world.airports[_from];
     final Airport? dest = _to == null ? null : world.airports[_to!];
     setState(() {
       _origin = origin;
@@ -267,20 +301,50 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
     setState(() => _arrive++);
   }
 
+  /// ¿A dónde vuelas? Se escribe la ciudad ("Málaga", "aeropuerto de
+  /// Málaga"), como en el buscador de vuelos; el código también vale.
   Future<void> _askDestination() async {
     final WorldData? world = _world;
     if (world == null) return;
-    final String? code = await showModalBottomSheet<String>(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (BuildContext sheet) =>
-          _DestinationSheet(airports: world.airports, exclude: widget.from),
+    final AppLocalizations t = AppLocalizations.of(context);
+    final String? code = await showOriginSheet(
+      context,
+      current: _to ?? '',
+      title: t.routePickDestination,
     );
     if (code == null || !mounted) return;
+    if (world.airports[code] == null || code == _from) {
+      _unknown();
+      return;
+    }
     _to = code;
     _setRoute();
+  }
+
+  /// ¿Desde dónde sales? (igual, por nombre).
+  Future<void> _askOrigin() async {
+    final WorldData? world = _world;
+    if (world == null) return;
+    final AppLocalizations t = AppLocalizations.of(context);
+    final String? code = await showOriginSheet(
+      context,
+      current: _from,
+      title: t.flightsOriginTitle,
+    );
+    if (code == null || !mounted) return;
+    if (world.airports[code] == null || code == _to) {
+      _unknown();
+      return;
+    }
+    _from = code;
+    _setRoute();
+    if (_to == null && mounted) unawaited(_askDestination());
+  }
+
+  void _unknown() {
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      SnackBar(content: Text(AppLocalizations.of(context).routeUnknownAirport)),
+    );
   }
 
   /// Lo que pide la página.
@@ -291,6 +355,8 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
         unawaited(Navigator.of(context).maybePop());
       case 'pick':
         unawaited(_askDestination());
+      case 'pickO':
+        unawaited(_askOrigin());
       case 'fly3d':
         unawaited(_fly3d());
       case 'more' when p.length > 1:
@@ -381,6 +447,22 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
       'worldLbl': t.routeWorld,
       'followLbl': t.routeFollowing,
       'path': mapPath(_route),
+      // El camino de verdad para el mapa: [longitud, latitud] (si cruza el
+      // meridiano 180 la longitud sigue de largo, y el mapa lo entiende).
+      'route': <List<double>>[
+        for (final LatLon p in _route)
+          <double>[
+            double.parse(p.lon.toStringAsFixed(3)),
+            double.parse(p.lat.toStringAsFixed(3)),
+          ],
+      ],
+      'speedTxt': t.routeSpeed,
+      'altTxt': t.routeAltitude,
+      'changeOTxt': t.routeChangeOrigin,
+      'changeDTxt': t.routeChangeDest,
+      'nightTxt': t.routeNightThere,
+      'takeoffTxt': d == null ? '' : t.routeTakeOff(_city(d)),
+      'arrivedTxt': d == null ? '' : t.routeArrived(_city(d)),
       'o': o == null
           ? null
           : <String, Object?>{
@@ -389,6 +471,8 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
                 'y': mapPoint(o.position)[1],
               },
               // El nombre del aeropuerto (no el código) y su bandera debajo.
+              'lat': o.position.lat,
+              'lon': o.position.lon,
               'lbl': t.routeAirportOf(_city(o)),
               'flag': _flag(o),
               'aria': t.placeAbout(_city(o)),
@@ -404,6 +488,8 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
                       ? 0
                       : mapPoint(_route.last)[0] - mapPoint(d.position)[0]),
               'y': mapPoint(d.position)[1],
+              'lat': d.position.lat,
+              'lon': _route.isEmpty ? d.position.lon : _route.last.lon,
               'lbl': t.routeAirportOf(_city(d)),
               'flag': _flag(d),
               'aria': t.placeAbout(_city(d)),
@@ -536,73 +622,5 @@ class _FlightRouteScreenState extends State<FlightRouteScreen> {
     } on tz.LocationNotFoundException {
       return null;
     }
-  }
-}
-
-/// Hoja para escribir el aeropuerto de destino.
-class _DestinationSheet extends StatefulWidget {
-  const _DestinationSheet({required this.airports, required this.exclude});
-
-  final Airports airports;
-  final String exclude;
-
-  @override
-  State<_DestinationSheet> createState() => _DestinationSheetState();
-}
-
-class _DestinationSheetState extends State<_DestinationSheet> {
-  final TextEditingController _code = TextEditingController();
-  bool _invalid = false;
-
-  @override
-  void dispose() {
-    _code.dispose();
-    super.dispose();
-  }
-
-  void _save() {
-    final String code = _code.text.trim().toUpperCase();
-    if (widget.airports[code] == null || code == widget.exclude) {
-      setState(() => _invalid = true);
-      return;
-    }
-    Navigator.pop(context, code);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations t = AppLocalizations.of(context);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        0,
-        20,
-        20 + MediaQuery.viewInsetsOf(context).bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            t.routePickDestination,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _code,
-            autofocus: true,
-            maxLength: 3,
-            textCapitalization: TextCapitalization.characters,
-            decoration: InputDecoration(
-              labelText: t.routeDestinationHint,
-              errorText: _invalid ? t.routeUnknownAirport : null,
-            ),
-            onSubmitted: (_) => _save(),
-          ),
-          const SizedBox(height: 8),
-          FilledButton(onPressed: _save, child: Text(t.routeShowRoute)),
-        ],
-      ),
-    );
   }
 }

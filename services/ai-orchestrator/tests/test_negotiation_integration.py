@@ -143,10 +143,9 @@ async def test_sweep_handles_deadlines_and_dead_workers(pool: asyncpg.Pool[async
     a_id = (await store.create(draft(*a))).negotiation_id
     for m in a[:2]:
         await store.submit_preferences(a_id, m, PREFS)
-    # B: 1 de 2 listo -> caduca y se borran sus preferencias.
+    # B: 0 de 2 listos -> caduca (y no queda ninguna preferencia).
     b = people(2)
     b_id = (await store.create(draft(*b))).negotiation_id
-    await store.submit_preferences(b_id, b[0], PREFS)
     await pool.execute(
         "UPDATE ai.group_negotiations SET deadline = now() - interval '1 minute' "
         "WHERE negotiation_id = ANY($1::uuid[])",
@@ -210,15 +209,18 @@ async def test_invites_join_and_start(pool: asyncpg.Pool[asyncpg.Record]) -> Non
         await store.join(code, friends[-1], None)
 
 
-async def test_start_needs_two_ready(pool: asyncpg.Pool[asyncpg.Record]) -> None:
+async def test_start_needs_someone_ready(pool: asyncpg.Pool[asyncpg.Record]) -> None:
     store = PostgresNegotiations(pool, requests_topic=REQUESTS)
     organizer, friend = people(2)
     created = await store.create(replace(draft(organizer), invites_open=True))
     assert created.invite_code is not None
     await store.join(created.invite_code, friend, None)
-    await store.submit_preferences(created.negotiation_id, organizer, PREFS)
     with pytest.raises(NotEnoughReadyError):
         await store.start(created.negotiation_id, organizer)
+    # Con tus gustos enviados basta (Flyra hace de compañera).
+    await store.submit_preferences(created.negotiation_id, organizer, PREFS)
+    started = await store.start(created.negotiation_id, organizer)
+    assert started.status is Status.QUEUED
 
 
 async def test_end_to_end_through_kafka(pool: asyncpg.Pool[asyncpg.Record]) -> None:

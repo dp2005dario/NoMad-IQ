@@ -25,6 +25,7 @@ import '../../core/services.dart';
 import '../../core/theme.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../easy/easy_mode.dart';
+import '../flights/airport_names.dart';
 import '../map/geo.dart';
 import '../map/location.dart';
 import '../route/geo.dart' show LatLon;
@@ -155,6 +156,9 @@ class _AirportScreenState extends State<AirportScreen> {
 
   /// El nombre del aeropuerto para arriba ("Madrid · MAD").
   String? _place;
+
+  /// Los aeropuertos que encajan con lo que escribes ("mala" → Málaga).
+  List<AirportName> _hits = const <AirportName>[];
   final TurnAnnouncer _announcer = TurnAnnouncer();
 
   @override
@@ -192,7 +196,11 @@ class _AirportScreenState extends State<AirportScreen> {
 
   Future<void> _start() async {
     final LocationSource gps = _services.location;
-    final LocationAccess access = await gps.check();
+    LocationAccess access = await gps.check();
+    // Aquí se ve claro para qué es la ubicación (las flechas hasta tu
+    // puerta): se pregunta nada más entrar, sin botón "Activar ubicación".
+    // Si dijiste "no volver a preguntar" o el GPS está apagado, se avisa.
+    if (access == LocationAccess.denied) access = await gps.request();
     if (!mounted) return;
     setState(() => _access = access);
     if (access == LocationAccess.granted) _listen();
@@ -210,8 +218,9 @@ class _AirportScreenState extends State<AirportScreen> {
     }
     if (iata == null && access == LocationAccess.granted) {
       try {
-        final PositionFix fix = await gps.watch().first.timeout(
-          const Duration(seconds: 8),
+        final PositionFix fix = await positionNow(
+          gps,
+          wait: const Duration(seconds: 8),
         );
         final Airports airports = await _services.loadAirports();
         final Airport? a = nearestAirport(
@@ -248,10 +257,39 @@ class _AirportScreenState extends State<AirportScreen> {
     if (a == LocationAccess.granted) _listen();
   }
 
+  /// Mientras escribes: los aeropuertos que encajan, por ciudad, nombre,
+  /// país o código ("Málaga", "aeropuerto de Málaga", "AGP").
+  Future<void> _type(String v) async {
+    final AirportNames names = await AirportNames.load();
+    if (!mounted || _code.text != v) return;
+    setState(() => _hits = names.search(v, limit: 4));
+  }
+
+  /// Al darle a "Ir": el primero de la lista (o el código si lo es).
+  Future<void> _go(String v) async {
+    final String code = v.trim().toUpperCase();
+    final AirportNames names = await AirportNames.load();
+    if (!mounted) return;
+    if (RegExp(r'^[A-Z]{3}$').hasMatch(code) && names[code] != null) {
+      await _open(code);
+      return;
+    }
+    final List<AirportName> hits = names.search(v, limit: 1);
+    if (hits.isNotEmpty) {
+      await _open(hits.first.iata);
+    } else if (RegExp(r'^[A-Z]{3}$').hasMatch(code)) {
+      await _open(code);
+    } else {
+      setState(() => _unknown = true);
+    }
+  }
+
   Future<void> _open(String raw) async {
     final String iata = raw.trim().toUpperCase();
     if (!RegExp(r'^[A-Z]{3}$').hasMatch(iata)) return;
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
+      _hits = const <AirportName>[];
       _iata = iata;
       _code.text = iata;
       _loading = true;
@@ -357,7 +395,7 @@ class _AirportScreenState extends State<AirportScreen> {
         _unknown
             ? t.airportUnknown
             : _error == null
-            ? 'Escribe abajo su código de 3 letras'
+            ? 'Escribe abajo su ciudad o su nombre'
             : _error == ApiError.unavailable
             ? t.airportBusy
             : _error == ApiError.network
@@ -521,14 +559,27 @@ class _AirportScreenState extends State<AirportScreen> {
                         : _target == SpotKind.gate
                         ? _gate
                         : null,
-                    fieldHint: g == null ? 'MAD' : 'K42',
+                    fieldHint: g == null ? 'Málaga' : 'K42',
                     onField: (String v) {
                       if (g == null) {
-                        unawaited(_open(v));
+                        unawaited(_go(v));
                       } else {
                         _retarget(SpotKind.gate);
                       }
                     },
+                    onType: g == null
+                        ? (String v) => unawaited(_type(v))
+                        : null,
+                    picks: g == null
+                        ? <(String, String, VoidCallback)>[
+                            for (final AirportName a in _hits)
+                              (
+                                a.city,
+                                '${a.country} · ${a.iata}',
+                                () => unawaited(_open(a.iata)),
+                              ),
+                          ]
+                        : const <(String, String, VoidCallback)>[],
                     name: spot == null
                         ? ''
                         : spot.kind == SpotKind.gate
@@ -1368,9 +1419,17 @@ class _Destination extends StatelessWidget {
     required this.target,
     required this.onStop,
     required this.credits,
+    this.onType,
+    this.picks = const <(String, String, VoidCallback)>[],
   });
 
   final String kind;
+
+  /// Mientras escribes el aeropuerto (para las sugerencias).
+  final ValueChanged<String>? onType;
+
+  /// Las sugerencias: ciudad, "país · código" y qué hacer al tocarla.
+  final List<(String, String, VoidCallback)> picks;
 
   /// Para escribir el aeropuerto o tu puerta (null = no se escribe).
   final TextEditingController? field;
@@ -1428,9 +1487,11 @@ class _Destination extends StatelessWidget {
                       TextField(
                         controller: f,
                         style: big,
-                        textCapitalization: TextCapitalization.characters,
+                        textCapitalization: onType != null
+                            ? TextCapitalization.words
+                            : TextCapitalization.characters,
                         textInputAction: TextInputAction.go,
-                        onChanged: kind == 'TU AEROPUERTO' ? null : onField,
+                        onChanged: onType ?? onField,
                         onSubmitted: onField,
                         decoration: InputDecoration(
                           hintText: fieldHint,
@@ -1478,6 +1539,48 @@ class _Destination extends StatelessWidget {
               ),
             ],
           ),
+          for (final (String city, String where, VoidCallback pick) in picks)
+            Semantics(
+              button: true,
+              child: InkWell(
+                onTap: pick,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: <Widget>[
+                      const Icon(
+                        Icons.flight_takeoff_rounded,
+                        size: 18,
+                        color: _accent,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          city,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: 'Manrope',
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: _ink,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        where,
+                        style: const TextStyle(
+                          fontFamily: 'Manrope',
+                          fontSize: 12,
+                          color: Color(0xFF9FB0B8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           const SizedBox(height: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),

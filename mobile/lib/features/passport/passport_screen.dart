@@ -133,7 +133,7 @@ class _PassportScreenState extends State<PassportScreen> {
       case 'memories':
         unawaited(context.push(Routes.memories));
       case 'camera':
-        context.go(Routes.camera);
+        context.go(Routes.cameraScan);
       case 'listen' when s != null:
         unawaited(_listen(s));
       case 'stop':

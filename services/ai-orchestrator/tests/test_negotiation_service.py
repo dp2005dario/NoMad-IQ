@@ -12,14 +12,19 @@ from conftest import FIXED_NOW, FakeLLM, InMemoryNegotiations, negotiation_turn_
 from ai_orchestrator.events import InvalidEventError
 from ai_orchestrator.negotiation.agents import AgentSettings
 from ai_orchestrator.negotiation.consumer import NegotiationRequestConsumer
-from ai_orchestrator.negotiation.domain import GroupOption, MemberPreferences, Outcome, Status
+from ai_orchestrator.negotiation.domain import GroupOption, MemberPreferences, Outcome, Status, TripRules
 from ai_orchestrator.negotiation.events import (
     CONCLUDED_TYPE,
     REQUESTED_TYPE,
     decode_request,
     request_message,
 )
-from ai_orchestrator.negotiation.service import NegotiationService, NegotiationSettings, RunOutcome
+from ai_orchestrator.negotiation.service import (
+    NegotiationService,
+    NegotiationSettings,
+    RunOutcome,
+    with_rules,
+)
 from ai_orchestrator.negotiation.store import NewNegotiation
 from ai_orchestrator.pseudonym import Pseudonymizer
 from nomadiq.ai.v1 import negotiation_pb2
@@ -235,16 +240,41 @@ async def test_consumer_runs_orders_and_dead_letters_garbage() -> None:
     assert dict(producer.sent[0]["headers"])["dlq_reason"]
 
 
-async def test_a_queue_without_enough_people_expires() -> None:
+async def test_one_person_travels_with_flyra() -> None:
     store = InMemoryNegotiations()
     negotiation_id = await queued(
         store, MemberPreferences(budget_max_minor=100000), MemberPreferences(budget_max_minor=100000)
     )
-    # Simula una orden que llega con un solo miembro con preferencias.
+    # Solo una persona mandó sus gustos: Flyra hace de compañera y sale plan.
     record = store.records[negotiation_id]
     store.records[negotiation_id] = replace(
         record, members=(record.members[0], replace(record.members[1], preferences=None))
     )
+    assert await service(store).run(negotiation_id) is RunOutcome.CONCLUDED
+    result = store.records[negotiation_id].result
+    assert result is not None
+    # El plan es tuyo: Flyra no sale como miembro del resultado.
+    assert [m.alias for m in result.members] == [record.members[0].alias]
+
+
+async def test_a_queue_without_anyone_expires() -> None:
+    store = InMemoryNegotiations()
+    negotiation_id = await queued(
+        store, MemberPreferences(budget_max_minor=100000), MemberPreferences(budget_max_minor=100000)
+    )
+    record = store.records[negotiation_id]
+    store.records[negotiation_id] = replace(
+        record, members=tuple(replace(m, preferences=None) for m in record.members)
+    )
     assert await service(store).run(negotiation_id) is RunOutcome.EXPIRED
     assert store.records[negotiation_id].status is Status.EXPIRED
     assert all(m.preferences is None for m in store.records[negotiation_id].members)
+
+
+def test_group_rules_apply_to_everyone() -> None:
+    prefs = MemberPreferences(budget_max_minor=100000, interests=("nightlife", "beach"), avoid=("crowds",))
+    out = with_rules(prefs, TripRules(max_price_minor=50000, avoid=("nightlife", "early-starts")))
+    assert out.budget_max_minor == 50000
+    assert out.avoid == ("crowds", "nightlife", "early-starts")
+    assert out.interests == ("beach",)
+    assert with_rules(prefs, None) is prefs

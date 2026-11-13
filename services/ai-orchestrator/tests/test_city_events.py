@@ -127,6 +127,28 @@ def test_parsers_keep_only_real_fields() -> None:
     assert parse_ticketmaster({}) == []
 
 
+def test_ticketmaster_photo_and_famous_first() -> None:
+    images = [
+        {"ratio": "3_2", "url": "https://s1.ticketm.net/a_3_2.jpg", "width": 640},
+        {"ratio": "16_9", "url": "https://s1.ticketm.net/a_16_9_small.jpg", "width": 205},
+        {"ratio": "16_9", "url": "https://s1.ticketm.net/a_16_9.jpg", "width": 1024},
+        {"ratio": "16_9", "url": "https://s1.ticketm.net/a_16_9_huge.jpg", "width": 2048},
+        {"ratio": "16_9", "url": "http://inseguro/x.jpg", "width": 800},
+    ]
+    rows = [tm_event("f", "2026-06-12", images=images)]
+    rows += [tm_event(f"r{i}", "2026-06-12") for i in range(20)]
+    small = [{"ratio": "4_3", "url": "https://x/y.jpg", "width": 305}]
+    rows.append(tm_event("o", "2026-06-12", images=small))
+    ev = parse_ticketmaster({"_embedded": {"events": rows}})
+    # La foto 16:9 que se ve bien y pesa poco (ni la enorme ni la http).
+    assert ev[0].image == "https://s1.ticketm.net/a_16_9.jpg"
+    # Sin 16:9 grande: la más ancha que haya; sin fotos: nada (sale el dibujo).
+    assert ev[-1].image == "https://x/y.jpg"
+    assert ev[1].image is None
+    # Los primeros por relevancia son "de los más conocidos".
+    assert ev[0].top and ev[14].top and not ev[15].top
+
+
 def test_ticketmaster_status_and_place() -> None:
     ev = parse_ticketmaster(
         {
@@ -251,3 +273,90 @@ async def test_api_is_public() -> None:
                 "/v1/events", params={"iata": "LISBOA", "from": "2026-06-10", "to": "2026-06-14"}
             )
         ).status_code in (400, 422)
+
+
+# --- Fiestas famosas de Wikidata -------------------------------------------------
+
+
+def wd_row(qid: str, label: str, links: int, **extra: str) -> dict[str, Any]:
+    row: dict[str, Any] = {
+        "item": {"value": f"http://www.wikidata.org/entity/{qid}"},
+        "itemLabel": {"value": label},
+        "links": {"value": str(links)},
+    }
+    for k, v in extra.items():
+        row[k] = {"value": v}
+    return row
+
+
+WD = {
+    "results": {
+        "bindings": [
+            # Santo António: cada año en junio (Q120), muy conocida.
+            wd_row(
+                "Q1",
+                "Fiestas de San Antonio",
+                40,
+                month="http://www.wikidata.org/entity/Q120",
+                article="https://es.wikipedia.org/wiki/Fiestas",
+            ),
+            wd_row("Q2", "Rock in Rio Lisboa 2026", 5, start="2026-06-20T00:00:00Z"),
+            wd_row("Q3", "Q3", 9, start="2026-06-21T00:00:00Z"),  # sin nombre: fuera
+            wd_row("Q4", "Fiesta de diciembre", 9, month="http://www.wikidata.org/entity/Q126"),
+            wd_row("Q5", "Mala fecha", 9, start="nada"),
+        ]
+    }
+}
+
+
+def test_wikidata_festivals_query_and_parse() -> None:
+    from ai_orchestrator.city_events.festivals import build_query, parse_festivals
+
+    q = build_query(38.774, -9.134, "es")
+    assert '"Point(-9.1340 38.7740)"' in q and "https://es.wikipedia.org/" in q
+    with pytest.raises(ValueError):
+        build_query(1, 1, 'es"')
+    got = parse_festivals(WD)
+    assert [e.id for e in got] == ["w-Q1-m6", "w-Q2-2026-06-20", "w-Q4-m12"]
+    assert got[0].month_only and got[0].top and got[0].kind == "festival"
+    assert got[0].url == "https://es.wikipedia.org/wiki/Fiestas"
+    assert not got[1].month_only and not got[1].top
+
+
+async def test_famous_festivals_join_the_city_events() -> None:
+    from ai_orchestrator.city_events.festivals import WikidataFestivals
+
+    fake = Fake()
+    asked: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "query.wikidata.org":
+            asked.append(request)
+            return httpx.Response(200, json=WD)
+        return fake.handler(request)
+
+    http = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    cache = MemoryCache()
+    svc = CityEventService(
+        airports=AIRPORTS,
+        countries=COUNTRIES,
+        holidays=NagerClient(
+            http, limiter=RateLimiter(1000, 1000), url="https://nager.test/api/v3/PublicHolidays"
+        ),
+        festivals=WikidataFestivals(http),
+        cache=cache,
+    )
+    got = await svc.between("LIS", date(2026, 6, 15), date(2026, 6, 25), today=TODAY, lang="es")
+    fest = [e for e in got.events if e.kind == "festival"]
+    # La de junio sale el primer día de tus fechas (y la app dice "en junio");
+    # la de diciembre, no.
+    assert [(e.name, e.date) for e in fest] == [
+        ("Fiestas de San Antonio", date(2026, 6, 15)),
+        ("Rock in Rio Lisboa 2026", date(2026, 6, 20)),
+    ]
+    assert fest[0].month_only and fest[0].id == "w-Q1-m6-2026"
+    assert "Wikidata" in got.sources
+    assert cache.ttls["wd:LIS:es"] == 30 * 24 * 3600
+    # La segunda vez, de la caché.
+    await svc.between("LIS", date(2026, 6, 15), date(2026, 6, 25), today=TODAY, lang="es")
+    assert len(asked) == 1

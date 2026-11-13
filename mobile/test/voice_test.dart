@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/core/router.dart';
@@ -18,11 +19,16 @@ class FakeMic implements SpeechInput {
   final List<String> heard = <String>[];
 
   @override
-  Future<String?> listen(String lang) async =>
-      heard.isEmpty ? null : heard.removeAt(0);
+  Future<String?> listen(
+    String lang, {
+    ValueChanged<String>? onPartial,
+  }) async => heard.isEmpty ? null : heard.removeAt(0);
 
   @override
   Future<void> stop() async {}
+
+  @override
+  ValueListenable<double> get level => ValueNotifier<double>(0);
 }
 
 class FakeSpeaker implements Speaker {

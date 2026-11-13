@@ -101,6 +101,8 @@ class NearHotel {
     required this.kind,
     required this.point,
     this.stars,
+    this.phone,
+    this.website,
   });
 
   /// El id de OpenStreetMap ("n123"): con él se pide su foto.
@@ -112,6 +114,10 @@ class NearHotel {
   final GeoPoint point;
   final int? stars;
 
+  /// Su teléfono y su web (de OpenStreetMap), si los tiene.
+  final String? phone;
+  final Uri? website;
+
   static NearHotel? parse(Object? json) {
     if (json is! Map<String, Object?>) return null;
     final Object? id = json['id'];
@@ -120,6 +126,9 @@ class NearHotel {
     final Object? lat = json['lat'];
     final Object? lon = json['lon'];
     final Object? stars = json['stars'];
+    final Object? phone = json['phone'];
+    final Object? web = json['website'];
+    final Uri? site = web is String ? Uri.tryParse(web) : null;
     if (id is! String ||
         !RegExp(r'^[nwr][1-9][0-9]{0,15}$').hasMatch(id) ||
         name is! String ||
@@ -135,6 +144,14 @@ class NearHotel {
       kind: kind,
       point: GeoPoint(lat.toDouble(), lon.toDouble()),
       stars: stars is int && stars >= 1 && stars <= 5 ? stars : null,
+      // Solo números, espacios, +, -, () y /: nada raro en el marcador.
+      phone:
+          phone is String && RegExp(r'^\+?[0-9 ()./-]{6,25}$').hasMatch(phone)
+          ? phone
+          : null,
+      website: site != null && site.scheme == 'https' && site.host.isNotEmpty
+          ? site
+          : null,
     );
   }
 }
@@ -186,7 +203,7 @@ class StaysApi {
         '/v1/stays',
         query: <String, String>{'lat': '$lat', 'lon': '$lon'},
         public: true,
-        timeout: ApiClient.slow,
+        timeout: ApiClient.verySlow,
       ),
     );
   }

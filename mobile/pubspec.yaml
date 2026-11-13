@@ -63,6 +63,7 @@ dependencies:
   # Abre la cámara (o la galería) del sistema para hacer la foto del ticket.
   image_picker: ^1.2.4
   local_auth: ^3.0.2
+  local_auth_android: ^2.3.0
   file_picker: ^13.1.0
   pdfx: ^2.11.0
   path_provider: ^2.1.6
@@ -91,6 +92,7 @@ dependencies:
   google_mlkit_barcode_scanning: ^0.16.1
   qr_flutter: ^4.1.0
   flutter_native_contact_picker: ^0.0.13
+  get_thumbnail_video: ^0.7.3
 
 dev_dependencies:
   flutter_test:
@@ -139,6 +141,9 @@ flutter:
     - assets/radar/radar.html
     - assets/memories/recuerdos.html
     - assets/route/ruta.html
+    # El mapa de verdad de la Ruta del vuelo (MapLibre GL JS 5.24.0, BSD-3).
+    - assets/route/maplibre-gl.js
+    - assets/route/LICENSE-maplibre.txt
     - assets/offline/sinconexion.html
     - assets/travel_with/viajocon.html
     - assets/visa/visado.html

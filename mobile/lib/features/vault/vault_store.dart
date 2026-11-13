@@ -17,6 +17,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:local_auth_android/local_auth_android.dart';
 import 'package:path_provider/path_provider.dart';
 
 /// La llave (32 bytes al azar) en la caja fuerte del móvil.
@@ -155,7 +156,17 @@ class DeviceUnlocker implements Unlocker {
     try {
       if (!await _auth.isDeviceSupported()) return UnlockResult.unavailable;
       // biometricOnly: false → si no hay huella, vale el PIN del móvil.
-      final bool ok = await _auth.authenticate(localizedReason: reason);
+      // La ventana del sistema no se puede quitar (Android la exige para la
+      // huella), pero sí cambiar su título: "ECLIPTA" en vez del
+      // "Authentication required" de siempre. sensitiveTransaction: false
+      // → en cuanto te reconoce, entra (sin botón "Confirmar").
+      final bool ok = await _auth.authenticate(
+        localizedReason: reason,
+        authMessages: const <AuthMessages>[
+          AndroidAuthMessages(signInTitle: 'ECLIPTA', signInHint: ''),
+        ],
+        sensitiveTransaction: false,
+      );
       return ok ? UnlockResult.ok : UnlockResult.cancelled;
     } on LocalAuthException catch (e) {
       return e.code == LocalAuthExceptionCode.noCredentialsSet ||

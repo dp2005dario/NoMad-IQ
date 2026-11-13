@@ -20,7 +20,7 @@ from ai_orchestrator.stays.domain import Lodging, Station, StayArea, build_zones
 
 log = logging.getLogger(__name__)
 
-KEY_PREFIX = "ai:stays:v1"
+KEY_PREFIX = "ai:stays:v2"  # v2: los hoteles traen teléfono y web
 
 
 class StaySource(Protocol):

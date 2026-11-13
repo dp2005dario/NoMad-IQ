@@ -306,6 +306,7 @@ class InMemoryNegotiations:
             ),
             invites_open=draft.invites_open,
             invite_code=new_invite_code() if draft.invites_open else None,
+            rules=draft.rules,
         )
         self.records[negotiation_id] = record
         return record
@@ -341,7 +342,7 @@ class InMemoryNegotiations:
             raise NotOrganizerError(negotiation_id)
         if record.status is not Status.COLLECTING or record.deadline < self.now:
             raise NegotiationClosedError(negotiation_id)
-        if sum(1 for m in record.members if m.submitted_at) < 2:
+        if sum(1 for m in record.members if m.submitted_at) < 1:
             raise NotEnoughReadyError(negotiation_id)
         return self._queue(record)
 

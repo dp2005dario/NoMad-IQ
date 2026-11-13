@@ -256,6 +256,26 @@ class Vault extends ChangeNotifier {
     return UnlockResult.ok;
   }
 
+  int _away = 0;
+
+  /// La app se fue un momento a la cámara, la galería o los archivos del
+  /// móvil (para guardar algo en la Bóveda): eso no cuenta como salir.
+  bool get away => _away > 0;
+
+  /// Hace [task] (abrir la cámara, la galería o un PDF) sin que la Bóveda se
+  /// cierre mientras tanto: ni por salir de la app ni por el reloj de 2
+  /// minutos. Al volver, los 2 minutos empiezan de nuevo.
+  Future<T> whileAway<T>(Future<T> Function() task) async {
+    _away++;
+    _timer?.cancel();
+    try {
+      return await task();
+    } finally {
+      _away--;
+      touch();
+    }
+  }
+
   /// Cierra y olvida la llave de la memoria.
   void close() {
     _timer?.cancel();

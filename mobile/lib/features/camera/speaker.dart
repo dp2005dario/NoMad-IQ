@@ -18,10 +18,56 @@ class DeviceSpeaker implements Speaker {
 
   final FlutterTts _tts = FlutterTts();
 
+  /// La mejor voz encontrada para cada idioma (se busca una vez).
+  final Map<String, Map<String, String>?> _best =
+      <String, Map<String, String>?>{};
+
   @override
   Future<void> speak(String text, String language) async {
     await _tts.setLanguage(language);
+    final Map<String, String>? voice = _best.containsKey(language)
+        ? _best[language]
+        : _best[language] = await _bestVoice(language);
+    if (voice != null) {
+      try {
+        await _tts.setVoice(voice);
+      } on Object {
+        // Si no la acepta, la de siempre.
+      }
+    }
     await _tts.speak(text);
+  }
+
+  /// La voz más natural del móvil para ese idioma: las "neuronales" de
+  /// Google tienen calidad 400-500 (las normales, 300). Se prefieren las
+  /// que funcionan sin internet.
+  Future<Map<String, String>?> _bestVoice(String language) async {
+    try {
+      final Object? raw = await _tts.getVoices;
+      if (raw is! List) return null;
+      Map<String, String>? best;
+      int bestScore = -1;
+      for (final Object? v in raw) {
+        if (v is! Map) continue;
+        final String name = '${v['name'] ?? ''}';
+        final String locale = '${v['locale'] ?? ''}'.replaceAll('_', '-');
+        if (name.isEmpty || !locale.toLowerCase().startsWith(language)) {
+          continue;
+        }
+        final int quality = int.tryParse('${v['quality'] ?? ''}') ?? 300;
+        final bool network =
+            '${v['network_required'] ?? ''}' == '1' ||
+            name.toLowerCase().contains('network');
+        final int score = quality + (network ? 0 : 50);
+        if (score > bestScore) {
+          bestScore = score;
+          best = <String, String>{'name': name, 'locale': locale};
+        }
+      }
+      return best;
+    } on Object {
+      return null;
+    }
   }
 
   @override

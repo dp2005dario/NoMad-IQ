@@ -29,6 +29,11 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 # 10 opciones ya es mucho trabajo para un LLM local, y estos números acotan
 # cuántas llamadas al modelo puede provocar UNA petición (rondas x miembros).
 MIN_MEMBERS = 2
+# Para EMPEZAR basta una persona: si va sola, Flyra hace de compañera de
+# viaje (un agente más que quiere lo mismo que ella) y la negociación sale
+# igual, con su plan.
+MIN_READY_TO_START = 1
+FLYRA_ALIAS = "Flyra"
 MAX_MEMBERS = 8
 MIN_OPTIONS = 2
 MAX_OPTIONS = 10
@@ -98,6 +103,18 @@ class GroupOption(BaseModel):
     price_minor: int = Field(gt=0, le=100_000_000)
     # Qué ofrece la opción: "playa", "museos", "fiesta", "montaña"...
     tags: Tags = ()
+
+
+class TripRules(BaseModel):
+    """Reglas del organizador para TODO el grupo ("máx. 500 € por persona",
+    "nada de madrugones"). Son públicas: las ve todo el grupo."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    # Precio máximo por persona (céntimos). Ninguna opción puede pasarse.
+    max_price_minor: int | None = Field(default=None, gt=0, le=100_000_000)
+    # Lo que nadie quiere: se suma a lo que evita cada uno.
+    avoid: Tags = ()
 
 
 class MemberPreferences(BaseModel):

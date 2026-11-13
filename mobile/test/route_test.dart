@@ -200,29 +200,52 @@ void main() {
     expect(fact(spy, 'dp', 'Hora'), contains('h más que New York'));
   });
 
-  testWidgets('sin destino: se pregunta y se valida', (
+  testWidgets('sin destino: se pregunta por NOMBRE (no por código)', (
     WidgetTester tester,
   ) async {
     final m.PageSpy spy = await pumpRoute(tester, to: null);
     await tester.pumpAndSettle();
-    expect(
-      find.text('Código del aeropuerto de destino (p. ej. NRT)'),
-      findsOneWidget,
-    );
+    expect(find.text('¿A dónde vuelas?'), findsOneWidget);
     expect(routeData(spy)['d'], isNull);
-    await tester.enterText(find.byType(TextField), 'zzz');
-    await tester.tap(find.text('Ver ruta'));
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(find.textContaining('No conocemos ese aeropuerto'), findsOneWidget);
-    await tester.enterText(find.byType(TextField), 'lis');
-    await tester.tap(find.text('Ver ruta'));
+    // Como en el buscador de vuelos: "aeropuerto de malaga" es Málaga.
+    await tester.enterText(find.byType(TextField), 'aeropuerto de malaga');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Málaga').first);
+    await tester.pump(const Duration(milliseconds: 1500));
+    expect(routeData(spy)['title'], 'Madrid → Málaga');
+    // El camino de verdad para el mapa: [longitud, latitud].
+    final List<Object?> rt = routeData(spy)['route']! as List<Object?>;
+    expect((rt.first! as List<Object?>)[1], closeTo(40.47, 0.01));
+
+    // "Cambiar destino" en la página vuelve a abrir la hoja.
+    spy.to('ECLIPTA · Ruta del vuelo')('pick');
+    await tester.pumpAndSettle();
+    expect(find.text('¿A dónde vuelas?'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'lisboa');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lisboa').first);
     await tester.pump(const Duration(milliseconds: 1500));
     expect(routeData(spy)['title'], 'Madrid → Lisboa');
 
-    // "¿A dónde vuelas?" en la página vuelve a abrir la hoja.
-    spy.to('ECLIPTA · Ruta del vuelo')('pick');
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(find.text('Ver ruta'), findsOneWidget);
+    // "Cambiar origen" también, por nombre.
+    spy.to('ECLIPTA · Ruta del vuelo')('pickO');
+    await tester.pumpAndSettle();
+    expect(find.text('¿Desde dónde vuelas?'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'malaga airport');
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Málaga').first);
+    await tester.pump(const Duration(milliseconds: 1500));
+    expect(routeData(spy)['title'], 'Málaga → Lisboa');
+  });
+
+  test('la página lleva el mapa de verdad dentro (sin pedirlo a Internet)', () {
+    final String lib = File('assets/route/maplibre-gl.js').readAsStringSync();
+    // Si la librería llevara "</script", rompería la página.
+    expect(lib, isNot(contains('</script')));
+    final String page = File('assets/route/ruta.html').readAsStringSync();
+    expect(page, contains('/*MAPLIBRE*/'));
+    expect(page, contains('/*ROUTEMAP*/{}'));
+    expect(page, isNot(contains('unpkg.com')));
   });
 
   group('fichas de ciudad', () {

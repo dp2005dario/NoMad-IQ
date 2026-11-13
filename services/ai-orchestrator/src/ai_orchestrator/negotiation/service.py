@@ -22,13 +22,16 @@ from enum import StrEnum
 from ai_orchestrator.llm.client import LLMClient
 from ai_orchestrator.negotiation.agents import AgentSettings, LLMAgent, RuleAgent
 from ai_orchestrator.negotiation.domain import (
+    FLYRA_ALIAS,
     MIN_MEMBERS,
     AgentPosition,
     GroupOption,
     Member,
+    MemberPreferences,
     MemberResult,
     NegotiationResult,
     Outcome,
+    TripRules,
 )
 from ai_orchestrator.negotiation.engine import EngineResult, NegotiationAgent, NegotiationEngine, Seat
 from ai_orchestrator.negotiation.events import concluded_message
@@ -82,10 +85,20 @@ class NegotiationService:
         for m in record.members:
             if m.preferences is None:
                 continue  # no envió sus preferencias a tiempo: no tiene asiento
-            member = Member(alias=m.alias, preferences=m.preferences)
-            seats.append(
-                Seat(self._agent(member, record.currency, record.language), m.preferences.budget_max_minor)
-            )
+            prefs = with_rules(m.preferences, record.rules)
+            member = Member(alias=m.alias, preferences=prefs)
+            seats.append(Seat(self._agent(member, record.currency, record.language), prefs.budget_max_minor))
+
+        aliases = [s.agent.agent_id for s in seats]
+        if len(seats) == 1:
+            # Viaje "en grupo" de una persona y Flyra: Flyra se sienta como
+            # compañera que quiere lo mismo que tú (sus gustos y su
+            # presupuesto), sin LLM. No sale en el resultado: el plan es tuyo.
+            only = next(m for m in record.members if m.preferences is not None)
+            assert only.preferences is not None  # noqa: S101
+            prefs = with_rules(only.preferences, record.rules)
+            flyra = Member(alias=FLYRA_ALIAS, preferences=prefs)
+            seats.append(Seat(RuleAgent(flyra, language=record.language), prefs.budget_max_minor))
 
         if len(seats) < MIN_MEMBERS:
             # No debería pasar (solo se pone en cola con dos o más listos),
@@ -103,7 +116,7 @@ class NegotiationService:
             total_timeout_seconds=self._settings.total_timeout_seconds,
         )
         outcome = await engine.run(record.options, seats)
-        result = build_result(outcome, record.options, [s.agent.agent_id for s in seats], record.language)
+        result = build_result(outcome, record.options, aliases, record.language)
 
         recipients = (
             [self._pseudonymizer.recipient(m.user_id) for m in record.members] if self._pseudonymizer else []
@@ -134,6 +147,20 @@ class NegotiationService:
         return LLMAgent(
             member, llm=self._llm, currency=currency, language=language, settings=self._settings.agent
         )
+
+
+def with_rules(prefs: MemberPreferences, rules: TripRules | None) -> MemberPreferences:
+    """Las reglas del organizador valen para todos: lo que evita el grupo se
+    suma a lo que evita cada uno, y nadie puede pasarse del máximo."""
+    if rules is None:
+        return prefs
+    avoid = tuple(dict.fromkeys((*prefs.avoid, *rules.avoid)))
+    # Si alguien también lo marcó como gusto, manda la regla del grupo.
+    interests = tuple(t for t in prefs.interests if t not in rules.avoid)
+    budget = prefs.budget_max_minor
+    if rules.max_price_minor is not None:
+        budget = min(budget, rules.max_price_minor)
+    return prefs.model_copy(update={"avoid": avoid, "interests": interests, "budget_max_minor": budget})
 
 
 def build_result(

@@ -1,5 +1,7 @@
 // De dónde sale tu posición. La pantalla del mapa habla con esta "interfaz"
 // y no directamente con el GPS: así en los tests se usa un GPS falso.
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -107,8 +109,8 @@ class DeviceLocationSource implements LocationSource {
     );
   }
 
-  // Solo avisa cuando te has movido 20 m: andando, una posición cada 15 s
-  // más o menos. Más a menudo gastaría batería sin aportar nada.
+  // Con la app en pantalla avisa cada 5 m (unos 3-4 s andando): así tu
+  // punto del mapa se mueve contigo en directo, como en Google Maps.
   //
   // En modo viaje (app cerrada) se pide algo menos de precisión y se espera
   // 50 m: basta para saber en qué barrio estás y la batería dura el día.
@@ -118,8 +120,8 @@ class DeviceLocationSource implements LocationSource {
           accuracy: background == null
               ? LocationAccuracy.high
               : LocationAccuracy.medium,
-          distanceFilter: background == null ? 20 : 50,
-          intervalDuration: Duration(seconds: background == null ? 10 : 30),
+          distanceFilter: background == null ? 5 : 50,
+          intervalDuration: Duration(seconds: background == null ? 2 : 30),
           foregroundNotificationConfig: background == null
               ? null
               : ForegroundNotificationConfig(
@@ -135,7 +137,7 @@ class DeviceLocationSource implements LocationSource {
           accuracy: background == null
               ? LocationAccuracy.high
               : LocationAccuracy.medium,
-          distanceFilter: background == null ? 20 : 50,
+          distanceFilter: background == null ? 5 : 50,
           // "Andando": iOS ajusta el GPS a ese ritmo y ahorra batería.
           activityType: ActivityType.fitness,
           pauseLocationUpdatesAutomatically: true,
@@ -161,4 +163,25 @@ class DeviceLocationSource implements LocationSource {
     LocationPermission.denied ||
     LocationPermission.unableToDetermine => LocationAccess.denied,
   };
+}
+
+/// Tu posición ya, para pantallas que solo necesitan saber dónde estás una
+/// vez (cajeros, radar, SOS...). Primero la que el móvil recuerda (al
+/// momento y funciona dentro de casa); si no hay, el primer aviso del GPS.
+///
+/// Antes se esperaba solo al GPS de alta precisión: dentro de un edificio
+/// casi nunca llega a tiempo y la pantalla decía "sin ubicación".
+///
+/// Lanza [TimeoutException] si en [wait] no hay nada.
+Future<PositionFix> positionNow(
+  LocationSource gps, {
+  Duration wait = const Duration(seconds: 15),
+}) async {
+  try {
+    final PositionFix? known = await gps.current().timeout(wait);
+    if (known != null) return known;
+  } on Object {
+    // Sin posición recordada: se espera al GPS.
+  }
+  return gps.watch().first.timeout(wait);
 }

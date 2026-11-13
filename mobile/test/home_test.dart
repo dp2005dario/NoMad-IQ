@@ -1,6 +1,7 @@
 // Inicio: la maqueta dentro de un WebView. Aquí se prueba lo que la app
 // hace con lo que manda la página: hablar a Flyra, los cuadrados del
 // carrusel, el SOS (WhatsApp, SMS, llamar) y los contactos.
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/core/router.dart';
@@ -20,13 +21,16 @@ class HeardMic implements SpeechInput {
   final List<String> langs = <String>[];
 
   @override
-  Future<String?> listen(String lang) async {
+  Future<String?> listen(String lang, {ValueChanged<String>? onPartial}) async {
     langs.add(lang);
     return '¿Qué visito hoy?';
   }
 
   @override
   Future<void> stop() async {}
+
+  @override
+  ValueListenable<double> get level => ValueNotifier<double>(0);
 }
 
 void main() {
@@ -141,7 +145,10 @@ void main() {
     await tester.pumpAndSettle();
     // WhatsApp y SMS esperan a saber dónde estás: pueden abrirse después.
     final Uri wa = opened.firstWhere((Uri u) => u.host == 'wa.me');
-    expect(wa.queryParameters['text'], startsWith('¡Necesito ayuda!'));
+    expect(
+      wa.queryParameters['text'],
+      startsWith('🆘 EMERGENCIA: necesito ayuda urgente.'),
+    );
     // Sin GPS no dice "Estoy aquí:" (haría creer que mandó la ubicación).
     expect(wa.queryParameters['text'], isNot(contains('Estoy aquí')));
     expect(opened.where((Uri u) => u.scheme == 'sms'), hasLength(1));

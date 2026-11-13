@@ -1,6 +1,7 @@
 """API HTTP del radar local (se monta dentro de api.create_api).
 
     GET    /v1/radar/{city}              avisos y precios de una ciudad
+    GET    /v1/radar/{city}/safety       robos, timos y zonas (Wikivoyage)
     POST   /v1/radar/{city}/scams        avisar de un timo (uno por tipo)
     DELETE /v1/radar/{city}/scams/{cat}  quitar mi aviso
     POST   /v1/radar/{city}/prices       apuntar lo que he pagado
@@ -15,12 +16,13 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from pydantic import BaseModel, ConfigDict, Field
 
 from ai_orchestrator.identity import Principal, current_principal
 from ai_orchestrator.places.airports import Airports
 from ai_orchestrator.radar.domain import CityRadar, PriceItem, RadarLimitError, ScamCategory
+from ai_orchestrator.radar.safety import CitySafety, SafetyService
 from ai_orchestrator.radar.store import RadarStore
 
 PREFIX = "/v1/radar"
@@ -41,7 +43,7 @@ class PriceBody(BaseModel):
     amount: Decimal = Field(gt=0, lt=10_000_000, max_digits=12, decimal_places=2)
 
 
-def radar_router(store: RadarStore, airports: Airports) -> APIRouter:
+def radar_router(store: RadarStore, airports: Airports, safety: SafetyService | None = None) -> APIRouter:
     router = APIRouter(prefix=PREFIX)
 
     def known_city(city: str) -> str:
@@ -55,6 +57,19 @@ def radar_router(store: RadarStore, airports: Airports) -> APIRouter:
         principal: Annotated[Principal, Depends(current_principal)], city: City
     ) -> CityRadar:
         return await store.city(known_city(city), principal.user_id)
+
+    @router.get("/{city}/safety", response_model=CitySafety)
+    async def city_safety(
+        principal: Annotated[Principal, Depends(current_principal)],
+        city: City,
+        lang: Annotated[str, Query(pattern=r"^[a-z]{2,3}$")] = "en",
+    ) -> CitySafety:
+        # Robos, timos y zonas con cuidado de la guía de Wikivoyage de la
+        # ciudad, resumidos en tu idioma (ver radar/safety.py).
+        airport = airports.get(known_city(city))
+        if safety is None or airport is None:
+            raise HTTPException(status_code=503, detail="avisos de seguridad apagados")
+        return await safety.city(airport.city, lang)
 
     @router.post("/{city}/scams", status_code=204)
     async def report(

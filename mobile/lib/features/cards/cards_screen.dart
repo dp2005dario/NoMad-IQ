@@ -343,8 +343,9 @@ class _CardsScreenState extends State<CardsScreen> {
       LocationAccess access = await gps.check();
       if (access == LocationAccess.denied) access = await gps.request();
       if (access != LocationAccess.granted) return null;
-      final PositionFix fix = await gps.watch().first.timeout(
-        const Duration(seconds: 15),
+      final PositionFix fix = await positionNow(
+        gps,
+        wait: const Duration(seconds: 15),
       );
       return (await widget.locate(fix.point)).city;
     } on Object {

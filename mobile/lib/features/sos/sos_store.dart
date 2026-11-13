@@ -150,7 +150,8 @@ String sosMessage(String intro, GeoPoint? where, {String? noLocation}) {
   if (where == null) return noLocation ?? intro;
   final String lat = where.lat.toStringAsFixed(5);
   final String lon = where.lon.toStringAsFixed(5);
-  return '$intro https://www.openstreetmap.org/?mlat=$lat&mlon=$lon#map=17/$lat/$lon';
+  // Google Maps: lo tiene casi todo el mundo y abre el punto exacto.
+  return '$intro https://www.google.com/maps/search/?api=1&query=$lat,$lon';
 }
 
 /// El SMS ya escrito para todos tus contactos (tú solo pulsas "Enviar").
@@ -163,8 +164,8 @@ Uri smsUri(List<SosContact> contacts, String body) => Uri(
 /// Llamar a un número (abre el marcador del móvil con el número puesto).
 Uri telUri(String number) => Uri(scheme: 'tel', path: number);
 
-/// Embajadas y consulados cerca, en el mapa libre de OpenStreetMap.
+/// Embajadas y consulados cerca, en Google Maps.
 Uri embassiesUri(GeoPoint where) => Uri.parse(
-  'https://www.openstreetmap.org/search?query=embassy'
-  '#map=13/${where.lat.toStringAsFixed(4)}/${where.lon.toStringAsFixed(4)}',
+  'https://www.google.com/maps/search/embassy/'
+  '@${where.lat.toStringAsFixed(4)},${where.lon.toStringAsFixed(4)},13z',
 );

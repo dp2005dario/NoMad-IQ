@@ -67,8 +67,9 @@ class _AtmsPanelState extends State<AtmsPanel> {
     if (access == LocationAccess.denied) access = await gps.request();
     if (access != LocationAccess.granted) return null;
     try {
-      final PositionFix fix = await gps.watch().first.timeout(
-        const Duration(seconds: 15),
+      final PositionFix fix = await positionNow(
+        gps,
+        wait: const Duration(seconds: 15),
       );
       return fix.point;
     } on TimeoutException {

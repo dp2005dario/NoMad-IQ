@@ -340,7 +340,34 @@ class _VisaScreenState extends State<VisaScreen> {
         EntryRule.refused => ('bad', t.visaRefused, t.visaRefusedMore),
         EntryRule.unknown => ('muted', t.visaUnknown, t.visaUnknownMore),
       };
+      // Lo que hace falta según el caso (la lista con ✓ de la tarjeta).
+      final List<String> needs = switch (need.rule) {
+        EntryRule.free => <String>[
+          t.visaNeedPassport,
+          t.visaNeedReturn,
+          t.visaNeedOfficial,
+        ],
+        EntryRule.onArrival => <String>[
+          t.visaNeedPassport,
+          t.visaNeedArrival,
+          t.visaNeedReturn,
+        ],
+        EntryRule.eta || EntryRule.eVisa => <String>[
+          t.visaNeedPassport,
+          t.visaNeedOnline,
+          t.visaNeedOfficial,
+        ],
+        EntryRule.embassy => <String>[
+          t.visaNeedPassport,
+          t.visaNeedEmbassy,
+          t.visaNeedOfficial,
+        ],
+        EntryRule.refused => <String>[t.visaNeedOfficial],
+        EntryRule.unknown => <String>[t.visaNeedPassport, t.visaNeedOfficial],
+      };
       verdict = <String, Object?>{
+        'rule': need.rule.name,
+        'needs': needs,
         'tone': tone,
         'h': h,
         'days': need.days == null ? '' : t.visaDays(need.days!),
@@ -368,7 +395,13 @@ class _VisaScreenState extends State<VisaScreen> {
         'official': t.visaOpenOfficial,
         'save': t.visaSaveApproval,
         'copy': t.visaCopy,
+        'needH': t.visaNeedTitle,
       },
+      // Las banderas y los códigos del dibujo de arriba (avión y sello).
+      'fromFlag': passport == null ? '' : flagOf(passport),
+      'toFlag': to == null ? '' : flagOf(to),
+      'fromCode': passport ?? '',
+      'toCode': to ?? '',
       'title': apply ? t.visaApplyTitle(scheme) : t.visaTitle,
       'sub': to == null
           ? t.visaCheck

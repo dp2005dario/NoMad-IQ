@@ -24,11 +24,12 @@ from pydantic import TypeAdapter
 
 from ai_orchestrator.negotiation.domain import (
     MAX_MEMBERS,
-    MIN_MEMBERS,
+    MIN_READY_TO_START,
     GroupOption,
     MemberPreferences,
     NegotiationResult,
     Status,
+    TripRules,
 )
 from ai_orchestrator.negotiation.events import request_message
 from ai_orchestrator.outbox import OutboxMessage, enqueue
@@ -56,7 +57,7 @@ class NotOrganizerError(Exception):
 
 
 class NotEnoughReadyError(Exception):
-    """Para negociar hacen falta al menos dos personas con sus preferencias enviadas."""
+    """Para negociar hace falta al menos una persona con sus preferencias enviadas."""
 
 
 # Alfabeto de Crockford: 32 símbolos sin O, I, L ni U. Al dictar un código
@@ -104,6 +105,8 @@ class NewNegotiation:
     invites_open: bool = False
     # Nombre del organizador para su grupo (None = solo su alias).
     organizer_name: str | None = None
+    # Reglas del organizador para todo el grupo (ver 0022_trip_rules.sql).
+    rules: TripRules | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,6 +138,7 @@ class NegotiationRecord:
     members: tuple[MemberRecord, ...]
     invites_open: bool = False
     invite_code: str | None = None
+    rules: TripRules | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -181,7 +185,7 @@ def alias_for(seat: int) -> str:
 
 _NEGOTIATION_COLUMNS = (
     "negotiation_id, organizer_id, title, currency, language, options, max_rounds, status, "
-    "deadline, created_at, concluded_at, result, invites_open, invite_code"
+    "deadline, created_at, concluded_at, result, invites_open, invite_code, rules"
 )
 
 # Si el código al azar ya lo tiene otro grupo vivo (rarísimo), se prueba otro.
@@ -213,8 +217,8 @@ class PostgresNegotiations:
                 """
                 INSERT INTO ai.group_negotiations
                     (negotiation_id, organizer_id, title, currency, language, options, max_rounds,
-                     status, deadline, invites_open, invite_code)
-                VALUES ($1::uuid, $2, $3, $4, $5, $6::jsonb, $7, 'collecting', $8, $9, $10)
+                     status, deadline, invites_open, invite_code, rules)
+                VALUES ($1::uuid, $2, $3, $4, $5, $6::jsonb, $7, 'collecting', $8, $9, $10, $11::jsonb)
                 """,
                 negotiation_id,
                 draft.organizer_id,
@@ -226,6 +230,7 @@ class PostgresNegotiations:
                 draft.deadline,
                 draft.invites_open,
                 invite_code,
+                draft.rules.model_dump_json() if draft.rules is not None else None,
             )
             await conn.executemany(
                 "INSERT INTO ai.group_negotiation_members "
@@ -317,7 +322,7 @@ class PostgresNegotiations:
                     raise NotOrganizerError(negotiation_id)
                 if row["status"] != Status.COLLECTING or row["late"]:
                     raise NegotiationClosedError(negotiation_id)
-                if row["ready"] < MIN_MEMBERS:
+                if row["ready"] < MIN_READY_TO_START:
                     raise NotEnoughReadyError(negotiation_id)
                 await self._queue(conn, negotiation_id)
                 record = await self._load(conn, negotiation_id)
@@ -505,8 +510,9 @@ class PostgresNegotiations:
 
         1. Negociaciones "running" cuyo préstamo caducó (el proceso murió):
            vuelven a la cola con una orden nueva.
-        2. Plazo vencido: con al menos dos miembros listos, se negocia con
-           ellos; si no, caduca ("expired") y se borran sus preferencias.
+        2. Plazo vencido: con al menos un miembro listo, se negocia con
+           ellos (si es uno solo, con Flyra de compañera); si no, caduca
+           ("expired") y se borran sus preferencias.
         3. Las terminadas hace más de retention_days se borran.
         """
         try:
@@ -540,7 +546,7 @@ class PostgresNegotiations:
                          LIMIT 100
                            FOR UPDATE SKIP LOCKED)
                     UPDATE ai.group_negotiations n
-                       SET status = CASE WHEN due.ready >= 2 THEN 'queued' ELSE 'expired' END,
+                       SET status = CASE WHEN due.ready >= 1 THEN 'queued' ELSE 'expired' END,
                            invites_open = false, invite_code = NULL, updated_at = now()
                       FROM due
                      WHERE n.negotiation_id = due.negotiation_id
@@ -645,6 +651,7 @@ def _record(row: asyncpg.Record, members: tuple[MemberRecord, ...]) -> Negotiati
         members=members,
         invites_open=data["invites_open"],
         invite_code=data["invite_code"],
+        rules=TripRules.model_validate_json(data["rules"]) if data.get("rules") else None,
     )
 
 

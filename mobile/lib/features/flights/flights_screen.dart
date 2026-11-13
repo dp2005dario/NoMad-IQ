@@ -28,6 +28,7 @@ import '../../core/api_client.dart';
 import '../../core/money.dart';
 import '../../core/router.dart';
 import '../../core/services.dart';
+import '../../core/settings.dart';
 import '../home/home_screen.dart' show displayName;
 import '../route/flight3d.dart' show CountryCodes;
 import '../route/open_flight3d.dart';
@@ -154,6 +155,9 @@ class _FlightsScreenState extends State<FlightsScreen> {
         deals = await _services.fares.deals(_origin);
       }
       deals = sortDeals(deals, shuffle: FlightsScreen.shuffleDeals);
+      // Las que quitaste ("no me interesa") no vuelven a salir.
+      final Set<String> skipped = _skipped();
+      deals = deals.where((Deal d) => !skipped.contains(skipKey(d))).toList();
     } on ApiException {
       failed = true;
     }
@@ -275,6 +279,20 @@ class _FlightsScreenState extends State<FlightsScreen> {
     }
   }
 
+  /// Las gangas quitadas, guardadas en el móvil.
+  Set<String> _skipped() {
+    try {
+      final Object? raw = jsonDecode(
+        _services.prefs.readData(LocalData.skippedDeals) ?? '[]',
+      );
+      return raw is List<Object?>
+          ? raw.whereType<String>().toSet()
+          : <String>{};
+    } on FormatException {
+      return <String>{};
+    }
+  }
+
   // ---- Lo que pide la página.
 
   void _onMessage(String m) {
@@ -287,6 +305,16 @@ class _FlightsScreenState extends State<FlightsScreen> {
         unawaited(_ficha(n == 0 ? 'o' : 'd'));
       case 'go' when p.length == 3:
         _search(unpackJson(p[2]));
+      case 'skip' when n >= 0 && n < _deals.length:
+        final List<String> list = _skipped().toList()..add(skipKey(_deals[n]));
+        unawaited(
+          _services.prefs.writeData(
+            LocalData.skippedDeals,
+            jsonEncode(
+              list.skip(list.length > 300 ? list.length - 300 : 0).toList(),
+            ),
+          ),
+        );
       case 'hunt' when n >= 0 && n < _deals.length:
         _hunt = n;
         _cards.clear();

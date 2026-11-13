@@ -27,9 +27,12 @@ NAGER_URL = "https://date.nager.at/api/v3/PublicHolidays"
 TICKETMASTER_URL = "https://app.ticketmaster.com/discovery/v2/events.json"
 USER_AGENT = "NomadIQ/1.0 (https://github.com/dp2005dario/NoMad-IQ)"
 # Radio alrededor del aeropuerto: suele estar a pocos km de la ciudad, y
-# 30 km cubren la ciudad y sus alrededores.
-RADIUS_KM = 30
-MAX_EVENTS = 100
+# 50 km cubren la ciudad, sus alrededores y los estadios de fuera.
+RADIUS_KM = 50
+# Ticketmaster da como mucho 200 por página.
+MAX_EVENTS = 200
+# Los N primeros por relevancia se marcan como "de los más conocidos".
+TOP_EVENTS = 15
 
 _TIME = re.compile(r"^([01]\d|2[0-3]):[0-5]\d")
 _CURRENCY = re.compile(r"^[A-Z]{3}$")
@@ -109,7 +112,7 @@ def parse_ticketmaster(data: Any) -> list[CityEvent]:
         return []
     out: list[CityEvent] = []
     seen: set[str] = set()
-    for row in rows[:MAX_EVENTS]:
+    for rank, row in enumerate(rows[:MAX_EVENTS]):
         if not isinstance(row, dict):
             continue
         eid, name = _text(row.get("id"), 40), _text(row.get("name"), 120)
@@ -151,9 +154,33 @@ def parse_ticketmaster(data: Any) -> list[CityEvent]:
                 status=status,
                 lat=lat,
                 lon=lon,
+                image=_image(row.get("images")),
+                top=rank < TOP_EVENTS,
             )
         )
     return out
+
+
+def _image(images: Any) -> str | None:
+    """La mejor foto del evento: apaisada (16:9), de 500 a 1200 px de ancho
+    (se ve bien y pesa poco), y solo https. Si no hay 16:9, la más ancha
+    que no pase de 1200 px."""
+    if not isinstance(images, list):
+        return None
+    best: tuple[int, int, str] | None = None
+    for img in images:
+        if not isinstance(img, dict):
+            continue
+        url, width = img.get("url"), img.get("width")
+        if not (isinstance(url, str) and url.startswith("https://") and len(url) < 500):
+            continue
+        if not isinstance(width, int) or isinstance(width, bool) or not 200 <= width <= 1200:
+            continue
+        # Primero 16:9 de al menos 500 px; luego, cuanto más ancha, mejor.
+        score = (1 if img.get("ratio") == "16_9" and width >= 500 else 0, width, url)
+        if best is None or score[:2] > best[:2]:
+            best = score
+    return best[2] if best else None
 
 
 # Los estados de Ticketmaster que enseñamos (los demás, sin etiqueta).
@@ -255,7 +282,8 @@ class TicketmasterClient:
                 "startDateTime": begin.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "endDateTime": finish.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "size": str(MAX_EVENTS),
-                "sort": "date,asc",
+                # Por relevancia: así entran primero los conciertos y partidos famosos.
+                "sort": "relevance,desc",
                 "locale": "*",
             },
             "Ticketmaster",

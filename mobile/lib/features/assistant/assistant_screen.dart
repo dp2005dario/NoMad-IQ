@@ -15,9 +15,9 @@
 // vez de hablar (con ruido, o si el micro no va).
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:typed_data';
 import 'dart:ui' show PathMetric;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/api_client.dart';
@@ -105,6 +105,9 @@ class _AssistantScreenState extends State<AssistantScreen>
   String? _answer;
   bool _asking = false;
   bool _askListening = false;
+
+  /// Lo que va entendiendo mientras hablas (se ve en directo).
+  String _partial = '';
 
   // Las ondas de los botones y las banderas que giran al detectar.
   late final AnimationController _wave = AnimationController(
@@ -294,12 +297,21 @@ class _AssistantScreenState extends State<AssistantScreen>
       return;
     }
     if (_busy) return;
-    setState(() => _listening = mine);
+    setState(() {
+      _listening = mine;
+      _partial = '';
+    });
     final String? heard = await _services.speechInput.listen(
       mine ? _mine : _theirs,
+      onPartial: (String p) {
+        if (mounted) setState(() => _partial = p);
+      },
     );
     if (!mounted) return;
-    setState(() => _listening = null);
+    setState(() {
+      _listening = null;
+      _partial = '';
+    });
     if (heard == null) {
       _snack(AppLocalizations.of(context).assistantDidntHear);
       return;
@@ -369,7 +381,7 @@ class _AssistantScreenState extends State<AssistantScreen>
     final LocationSource gps = _services.location;
     try {
       if (await gps.check() != LocationAccess.granted) return null;
-      return await gps.watch().first.timeout(const Duration(seconds: 8));
+      return await positionNow(gps, wait: const Duration(seconds: 8));
     } on Object {
       return null;
     }
@@ -415,10 +427,23 @@ class _AssistantScreenState extends State<AssistantScreen>
     final String language = Localizations.localeOf(context).languageCode;
     String? q = typed;
     if (q == null) {
-      setState(() => _askListening = true);
-      q = await _services.speechInput.listen(language);
+      setState(() {
+        _askListening = true;
+        _partial = '';
+        _question = null;
+        _answer = null;
+      });
+      q = await _services.speechInput.listen(
+        language,
+        onPartial: (String p) {
+          if (mounted) setState(() => _partial = p);
+        },
+      );
       if (!mounted) return;
-      setState(() => _askListening = false);
+      setState(() {
+        _askListening = false;
+        _partial = '';
+      });
       if (q == null || q.trim().isEmpty) {
         _snack(t.assistantDidntHear);
         return;
@@ -436,11 +461,24 @@ class _AssistantScreenState extends State<AssistantScreen>
     if (place != null) setState(() => _place = place);
     String answer;
     try {
-      final FlyraReply reply = await _services.flyra.ask(
+      // Si la conexión falla un momento (pasa al soltar el micro), se
+      // vuelve a intentar una vez antes de decir "sin conexión".
+      Future<FlyraReply> once() => _services.flyra.ask(
         <ChatTurn>[ChatTurn(ChatRole.user, question)],
         language: language,
-        place: _place,
+        // El servidor acepta como mucho 80 letras de sitio.
+        place: _place == null || _place!.length <= 80
+            ? _place
+            : _place!.substring(0, 80),
       );
+      FlyraReply reply;
+      try {
+        reply = await once();
+      } on ApiException catch (e) {
+        if (e.error != ApiError.network) rethrow;
+        await Future<void>.delayed(const Duration(milliseconds: 1500));
+        reply = await once();
+      }
       answer = reply.text;
       unawaited(_services.speaker.speak(answer, language));
     } on ApiException catch (e) {
@@ -585,10 +623,10 @@ class _AssistantScreenState extends State<AssistantScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
                               Text(
-                                lastMine == null
+                                meListening
+                                    ? (_partial.isEmpty ? '…' : '$_partial…')
+                                    : lastMine == null
                                     ? hello
-                                    : meListening
-                                    ? '…'
                                     : lastMine.translated,
                                 textDirection: rtlLanguages.contains(_theirs)
                                     ? TextDirection.rtl
@@ -706,6 +744,23 @@ class _AssistantScreenState extends State<AssistantScreen>
                             ],
                           ),
                   ),
+                  // Lo que va entendiendo, en directo, mientras alguien habla.
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOutCubic,
+                    child: _listening == null
+                        ? const SizedBox(width: double.infinity)
+                        : Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: _LiveCaption(
+                              text: _partial,
+                              hint: t.assistantTapWhenDone,
+                              mine: meListening,
+                              level: _services.speechInput.level,
+                              wave: _wave,
+                            ),
+                          ),
+                  ),
                   const SizedBox(height: 10),
                   _LangChips(
                     selected: _theirs,
@@ -722,7 +777,9 @@ class _AssistantScreenState extends State<AssistantScreen>
                           label: themListening
                               ? 'Escuchando…'
                               : 'Habla la otra persona',
-                          hint: _known
+                          hint: themListening && _listening == false
+                              ? t.assistantTapWhenDone
+                              : _known
                               ? 'En ${theirName.toLowerCase()}'
                               : 'Detecto su idioma',
                           on: themListening,
@@ -740,7 +797,9 @@ class _AssistantScreenState extends State<AssistantScreen>
                         child: _TalkButton(
                           tooltip: t.assistantSpeak,
                           label: meListening ? 'Te escucho…' : 'Hablo yo',
-                          hint: 'En ${myName.toLowerCase()}',
+                          hint: meListening
+                              ? t.assistantTapWhenDone
+                              : 'En ${myName.toLowerCase()}',
                           on: meListening,
                           background: _accent,
                           foreground: _bg,
@@ -763,13 +822,11 @@ class _AssistantScreenState extends State<AssistantScreen>
   }
 
   Widget _askBody(AppLocalizations t) {
-    final List<String> chips = <String>[
-      t.assistantChipInside,
-      t.assistantChipPhoto,
-      t.assistantChipMore,
-    ];
-    final String? q = _question;
-    final bool waving = _askListening || _asking;
+    // Mientras hablas se ve lo que va entendiendo; luego, tu pregunta.
+    final String? q = _askListening
+        ? (_partial.isEmpty ? null : _partial)
+        : _question;
+    final double bottom = MediaQuery.of(context).padding.bottom;
     return Stack(
       fit: StackFit.expand,
       children: <Widget>[
@@ -783,10 +840,23 @@ class _AssistantScreenState extends State<AssistantScreen>
                 ),
               ),
             ),
+        // Abajo se oscurece para que se lea bien la respuesta.
+        const IgnorePointer(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                stops: <double>[0.45, 1],
+                colors: <Color>[Color(0x000B1217), Color(0xE60B1217)],
+              ),
+            ),
+          ),
+        ),
         // El marco de rayas: apunta ahí.
         const SafeArea(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(56, 80, 56, 150),
+            padding: EdgeInsets.fromLTRB(56, 80, 56, 260),
             child: CustomPaint(painter: _DashedFrame()),
           ),
         ),
@@ -797,23 +867,28 @@ class _AssistantScreenState extends State<AssistantScreen>
               child: Align(
                 alignment: Alignment.topLeft,
                 child: _In(
-                  key: ValueKey<String>(q),
+                  key: ValueKey<bool>(_askListening),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 10,
                     ),
-                    decoration: const BoxDecoration(
-                      color: Color(0xD90B1217),
-                      borderRadius: BorderRadius.only(
+                    decoration: BoxDecoration(
+                      color: const Color(0xD90B1217),
+                      borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(18),
                         topRight: Radius.circular(18),
                         bottomRight: Radius.circular(18),
                         bottomLeft: Radius.circular(4),
                       ),
+                      border: Border.all(
+                        color: _askListening
+                            ? _accent
+                            : const Color(0x33FFFFFF),
+                      ),
                     ),
                     child: Text(
-                      '«$q»',
+                      _askListening ? '$q…' : '«$q»',
                       style: const TextStyle(
                         fontFamily: 'Manrope',
                         fontSize: 15,
@@ -829,139 +904,324 @@ class _AssistantScreenState extends State<AssistantScreen>
         Positioned(
           left: 12,
           right: 12,
-          bottom: 16 + MediaQuery.of(context).padding.bottom,
-          child: _In(
-            delay: 300,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xF7141E25),
-                borderRadius: BorderRadius.circular(26),
-                border: Border.all(color: const Color(0xFF26363F)),
+          bottom: 16 + bottom,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              _In(
+                delay: 300,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: <Color>[Color(0xF21A2233), Color(0xF2141E25)],
+                    ),
+                    borderRadius: BorderRadius.circular(26),
+                    border: Border.all(color: const Color(0xFF2C3A48)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          SizedBox(
+                            width: 40,
+                            height: 40,
+                            child: ClipOval(
+                              child: Image.asset(
+                                'assets/map/flyra.webp',
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) =>
+                                    const ColoredBox(color: _accent),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                const Text(
+                                  'FLYRA TE LO CUENTA',
+                                  style: TextStyle(
+                                    fontFamily: 'Manrope',
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.66,
+                                    color: _muted,
+                                  ),
+                                ),
+                                Text(
+                                  _place ?? t.assistantAskTitle,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontFamily: 'BricolageGrotesque',
+                                    fontSize: 19,
+                                    fontWeight: FontWeight.w800,
+                                    color: _ink,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (_asking)
+                            _Waves(
+                              animation: _wave,
+                              on: true,
+                              color: _accent,
+                              height: 18,
+                              width: 3,
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxHeight: 220),
+                        child: SingleChildScrollView(
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 350),
+                            child: Text(
+                              _asking
+                                  ? 'Flyra está mirando…'
+                                  : _askListening
+                                  ? t.assistantTapWhenDone
+                                  : _answer ?? t.assistantAskBody,
+                              key: ValueKey<String>(
+                                '${_asking}_${_askListening}_${_answer ?? ''}',
+                              ),
+                              style: const TextStyle(
+                                fontFamily: 'Manrope',
+                                fontSize: 14.5,
+                                height: 1.5,
+                                color: Color(0xFFDCE5E9),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
+              const SizedBox(height: 14),
+              // El micro grande: toca, pregunta y vuelve a tocar (o cállate)
+              // y Flyra contesta.
+              Center(
+                child: _BigMic(
+                  tooltip: _askListening
+                      ? t.assistantTapWhenDone
+                      : t.assistantTapToAsk,
+                  on: _askListening,
+                  busy: _asking,
+                  level: _services.speechInput.level,
+                  wave: _wave,
+                  onTap: () => unawaited(_ask()),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _askListening ? t.assistantTapWhenDone : t.assistantTapToAsk,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: 'Manrope',
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: _muted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// El micro grande de "Pregunta": un círculo con aros que laten más fuerte
+/// cuanto más alto hablas. Mientras Flyra piensa, gira un arco.
+class _BigMic extends StatelessWidget {
+  const _BigMic({
+    required this.tooltip,
+    required this.on,
+    required this.busy,
+    required this.level,
+    required this.wave,
+    required this.onTap,
+  });
+
+  final String tooltip;
+  final bool on;
+  final bool busy;
+  final ValueListenable<double> level;
+  final Animation<double> wave;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: tooltip,
+    child: Semantics(
+      button: true,
+      label: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedBuilder(
+          animation: Listenable.merge(<Listenable>[wave, level]),
+          builder: (BuildContext context, Widget? child) {
+            final double l = on ? level.value : 0;
+            final double w = wave.value;
+            return SizedBox(
+              width: 120,
+              height: 120,
+              child: Stack(
+                alignment: Alignment.center,
+                children: <Widget>[
+                  if (on || busy)
+                    for (int i = 0; i < 2; i++)
+                      Container(
+                        width: 78 + (26 + 22 * l) * ((w + i * 0.5) % 1),
+                        height: 78 + (26 + 22 * l) * ((w + i * 0.5) % 1),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: (busy ? const Color(0xFFB69CFF) : _accent)
+                                .withValues(
+                                  alpha: 0.6 * (1 - (w + i * 0.5) % 1),
+                                ),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    width: 78 + 8 * l,
+                    height: 78 + 8 * l,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: on
+                            ? const <Color>[
+                                Color(0xFFFF6B8B),
+                                Color(0xFFFF8A65),
+                              ]
+                            : const <Color>[_accent, Color(0xFF6CA8FF)],
+                      ),
+                      boxShadow: <BoxShadow>[
+                        BoxShadow(
+                          color: (on ? const Color(0xFFFF6B8B) : _accent)
+                              .withValues(alpha: 0.45),
+                          blurRadius: 24,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    alignment: Alignment.center,
+                    child: on
+                        ? _Waves(
+                            animation: wave,
+                            on: true,
+                            color: Colors.white,
+                            count: 5,
+                            height: 26,
+                            width: 4,
+                          )
+                        : Icon(
+                            busy
+                                ? Icons.auto_awesome_rounded
+                                : Icons.mic_rounded,
+                            size: 34,
+                            color: _bg,
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    ),
+  );
+}
+
+/// La tarjeta de "en directo": lo que el micro va entendiendo, con unas
+/// ondas que suben y bajan con tu voz.
+class _LiveCaption extends StatelessWidget {
+  const _LiveCaption({
+    required this.text,
+    required this.hint,
+    required this.mine,
+    required this.level,
+    required this.wave,
+  });
+
+  final String text;
+  final String hint;
+  final bool mine;
+  final ValueListenable<double> level;
+  final Animation<double> wave;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color c = mine ? _accent : _lilac;
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: LinearGradient(
+            colors: <Color>[c.withValues(alpha: 0.16), const Color(0x0DFFFFFF)],
+          ),
+          border: Border.all(color: c.withValues(alpha: 0.55)),
+        ),
+        child: Row(
+          children: <Widget>[
+            _Waves(
+              animation: wave,
+              on: true,
+              color: c,
+              height: 22,
+              width: 3,
+              level: level,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Tooltip(
-                        message: _askListening
-                            ? 'Te escucho…'
-                            : t.assistantSpeak,
-                        child: Semantics(
-                          button: true,
-                          child: GestureDetector(
-                            onTap: () => unawaited(_ask()),
-                            child: Container(
-                              width: 52,
-                              height: 52,
-                              decoration: const BoxDecoration(
-                                color: _accent,
-                                shape: BoxShape.circle,
-                              ),
-                              alignment: Alignment.center,
-                              child: _Waves(
-                                animation: _wave,
-                                on: waving,
-                                color: _bg,
-                                count: 4,
-                                height: 22,
-                                width: 4,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            const Text(
-                              'FLYRA TE LO CUENTA',
-                              style: TextStyle(
-                                fontFamily: 'Manrope',
-                                fontSize: 11,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.66,
-                                color: _muted,
-                              ),
-                            ),
-                            Text(
-                              _place ?? t.assistantAskTitle,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontFamily: 'BricolageGrotesque',
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800,
-                                color: _ink,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 200),
-                    child: SingleChildScrollView(
-                      child: Text(
-                        _asking
-                            ? 'Flyra está mirando…'
-                            : _askListening
-                            ? 'Te escucho…'
-                            : _answer ?? t.assistantAskBody,
-                        style: const TextStyle(
-                          fontFamily: 'Manrope',
-                          fontSize: 14,
-                          height: 1.5,
-                          color: Color(0xFFDCE5E9),
-                        ),
-                      ),
+                  Text(
+                    text.isEmpty ? '…' : text,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Manrope',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: _ink,
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: <Widget>[
-                      for (final String c in chips)
-                        GestureDetector(
-                          onTap: () => unawaited(_ask(c)),
-                          child: Container(
-                            height: 32,
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: const Color(0xFF33444E),
-                              ),
-                            ),
-                            child: Align(
-                              widthFactor: 1,
-                              child: Text(
-                                c,
-                                style: const TextStyle(
-                                  fontFamily: 'Manrope',
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: _ink,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
+                  Text(
+                    hint,
+                    style: TextStyle(
+                      fontFamily: 'Manrope',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: c,
+                    ),
                   ),
                 ],
               ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
@@ -1082,8 +1342,12 @@ class _Waves extends StatelessWidget {
     this.count = 5,
     this.height = 20,
     this.width = 4,
+    this.level,
   });
 
+  /// Lo fuerte que suena tu voz (0..1): con él, las ondas crecen al hablar
+  /// alto y casi se paran en silencio.
+  final ValueListenable<double>? level;
   final Animation<double> animation;
   final bool on;
   final Color color;
@@ -1095,7 +1359,7 @@ class _Waves extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-    animation: animation,
+    animation: Listenable.merge(<Listenable?>[animation, level]),
     builder: (BuildContext context, Widget? _) => Row(
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
@@ -1104,7 +1368,7 @@ class _Waves extends StatelessWidget {
           Transform.scale(
             scaleY: on
                 ? 0.3 +
-                      0.7 *
+                      (level == null ? 0.7 : 0.15 + 0.55 * level!.value) *
                           (0.5 +
                               0.5 *
                                   math.sin(

@@ -2,6 +2,7 @@
 // Ajustes → Licencias junto a las de las librerías. La ODbL de OpenFlights
 // exige citar de dónde salen los aeropuertos.
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 void registerDataLicenses() {
   LicenseRegistry.addLicense(() async* {
@@ -52,5 +53,10 @@ void registerDataLicenses() {
       'OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN '
       'THE SOFTWARE.',
     );
+    // El mapa de verdad de la Ruta del vuelo (la licencia completa va con
+    // la app, tal cual).
+    yield LicenseEntryWithLineBreaks(<String>[
+      'MapLibre GL JS (Ruta del vuelo)',
+    ], await rootBundle.loadString('assets/route/LICENSE-maplibre.txt'));
   });
 }

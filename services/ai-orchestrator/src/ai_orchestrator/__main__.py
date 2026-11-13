@@ -70,10 +70,12 @@ from ai_orchestrator.audioguides.service import AudioguideService, ServiceSettin
 from ai_orchestrator.audioguides.speech import PiperOpusSynthesizer, SpeechError, discover_voices
 from ai_orchestrator.audioguides.versions import ZoneVersionCache
 from ai_orchestrator.audioguides.writer import AudioguideWriter, WriterSettings
+from ai_orchestrator.city_events.festivals import WikidataFestivals
 from ai_orchestrator.city_events.service import CityEventService, EventSettings, RedisEventCache
 from ai_orchestrator.city_events.sources import NagerClient, SourceBusyError, TicketmasterClient
 from ai_orchestrator.climate.nasa import NasaBusyError, NasaClient
 from ai_orchestrator.climate.service import ClimateService, ClimateSettings, RedisClimateCache
+from ai_orchestrator.climate.worldbank import WorldBankFacts
 from ai_orchestrator.config import Settings
 from ai_orchestrator.consumer import AlertProcessor, FareAlertConsumer
 from ai_orchestrator.drive.overpass import DriveOverpass
@@ -119,6 +121,16 @@ from ai_orchestrator.places.airports import Airports
 from ai_orchestrator.places.countries import bundled_countries
 from ai_orchestrator.places.service import PlaceService, PlaceSettings, RedisPlaceCache
 from ai_orchestrator.places.wikimedia import RateLimiter, WikimediaClient
+from ai_orchestrator.plan_videos.photos import RedisPhotoCache, WikipediaPhotos
+from ai_orchestrator.plan_videos.service import (
+    QUOTA_PREFIX as PLAN_VIDEO_QUOTA_PREFIX,
+)
+from ai_orchestrator.plan_videos.service import (
+    PlanVideoService,
+    PlanVideoSettings,
+    RedisPlanVideoCache,
+)
+from ai_orchestrator.plan_videos.youtube import YouTubeClient
 from ai_orchestrator.plans.api import plan_router
 from ai_orchestrator.plans.store import PostgresPlans
 from ai_orchestrator.pseudonym import Pseudonymizer
@@ -127,6 +139,7 @@ from ai_orchestrator.queues.store import PostgresQueues
 from ai_orchestrator.quota import RedisQuota
 from ai_orchestrator.radar.api import radar_router
 from ai_orchestrator.radar.rain import MetClient, RainBusyError, RainService, RedisRainCache
+from ai_orchestrator.radar.safety import RedisSafetyCache, SafetyService, Wikivoyage
 from ai_orchestrator.radar.store import PostgresRadar
 from ai_orchestrator.recommender import FareRecommender, RecommenderSettings
 from ai_orchestrator.retrieval import KnowledgeBase, NoKnowledge, QdrantKnowledge
@@ -155,6 +168,8 @@ from ai_orchestrator.store import (
 )
 from ai_orchestrator.streetview.mapillary import MapillaryBusyError, MapillaryClient
 from ai_orchestrator.streetview.service import RedisStreetCache, StreetSettings, StreetViewService
+from ai_orchestrator.trip_tasks.api import task_router
+from ai_orchestrator.trip_tasks.store import PostgresTasks
 
 log = logging.getLogger("ai_orchestrator")
 
@@ -376,6 +391,26 @@ def _google_client(settings: Settings, key: SecretStr, stack: AsyncExitStack) ->
     )
 
 
+def _plan_videos(
+    settings: Settings, key: SecretStr | None, redis: Redis, stack: AsyncExitStack
+) -> PlanVideoService:
+    """Vídeos de planes de YouTube Shorts (con clave; tope diario + caché de
+    7 días en Redis) y fotos de Wikipedia de cada sitio."""
+    http = httpx.AsyncClient(
+        timeout=httpx.Timeout(settings.youtube_timeout_seconds, connect=5.0),
+        follow_redirects=False,
+    )
+    stack.push_async_callback(http.aclose)
+    return PlanVideoService(
+        youtube=YouTubeClient(http, key) if key is not None else None,
+        cache=RedisPlanVideoCache(redis),
+        quota=RedisQuota(redis, prefix=PLAN_VIDEO_QUOTA_PREFIX),
+        photos=WikipediaPhotos(http),
+        photo_cache=RedisPhotoCache(redis),
+        settings=PlanVideoSettings(daily_limit=settings.youtube_daily_limit),
+    )
+
+
 def _shop_photos(settings: Settings, key: SecretStr, redis: Redis, stack: AsyncExitStack) -> ShopPhotoService:
     """Fotos de Google Maps de las tiendas: tope diario + caché en Redis."""
     return ShopPhotoService(
@@ -501,11 +536,13 @@ def _climate(settings: Settings, redis: Redis, stack: AsyncExitStack) -> Climate
         ),
         cache=RedisClimateCache(redis),
         settings=ClimateSettings(ttl_seconds=settings.climate_ttl_seconds),
+        facts=WorldBankFacts(http, redis),
     )
 
 
 def _city_events(settings: Settings, redis: Redis, stack: AsyncExitStack) -> CityEventService:
-    """Qué pasa en tus fechas: festivos (Nager.Date) y eventos (Ticketmaster, si hay clave)."""
+    """Qué pasa en tus fechas: festivos (Nager.Date), eventos (Ticketmaster, si hay clave)
+    y fiestas famosas (Wikidata)."""
     http = httpx.AsyncClient(
         timeout=httpx.Timeout(settings.events_timeout_seconds, connect=5.0),
         follow_redirects=False,
@@ -519,6 +556,8 @@ def _city_events(settings: Settings, redis: Redis, stack: AsyncExitStack) -> Cit
             busy=lambda: SourceBusyError("límite de peticiones de eventos"),
         )
 
+    wikidata = httpx.AsyncClient(timeout=httpx.Timeout(40.0, connect=5.0), follow_redirects=False)
+    stack.push_async_callback(wikidata.aclose)
     key = settings.ticketmaster_api_key
     return CityEventService(
         airports=Airports.bundled(),
@@ -529,9 +568,19 @@ def _city_events(settings: Settings, redis: Redis, stack: AsyncExitStack) -> Cit
         else TicketmasterClient(
             http, api_key=key.get_secret_value(), limiter=limiter(), url=settings.ticketmaster_url
         ),
+        # Fiestas y festivales famosos de la ciudad (Wikidata, gratis): su
+        # buscador tarda más, así que va con su propio tiempo de espera.
+        festivals=WikidataFestivals(wikidata),
         cache=RedisEventCache(redis),
         settings=EventSettings(ticketmaster_daily_limit=settings.ticketmaster_daily_limit),
     )
+
+
+def _safety(redis: Redis, llm: LLMClient | None, stack: AsyncExitStack) -> SafetyService:
+    """Robos, timos y zonas de cada ciudad (Wikivoyage, resumido por la IA)."""
+    http = httpx.AsyncClient(timeout=httpx.Timeout(12.0, connect=5.0), follow_redirects=False)
+    stack.push_async_callback(http.aclose)
+    return SafetyService(Wikivoyage(http), RedisSafetyCache(redis), llm)
 
 
 def _rain(settings: Settings, redis: Redis, stack: AsyncExitStack) -> RainService:
@@ -747,6 +796,7 @@ async def run(settings: Settings) -> int:
             or settings.landmarks_enabled
             or settings.mapillary_token is not None
             or settings.google_places_api_key is not None
+            or settings.plan_videos_enabled
             or (settings.flyra_enabled and llm is not None)
             or (settings.menu_enabled and llm is not None)
             or (settings.shared_trips_enabled and llm is not None)
@@ -781,6 +831,11 @@ async def run(settings: Settings) -> int:
         shop_photos: ShopPhotoService | None = None
         if settings.google_places_api_key is not None and public_redis is not None:
             shop_photos = _shop_photos(settings, settings.google_places_api_key, public_redis, stack)
+
+        # --- Vídeos de planes (YouTube Shorts) --------------------------------------------
+        plan_videos: PlanVideoService | None = None
+        if settings.plan_videos_enabled and public_redis is not None:
+            plan_videos = _plan_videos(settings, settings.youtube_api_key, public_redis, stack)
 
         # --- OpenStreetMap (Overpass): cajeros, guía del aeropuerto y "cerca de ti" ------
         overpass = (
@@ -821,11 +876,16 @@ async def run(settings: Settings) -> int:
         climate: ClimateService | None = None
         if settings.climate_enabled and public_redis is not None:
             climate = _climate(settings, public_redis, stack)
+            # Explorar: se empieza a llenar ya la caché de todos los países.
+            warm = asyncio.create_task(climate.warm())
+            stack.callback(warm.cancel)
 
         # --- Radar local: lluvia (MET Norway con caché en Redis) --------------------------
         rain: RainService | None = None
+        safety: SafetyService | None = None
         if settings.radar_enabled and public_redis is not None:
             rain = _rain(settings, public_redis, stack)
+            safety = _safety(public_redis, llm, stack)
 
         # --- Qué pasa en tus fechas (festivos + eventos con caché en Redis) -------------
         city_events: CityEventService | None = None
@@ -873,6 +933,7 @@ async def run(settings: Settings) -> int:
 
         # --- Elegid planes (los viajes en grupo; solo PostgreSQL) ------------------------
         plans = plan_router(PostgresPlans(pool)) if settings.negotiations_enabled else None
+        group_tasks = task_router(PostgresTasks(pool)) if settings.negotiations_enabled else None
 
         # --- Quedadas con otros viajeros (solo PostgreSQL) -------------------------------
         meetups = (
@@ -941,6 +1002,7 @@ async def run(settings: Settings) -> int:
                 shared_trips=shared_trips,
                 leagues=leagues,
                 plans=plans,
+                tasks=group_tasks,
                 group_chat=group_chat,
                 meetups=meetups,
                 places=places,
@@ -951,6 +1013,7 @@ async def run(settings: Settings) -> int:
                 atms=atms,
                 nearby=nearby,
                 shop_photos=shop_photos,
+                plan_videos=plan_videos,
                 cravings=cravings,
                 drive=drive,
                 stays=stays,
@@ -958,7 +1021,7 @@ async def run(settings: Settings) -> int:
                 climate=climate,
                 city_events=city_events,
                 rain=rain,
-                radar=radar_router(PostgresRadar(pool), Airports.bundled())
+                radar=radar_router(PostgresRadar(pool), Airports.bundled(), safety)
                 if settings.radar_enabled
                 else None,
                 queues=queues_router(PostgresQueues(pool)) if settings.queues_enabled else None,

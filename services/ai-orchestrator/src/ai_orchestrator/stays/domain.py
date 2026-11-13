@@ -77,6 +77,8 @@ class Lodging(BaseModel):
     # hotel · hostel · guest_house · motel · apartment
     kind: str
     stars: int | None = None
+    phone: str | None = None
+    website: str | None = None
 
 
 class Station(BaseModel):
@@ -122,6 +124,9 @@ class NearHotel(BaseModel):
     lon: float
     # Distancia en línea recta desde el centro de la casilla.
     km: float
+    # Teléfono y web (de OpenStreetMap, si los tiene).
+    phone: str | None = None
+    website: str | None = None
 
 
 class StayArea(BaseModel):
@@ -156,7 +161,17 @@ def nearest_hotels(
         if km > WALK_KM:
             continue
         found.append(
-            NearHotel(id=x.id, name=x.name, kind=x.kind, stars=x.stars, lat=x.lat, lon=x.lon, km=round(km, 2))
+            NearHotel(
+                id=x.id,
+                name=x.name,
+                kind=x.kind,
+                stars=x.stars,
+                lat=x.lat,
+                lon=x.lon,
+                km=round(km, 2),
+                phone=x.phone,
+                website=x.website,
+            )
         )
     found.sort(key=lambda h: h.km)
     return found[:limit]

@@ -13,7 +13,7 @@ Flujo para la app:
    miembros y recibe un código ("7K2M9QXD") que comparte con su grupo:
            POST /v1/group-negotiations/join  {"code": ...}   -> 200
        Mientras el grupo admite gente, NO arranca sola: el organizador pulsa
-       "Empezar" (con al menos dos preferencias enviadas) o vence el plazo:
+       "Empezar" (con al menos una preferencia enviada; si va sola, con Flyra) o vence el plazo:
            POST /v1/group-negotiations/{id}/start            -> 200
     3. Todos consultan cómo va y, al final, el resultado:
            GET  /v1/group-negotiations/{id}                  -> 200
@@ -58,6 +58,7 @@ from ai_orchestrator.negotiation.domain import (
     NegotiationResult,
     Status,
     Taste,
+    TripRules,
     clean_text,
 )
 from ai_orchestrator.negotiation.engine import HARD_MAX_ROUNDS
@@ -112,6 +113,8 @@ class CreateNegotiation(BaseModel):
     max_rounds: int | None = Field(default=None, ge=1, le=HARD_MAX_ROUNDS)
     # Cómo quiere el organizador que le vea su grupo.
     my_name: DisplayName = None
+    # Reglas para todo el grupo ("máx. 500 € por persona", "nada de madrugones").
+    rules: TripRules | None = None
 
     @model_validator(mode="after")
     def _check(self) -> Self:
@@ -124,6 +127,9 @@ class CreateNegotiation(BaseModel):
             raise ValueError("miembro repetido")
         if any(not USER_ID_RE.fullmatch(m) for m in self.members):
             raise ValueError("user_id de miembro con formato inválido")
+        cap = self.rules.max_price_minor if self.rules is not None else None
+        if cap is not None and any(o.price_minor > cap for o in self.options):
+            raise ValueError("hay una opción por encima del máximo por persona")
         return self
 
 
@@ -180,6 +186,7 @@ class NegotiationView(BaseModel):
     # Solo las suyas; se borran al terminar (minimización de datos).
     my_preferences: MemberPreferences | None
     result: NegotiationResult | None
+    rules: TripRules | None = None
 
     @classmethod
     def of(cls, record: NegotiationRecord, user_id: str) -> NegotiationView:
@@ -209,6 +216,7 @@ class NegotiationView(BaseModel):
             invite_code=record.invite_code if record.status is Status.COLLECTING else None,
             my_preferences=me.preferences,
             result=record.result,
+            rules=record.rules,
         )
 
 
@@ -251,6 +259,7 @@ def negotiation_router(
                 deadline=deadline_after(clock(), settings.collect_hours),
                 invites_open=not body.members,
                 organizer_name=body.my_name,
+                rules=body.rules,
             )
         )
         response.headers["Location"] = f"{PREFIX}/{record.negotiation_id}"
@@ -289,7 +298,7 @@ def negotiation_router(
             raise HTTPException(status_code=409, detail="la negociación ya no está esperando") from None
         except NotEnoughReadyError:
             raise HTTPException(
-                status_code=409, detail="hacen falta al menos dos personas con sus preferencias enviadas"
+                status_code=409, detail="hace falta al menos una persona con sus preferencias enviadas"
             ) from None
         _kick()
         return NegotiationView.of(record, principal.user_id)

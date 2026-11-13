@@ -8,7 +8,7 @@ import '../auth/session.dart';
 import '../features/home/home_screen.dart';
 import '../features/vault/vault_screen.dart';
 import '../features/audioguide/audioguide_screen.dart';
-import '../features/camera/camera_screen.dart';
+import '../features/camera/camera_tab.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/flights/explore_screen.dart';
 import '../features/flights/fare_alerts_screen.dart';
@@ -65,6 +65,9 @@ abstract final class Routes {
   static const String home = '/home';
   static const String map = '/map';
   static const String camera = '/camera';
+
+  /// La pestaña Cámara, pero directamente en el escáner de monumentos.
+  static const String cameraScan = '/camera?scan=1';
   static const String flights = '/flights';
   static const String group = '/group';
   static const String language = '/settings/language';
@@ -279,7 +282,15 @@ GoRouter buildRouter({
       branches: <StatefulShellBranch>[
         _tab(Routes.home, (_) => const HomeOrEasy()),
         _tab(Routes.map, (_) => const MapScreen()),
-        _tab(Routes.camera, (_) => const CameraScreen()),
+        StatefulShellBranch(
+          routes: <RouteBase>[
+            GoRoute(
+              path: Routes.camera,
+              builder: (BuildContext context, GoRouterState state) =>
+                  CameraTab(scan: state.uri.queryParameters['scan'] == '1'),
+            ),
+          ],
+        ),
         _tab(Routes.flights, (_) => const FlightsScreen()),
         _tab(Routes.group, (_) => const GroupScreen()),
       ],
@@ -318,6 +329,8 @@ GoRouter buildRouter({
           places: services.places.get,
           openLink: services.openBooking,
           scene3d: services.scene3d ?? services.webScene,
+          tilesUrl: services.tilesUrl,
+          glyphsUrl: services.glyphsUrl,
         );
       },
     ),

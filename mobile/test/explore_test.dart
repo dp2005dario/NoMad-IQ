@@ -18,6 +18,45 @@ List<Object?> year(double temp, double rain) => <Object?>[
 ];
 
 void main() {
+  test(
+    'datos de los países (Banco Mundial): se leen, se guardan y se juntan',
+    () {
+      final CountryClimate c = CountryClimate.parse(<String, Object?>{
+        'complete': false,
+        'countries': <String, Object?>{'ES': year(10, 40)},
+        'facts': <String, Object?>{
+          'ES': <String, Object?>{
+            'arrivals': 83700000,
+            'price': 0.62,
+            'homicides': 0.6,
+            'population': 48000000,
+            'capital': 'Madrid',
+          },
+          'FR': <String, Object?>{'price': -1, 'capital': 7}, // todo raro
+          'xx': <String, Object?>{'arrivals': 1},
+        },
+      });
+      expect(c.facts.keys, <String>['ES']);
+      expect(c.facts['ES']!.capital, 'Madrid');
+      // Lo guardado en el móvil se vuelve a leer igual.
+      final CountryClimate again = CountryClimate.parse(
+        jsonDecode(jsonEncode(c.toJson())),
+      );
+      expect(again.byCountry['ES'], c.byCountry['ES']);
+      expect(again.facts['ES']!.arrivals, 83700000);
+      // Lo nuevo del servidor se suma a lo guardado.
+      final CountryClimate merged = again.merge(
+        CountryClimate.parse(<String, Object?>{
+          'complete': true,
+          'countries': <String, Object?>{'JP': year(5, 90)},
+        }),
+      );
+      expect(merged.byCountry.keys, containsAll(<String>['ES', 'JP']));
+      expect(merged.complete, isTrue);
+      expect(merged.facts['ES']!.price, 0.62);
+    },
+  );
+
   test('el clima de los países: solo lo que está bien formado', () {
     final CountryClimate c = CountryClimate.parse(<String, Object?>{
       'complete': true,

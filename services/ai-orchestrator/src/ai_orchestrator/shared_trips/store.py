@@ -44,6 +44,7 @@ class TripRecord:
     note: str = ""
     rating_sum: int = 0
     rating_count: int = 0
+    author_photo: str | None = None
 
 
 class SharedTripStore(Protocol):
@@ -66,24 +67,24 @@ class SharedTripStore(Protocol):
 
 _INSERT = (
     "INSERT INTO ai.shared_trips "
-    "(code, owner_id, author, title, destination, days, currency, items, public, note) "
-    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10) "
+    "(code, owner_id, author, title, destination, days, currency, items, public, note, author_photo) "
+    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11) "
     "RETURNING code, owner_id, author, title, destination, days, currency, items, copies, created_at, "
-    "public, note, rating_sum, rating_count"
+    "public, note, rating_sum, rating_count, author_photo"
 )
 _GET = (
     "SELECT code, owner_id, author, title, destination, days, currency, items, copies, created_at, "
-    "public, note, rating_sum, rating_count "
+    "public, note, rating_sum, rating_count, author_photo "
     "FROM ai.shared_trips WHERE code = $1"
 )
 _FEED = (
     "SELECT code, owner_id, author, title, destination, days, currency, items, copies, created_at, "
-    "public, note, rating_sum, rating_count "
+    "public, note, rating_sum, rating_count, author_photo "
     "FROM ai.shared_trips WHERE public ORDER BY created_at DESC LIMIT $1"
 )
 _MINE = (
     "SELECT code, owner_id, author, title, destination, days, currency, items, copies, created_at, "
-    "public, note, rating_sum, rating_count "
+    "public, note, rating_sum, rating_count, author_photo "
     "FROM ai.shared_trips WHERE owner_id = $1 ORDER BY created_at DESC LIMIT $2"
 )
 
@@ -106,6 +107,7 @@ def _record(row: asyncpg.Record) -> TripRecord:
         note=row["note"],
         rating_sum=row["rating_sum"],
         rating_count=row["rating_count"],
+        author_photo=row["author_photo"],
     )
 
 
@@ -138,6 +140,7 @@ class PostgresSharedTrips:
                         items,
                         trip.public,
                         trip.note,
+                        trip.author_photo,
                     )
             except asyncpg.UniqueViolationError as exc:
                 # Solo puede chocar el código: se prueba otro.

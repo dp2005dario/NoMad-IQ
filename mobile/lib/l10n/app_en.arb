@@ -1087,7 +1087,7 @@
   "@routeDestinationHint": {
     "description": "Flight route map screen."
   },
-  "routeUnknownAirport": "We don’t know that airport. Use its 3-letter code: NRT, JFK…",
+  "routeUnknownAirport": "We don't know that airport. Type the city: Málaga, Tokyo…",
   "@routeUnknownAirport": {
     "description": "Flight route map screen."
   },
@@ -1095,7 +1095,7 @@
   "@routeShowRoute": {
     "description": "Flight route map screen."
   },
-  "routeCredits": "Map: Natural Earth · Airports: OpenFlights (ODbL)",
+  "routeCredits": "Map: © OpenStreetMap · OpenFreeMap · Natural Earth · Airports: OpenFlights (ODbL)",
   "@routeCredits": {
     "description": "Flight route map screen."
   },
@@ -1782,9 +1782,21 @@
   "@groupStartHelp": {
     "description": "Explains start."
   },
-  "groupStartNeedsTwo": "At least two people need to send their preferences.",
+  "groupStartNeedsTwo": "Send your preferences to start (if you're alone, Flyra is your companion).",
   "@groupStartNeedsTwo": {
     "description": "Need 2 ready members."
+  },
+  "groupWithFlyra": "You and Flyra",
+  "@groupWithFlyra": {
+    "description": "Group trips: status label when the user is alone in the trip and Flyra (the AI) acts as travel companion"
+  },
+  "groupTrailerTitle": "Your trip trailer",
+  "@groupTrailerTitle": {
+    "description": "Group trips: title of the box where the trip trailer video will appear"
+  },
+  "groupTrailerSoon": "Coming soon: Flyra will make a short video of your trip.",
+  "@groupTrailerSoon": {
+    "description": "Group trips: text in the trailer box explaining it is coming soon"
   },
   "groupWaitingOrganizer": "When everyone's ready, the organiser presses Start (or it starts on its own at the deadline).",
   "@groupWaitingOrganizer": {
@@ -3284,6 +3296,46 @@
   "@exwYear": {
     "description": "Chart title: score through the year"
   },
+  "exwPerYear": "per year",
+  "@exwPerYear": {
+    "description": "Suffix after a number of tourists: per year"
+  },
+  "exwCheap": "Cheap",
+  "@exwCheap": {
+    "description": "Price level: cheap"
+  },
+  "exwMid": "Average",
+  "@exwMid": {
+    "description": "Price level: average"
+  },
+  "exwPricey": "Expensive",
+  "@exwPricey": {
+    "description": "Price level: expensive"
+  },
+  "exwSafe": "Safe",
+  "@exwSafe": {
+    "description": "Safety level: calm/safe"
+  },
+  "exwCareful": "Take care",
+  "@exwCareful": {
+    "description": "Safety level: take care"
+  },
+  "exwRisky": "Risky",
+  "@exwRisky": {
+    "description": "Safety level: risky"
+  },
+  "exwCapital": "Capital",
+  "@exwCapital": {
+    "description": "Stat: capital city"
+  },
+  "exwPopulation": "Population",
+  "@exwPopulation": {
+    "description": "Stat: population"
+  },
+  "exwFactsSource": "Tourists, prices, safety and population: World Bank (CC BY 4.0)",
+  "@exwFactsSource": {
+    "description": "Source line for tourists, prices, safety and population"
+  },
   "exwClose": "Close",
   "@exwClose": {
     "description": "Close button label"
@@ -3501,6 +3553,14 @@
   "@nbPause": {
     "description": "Walk: pause"
   },
+  "nbLiveGps": "Live GPS",
+  "@nbLiveGps": {
+    "description": "Walking mode: your position comes from the real GPS"
+  },
+  "nbWaitGps": "Waiting for GPS…",
+  "@nbWaitGps": {
+    "description": "Walking mode: still no GPS position"
+  },
   "nbResume": "Continue",
   "@nbResume": {
     "description": "Walk: continue"
@@ -3529,7 +3589,7 @@
   "@nbNoPlans": {
     "description": "Empty plans tab"
   },
-  "nbLoading": "Looking for what's nearby…",
+  "nbLoading": "Looking for what's nearby… (The first time in a new area it can take a minute.)",
   "@nbLoading": {
     "description": "Nearby: searching"
   },
@@ -5477,7 +5537,7 @@
   "@sosImOk": {
     "description": "Cancel / reset."
   },
-  "sosMessage": "I need help! I'm here:",
+  "sosMessage": "🆘 EMERGENCY: I need help urgently. This is where I am right now (tap to open it in Google Maps):",
   "@sosMessage": {
     "description": "SMS text before the map link."
   },
@@ -7787,6 +7847,22 @@
       }
     }
   },
+  "memShutterHint": "Tap: photo · Hold: video",
+  "@memShutterHint": {
+    "description": "Hint under the camera shutter button"
+  },
+  "memSwipeScanner": "Swipe right for the landmark scanner",
+  "@memSwipeScanner": {
+    "description": "Hint on the camera: swipe right to open the landmark scanner"
+  },
+  "memSwipeCamera": "Swipe left to go back to the camera",
+  "@memSwipeCamera": {
+    "description": "Hint on the scanner: swipe left to return to the camera"
+  },
+  "memSavedFlash": "Saved to Memories",
+  "@memSavedFlash": {
+    "description": "Short flash after taking a photo or video"
+  },
   "memSavedHint": "Saved in your Memories, only on this phone.",
   "@memSavedHint": {
     "description": "Saved hint."
@@ -8286,7 +8362,7 @@
   "@airportBusy": {
     "description": "Busy."
   },
-  "airportUnknown": "We do not know that airport. Check the 3-letter code.",
+  "airportUnknown": "I cannot find that airport. Try the city name.",
   "@airportUnknown": {
     "description": "Unknown airport."
   },
@@ -8544,6 +8620,34 @@
         "type": "String"
       }
     }
+  },
+  "visaNeedTitle": "WHAT YOU NEED",
+  "@visaNeedTitle": {
+    "description": "Title of the list of things the traveller needs to enter the country"
+  },
+  "visaNeedPassport": "A passport valid for the whole trip",
+  "@visaNeedPassport": {
+    "description": "Requirement: a passport valid for the whole trip"
+  },
+  "visaNeedOnline": "Apply online before you fly",
+  "@visaNeedOnline": {
+    "description": "Requirement: apply online before flying"
+  },
+  "visaNeedEmbassy": "An appointment at the embassy or consulate",
+  "@visaNeedEmbassy": {
+    "description": "Requirement: book an appointment at the embassy or consulate"
+  },
+  "visaNeedArrival": "You get it on arrival at the airport",
+  "@visaNeedArrival": {
+    "description": "Requirement: the visa or stamp is given on arrival at the airport"
+  },
+  "visaNeedReturn": "They may ask for your return ticket",
+  "@visaNeedReturn": {
+    "description": "Requirement: border officers may ask for a return or onward ticket"
+  },
+  "visaNeedOfficial": "Double-check on the official website before you go",
+  "@visaNeedOfficial": {
+    "description": "Requirement: confirm on the official website before travelling"
   },
   "visaGenericScheme": "visa",
   "@visaGenericScheme": {
@@ -9270,6 +9374,14 @@
   "assistantSpeak": "Speak",
   "@assistantSpeak": {
     "description": "Mic tooltip."
+  },
+  "assistantTapWhenDone": "Tap again when you're done",
+  "@assistantTapWhenDone": {
+    "description": "Voice assistant: hint while listening; tapping the mic again means the user finished speaking"
+  },
+  "assistantTapToAsk": "Tap the mic and ask Flyra",
+  "@assistantTapToAsk": {
+    "description": "Voice assistant Ask tab: hint under the big microphone button"
   },
   "assistantHint": "Tap the mic and speak. The other person reads and hears the translation on their half of the screen.",
   "@assistantHint": {
@@ -10443,6 +10555,42 @@
   "@radarNoScams": {
     "description": "No scam reported by enough travellers."
   },
+  "radarSafeTheft": "Theft and pickpockets",
+  "@radarSafeTheft": {
+    "description": "Safety tip title: thefts and pickpockets"
+  },
+  "radarSafeScam": "Scams",
+  "@radarSafeScam": {
+    "description": "Safety tip title: scams"
+  },
+  "radarSafeArea": "Areas to be careful",
+  "@radarSafeArea": {
+    "description": "Safety tip title: areas where to be careful"
+  },
+  "radarSafeTransport": "Taxis and transport",
+  "@radarSafeTransport": {
+    "description": "Safety tip title: taxis and transport"
+  },
+  "radarSafeNight": "At night",
+  "@radarSafeNight": {
+    "description": "Safety tip title: at night"
+  },
+  "radarSafeHealth": "Health",
+  "@radarSafeHealth": {
+    "description": "Safety tip title: health"
+  },
+  "radarSafeEmergency": "Emergencies",
+  "@radarSafeEmergency": {
+    "description": "Safety tip title: emergencies"
+  },
+  "radarSafeOther": "Good to know",
+  "@radarSafeOther": {
+    "description": "Safety tip title: other things to keep in mind"
+  },
+  "radarFromGuide": "From the Wikivoyage guide",
+  "@radarFromGuide": {
+    "description": "Source label: the tip comes from the Wikivoyage travel guide"
+  },
   "radarReportedBy": "{count, plural, =1{Reported by 1 traveller (last 90 days)} other{Reported by {count} travellers (last 90 days)}}",
   "@radarReportedBy": {
     "description": "How many travellers reported a scam (last 90 days).",
@@ -11147,7 +11295,7 @@
   "@nbClosedNow": {
     "description": "Nearby shop badge: closed right now"
   },
-  "sosMessageNoLocation": "I need help! (My phone couldn't get my location.)",
+  "sosMessageNoLocation": "🆘 EMERGENCY: I need help urgently. My phone couldn't get my location: please call me.",
   "@sosMessageNoLocation": {
     "description": "SOS text when the phone could not get the location (never say 'I'm here' without a location)"
   },
@@ -11174,6 +11322,10 @@
   "searchCheapest": "Cheapest",
   "@searchCheapest": {
     "description": "Badge on the cheapest day"
+  },
+  "searchElsewhere": "Don't see your flight? Also look on:",
+  "@searchElsewhere": {
+    "description": "Above links that open the same flight search on other big search engines"
   },
   "flyraTraitLanguage": "Speaks your language",
   "@flyraTraitLanguage": {
@@ -11227,6 +11379,154 @@
   "@groupPreviewEmpty": {
     "description": "Empty live preview"
   },
+  "groupCreateHeadline": "Plan your trip together",
+  "@groupCreateHeadline": {
+    "description": "Big headline at the top of the new group trip screen"
+  },
+  "groupQuickIdeas": "Quick ideas",
+  "@groupQuickIdeas": {
+    "description": "Title above template chips that pre-fill the trip"
+  },
+  "groupTplWeekend": "Weekend getaway",
+  "@groupTplWeekend": {
+    "description": "Template: weekend getaway"
+  },
+  "groupTplParty": "Party trip",
+  "@groupTplParty": {
+    "description": "Template: party trip (e.g. bachelor party)"
+  },
+  "groupTplBeach": "Beach and sun",
+  "@groupTplBeach": {
+    "description": "Template: beach and sun"
+  },
+  "groupTplCulture": "Culture and museums",
+  "@groupTplCulture": {
+    "description": "Template: culture and museums"
+  },
+  "groupTplAdventure": "Adventure",
+  "@groupTplAdventure": {
+    "description": "Template: adventure and nature"
+  },
+  "groupTplFood": "Food trip",
+  "@groupTplFood": {
+    "description": "Template: food trip"
+  },
+  "groupPlansTitle": "Out of ideas?",
+  "@groupPlansTitle": {
+    "description": "Title of the section with video ideas of plans"
+  },
+  "groupPlansFor": "Plans for:",
+  "@groupPlansFor": {
+    "description": "Label of the search box: plans for (city/country)"
+  },
+  "groupPlansHint": "city or country",
+  "@groupPlansHint": {
+    "description": "Hint in the plans search box"
+  },
+  "groupPlansQuery": "things to do in {place}",
+  "@groupPlansQuery": {
+    "description": "Video search text sent to the video site; keep {place}",
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "groupPlansDefault": "group travel plans with friends",
+  "@groupPlansDefault": {
+    "description": "Default video search when the user hasn't typed a place"
+  },
+  "groupPlansMoreOn": "More on:",
+  "@groupPlansMoreOn": {
+    "description": "Label before TikTok / Instagram / YouTube buttons"
+  },
+  "groupPlansNone": "No videos here yet. Watch them on:",
+  "@groupPlansNone": {
+    "description": "Shown when no in-app videos are available"
+  },
+  "groupRulesTitle": "Group rules",
+  "@groupRulesTitle": {
+    "description": "Section title: group rules set by organizer"
+  },
+  "groupRulesHelp": "They apply to everyone: no option can go over the maximum, and nobody's agent will pick what you mark here.",
+  "@groupRulesHelp": {
+    "description": "Help text under group rules"
+  },
+  "groupRulesMax": "Max per person",
+  "@groupRulesMax": {
+    "description": "Field: maximum price per person"
+  },
+  "groupRulesAvoid": "Nobody wants…",
+  "@groupRulesAvoid": {
+    "description": "Label above tags nobody wants"
+  },
+  "groupPriceOverMax": "Over the max per person",
+  "@groupPriceOverMax": {
+    "description": "Validation error: option price above group max"
+  },
+  "groupRulesMaxShown": "Max {amount} per person",
+  "@groupRulesMaxShown": {
+    "description": "Chip showing the group max price",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "groupTasksTitle": "Who does what",
+  "@groupTasksTitle": {
+    "description": "Section title: who does what"
+  },
+  "groupTasksHint": "Add a task (e.g. book the hotel)",
+  "@groupTasksHint": {
+    "description": "Hint for adding a task"
+  },
+  "groupTasksEmpty": "No tasks yet. Write down who books what.",
+  "@groupTasksEmpty": {
+    "description": "Empty state for tasks"
+  },
+  "groupTaskTake": "I'll do it",
+  "@groupTaskTake": {
+    "description": "Button: I'll take care of it"
+  },
+  "groupTaskOwner": "{name} is on it",
+  "@groupTaskOwner": {
+    "description": "Who takes care of a task",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groupInviteWhatsApp": "Invite on WhatsApp",
+  "@groupInviteWhatsApp": {
+    "description": "Button: invite via WhatsApp"
+  },
+  "groupInviteQr": "Show QR",
+  "@groupInviteQr": {
+    "description": "Button: show the invite QR"
+  },
+  "groupInviteMessage": "Come on a trip with me! Open ECLIPTA → Group trips → Join with a code and type: {code}",
+  "@groupInviteMessage": {
+    "description": "WhatsApp invite text; keep {code}",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "groupAllReady": "Everyone's in!",
+  "@groupAllReady": {
+    "description": "Celebration when everyone sent preferences"
+  },
+  "groupBigScreen": "Big screen",
+  "@groupBigScreen": {
+    "description": "Button: big screen mode to show the plan on a TV"
+  },
+  "groupBigScreenHint": "Cast your phone's screen to the TV to see it all together.",
+  "@groupBigScreenHint": {
+    "description": "Hint in big screen mode"
+  },
   "hoNearTitle": "Nearest places to stay",
   "@hoNearTitle": {
     "description": "Title of the horizontal list of the nearest hotels (like Google Maps)"
@@ -11258,6 +11558,22 @@
   "hoHotelPrices": "Prices",
   "@hoHotelPrices": {
     "description": "Short button: see prices of this hotel on Booking"
+  },
+  "hoCall": "Call",
+  "@hoCall": {
+    "description": "Hotel card button: call the hotel"
+  },
+  "hoFindPhone": "Phone in Maps",
+  "@hoFindPhone": {
+    "description": "Hotel card button when we don't know its phone: open it in Google Maps to see the phone"
+  },
+  "hoWeb": "Website",
+  "@hoWeb": {
+    "description": "Hotel card button: open the hotel's website"
+  },
+  "hoDirections": "Directions",
+  "@hoDirections": {
+    "description": "Hotel card button: how to get there (opens maps)"
   },
   "routeAirportOf": "{city} airport",
   "@routeAirportOf": {
@@ -11311,6 +11627,26 @@
   "routeNowThere": "Now there",
   "@routeNowThere": {
     "description": "Flight route screen"
+  },
+  "routeSpeed": "Speed",
+  "@routeSpeed": {
+    "description": "Flight route HUD: label for the plane's speed"
+  },
+  "routeAltitude": "Altitude",
+  "@routeAltitude": {
+    "description": "Flight route HUD: label for the plane's altitude"
+  },
+  "routeChangeOrigin": "Change origin",
+  "@routeChangeOrigin": {
+    "description": "Flight route: button to choose another departure airport"
+  },
+  "routeChangeDest": "Change destination",
+  "@routeChangeDest": {
+    "description": "Flight route: button to choose another arrival airport"
+  },
+  "routeNightThere": "Shaded: where it's night right now",
+  "@routeNightThere": {
+    "description": "Flight route: small note on the map that the shaded part of the globe is where it is night now"
   },
   "cityPickPopular": "Most searched",
   "@cityPickPopular": {

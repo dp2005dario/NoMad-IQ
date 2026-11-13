@@ -1,4 +1,5 @@
 // Asistente: el intérprete cara a cara (traductor y micro de mentira).
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:eclipta/core/router.dart';
@@ -39,13 +40,16 @@ class FakeMic implements SpeechInput {
   final List<String> langs = <String>[];
 
   @override
-  Future<String?> listen(String lang) async {
+  Future<String?> listen(String lang, {ValueChanged<String>? onPartial}) async {
     langs.add(lang);
     return heard.isEmpty ? null : heard.removeAt(0);
   }
 
   @override
   Future<void> stop() async {}
+
+  @override
+  ValueListenable<double> get level => ValueNotifier<double>(0);
 }
 
 /// Adivina "it" si la frase lleva "dov'è" (de mentira).
@@ -184,7 +188,11 @@ void main() {
     await tester.tap(find.text('Pregunta'));
     await tester.pumpAndSettle();
     expect(find.text('FLYRA TE LO CUENTA'), findsOneWidget);
-    await tester.tap(find.text('¿Qué hay dentro?'));
+    // Ya no hay preguntas hechas: solo el micro grande de abajo.
+    expect(find.text('¿Qué hay dentro?'), findsNothing);
+    expect(find.text('Toca el micro y pregúntale a Flyra'), findsOneWidget);
+    mic.heard.add('¿Qué hay dentro?');
+    await tester.tap(find.byTooltip('Toca el micro y pregúntale a Flyra'));
     await tester.pumpAndSettle();
     expect(find.text('«¿Qué hay dentro?»'), findsOneWidget);
     expect(find.textContaining('Prueba otra vez'), findsOneWidget);

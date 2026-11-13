@@ -204,6 +204,64 @@ class CityRadar {
   }
 }
 
+/// Un aviso de seguridad de la guía de la ciudad (Wikivoyage, resumido en
+/// tu idioma): de qué tipo es y qué dice.
+class SafetyTip {
+  const SafetyTip(this.kind, this.text);
+
+  /// theft, scam, area, transport, night, health, emergency u other.
+  final String kind;
+  final String text;
+}
+
+class CitySafety {
+  const CitySafety(this.tips, this.sourceUrl);
+
+  final List<SafetyTip> tips;
+
+  /// La guía de donde sale (Wikivoyage), o null.
+  final Uri? sourceUrl;
+
+  static const Set<String> kinds = <String>{
+    'theft',
+    'scam',
+    'area',
+    'transport',
+    'night',
+    'health',
+    'emergency',
+    'other',
+  };
+
+  static CitySafety parse(Object? json) {
+    final List<SafetyTip> tips = <SafetyTip>[];
+    Uri? source;
+    if (json is Map<String, Object?>) {
+      final Object? raw = json['tips'];
+      if (raw is List<Object?>) {
+        for (final Object? t in raw.take(6)) {
+          if (t is! Map<String, Object?>) continue;
+          final Object? kind = t['kind'], text = t['text'];
+          if (text is! String || text.trim().isEmpty) continue;
+          tips.add(
+            SafetyTip(
+              kind is String && kinds.contains(kind) ? kind : 'other',
+              text.length > 240 ? text.substring(0, 240) : text,
+            ),
+          );
+        }
+      }
+      final Uri? u = Uri.tryParse('${json['source_url'] ?? ''}');
+      if (u != null &&
+          u.isScheme('https') &&
+          u.host.endsWith('.wikivoyage.org')) {
+        source = u;
+      }
+    }
+    return CitySafety(tips, source);
+  }
+}
+
 class RadarApi {
   const RadarApi(this._api);
 
@@ -225,6 +283,16 @@ class RadarApi {
 
   Future<CityRadar> city(String iata) async =>
       CityRadar.parse(await _api.getJson('/v1/radar/${iata.toUpperCase()}'));
+
+  /// Robos, timos y zonas con cuidado de la ciudad, en tu idioma.
+  Future<CitySafety> safety(String iata, String language) async =>
+      CitySafety.parse(
+        await _api.getJson(
+          '/v1/radar/${iata.toUpperCase()}/safety',
+          query: <String, String>{'lang': language},
+          timeout: ApiClient.verySlow,
+        ),
+      );
 
   Future<void> reportScam(String iata, ScamCategory c) => _api.postJson(
     '/v1/radar/${iata.toUpperCase()}/scams',

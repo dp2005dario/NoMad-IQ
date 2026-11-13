@@ -301,7 +301,7 @@ class _CameraScreenState extends State<CameraScreen>
     if (access == LocationAccess.denied) access = await gps.request();
     if (access != LocationAccess.granted) return null;
     try {
-      return await gps.watch().first.timeout(const Duration(seconds: 15));
+      return await positionNow(gps, wait: const Duration(seconds: 15));
     } on TimeoutException {
       return null;
     } on StateError {
