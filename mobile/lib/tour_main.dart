@@ -42,7 +42,9 @@ final List<(String, String)> tourStops = <(String, String)>[
   ('12-cerca-de-ti', Routes.nearby),
   ('13-radar', Routes.radar()),
   ('14-dinero', Routes.money()),
-  ('15-boveda', Routes.vault),
+  // La Bóveda no se fotografía: su fondo (texturas y animaciones) congela
+  // el emulador del robot, que dibuja por software. En un móvil de verdad va
+  // bien; se prueba a mano.
   ('16-pasaporte', Routes.passport),
   ('17-recuerdos', Routes.memories),
   ('18-sos', Routes.sos),
