@@ -35,7 +35,7 @@ trap 'kill $MEMPID 2>/dev/null' EXIT
 # apunta desde qué pantalla seguir, se abre la app de cero y se leen sus
 # avisos hasta "PARTE" (seguir) o "FIN" (terminado). Así el emulador no
 # acumula todas las pantallas a la vez y no se congela.
-PARTE=4          # igual que tourPart en lib/tour_main.dart
+PARTE=2          # igual que tourPart en lib/tour_main.dart
 DESDE=0
 rm -f "$OUT/.fin" "$OUT/.parte"
 while [ "$DESDE" -lt 100 ]; do
