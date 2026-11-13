@@ -35,9 +35,39 @@ trap 'kill $MEMPID 2>/dev/null' EXIT
 # apunta desde qué pantalla seguir, se abre la app de cero y se leen sus
 # avisos hasta "PARTE" (seguir) o "FIN" (terminado). Así el emulador no
 # acumula todas las pantallas a la vez y no se congela.
-PARTE=2          # igual que tourPart en lib/tour_main.dart
+PARTE=4          # igual que tourPart en lib/tour_main.dart
 DESDE=0
+REINICIOS=0      # veces que se ha vuelto a encender el emulador
 rm -f "$OUT/.fin" "$OUT/.parte"
+
+# El emulador del robot (dibujo por software) a veces se congela o se
+# cierra solo con páginas con muchas animaciones, aunque en un móvil de
+# verdad van bien. Si pasa, se apaga del todo, se vuelve a encender y se
+# repite la misma parte (como mucho 6 veces en todo el recorrido).
+reencender() {
+  echo "== El emulador se ha caído: se vuelve a encender ($((REINICIOS + 1))) =="
+  adb emu kill >/dev/null 2>&1 || true
+  sleep 3
+  pkill -9 -f qemu-system >/dev/null 2>&1 || true
+  sleep 2
+  adb kill-server >/dev/null 2>&1 || true
+  "$ANDROID_HOME/emulator/emulator" -avd test -no-window -gpu swiftshader_indirect \
+    -noaudio -no-boot-anim -no-snapshot-save -camera-back emulated \
+    >/tmp/emulador-$REINICIOS.log 2>&1 &
+  adb start-server >/dev/null 2>&1 || true
+  timeout 240 adb wait-for-device || return 1
+  for _ in $(seq 1 90); do
+    [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ] && break
+    sleep 2
+  done
+  adb shell settings put global window_animation_scale 0 || true
+  adb shell settings put global transition_animation_scale 0 || true
+  adb shell settings put global animator_duration_scale 0 || true
+  adb shell input keyevent 82 >/dev/null 2>&1 || true
+  sleep 5
+  REINICIOS=$((REINICIOS + 1))
+}
+
 while [ "$DESDE" -lt 100 ]; do
   rm -f "$OUT/.parte"
   adb shell am force-stop "$PKG" || true
@@ -47,11 +77,11 @@ while [ "$DESDE" -lt 100 ]; do
   echo "== Parte desde la pantalla $((DESDE + 1)) =="
   adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null
 
-  # Lee el registro hasta "PARTE" o "FIN" (o como mucho 5 minutos).
+  # Lee el registro hasta "PARTE" o "FIN" (o como mucho 2 minutos y medio).
   # Además de los avisos de la app (flutter), los errores graves de Android
   # (cierres, WebView, gráficos): si el emulador se cae, en el registro del
   # robot queda lo último que pasó (el .zip no siempre se puede abrir).
-  timeout 300 adb logcat -v raw -s flutter:I AndroidRuntime:E chromium:E cr_*:E libc:F DEBUG:F OpenGLRenderer:E EGL_emulation:E | while IFS= read -r line; do
+  timeout 150 adb logcat -v raw -s flutter:I AndroidRuntime:E chromium:E cr_*:E libc:F DEBUG:F OpenGLRenderer:E EGL_emulation:E | while IFS= read -r line; do
     case "$line" in
       *ECLIPTA_SHOT:FIN*)
         echo "Fin del recorrido"
@@ -82,7 +112,12 @@ while [ "$DESDE" -lt 100 ]; do
   done
   timeout 30 adb logcat -d -s flutter:* >> "$OUT/registro-flutter.txt" || true
   [ -f "$OUT/.fin" ] && break
-  [ -f "$OUT/.parte" ] || break   # ni PARTE ni FIN: algo ha fallado
+  if [ ! -f "$OUT/.parte" ]; then
+    # Ni PARTE ni FIN: el emulador se ha caído o congelado.
+    [ "$REINICIOS" -ge 6 ] && break
+    reencender || break
+    continue   # repetir la misma parte
+  fi
   DESDE=$((DESDE + PARTE))
 done
 rm -f "$OUT/.parte"

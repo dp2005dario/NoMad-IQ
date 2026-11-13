@@ -79,7 +79,7 @@ Future<void> main() => startApp(
 );
 
 /// Cuántas pantallas se visitan antes de cerrar y volver a abrir la app.
-const int tourPart = 2;
+const int tourPart = 4;
 
 /// Desde qué pantalla empezar (0 = la primera). Lo escribe el script en el
 /// archivo "tour_desde" de la app; si no está, se empieza desde el principio.
