@@ -43,7 +43,7 @@ rm -f "$OUT/.fin" "$OUT/.parte"
 # El emulador del robot (dibujo por software) a veces se congela o se
 # cierra solo con páginas con muchas animaciones, aunque en un móvil de
 # verdad van bien. Si pasa, se apaga del todo, se vuelve a encender y se
-# repite la misma parte (como mucho 6 veces en todo el recorrido).
+# repite la misma parte (como mucho 12 veces en todo el recorrido).
 reencender() {
   echo "== El emulador se ha caído: se vuelve a encender ($((REINICIOS + 1))) =="
   adb emu kill >/dev/null 2>&1 || true
@@ -114,7 +114,7 @@ while [ "$DESDE" -lt 100 ]; do
   [ -f "$OUT/.fin" ] && break
   if [ ! -f "$OUT/.parte" ]; then
     # Ni PARTE ni FIN: el emulador se ha caído o congelado.
-    [ "$REINICIOS" -ge 6 ] && break
+    [ "$REINICIOS" -ge 12 ] && break
     reencender || break
     continue   # repetir la misma parte
   fi
